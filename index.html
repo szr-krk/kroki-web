@@ -1,0 +1,851 @@
+<!doctype html>
+<html lang="tr">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Kroki Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;800;900&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="src/home.css" />
+  <link rel="stylesheet" href="src/editor.css" />
+  <link rel="stylesheet" href="src/editor-line.css" />
+</head>
+
+<body>
+  <div id="uygulama">
+    <section id="home" class="ekran" aria-label="Kroki Pro ana sayfa">
+      <div class="home-ust">
+        <div class="home-ust-baslik">Kroki Pro</div>
+        <div class="home-ust-aksiyonlar">
+          <button id="btnHomeTamEkran" class="home-ust-btn" type="button" aria-pressed="false" aria-label="Tam ekran aç"
+            title="Tam ekran aç">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M8 4H4v4M16 4h4v4M20 16v4h-4M4 16v4h4" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            <span id="lblHomeTamEkran">Tam Ekran Aç</span>
+          </button>
+
+          <button id="btnKlavuz" class="home-ust-btn" type="button" aria-label="Kullanım kılavuzu"
+            title="Kullanım kılavuzu">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v16H7.5A2.5 2.5 0 0 0 5 21V5.5Z" stroke="currentColor"
+                stroke-width="2" stroke-linejoin="round"></path>
+              <path d="M8 7h8M8 11h8M8 15h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+            </svg>
+            <span>Kılavuz</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="home-icerik">
+        <div class="home-sol">
+          <button id="btnYeniKroki" class="home-ana-buton" type="button">
+            <span class="mini-ikon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z" stroke="currentColor"
+                  stroke-width="2" stroke-linejoin="round"></path>
+                <path d="M19 3v4M21 5h-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+              </svg>
+            </span>
+            <span>Yeni Kroki</span>
+          </button>
+
+          <div class="kart kart-hizli">
+            <h3>Hızlı Başlangıç</h3>
+            <div class="hizli-grid">
+              <button id="btnSablonlarim" type="button" data-modal-target="modalSablonlarim">
+                <span class="mini-ikon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M6 4h8l4 4v12H6z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+                    <path d="M14 4v4h4M9 12h6M9 16h6" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    </path>
+                  </svg>
+                </span>
+                <span>Şablonlarım</span>
+              </button>
+
+              <button id="btnHazirKavsaklar" type="button" data-modal-target="modalHazirKavsaklar">
+                <span class="mini-ikon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path>
+                    <path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                    </path>
+                  </svg>
+                </span>
+                <span>Hazır Kavşaklar</span>
+              </button>
+
+              <button id="btnHazirYollar" type="button" data-modal-target="modalHazirYollar">
+                <span class="mini-ikon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M5 19C7 13 10 11 12 5C14 11 17 13 19 19" stroke="currentColor" stroke-width="2.2"
+                      stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M12 8v2M12 13v2M12 18v1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                    </path>
+                  </svg>
+                </span>
+                <span>Hazır Yollar</span>
+              </button>
+
+              <button id="btnSvgYukle" type="button">
+                <span class="mini-ikon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 3v11M8.5 6.5 12 3l3.5 3.5" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M5 14v4a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-4" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round"></path>
+                  </svg>
+                </span>
+                <span>SVG Yükle</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="kart kart-son">
+          <h3>Son Krokiler</h3>
+          <div class="son-kroki-scroll" id="sonKrokilerListesi">
+            <p>Henüz kayıt yok.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="modalSablonlarim" class="modal-panel gizli" role="dialog" aria-modal="true"
+        aria-labelledby="modalSablonlarimBaslik">
+        <div class="modal">
+          <div class="modal-ust">
+            <span id="modalSablonlarimBaslik">Şablonlarım</span>
+            <div class="modal-ust-sag">
+              <button class="btn-ok btn-tamam gizli" type="button">
+                <span class="btn-ikon">✓</span> Tamam
+              </button>
+              <button class="btn-danger btn-kapat" type="button" data-modal-close>
+                <span class="btn-ikon">✕</span> Kapat
+              </button>
+            </div>
+          </div>
+          <div class="modal-icerik" id="sablonlarimListesi">(Boş) - Daha sonra doldurulacak.</div>
+          <div class="modal-alt">Şablon seçildiğinde kopyası yeni kroki olarak açılır.</div>
+        </div>
+      </div>
+
+      <div id="modalHazirKavsaklar" class="modal-panel gizli" role="dialog" aria-modal="true"
+        aria-labelledby="modalHazirKavsaklarBaslik">
+        <div class="modal">
+          <div class="modal-ust">
+            <span id="modalHazirKavsaklarBaslik">Hazır Kavşaklar</span>
+            <div class="modal-ust-sag">
+              <button class="btn-ok btn-tamam gizli" type="button">
+                <span class="btn-ikon">✓</span> Tamam
+              </button>
+              <button class="btn-danger btn-kapat" type="button" data-modal-close>
+                <span class="btn-ikon">✕</span> Kapat
+              </button>
+            </div>
+          </div>
+          <div class="modal-icerik" id="hazirKavsaklarListesi">(Boş) - Hazır kavşaklar daha sonra doldurulacak.</div>
+          <div class="modal-alt">Seçilen kavşak yeni krokiye eklenecek.</div>
+        </div>
+      </div>
+
+      <div id="modalHazirYollar" class="modal-panel gizli" role="dialog" aria-modal="true"
+        aria-labelledby="modalHazirYollarBaslik">
+        <div class="modal">
+          <div class="modal-ust">
+            <span id="modalHazirYollarBaslik">Hazır Yollar</span>
+            <div class="modal-ust-sag">
+              <button class="btn-ok btn-tamam gizli" type="button">
+                <span class="btn-ikon">✓</span> Tamam
+              </button>
+              <button class="btn-danger btn-kapat" type="button" data-modal-close>
+                <span class="btn-ikon">✕</span> Kapat
+              </button>
+            </div>
+          </div>
+          <div class="modal-icerik" id="hazirYollarListesi">(Boş) - Hazır yollar daha sonra doldurulacak.</div>
+          <div class="modal-alt">Seçilen yol yeni krokiye eklenecek.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="editor" class="ekran gizli" aria-label="Kroki editörü">
+      <main class="editor-calisma-alani">
+        <svg id="editorCanvas" class="editor-canvas" viewBox="0 0 1200 800" aria-label="Boş kroki alanı">
+          <g id="editorObjects"></g>
+          <g id="editorEditLayer"></g>
+        </svg>
+      </main>
+
+      <div class="editor-floating-toolbar" aria-label="Geçmiş işlemleri">
+        <div class="floating-toolbar-group" aria-label="Geçmiş">
+          <button id="btnEditorUndo" class="floating-tool-btn" type="button" aria-label="Geri al" title="Geri al"
+            disabled>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M9 7 4 12l5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+                stroke-linejoin="round"></path>
+              <path d="M5 12h9a5 5 0 0 1 0 10h-2" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round"></path>
+            </svg>
+          </button>
+
+          <button id="btnEditorRedo" class="floating-tool-btn" type="button" aria-label="Yinele" title="Yinele"
+            disabled>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="m15 7 5 5-5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+                stroke-linejoin="round"></path>
+              <path d="M19 12h-9a5 5 0 0 0 0 10h2" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <aside class="editor-rail" aria-label="Ana menü">
+        <button id="btnEditorMenu" class="rail-btn" type="button" aria-label="Ana menü" title="Ana menü" data-rail-menu-target="railMenuAna" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path>
+          </svg>
+        </button>
+
+        <button id="btnCizimAraclari" class="rail-btn" type="button" aria-label="Çizim araçları" title="Çizim araçları" data-rail-menu-target="railMenuCizim" aria-expanded="false">
+          <svg viewBox="0 0 56 56" aria-hidden="true">
+            <path d="M 50 49 L 7 49 L 7 41 L 50 41 Z M 42 16 L 25 33 L 12 38 L 17 25 L 34 9 Z M 35 8 A 1 1 0 0 1 43 15 Z M 24 32 L 18 26 L 13 37 Z" fill="currentColor" stroke="none"></path>
+            <rect x="0" y="0" width="56" height="56" fill-opacity="0"></rect>
+          </svg>
+        </button>
+
+        <button id="btnYolEkle" class="rail-btn" type="button" aria-label="Yol ekle" title="Yol ekle" data-rail-menu-target="railMenuYol" aria-expanded="false">
+          <svg viewBox="0 0 56 56" aria-hidden="true">
+            <path d="M 17 7 L 7 47 L 7 49 L 9 49 L 9 47 L 18 7 Z M 20 7 L 11 47 L 11 49 L 27 49 L 27 43 L 30 43 L 30 49 L 46 49 L 46 47 L 37 7 L 30 7 L 30 10 L 27 10 L 27 7 Z M 30 13 L 30 17 L 27 17 L 27 13 Z M 30 21 L 30 26 L 27 26 L 27 21 Z M 39 7 L 48 47 L 48 49 L 50 49 L 50 47 L 40 7 Z M 27 31 L 30 31 L 30 37 L 27 37 Z" fill="currentColor" stroke="none"></path>
+            <rect x="0" y="0" width="56" height="56" fill-opacity="0"></rect>
+          </svg>
+        </button>
+
+        <button id="btnAracEkle" class="rail-btn" type="button" aria-label="Araç ekle" title="Araç ekle" data-rail-menu-target="railMenuArac" aria-expanded="false">
+          <svg class="rail-svg-arac" viewBox="0 0 102 77" aria-hidden="true">
+            <path d="M 51 1 Q 76 2 78 4 C 84 10 86 17 91 24 Q 91 20 89 19 C 101 20 101 21 101 25 Q 96 27 91 26 C 91 35 101 35 101 45 C 101 75 102 78 99 78 L 89 78 C 86 78 86 75 86 70 L 15 70 C 15 75 15 78 12 78 L 3 78 C 0 78 0 75 0 73 L 0 45 C 0 35 10 35 10 26 Q 5 27 0 25 C 0 21 0 20 12 19 Q 10 20 10 24 C 15 17 16 10 23 4 Q 25 2 51 1 M 23 7 Q 17 15 14 25 L 87 25 Q 84 15 78 7 Q 51 3 23 7 M 4 39 Q 0 43 5 47 Q 9 50 27 48 L 29 45 Q 18 37 4 39 M 98 39 Q 83 38 74 45 L 76 48 Q 91 50 95 47 Q 101 43 98 39 Z M 35 59 L 35 65 L 68 65 L 68 59 Z" fill="currentColor" stroke="none"></path>
+          </svg>
+        </button>
+
+        <button id="btnLevhaEkle" class="rail-btn" type="button" aria-label="Levha ekle" title="Levha ekle" data-rail-menu-target="railMenuLevha" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 3 22 20H2L12 3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+            <path d="M12 9v5M12 17h.1" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"></path>
+          </svg>
+        </button>
+
+        <button id="btnDigerSembolEkle" class="rail-btn" type="button" aria-label="Diğer sembol ekle"
+          title="Diğer sembol ekle" data-rail-menu-target="railMenuDiger" aria-expanded="false">
+          <svg viewBox="0 0 51 51" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M 11.4 1.4 A 0.2 0.2 90 0 1 11.8 1.4 Q 12 7 16 9 L 13.8 9 Q 13.8 13 18 14 L 15.2 14 Q 15.2 17 19 19 L 16.6 19 Q 16.6 22 21 24 L 18 24 Q 18 27.6 23 29 L 13 30 L 13 37 L 10 37 L 10 30 L 0 29 Q 5.2 27.6 5.2 24 L 2 24 Q 6.6 22 6.6 19 L 4 19 Q 8 17 8 14 L 5 14 Q 9.4 13 9.4 9 L 7 9 Q 11 7 11.4 1.4 Z M 47 3.8 Q 47.8 4.4 47.4 5 L 47.8 5 L 49.8 6.8 Q 51 8 49.8 8 L 48.6 14 Q 48.4 14.8 49 14.8 Q 47.4 14.8 47.4 17 L 47.4 36.4 L 47.8 37.6 L 47.8 46.4 Q 48.4 46.4 48.4 47 L 48.4 50.4 L 8 50.4 L 8.4 49.8 L 9.8 48.8 L 11.6 45.6 L 11.6 44.6 L 11.4 43 L 10.6 42.8 L 9.8 42.2 L 8.8 42.2 L 7.6 42.4 L 6.6 42 L 6.2 41.4 L 6.2 41.2 L 7.6 40.2 L 8.6 39 L 10 38.4 L 11.6 38.8 L 13.6 40 Q 21.8 38 27.4 34.6 L 27.6 34 L 27.6 33.6 L 27.8 33.4 L 29.2 32.8 L 29.4 32.2 L 32.6 29.2 L 33.8 23.8 L 33.6 23.2 L 34.4 22.4 C 34.2 22.2 34 22 33.8 22 L 33 21.6 L 33 21.2 L 32.8 20.8 L 32.6 20.2 L 32.2 19.8 L 32.6 19 L 32.8 18.4 L 32.4 18 L 32.8 17.4 L 34.8 16.2 L 36.6 16.4 L 37 17 L 37.4 18 L 37 19.6 C 37 19.6 36.8 19.8 36.8 19.8 L 36.8 21.2 L 37.6 21 L 38.2 21.2 L 38.4 22.6 L 39.4 24.2 L 40 27.6 L 40.2 31 L 39.8 34 L 38.6 37 L 42.8 47.6 L 43 47.6 L 43.6 49.6 L 41.8 50.4 L 44.6 50.4 L 44.6 47 Q 44.6 46.4 45.2 46.4 L 45.2 37.6 L 45.6 36.4 L 45.6 17 Q 45.6 14.8 44 14.8 Q 44.6 14.8 44.4 14 L 43.2 8 Q 42 8 43.2 6.8 L 45.2 5 L 45.6 5 Q 45.2 4.4 46 3.8 A 0.2 0.2 90 0 1 47 3.8 M 44 8 L 45.2 14 L 47.8 14 L 49 8 L 44 8 M 30.6 34.2 L 30 34 L 29.6 34.2 C 29.6 34.2 29.6 34.4 29.6 34.4 L 28.8 35.2 L 28.4 35.2 L 27.8 35 Q 22 38.6 15 40 L 14.6 40.4 L 22 40.2 L 24.6 40.8 L 26 42 L 27.4 43.4 L 28.8 44.2 L 29.4 44.2 L 29.4 44.4 L 28.4 45 L 26.2 44.6 L 24.8 42.6 L 25 44.6 L 25.6 45.8 L 26.4 46.6 L 27.2 48.8 L 29.4 48.2 L 33 35.4 L 32.4 35.4 L 32.6 32.6 L 30.6 34.2 M 35.6 39.6 L 32.2 48.6 L 31.8 49 L 31.6 50.4 L 38.2 50.4 L 40.2 48.4 L 35.6 39.6 M 20.4 44.6 L 16.4 46 L 16.8 47.2 L 17.2 49.2 L 17 50.4 L 19.6 50.4 L 20.6 49.8 L 21.4 48.6 L 20.8 46.8 L 20.4 45.6 L 20.4 44.6 M 22.6 45.6 L 22.8 47 L 22.6 48.8 L 21.4 50.4 L 28 50.4 L 26.4 49.8 L 25.6 47.8 L 25 47.4 L 23.2 46.2 L 22.6 45.6 M 14 46.2 L 10 50.4 L 15 50.4 L 15.4 50 L 16 49.8 L 16 48.8 L 14.8 47.2 L 14 46.2 Z" fill="currentColor"></path>
+          </svg>
+        </button>
+
+        <button id="btnEditorFitScreen" class="rail-btn" type="button" aria-label="Ekrana sığdır"
+          title="Ekrana sığdır">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M8 8h8v8H8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path>
+          </svg>
+        </button>
+      </aside>
+
+      <div id="editorTopIp" class="editor-top-ip gizli" aria-label="Aktif nesne işlemleri">
+        <button id="btnEditTamam" class="top-ip-btn top-ip-ok" type="button" aria-label="Düzenlemeyi tamamla"
+          title="Tamam">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M5 12.5 10 17 19 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"
+              stroke-linejoin="round"></path>
+          </svg>
+          <span>Tamam</span>
+        </button>
+
+        <button id="btnEditKopyala" class="top-ip-btn top-ip-copy" type="button" aria-label="Aktif nesneyi kopyala"
+          title="Kopyala">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <rect x="8" y="8" width="10" height="12" rx="1.6" stroke="currentColor" stroke-width="2"></rect>
+            <path d="M6 16H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          <span>Kopyala</span>
+        </button>
+
+        <button id="btnMultiSelectMode" class="top-ip-btn top-ip-select" type="button" aria-label="Çoklu seç"
+          title="Çoklu seç" aria-pressed="false">
+          <svg viewBox="0 0 56 56" fill="none" aria-hidden="true">
+            <rect x="10" y="12" width="24" height="18" rx="2" stroke="currentColor" stroke-width="4"></rect>
+            <rect x="22" y="24" width="24" height="20" rx="2" stroke="currentColor" stroke-width="4"></rect>
+            <path d="M12 42H7V37" stroke="currentColor" stroke-width="4" stroke-linecap="round"></path>
+            <path d="M44 8h5v5" stroke="currentColor" stroke-width="4" stroke-linecap="round"></path>
+          </svg>
+          <span>Çoklu</span>
+        </button>
+
+        <button id="btnEditGrupla" class="top-ip-btn top-ip-group multi-only-control gizli" type="button"
+          aria-label="Seçili nesneleri grupla" title="Grupla">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <rect x="4" y="5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"></rect>
+            <rect x="13" y="12" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"></rect>
+            <path d="M11 8.5h2M7.5 12v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+          </svg>
+          <span>Grupla</span>
+        </button>
+
+        <button id="btnEditGrupCoz" class="top-ip-btn top-ip-group group-only-control gizli" type="button"
+          aria-label="Grubu çöz" title="Grubu çöz">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <rect x="4" y="5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"></rect>
+            <rect x="13" y="12" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"></rect>
+            <path d="M11.5 12.5 13 11M8 15v3M6.5 16.5h3" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round"></path>
+          </svg>
+          <span>Çöz</span>
+        </button>
+
+        <button id="btnEditOneGetir" class="top-ip-btn top-ip-layer" type="button"
+          aria-label="Aktif nesneyi one getir" title="One getir">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M7 8h10M7 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+            <path d="M12 15V5M8.5 8.5 12 5l3.5 3.5" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          <span>Öne</span>
+        </button>
+
+        <button id="btnEditArkayaGonder" class="top-ip-btn top-ip-layer" type="button"
+          aria-label="Aktif nesneyi arkaya gonder" title="Arkaya gonder">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M7 6h10M7 16h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+            <path d="M12 9v10M8.5 15.5 12 19l3.5-3.5" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          <span>Arkaya</span>
+        </button>
+
+        <button id="btnEditSil" class="top-ip-btn top-ip-danger" type="button" aria-label="Aktif nesneyi sil"
+          title="Sil">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M5 7h14M10 11v6M14 11v6M9 7l1-3h4l1 3M7 7l1 13h8l1-13" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          <span>Sil</span>
+        </button>
+
+      </div>
+
+      <div id="editorSideIp" class="editor-side-ip gizli" aria-label="Aktif nesne özellikleri">
+
+        <button id="btnLineColor" class="side-ip-btn side-ip-tool side-ip-color-btn is-stroke" type="button"
+          aria-label="Cizgi rengi" title="Cizgi rengi" aria-controls="strokeColorPanel"
+          aria-expanded="false">
+          <svg class="side-ip-palette-icon" viewBox="0 0 49 57" aria-hidden="true">
+            <g class="side-ip-palette-stroke-art">
+              <path
+                d="M 5 30 C 6.4 14.8 18.5 7.4 29.6 9.4 C 35.8 10.5 41.1 14.1 43.2 19.2 C 45.3 24.2 43.3 29.4 37.4 31.2 C 32.2 32.8 29.8 37.6 32.2 43.2 C 32.9 44.9 32.2 46.1 30.7 46.6 C 16 51.3 4.2 43.3 5 30 Z">
+              </path>
+              <path
+                d="M 23.2 31.4 C 22.7 26 26.2 24.5 28.6 24.9 L 30.7 26.3 C 31 29.6 28.2 33.2 21.4 33.6 C 22.6 32.8 23.2 32.1 23.2 31.4 Z">
+              </path>
+              <path d="M 28.6 24.9 Q 35.3 10.4 45.6 1.6"></path>
+              <circle cx="20.6" cy="16.7" r="2.4"></circle>
+              <circle cx="13.6" cy="21.3" r="2.4"></circle>
+              <circle cx="10.6" cy="30" r="2.4"></circle>
+              <circle cx="13.5" cy="39.1" r="2.4"></circle>
+            </g>
+            <path class="side-ip-palette-fill-art"
+              d="M 27.7 23.3 Q 34.3 9.3 45.6 0 L 48.1 1.8 Q 41.8 14.9 30.2 25.4 L 27.7 23.3 Z M 0.1 29.4 C 2.1 4.1 30.2 5.7 34.1 11.1 C 31.3 14.9 28.6 19 26.6 23.3 C 25.5 23.5 21.2 23.3 21.2 30.6 Q 20.9 32.4 18.4 34.4 C 31.6 35.5 30.7 26.9 30.7 26 C 34.1 23.1 37 19.7 39.9 16.3 C 41.5 18.1 47 26 41.1 29 C 33.6 31.7 30.7 37.6 33.6 44.6 Q 34.5 46.2 33.4 46.6 C 9.4 56.8 -0.8 39.6 0.1 29.4 M 19.1 15.4 A 0.2 0.2 90 0 0 25.9 15.4 A 0.2 0.2 90 0 0 19.1 15.4 M 10.5 18.8 A 0.2 0.2 90 0 0 17.3 18.8 A 0.2 0.2 90 0 0 10.5 18.8 M 6 26.9 A 0.2 0.2 90 0 0 12.8 26.9 A 0.2 0.2 90 0 0 6 26.9 M 6.9 36.5 A 0.2 0.2 90 0 0 13.7 36.5 A 0.2 0.2 90 0 0 6.9 36.5 M 21.4 42.8 A 0.2 0.2 90 0 0 14.6 42.8 A 0.2 0.2 90 0 0 21.4 42.8 Z M 22.3 30.3 C 21.8 24.2 26.4 24 27.3 24.2 L 29.8 26 C 30.4 29.4 27.5 33.7 20 33.7 Q 22.3 32.2 22.3 30.3 Z"></path>
+          </svg>
+        </button>
+
+        <button id="btnShapeFill" class="side-ip-btn side-ip-tool side-ip-color-btn is-fill shape-only-control gizli"
+          type="button" aria-label="Dolgu rengi" title="Dolgu rengi" aria-controls="fillColorPanel"
+          aria-expanded="false">
+          <svg class="side-ip-palette-icon" viewBox="0 0 49 52" fill="none" aria-hidden="true">
+            <g class="side-ip-palette-stroke-art">
+              <path
+                d="M 23.2 31.4 C 22.7 26 26.2 24.5 28.6 24.9 L 30.7 26.3 C 31 29.6 28.2 33.2 21.4 33.6 C 22.6 32.8 23.2 32.1 23.2 31.4 Z">
+              </path>
+              <path d="M 28.6 24.9 Q 35.3 10.4 45.6 1.6"></path>
+              <circle cx="20.6" cy="16.7" r="2.4"></circle>
+              <circle cx="13.6" cy="21.3" r="2.4"></circle>
+              <circle cx="10.6" cy="30" r="2.4"></circle>
+              <circle cx="13.5" cy="39.1" r="2.4"></circle>
+            </g>
+            <path class="side-ip-palette-fill-art"
+              d="M 27.7 23.3 Q 34.3 9.3 45.6 0 L 48.1 1.8 Q 41.8 14.9 30.2 25.4 L 27.7 23.3 Z M 0.1 29.4 C 2.1 4.1 30.2 5.7 34.1 11.1 C 31.3 14.9 28.6 19 26.6 23.3 C 25.5 23.5 21.2 23.3 21.2 30.6 Q 20.9 32.4 18.4 34.4 C 31.6 35.5 30.7 26.9 30.7 26 C 34.1 23.1 37 19.7 39.9 16.3 C 41.5 18.1 47 26 41.1 29 C 33.6 31.7 30.7 37.6 33.6 44.6 Q 34.5 46.2 33.4 46.6 C 9.4 56.8 -0.8 39.6 0.1 29.4 M 19.1 15.4 A 0.2 0.2 90 0 0 25.9 15.4 A 0.2 0.2 90 0 0 19.1 15.4 M 10.5 18.8 A 0.2 0.2 90 0 0 17.3 18.8 A 0.2 0.2 90 0 0 10.5 18.8 M 6 26.9 A 0.2 0.2 90 0 0 12.8 26.9 A 0.2 0.2 90 0 0 6 26.9 M 6.9 36.5 A 0.2 0.2 90 0 0 13.7 36.5 A 0.2 0.2 90 0 0 6.9 36.5 M 21.4 42.8 A 0.2 0.2 90 0 0 14.6 42.8 A 0.2 0.2 90 0 0 21.4 42.8 Z M 22.3 30.3 C 21.8 24.2 26.4 24 27.3 24.2 L 29.8 26 C 30.4 29.4 27.5 33.7 20 33.7 Q 22.3 32.2 22.3 30.3 Z"></path>
+          </svg>
+        </button>
+        <button id="btnFillPattern" class="side-ip-btn side-ip-tool side-ip-pattern-btn fill-pattern-control gizli"
+          type="button" aria-label="Dolgu deseni" title="Dolgu deseni" aria-controls="fillPatternPanel"
+          aria-expanded="false">
+          <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+            <rect x="9" y="9" width="30" height="30" rx="4" fill="var(--side-ip-fill-color)"
+              stroke="currentColor" stroke-width="2.6"></rect>
+            <path d="M9 22H39M22 9V22M16 22V39M32 22V39"
+              stroke="currentColor" stroke-width="2.3" stroke-linecap="round" opacity=".78"></path>
+            <path d="M11 11H37V37H11Z" stroke="#ffffff" stroke-width="1.2" opacity=".72"></path>
+          </svg>
+        </button>
+        <button id="btnClosedShapeEdit" class="side-ip-btn side-ip-tool side-ip-shape-edit-btn closed-shape-control gizli"
+          type="button" aria-label="Şekli düzenle" title="Şekli düzenle" aria-pressed="false">
+          <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+            <path d="M10 26 Q14 10 27 12 Q37 14 38 25 Q39 36 26 38 Q14 39 10 26Z"
+              stroke="currentColor" stroke-width="3" stroke-linejoin="round"></path>
+            <circle cx="10" cy="26" r="3.5"></circle>
+            <circle cx="27" cy="12" r="3.5"></circle>
+            <circle cx="38" cy="25" r="3.5"></circle>
+            <circle cx="26" cy="38" r="3.5"></circle>
+          </svg>
+        </button>
+        <button id="btnLineText" class="side-ip-btn side-ip-tool side-ip-text-btn" type="button"
+          aria-label="Cizgi metni" title="Cizgi metni" aria-controls="lineTextPanel" aria-expanded="false">
+          <span class="side-ip-text-mark" aria-hidden="true">Abc</span>
+        </button>
+
+        <div class="side-ip-text-format-stack side-ip-control text-object-control gizli" aria-label="Metin bicimi">
+          <button id="btnSideTextBold" class="side-ip-text-format-btn" type="button" aria-label="Kalin"
+            title="Kalin" aria-pressed="false">B</button>
+          <button id="btnSideTextItalic" class="side-ip-text-format-btn is-italic" type="button" aria-label="Italik"
+            title="Italik" aria-pressed="false">I</button>
+          <button id="btnSideTextUnderline" class="side-ip-text-format-btn is-underline" type="button"
+            aria-label="Alti cizili" title="Alti cizili" aria-pressed="false">U</button>
+        </div>
+
+        <div class="side-ip-stepper-vertical side-ip-control" aria-label="Cizgi kalinligi">
+          <button id="btnLineStrokeWidthPlus" class="side-ip-stepper-btn" type="button"
+            aria-label="Cizgi kalinligini arttir">+</button>
+          <input id="lineStrokeWidthInput" class="side-ip-stepper-number" type="number" min="1" step="1"
+            value="2" inputmode="numeric" aria-label="Cizgi kalinligi">
+          <button id="btnLineStrokeWidthMinus" class="side-ip-stepper-btn" type="button"
+            aria-label="Cizgi kalinligini azalt">-</button>
+        </div>
+
+        <button id="btnLineStyle" class="side-ip-btn side-ip-tool side-ip-style-btn" type="button"
+          aria-label="Cizgi stili" title="Cizgi stili" aria-controls="lineStylePanel" aria-expanded="false">
+          <svg id="iconLineStyle" class="side-ip-style-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true"></svg>
+        </button>
+
+        <div class="side-ip-arrow-stack side-ip-control line-only-control" aria-label="Cizgi ok uclari">
+          <button id="btnLineStartArrow" class="side-ip-arrow-btn" type="button"
+            aria-label="Baslangic ok ucu" title="Baslangic ok ucu">
+            <svg id="iconLineStartArrow" viewBox="0 0 48 24" aria-hidden="true"></svg>
+          </button>
+          <button id="btnLineEndArrow" class="side-ip-arrow-btn" type="button"
+            aria-label="Bitis ok ucu" title="Bitis ok ucu">
+            <svg id="iconLineEndArrow" viewBox="0 0 48 24" aria-hidden="true"></svg>
+          </button>
+        </div>
+
+        <button id="btnLineCap" class="side-ip-btn side-ip-tool side-ip-cap-btn" type="button"
+          aria-label="Cizgi ucu" title="Cizgi ucu">
+          <svg id="iconLineCap" class="side-ip-cap-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true"></svg>
+        </button>
+
+        <button id="btnLineSnap" class="side-ip-btn side-ip-tool side-ip-snap-btn is-active line-only-control" type="button"
+          aria-label="Yatay dikey cizim yardimcisi acik" title="Yatay dikey cizim yardimcisi acik"
+          aria-pressed="true">
+          <svg id="iconLineSnap" class="side-ip-snap-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true"></svg>
+        </button>
+
+      </div>
+
+      <div id="closedShapeDraftPanel" class="closed-shape-draft-panel gizli" aria-label="Kapalı şekil çizimi">
+        <div class="closed-shape-draft-hint">Ekrana dokun, noktaları sırayla bırak; 3 noktadan sonra şekli kapatabilirsin.</div>
+        <button id="btnClosedShapeDraftCancel" class="closed-shape-draft-btn is-cancel" type="button">İptal</button>
+        <button id="btnClosedShapeDraftClose" class="closed-shape-draft-btn is-close" type="button" disabled>Şekli Kapat</button>
+      </div>
+
+      <div id="freeTextComposer" class="free-text-composer gizli" role="dialog" aria-label="Metin ekle">
+        <textarea id="freeTextInput" class="free-text-input" rows="3" maxlength="240" placeholder="METIN"></textarea>
+        <div class="free-text-actions">
+          <div class="line-text-size-picker" aria-label="Metin boyutu">
+            <button id="btnFreeTextSizeMinus" class="line-text-picker-btn" type="button"
+              aria-label="Metin boyutunu azalt" title="Metin boyutunu azalt">-</button>
+            <span id="valFreeTextSize" class="line-text-picker-value" aria-hidden="true">28</span>
+            <button id="btnFreeTextSizePlus" class="line-text-picker-btn" type="button"
+              aria-label="Metin boyutunu arttir" title="Metin boyutunu arttir">+</button>
+          </div>
+          <div class="line-text-size-picker" aria-label="Metin opakligi">
+            <button id="btnFreeTextOpacityMinus" class="line-text-picker-btn" type="button"
+              aria-label="Metin opakligini azalt" title="Metin opakligini azalt">-</button>
+            <span id="valFreeTextOpacity" class="line-text-picker-value" aria-hidden="true">100%</span>
+            <button id="btnFreeTextOpacityPlus" class="line-text-picker-btn" type="button"
+              aria-label="Metin opakligini arttir" title="Metin opakligini arttir">+</button>
+          </div>
+          <button id="btnFreeTextAlign" class="line-text-icon-btn free-text-align-btn" type="button"
+            aria-label="Metin hizalama" title="Metin hizalama" data-align="center">
+            <span aria-hidden="true"></span>
+          </button>
+          <button id="btnFreeTextBold" class="line-text-icon-btn line-text-format-btn" type="button"
+            aria-label="Kalin" title="Kalin" aria-pressed="false">B</button>
+          <button id="btnFreeTextItalic" class="line-text-icon-btn line-text-format-btn is-italic" type="button"
+            aria-label="Italik" title="Italik" aria-pressed="false">I</button>
+          <button id="btnFreeTextUnderline" class="line-text-icon-btn line-text-format-btn is-underline" type="button"
+            aria-label="Alti cizili" title="Alti cizili" aria-pressed="false">U</button>
+          <button id="btnFreeTextColor" class="line-text-icon-btn line-text-color-btn side-ip-color-btn is-fill"
+            type="button" aria-label="Metin rengi" title="Metin rengi">
+            <svg class="side-ip-palette-icon" viewBox="0 0 49 57" aria-hidden="true">
+              <path class="side-ip-palette-fill-art"
+                d="M 27.7 23.3 Q 34.3 9.3 45.6 0 L 48.1 1.8 Q 41.8 14.9 30.2 25.4 L 27.7 23.3 Z M 0.1 29.4 C 2.1 4.1 30.2 5.7 34.1 11.1 C 31.3 14.9 28.6 19 26.6 23.3 C 25.5 23.5 21.2 23.3 21.2 30.6 Q 20.9 32.4 18.4 34.4 C 31.6 35.5 30.7 26.9 30.7 26 C 34.1 23.1 37 19.7 39.9 16.3 C 41.5 18.1 47 26 41.1 29 C 33.6 31.7 30.7 37.6 33.6 44.6 Q 34.5 46.2 33.4 46.6 C 9.4 56.8 -0.8 39.6 0.1 29.4 M 19.1 15.4 A 0.2 0.2 90 0 0 25.9 15.4 A 0.2 0.2 90 0 0 19.1 15.4 M 10.5 18.8 A 0.2 0.2 90 0 0 17.3 18.8 A 0.2 0.2 90 0 0 10.5 18.8 M 6 26.9 A 0.2 0.2 90 0 0 12.8 26.9 A 0.2 0.2 90 0 0 6 26.9 M 6.9 36.5 A 0.2 0.2 90 0 0 13.7 36.5 A 0.2 0.2 90 0 0 6.9 36.5 M 21.4 42.8 A 0.2 0.2 90 0 0 14.6 42.8 A 0.2 0.2 90 0 0 21.4 42.8 Z M 22.3 30.3 C 21.8 24.2 26.4 24 27.3 24.2 L 29.8 26 C 30.4 29.4 27.5 33.7 20 33.7 Q 22.3 32.2 22.3 30.3 Z"></path>
+            </svg>
+          </button>
+          <button id="btnFreeTextCancel" class="free-text-command-btn" type="button">Kapat</button>
+          <button id="btnFreeTextDone" class="free-text-command-btn is-ok" type="button">Tamam</button>
+        </div>
+        <input id="freeTextColorInput" class="side-ip-hidden-input" type="color" value="#111827" tabindex="-1"
+          aria-hidden="true">
+      </div>
+
+      <div id="lineStylePanel" class="line-style-panel gizli" aria-label="Cizgi stili">
+        <div class="line-style-options" role="radiogroup" aria-label="Cizgi desenleri">
+          <button class="line-style-option" type="button" role="radio" aria-checked="true" data-line-style="solid"
+            aria-label="Duz cizgi" title="Duz cizgi">
+            <svg viewBox="0 0 42 24" aria-hidden="true">
+              <path d="M5 12H37"></path>
+            </svg>
+          </button>
+          <button class="line-style-option" type="button" role="radio" aria-checked="false" data-line-style="dash"
+            aria-label="Kesik cizgi" title="Kesik cizgi">
+            <svg viewBox="0 0 42 24" aria-hidden="true">
+              <path d="M5 12H37" stroke-dasharray="10 7"></path>
+            </svg>
+          </button>
+          <button class="line-style-option" type="button" role="radio" aria-checked="false" data-line-style="dot"
+            aria-label="Noktali cizgi" title="Noktali cizgi">
+            <svg viewBox="0 0 42 24" aria-hidden="true">
+              <path d="M6 12H36" stroke-dasharray="0 8"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="line-style-controls">
+          <div id="lineDashSizeControl" class="line-style-control" aria-label="Kesik boyutu">
+            <button id="btnLineDashSizeMinus" class="line-style-control-btn" type="button"
+              aria-label="Kesik boyutunu azalt" title="Kesik boyutunu azalt">-</button>
+            <span id="valLineDashSize" class="line-style-control-value" aria-hidden="true">12</span>
+            <button id="btnLineDashSizePlus" class="line-style-control-btn" type="button"
+              aria-label="Kesik boyutunu arttir" title="Kesik boyutunu arttir">+</button>
+          </div>
+          <div id="lineDashGapControl" class="line-style-control" aria-label="Desen boslugu">
+            <button id="btnLineDashGapMinus" class="line-style-control-btn" type="button"
+              aria-label="Desen boslugunu azalt" title="Desen boslugunu azalt">-</button>
+            <span id="valLineDashGap" class="line-style-control-value" aria-hidden="true">8</span>
+            <button id="btnLineDashGapPlus" class="line-style-control-btn" type="button"
+              aria-label="Desen boslugunu arttir" title="Desen boslugunu arttir">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="strokeColorPanel" class="side-ip-color-panel gizli" aria-label="Cizgi rengi ve opakligi">
+        <div id="strokeOpacityControl" class="side-ip-color-opacity" aria-label="Cizgi opakligi">
+          <input id="strokeOpacityInput" class="side-ip-opacity-range" type="range" min="0" max="100" step="5"
+            value="100" aria-label="Cizgi opakligi">
+          <span id="strokeOpacityValue" class="side-ip-opacity-value" aria-hidden="true">100%</span>
+        </div>
+        <input id="lineColorInput" class="side-ip-color-picker" type="color" value="#111827"
+          aria-label="Cizgi rengi">
+      </div>
+
+      <div id="fillColorPanel" class="side-ip-color-panel gizli" aria-label="Dolgu rengi ve opakligi">
+        <div class="side-ip-color-opacity" aria-label="Dolgu opakligi">
+          <input id="fillOpacityInput" class="side-ip-opacity-range" type="range" min="0" max="100" step="5"
+            value="100" aria-label="Dolgu opakligi">
+          <span id="fillOpacityValue" class="side-ip-opacity-value" aria-hidden="true">100%</span>
+        </div>
+        <input id="shapeFillInput" class="side-ip-color-picker" type="color" value="#ffffff"
+          aria-label="Dolgu rengi">
+      </div>
+
+      <div id="fillPatternPanel" class="fill-pattern-panel gizli" aria-label="Dolgu deseni">
+        <div class="fill-pattern-options" role="radiogroup" aria-label="Dolgu desenleri">
+          <button class="fill-pattern-option is-selected" type="button" role="radio" aria-checked="true"
+            data-fill-pattern="none" aria-label="Duz dolgu" title="Duz dolgu">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <rect x="8" y="8" width="32" height="32" rx="5" fill="#e5e7eb"></rect>
+              <path d="M13 24H35" stroke="#64748b" stroke-width="3" stroke-linecap="round"></path>
+            </svg>
+          </button>
+          <button class="fill-pattern-option" type="button" role="radio" aria-checked="false"
+            data-fill-pattern="paver" aria-label="Kilit tasi" title="Kilit tasi">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <rect x="8" y="8" width="32" height="32" rx="5" fill="#d1d5db"></rect>
+              <path d="M8 24H40M24 8V24M16 24V40M32 24V40M8 8H40V40H8Z"
+                stroke="#475569" stroke-width="2" fill="none"></path>
+            </svg>
+          </button>
+          <button class="fill-pattern-option" type="button" role="radio" aria-checked="false"
+            data-fill-pattern="pavement" aria-label="Kaldirim" title="Kaldirim">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <rect x="8" y="8" width="32" height="32" rx="5" fill="#e5e7eb"></rect>
+              <path d="M8 8H40V40H8ZM8 24H40M24 8V40" stroke="#64748b" stroke-width="2" fill="none"></path>
+            </svg>
+          </button>
+          <button class="fill-pattern-option" type="button" role="radio" aria-checked="false"
+            data-fill-pattern="grass" aria-label="Cim" title="Cim">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <rect x="8" y="8" width="32" height="32" rx="5" fill="#dcfce7"></rect>
+              <path d="M16 34Q18 24 24 17M24 35Q27 26 33 19M13 22Q20 16 29 14"
+                stroke="#15803d" stroke-width="2.4" fill="none" stroke-linecap="round"></path>
+            </svg>
+          </button>
+          <button class="fill-pattern-option" type="button" role="radio" aria-checked="false"
+            data-fill-pattern="median" aria-label="Refuj" title="Refuj">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <rect x="8" y="8" width="32" height="32" rx="5" fill="#e5e7eb"></rect>
+              <path d="M6 42L42 6M16 44L44 16" stroke="#16a34a" stroke-width="3" fill="none"
+                stroke-linecap="round"></path>
+            </svg>
+          </button>
+          <button class="fill-pattern-option" type="button" role="radio" aria-checked="false"
+            data-fill-pattern="gravel" aria-label="Cakil" title="Cakil">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <rect x="8" y="8" width="32" height="32" rx="5" fill="#e5e7eb"></rect>
+              <circle cx="17" cy="18" r="3" fill="#64748b"></circle>
+              <circle cx="30" cy="16" r="2.5" fill="#475569"></circle>
+              <circle cx="24" cy="31" r="3.4" fill="#64748b"></circle>
+              <circle cx="35" cy="30" r="2.2" fill="#475569"></circle>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="textColorPanel" class="side-ip-color-panel gizli" aria-label="Metin rengi ve opakligi">
+        <div class="side-ip-color-opacity" aria-label="Metin opakligi">
+          <input id="textOpacityInput" class="side-ip-opacity-range" type="range" min="0" max="100" step="5"
+            value="100" aria-label="Metin opakligi">
+          <span id="textOpacityValue" class="side-ip-opacity-value" aria-hidden="true">100%</span>
+        </div>
+        <input id="lineTextColorInput" class="side-ip-color-picker" type="color" value="#111827"
+          aria-label="Metin rengi">
+      </div>
+
+      <div id="lineTextPanel" class="line-text-panel gizli" aria-label="Cizgi metni">
+        <textarea id="lineTextInput" class="line-text-input" rows="3" maxlength="240" placeholder="Metin"></textarea>
+        <div class="line-text-actions">
+          <div class="line-text-size-picker" aria-label="Metin boyutu">
+            <button id="btnLineTextSizeMinus" class="line-text-picker-btn" type="button"
+              aria-label="Metin boyutunu azalt" title="Metin boyutunu azalt">-</button>
+            <span id="valLineTextSize" class="line-text-picker-value" aria-hidden="true">18</span>
+            <button id="btnLineTextSizePlus" class="line-text-picker-btn" type="button"
+              aria-label="Metin boyutunu arttir" title="Metin boyutunu arttir">+</button>
+          </div>
+          <button id="btnLineTextAlign" class="line-text-icon-btn" type="button" aria-label="Metin yatay konumu"
+            title="Metin yatay konumu">
+            <svg id="iconLineTextAlign" viewBox="0 0 32 32" aria-hidden="true"></svg>
+          </button>
+          <button id="btnLineTextSide" class="line-text-icon-btn" type="button" aria-label="Metin dusey konumu"
+            title="Metin dusey konumu">
+            <svg id="iconLineTextSide" viewBox="0 0 32 32" aria-hidden="true"></svg>
+          </button>
+          <button id="btnLineTextColor" class="line-text-icon-btn line-text-color-btn side-ip-color-btn is-fill"
+            type="button" aria-label="Metin rengi" title="Metin rengi" aria-controls="textColorPanel"
+            aria-expanded="false">
+            <svg class="side-ip-palette-icon" viewBox="0 0 49 57" aria-hidden="true">
+              <path class="side-ip-palette-fill-art"
+                d="M 27.7 23.3 Q 34.3 9.3 45.6 0 L 48.1 1.8 Q 41.8 14.9 30.2 25.4 L 27.7 23.3 Z M 0.1 29.4 C 2.1 4.1 30.2 5.7 34.1 11.1 C 31.3 14.9 28.6 19 26.6 23.3 C 25.5 23.5 21.2 23.3 21.2 30.6 Q 20.9 32.4 18.4 34.4 C 31.6 35.5 30.7 26.9 30.7 26 C 34.1 23.1 37 19.7 39.9 16.3 C 41.5 18.1 47 26 41.1 29 C 33.6 31.7 30.7 37.6 33.6 44.6 Q 34.5 46.2 33.4 46.6 C 9.4 56.8 -0.8 39.6 0.1 29.4 M 19.1 15.4 A 0.2 0.2 90 0 0 25.9 15.4 A 0.2 0.2 90 0 0 19.1 15.4 M 10.5 18.8 A 0.2 0.2 90 0 0 17.3 18.8 A 0.2 0.2 90 0 0 10.5 18.8 M 6 26.9 A 0.2 0.2 90 0 0 12.8 26.9 A 0.2 0.2 90 0 0 6 26.9 M 6.9 36.5 A 0.2 0.2 90 0 0 13.7 36.5 A 0.2 0.2 90 0 0 6.9 36.5 M 21.4 42.8 A 0.2 0.2 90 0 0 14.6 42.8 A 0.2 0.2 90 0 0 21.4 42.8 Z M 22.3 30.3 C 21.8 24.2 26.4 24 27.3 24.2 L 29.8 26 C 30.4 29.4 27.5 33.7 20 33.7 Q 22.3 32.2 22.3 30.3 Z"></path>
+            </svg>
+          </button>
+          <button id="btnLineTextBold" class="line-text-icon-btn line-text-format-btn text-object-control gizli"
+            type="button" aria-label="Kalin" title="Kalin" aria-pressed="false">B</button>
+          <button id="btnLineTextItalic"
+            class="line-text-icon-btn line-text-format-btn is-italic text-object-control gizli" type="button"
+            aria-label="Italik" title="Italik" aria-pressed="false">I</button>
+          <button id="btnLineTextUnderline"
+            class="line-text-icon-btn line-text-format-btn is-underline text-object-control gizli" type="button"
+            aria-label="Alti cizili" title="Alti cizili" aria-pressed="false">U</button>
+        </div>
+      </div>
+
+      <div class="rail-menu-panel gizli" id="railMenuAna" role="dialog" aria-label="Ana menü">
+        <div class="rail-menu-title">Ana Menü</div>
+        <button id="btnEditorTamEkran" class="rail-menu-btn" type="button" aria-label="Tam ekran"
+          title="Tam ekran" aria-pressed="false">Tam Ekran</button>
+        <button class="rail-menu-btn" type="button">Resim Olarak Kaydet</button>
+        <button class="rail-menu-btn" type="button">Alanı Resim Kaydet</button>
+        <button class="rail-menu-btn" type="button">Kaydet</button>
+        <button class="rail-menu-btn" type="button">Kaydet ve Çık</button>
+        <button class="rail-menu-btn" type="button">Kaydetmeden Çık</button>
+        <button class="rail-menu-btn" type="button">Şablonlarıma Kaydet</button>
+        <button class="rail-menu-btn" type="button">SVG Olarak Kaydet</button>
+        <div class="rail-menu-separator" aria-hidden="true"></div>
+        <button class="rail-menu-btn" type="button">Yeni Kroki</button>
+      </div>
+
+      <div class="rail-menu-panel gizli" id="railMenuCizim" role="dialog" aria-label="Çizim araçları">
+        <div class="rail-menu-title">Çizim Araçları</div>
+        <div class="rail-tool-grid" id="gridCizimAraclari">
+          <button type="button" class="rail-tool-btn" data-arac="cizgi" title="Çizgi" aria-label="Çizgi">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M5 19L19 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path>
+            </svg>
+          </button>
+
+          <button type="button" class="rail-tool-btn" data-arac="arc" title="Arc" aria-label="Arc">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M5 17A10 10 0 0 1 19 7" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round"></path>
+              <circle cx="5" cy="17" r="1.5" fill="currentColor"></circle>
+              <circle cx="19" cy="7" r="1.5" fill="currentColor"></circle>
+            </svg>
+          </button>
+
+          <button type="button" class="rail-tool-btn" data-arac="curve" title="Bezier Eğri" aria-label="Bezier Eğri">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 17Q9 6 20 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+              <circle cx="4" cy="17" r="1.6" fill="currentColor"></circle>
+              <circle cx="10" cy="7" r="1.6" fill="currentColor"></circle>
+              <circle cx="20" cy="10" r="1.6" fill="currentColor"></circle>
+            </svg>
+          </button>
+
+          <button type="button" class="rail-tool-btn" data-arac="cubic" title="Kübik Eğri" aria-label="Kübik Eğri">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 17C7 5 14 19 20 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+              <circle cx="4" cy="17" r="1.5" fill="currentColor"></circle>
+              <circle cx="8" cy="7" r="1.5" fill="currentColor"></circle>
+              <circle cx="15" cy="17" r="1.5" fill="currentColor"></circle>
+              <circle cx="20" cy="8" r="1.5" fill="currentColor"></circle>
+            </svg>
+          </button>
+
+          <button type="button" class="rail-tool-btn" data-arac="daire" title="Daire" aria-label="Daire">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="6.8" stroke="currentColor" stroke-width="2"></circle>
+            </svg>
+          </button>
+
+          <button type="button" class="rail-tool-btn" data-arac="elips" title="Elips" aria-label="Elips">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <ellipse cx="12" cy="12" rx="8" ry="5.2" stroke="currentColor" stroke-width="2"></ellipse>
+            </svg>
+          </button>
+
+          <button type="button" class="rail-tool-btn" data-arac="dikdortgen" title="Dikdörtgen" aria-label="Dikdörtgen">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect x="5" y="7" width="14" height="10" stroke="currentColor" stroke-width="2"></rect>
+            </svg>
+          </button>
+
+          <button type="button" class="rail-tool-btn" data-arac="metin" title="Metin" aria-label="Metin">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <text x="12" y="13" text-anchor="middle" dominant-baseline="middle" fill="currentColor"
+                font-family="Roboto, Arial, sans-serif" font-size="10.2" font-weight="900">Abc</text>
+            </svg>
+          </button>
+
+          <button type="button" class="rail-tool-btn" data-arac="olcu" title="Oklu Metin" aria-label="Oklu Metin">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M6.2 4.8h11.6a2.4 2.4 0 0 1 2.4 2.4v5.9a2.4 2.4 0 0 1-2.4 2.4h-5.4l-3.9 4.2v-4.2H6.2a2.4 2.4 0 0 1-2.4-2.4V7.2a2.4 2.4 0 0 1 2.4-2.4Z"
+                stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+              <path d="M7.2 8.6h9.6M7.2 11.7h6.7" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round"></path>
+            </svg>
+          </button>
+
+          <button type="button" class="rail-tool-btn" data-arac="kapali" title="Kapalı Bezier Şekil" aria-label="Kapalı Bezier Şekil">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M7.2 6.4C11.1 2.8 18.6 5 19.3 10.6C20 16.7 13.2 20.6 7.5 17.5C3 15 3.4 9.8 7.2 6.4Z"
+                fill="currentColor" opacity=".14"></path>
+              <path d="M7.2 6.4C11.1 2.8 18.6 5 19.3 10.6C20 16.7 13.2 20.6 7.5 17.5C3 15 3.4 9.8 7.2 6.4Z"
+                stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
+              <path d="M7.2 6.4L10.5 3.6M19.3 10.6L21.1 14.1M7.5 17.5L4.6 19M7.2 6.4L4.9 9.2"
+                stroke="currentColor" stroke-width="1.15" stroke-linecap="round" opacity=".5"></path>
+              <circle cx="10.5" cy="3.6" r="1" fill="currentColor" opacity=".72"></circle>
+              <circle cx="21.1" cy="14.1" r="1" fill="currentColor" opacity=".72"></circle>
+              <circle cx="4.6" cy="19" r="1" fill="currentColor" opacity=".72"></circle>
+              <circle cx="4.9" cy="9.2" r="1" fill="currentColor" opacity=".72"></circle>
+              <circle cx="7.2" cy="6.4" r="1.7" fill="#ffffff" stroke="currentColor" stroke-width="1.6"></circle>
+              <circle cx="19.3" cy="10.6" r="1.7" fill="#ffffff" stroke="currentColor" stroke-width="1.6"></circle>
+              <circle cx="7.5" cy="17.5" r="1.7" fill="#ffffff" stroke="currentColor" stroke-width="1.6"></circle>
+            </svg>
+          </button>
+          <button type="button" class="rail-tool-btn is-empty" disabled aria-hidden="true" tabindex="-1"></button>
+          <button type="button" class="rail-tool-btn is-empty" disabled aria-hidden="true" tabindex="-1"></button>
+        </div>
+      </div>
+
+      <div class="rail-menu-panel editor-library-panel gizli" id="railMenuYol" role="dialog" aria-label="Yol ekle">
+        <div class="editor-library-card">
+          <div class="editor-library-header">
+            <span>Yol Ekle</span>
+            <button class="editor-library-close" type="button" data-rail-close>Kapat</button>
+          </div>
+          <div class="editor-library-body">(Boş) - Hazır yollar daha sonra doldurulacak.</div>
+          <div class="editor-library-footer">Seçilen yol krokiye eklenecek.</div>
+        </div>
+      </div>
+
+      <div class="rail-menu-panel editor-library-panel gizli" id="railMenuArac" role="dialog" aria-label="Araç ekle">
+        <div class="editor-library-card">
+          <div class="editor-library-header">
+            <span>Araç Ekle</span>
+            <button class="editor-library-close" type="button" data-rail-close>Kapat</button>
+          </div>
+          <div class="editor-library-body">(Boş) - Araçlar daha sonra doldurulacak.</div>
+          <div class="editor-library-footer">Seçilen araç krokiye eklenecek.</div>
+        </div>
+      </div>
+
+      <div class="rail-menu-panel editor-library-panel gizli" id="railMenuLevha" role="dialog" aria-label="Levha ekle">
+        <div class="editor-library-card">
+          <div class="editor-library-header">
+            <span>Levha Ekle</span>
+            <button class="editor-library-close" type="button" data-rail-close>Kapat</button>
+          </div>
+          <div class="editor-library-body">(Boş) - Levhalar daha sonra doldurulacak.</div>
+          <div class="editor-library-footer">Seçilen levha krokiye eklenecek.</div>
+        </div>
+      </div>
+
+      <div class="rail-menu-panel editor-library-panel gizli" id="railMenuDiger" role="dialog" aria-label="Diğer sembol ekle">
+        <div class="editor-library-card">
+          <div class="editor-library-header">
+            <span>Diğer Sembol Ekle</span>
+            <button class="editor-library-close" type="button" data-rail-close>Kapat</button>
+          </div>
+          <div class="editor-library-body">(Boş) - Diğer semboller daha sonra doldurulacak.</div>
+          <div class="editor-library-footer">Seçilen sembol krokiye eklenecek.</div>
+        </div>
+      </div>
+
+    </section>
+  </div>
+
+  <script src="src/home.js"></script>
+  <script src="src/editor-state.js"></script>
+  <script src="src/editor-rail.js"></script>
+  <script src="src/editor-camera.js"></script>
+  <script src="src/editor-object-edit.js"></script>
+  <script src="src/editor-stroke-style.js"></script>
+  <script src="src/core/shapeRegistry.js"></script>
+  <script src="src/core/styleManager.js"></script>
+  <script src="src/core/editorObjectManager.js"></script>
+  <script src="src/core/groupManager.js"></script>
+  <script src="src/core/documentSerializer.js"></script>
+  <script src="src/core/historyManager.js"></script>
+  <script src="src/core/hitTestManager.js"></script>
+  <script src="src/core/controlPointManager.js"></script>
+  <script src="src/core/multiSelectManager.js"></script>
+  <script src="src/core/selectionManager.js"></script>
+  <script src="src/geometry/lineGeometry.js"></script>
+  <script src="src/geometry/circleGeometry.js"></script>
+  <script src="src/geometry/ellipseGeometry.js"></script>
+  <script src="src/geometry/rectangleGeometry.js"></script>
+  <script src="src/adapters/lineAdapter.js"></script>
+  <script src="src/adapters/arcAdapter.js"></script>
+  <script src="src/adapters/bezierAdapter.js"></script>
+  <script src="src/adapters/circleAdapter.js"></script>
+  <script src="src/adapters/ellipseAdapter.js"></script>
+  <script src="src/adapters/rectangleAdapter.js"></script>
+  <script src="src/adapters/closedShapeAdapter.js"></script>
+  <script src="src/adapters/calloutAdapter.js"></script>
+  <script src="src/adapters/textAdapter.js"></script>
+  <script src="src/ui/editorTextComposer.js"></script>
+  <script src="src/ui/editorBindings.js"></script>
+</body>
+
+</html>
