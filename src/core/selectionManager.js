@@ -311,6 +311,11 @@
     window.krokiEditorRail?.resetCizimAraci?.();
   }
 
+  function promoteActiveInteraction() {
+    if (Kroki.MultiSelectManager?.hasSelection?.()) Kroki.MultiSelectManager.promoteToEdit?.();
+    else promoteToEdit();
+  }
+
   function bindButtons() {
     const buttons = window.krokiObjectEditCore?.buttons || {};
     buttons.done?.addEventListener("click", finishEdit);
@@ -329,10 +334,10 @@
     buttons.sendBackward?.addEventListener("click", sendActiveToBack);
     buttons.delete?.addEventListener("click", deleteActive);
     window.krokiObjectEditCore?.topIp?.addEventListener("pointerdown", (event) => {
-      if (event.target.closest(".top-ip-btn")) promoteToEdit();
+      if (event.target.closest(".top-ip-btn")) promoteActiveInteraction();
     }, true);
     window.krokiObjectEditCore?.sideIp?.addEventListener("pointerdown", (event) => {
-      if (event.target.closest(".side-ip-btn, .side-ip-control")) promoteToEdit();
+      if (event.target.closest(".side-ip-btn, .side-ip-control")) promoteActiveInteraction();
     }, true);
   }
 

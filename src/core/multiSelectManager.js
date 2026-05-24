@@ -53,10 +53,6 @@
     return unionBounds(Array.from(selectedIds).map(modelBounds));
   }
 
-  function centerOfBounds(bounds) {
-    return bounds ? { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 } : null;
-  }
-
   function groupBounds(group) {
     return unionBounds((Kroki.GroupManager?.getLeafObjectIds?.(group?.id) || group?.children || []).map(modelBounds));
   }
@@ -352,7 +348,6 @@
     const hasStandaloneGroup = !hasActiveGroup && Boolean(selectedGroupMatch());
     const groupLikeSelection = hasActiveGroup || hasStandaloneGroup || hasGroupUnits;
     const selectionUnitCount = hasActiveGroup ? 1 : hasGroupUnits ? groupedSelectionChildren.length : selectedIds.size;
-    const disableDone = selectionUnitCount > 1 && !activeGroupId;
     document.querySelectorAll(".multi-only-control").forEach((control) => control.classList.toggle("gizli", selectionUnitCount < 2 || Boolean(activeGroupId)));
     document.querySelectorAll(".group-only-control").forEach((control) => control.classList.toggle("gizli", !activeGroupId));
     button?.classList.toggle("is-active", multiMode);
@@ -363,9 +358,9 @@
       button.setAttribute("title", "Çoklu seç");
     }
     if (doneButton) {
-      doneButton.disabled = disableDone;
-      doneButton.setAttribute("aria-disabled", String(disableDone));
-      doneButton.setAttribute("title", disableDone ? "Çoklu seçimde pasif" : "Tamam");
+      doneButton.disabled = false;
+      doneButton.setAttribute("aria-disabled", "false");
+      doneButton.setAttribute("title", "Tamam");
     }
     if (has) {
       window.krokiObjectEditCore?.topIp?.classList.remove("gizli");
@@ -507,6 +502,13 @@
     });
   }
 
+  function selectedIdsInDomOrder() {
+    const selected = new Set(selectedIds);
+    return (manager.getObjectsInDomOrder?.() || [])
+      .map((model) => model.id)
+      .filter((id) => selected.has(id));
+  }
+
   function selectionHasGroupUnits() {
     return groupingChildrenFromSelection().some((id) => Kroki.GroupManager?.has?.(id));
   }
@@ -593,34 +595,23 @@
   function copySelected(options = {}) {
     if (!selectedIds.size) return [];
     const transaction = options.skipHistory ? null : Kroki.HistoryManager?.begin?.("Coklu kopyala");
-    const sourceGroupId = activeGroupId || selectedGroupMatch()?.id || "";
-    const sourceGroup = sourceGroupId ? Kroki.GroupManager?.get?.(sourceGroupId) : null;
-    const sourceFrame = sourceGroupId ? groupFrame(sourceGroupId) : null;
-    const sourceBounds = sourceGroup ? groupBounds(sourceGroup) : null;
+    const sourceUnits = activeGroupId ? [activeGroupId] : groupingChildrenFromSelection();
+    const sourceGroupIds = sourceUnits.filter((id) => Kroki.GroupManager?.has?.(id));
     const idMap = new Map();
     const copies = [];
-    Array.from(selectedIds).forEach((id) => {
+    selectedIdsInDomOrder().forEach((id) => {
       const copy = manager.clone(id, { skipHistory: true, controlPoints: false, styleControls: false });
       if (copy) {
         idMap.set(id, copy.id);
         copies.push(copy.id);
       }
     });
-    const copyBounds = sourceGroup ? unionBounds(copies.map(modelBounds)) : null;
-    const frameOffset = sourceBounds && copyBounds ? {
-      dx: centerOfBounds(copyBounds).x - centerOfBounds(sourceBounds).x,
-      dy: centerOfBounds(copyBounds).y - centerOfBounds(sourceBounds).y
-    } : null;
-    const nextFrame = sourceFrame && sourceBounds && copyBounds ? {
-      ...sourceFrame,
-      cx: sourceFrame.cx + frameOffset.dx,
-      cy: sourceFrame.cy + frameOffset.dy
-    } : frameFromBounds(copyBounds);
-    const newGroup = sourceGroupId ? Kroki.GroupManager?.cloneGroup?.(sourceGroupId, idMap, {
-      frameOffset,
-      metadata: nextFrame ? { frame: nextFrame } : undefined
-    }) : null;
-    if (newGroup) selectGroup(newGroup.id, { mode: "edit" });
+    const frameOffset = copies.length ? { dx: 18, dy: 18 } : null;
+    const newGroups = sourceGroupIds
+      .map((groupId) => Kroki.GroupManager?.cloneGroup?.(groupId, idMap, { frameOffset }))
+      .filter(Boolean);
+    const groupedCopyIds = new Set(newGroups.flatMap((group) => Kroki.GroupManager?.getLeafObjectIds?.(group.id) || group.children || []));
+    if (newGroups.length === 1 && groupedCopyIds.size === copies.length) selectGroup(newGroups[0].id, { mode: "edit" });
     else selectIds(copies, { mode: "edit" });
     if (transaction) Kroki.HistoryManager?.commit?.(transaction, "Coklu kopyala");
     return copies;
@@ -629,7 +620,7 @@
   function bringToFront(options = {}) {
     if (!selectedIds.size) return false;
     const transaction = options.skipHistory ? null : Kroki.HistoryManager?.begin?.("Coklu one getir");
-    Array.from(selectedIds).forEach((id) => manager.bringToFront(id, { skipHistory: true, controlPoints: false, styleControls: false }));
+    selectedIdsInDomOrder().forEach((id) => manager.bringToFront(id, { skipHistory: true, controlPoints: false, styleControls: false }));
     sync();
     if (transaction) Kroki.HistoryManager?.commit?.(transaction, "Coklu one getir");
     return true;
@@ -638,7 +629,7 @@
   function sendToBack(options = {}) {
     if (!selectedIds.size) return false;
     const transaction = options.skipHistory ? null : Kroki.HistoryManager?.begin?.("Coklu arkaya gonder");
-    Array.from(selectedIds).reverse().forEach((id) => manager.sendToBack(id, { skipHistory: true, controlPoints: false, styleControls: false }));
+    selectedIdsInDomOrder().reverse().forEach((id) => manager.sendToBack(id, { skipHistory: true, controlPoints: false, styleControls: false }));
     sync();
     if (transaction) Kroki.HistoryManager?.commit?.(transaction, "Coklu arkaya gonder");
     return true;
@@ -1165,6 +1156,7 @@
     handlePointerDown,
     handlePointerMove,
     stopDrag,
+    promoteToEdit,
     deleteSelected,
     copySelected,
     bringToFront,

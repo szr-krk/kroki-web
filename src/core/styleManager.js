@@ -60,6 +60,7 @@
     {
       id: "paver",
       title: "Kilit tasi",
+      defaultFill: "#d1d5db",
       width: 28,
       height: 18,
       draw(pattern) {
@@ -76,8 +77,38 @@
       }
     },
     {
+      id: "paverTexture",
+      title: "Kilit tasi doku",
+      defaultFill: "#cbd5e1",
+      width: 36,
+      height: 24,
+      draw(pattern) {
+        pattern.append(
+          utils.createSvgElement("path", {
+            d: "M0 12H36M18 0V12M9 12V24M27 12V24M0 0H36V24H0Z",
+            fill: "none",
+            stroke: "#334155",
+            "stroke-width": "1.15",
+            opacity: ".52"
+          }),
+          utils.createSvgElement("path", {
+            d: "M4 5L7 3M15 7L19 5M25 4L30 6M5 18L11 16M21 19L25 17M31 15L34 18",
+            fill: "none",
+            stroke: "#f8fafc",
+            "stroke-width": ".9",
+            "stroke-linecap": "round",
+            opacity: ".38"
+          }),
+          utils.createSvgElement("circle", { cx: "12", cy: "4", r: ".8", fill: "#475569", opacity: ".28" }),
+          utils.createSvgElement("circle", { cx: "31", cy: "8", r: ".75", fill: "#475569", opacity: ".26" }),
+          utils.createSvgElement("circle", { cx: "17", cy: "18", r: ".85", fill: "#475569", opacity: ".25" })
+        );
+      }
+    },
+    {
       id: "pavement",
       title: "Kaldirim",
+      defaultFill: "#e5e7eb",
       width: 24,
       height: 24,
       draw(pattern) {
@@ -95,6 +126,7 @@
     {
       id: "grass",
       title: "Cim",
+      defaultFill: "#dcfce7",
       width: 22,
       height: 22,
       draw(pattern) {
@@ -111,8 +143,80 @@
       }
     },
     {
+      id: "grassFine",
+      title: "Cim ince",
+      defaultFill: "#bbf7d0",
+      width: 18,
+      height: 18,
+      draw(pattern) {
+        pattern.append(
+          utils.createSvgElement("path", {
+            d: "M2 17Q4 11 7 6M6 18Q8 10 11 4M10 18Q12 11 16 6M14 18Q16 13 18 9M1 8Q5 5 9 4M9 9Q13 6 17 5",
+            fill: "none",
+            stroke: "#166534",
+            "stroke-width": ".95",
+            "stroke-linecap": "round",
+            opacity: ".52"
+          }),
+          utils.createSvgElement("path", {
+            d: "M4 15Q6 12 8 10M12 15Q14 11 17 8",
+            fill: "none",
+            stroke: "#22c55e",
+            "stroke-width": ".85",
+            "stroke-linecap": "round",
+            opacity: ".44"
+          })
+        );
+      }
+    },
+    {
+      id: "grassDense",
+      title: "Cim yogun",
+      defaultFill: "#86efac",
+      width: 24,
+      height: 24,
+      draw(pattern) {
+        pattern.append(
+          utils.createSvgElement("path", {
+            d: "M3 22Q5 14 9 8M7 23Q10 14 13 6M12 23Q14 15 19 8M17 22Q20 15 22 11M2 12Q7 8 12 7M8 14Q14 9 21 7M4 20Q10 17 16 16M14 21Q18 17 23 15",
+            fill: "none",
+            stroke: "#14532d",
+            "stroke-width": "1.25",
+            "stroke-linecap": "round",
+            opacity: ".48"
+          }),
+          utils.createSvgElement("circle", { cx: "5", cy: "5", r: "1", fill: "#22c55e", opacity: ".35" }),
+          utils.createSvgElement("circle", { cx: "18", cy: "4", r: "1.1", fill: "#16a34a", opacity: ".32" }),
+          utils.createSvgElement("circle", { cx: "21", cy: "20", r: ".9", fill: "#22c55e", opacity: ".34" })
+        );
+      }
+    },
+    {
+      id: "grassPatch",
+      title: "Cim parcali",
+      defaultFill: "#d9f99d",
+      width: 28,
+      height: 28,
+      draw(pattern) {
+        pattern.append(
+          utils.createSvgElement("path", {
+            d: "M4 21Q8 13 13 10M7 24Q12 17 17 14M18 8Q21 4 25 3M20 12Q24 8 28 7M2 8Q5 5 9 4M15 24Q19 20 25 18",
+            fill: "none",
+            stroke: "#15803d",
+            "stroke-width": "1.45",
+            "stroke-linecap": "round",
+            opacity: ".52"
+          }),
+          utils.createSvgElement("ellipse", { cx: "10", cy: "16", rx: "5", ry: "2.2", fill: "#22c55e", opacity: ".16" }),
+          utils.createSvgElement("ellipse", { cx: "22", cy: "8", rx: "4.5", ry: "2", fill: "#16a34a", opacity: ".15" }),
+          utils.createSvgElement("ellipse", { cx: "22", cy: "22", rx: "5.5", ry: "2.4", fill: "#4ade80", opacity: ".14" })
+        );
+      }
+    },
+    {
       id: "median",
       title: "Refuj",
+      defaultFill: "#dcfce7",
       width: 18,
       height: 18,
       draw(pattern) {
@@ -131,6 +235,7 @@
     {
       id: "gravel",
       title: "Cakil",
+      defaultFill: "#e5e7eb",
       width: 20,
       height: 20,
       draw(pattern) {
@@ -139,6 +244,54 @@
           utils.createSvgElement("circle", { cx: "14", cy: "4", r: "1.2", fill: "#475569", opacity: ".38" }),
           utils.createSvgElement("circle", { cx: "10", cy: "14", r: "1.7", fill: "#64748b", opacity: ".42" }),
           utils.createSvgElement("circle", { cx: "18", cy: "15", r: "1.1", fill: "#475569", opacity: ".34" })
+        );
+      }
+    },
+    {
+      id: "soil",
+      title: "Toprak",
+      defaultFill: "#d6a46f",
+      width: 24,
+      height: 24,
+      draw(pattern) {
+        pattern.append(
+          utils.createSvgElement("circle", { cx: "4", cy: "5", r: "1.5", fill: "#92400e", opacity: ".30" }),
+          utils.createSvgElement("circle", { cx: "12", cy: "4", r: ".9", fill: "#78350f", opacity: ".26" }),
+          utils.createSvgElement("circle", { cx: "20", cy: "7", r: "1.25", fill: "#a16207", opacity: ".28" }),
+          utils.createSvgElement("circle", { cx: "8", cy: "15", r: "1.8", fill: "#92400e", opacity: ".24" }),
+          utils.createSvgElement("circle", { cx: "17", cy: "17", r: "1.1", fill: "#78350f", opacity: ".24" }),
+          utils.createSvgElement("path", {
+            d: "M2 21Q7 19 11 21M14 10Q18 9 22 11",
+            fill: "none",
+            stroke: "#78350f",
+            "stroke-width": ".9",
+            "stroke-linecap": "round",
+            opacity: ".24"
+          })
+        );
+      }
+    },
+    {
+      id: "soilRocky",
+      title: "Toprak cakilli",
+      defaultFill: "#c08457",
+      width: 28,
+      height: 28,
+      draw(pattern) {
+        pattern.append(
+          utils.createSvgElement("circle", { cx: "5", cy: "6", r: "1.8", fill: "#78350f", opacity: ".30" }),
+          utils.createSvgElement("circle", { cx: "15", cy: "5", r: "1.1", fill: "#fbbf24", opacity: ".20" }),
+          utils.createSvgElement("circle", { cx: "23", cy: "9", r: "2", fill: "#92400e", opacity: ".28" }),
+          utils.createSvgElement("circle", { cx: "10", cy: "19", r: "2.3", fill: "#57534e", opacity: ".25" }),
+          utils.createSvgElement("circle", { cx: "21", cy: "22", r: "1.4", fill: "#78350f", opacity: ".27" }),
+          utils.createSvgElement("path", {
+            d: "M2 14Q7 11 12 13M16 16Q21 13 27 15M3 25Q8 23 13 25",
+            fill: "none",
+            stroke: "#7c2d12",
+            "stroke-width": "1",
+            "stroke-linecap": "round",
+            opacity: ".28"
+          })
         );
       }
     }
@@ -1315,8 +1468,11 @@
         const pattern = normalizeFillPattern(button.dataset.fillPattern);
         const currentStyle = normalizeStyle(entry.model.style, entry.model.type);
         if (currentStyle.fillPattern === pattern) return;
+        const patternChoice = choiceById(FILL_PATTERNS, pattern);
         const patch = { fillPattern: pattern };
-        if (pattern !== "none" && currentStyle.fill === "none") patch.fill = "#d1d5db";
+        if (pattern !== "none" && (currentStyle.fill === "none" || currentStyle.fill === "#ffffff")) {
+          patch.fill = patternChoice.defaultFill || "#d1d5db";
+        }
         updateStyle(patch);
       });
     });

@@ -391,6 +391,7 @@
   top: 68px;
   right: calc(var(--editor-rail-width) + 8px);
   width: min(236px, calc(100vw - var(--editor-rail-width) - 16px));
+  max-height: calc(100vh - 84px);
   padding: 10px;
   box-sizing: border-box;
   display: grid;
@@ -399,6 +400,7 @@
   border-radius: 8px;
   background: #ffffff;
   box-shadow: 0 14px 34px rgba(15, 23, 42, .16);
+  overflow-y: auto;
   z-index: 12;
 }
 
