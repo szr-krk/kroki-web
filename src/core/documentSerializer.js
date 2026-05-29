@@ -25,6 +25,7 @@
     const clean = clonePlain(metadata);
     delete clean.draft;
     delete clean.pointEdit;
+    delete clean.roadSelection;
     return clean;
   }
 

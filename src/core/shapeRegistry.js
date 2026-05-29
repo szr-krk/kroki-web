@@ -44,13 +44,14 @@
 
   function typeFromElement(element) {
     const shape = element?.dataset?.shape;
-    if (shape === "arc" || shape === "bezier" || shape === "circle" || shape === "ellipse" || shape === "rectangle" || shape === "closedShape" || shape === "text" || shape === "callout") return shape;
+    if (shape === "arc" || shape === "bezier" || shape === "circle" || shape === "ellipse" || shape === "rectangle" || shape === "closedShape" || shape === "text" || shape === "callout" || shape === "road") return shape;
     if (element?.tagName?.toLowerCase() === "circle") return "circle";
     if (element?.tagName?.toLowerCase() === "ellipse") return "ellipse";
     if (element?.tagName?.toLowerCase() === "rect" && element?.classList?.contains("editor-rectangle")) return "rectangle";
     if (element?.tagName?.toLowerCase() === "path" && element?.classList?.contains("editor-closed-shape")) return "closedShape";
     if (element?.tagName?.toLowerCase() === "text" && element?.classList?.contains("editor-text")) return "text";
     if (element?.tagName?.toLowerCase() === "g" && element?.classList?.contains("editor-callout")) return "callout";
+    if (element?.tagName?.toLowerCase() === "g" && element?.classList?.contains("editor-road")) return "road";
     if (element?.classList?.contains("editor-cizgi") || element?.tagName?.toLowerCase() === "line") return "line";
     return "";
   }

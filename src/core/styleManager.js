@@ -566,6 +566,24 @@
       return;
     }
 
+    if (model.type === "road") {
+      delete element.dataset.fillColor;
+      delete element.dataset.fillPattern;
+      delete element.dataset.opacity;
+      delete element.dataset.labelText;
+      delete element.dataset.labelSize;
+      delete element.dataset.labelColor;
+      delete element.dataset.labelOpacity;
+      delete element.dataset.labelSide;
+      delete element.dataset.labelAnchor;
+      delete element.dataset.labelAlign;
+      delete element.dataset.labelRotateMode;
+      delete element.dataset.labelBold;
+      delete element.dataset.labelItalic;
+      delete element.dataset.labelUnderline;
+      return;
+    }
+
     delete element.dataset.fillColor;
     delete element.dataset.fillPattern;
     delete element.dataset.opacity;
@@ -601,6 +619,12 @@
     }
     element.removeAttribute("fill-opacity");
     element.style.fillOpacity = "";
+  }
+
+  function applyGeometryStrokeScaling(element, style) {
+    const vectorEffect = style.dash === "solid" ? "non-scaling-stroke" : "none";
+    element.setAttribute("vector-effect", vectorEffect);
+    element.style.setProperty("vector-effect", vectorEffect);
   }
 
   function markerStrokeUnitSize(strokeWidth) {
@@ -785,6 +809,8 @@
       element.removeAttribute("fill-opacity");
       element.removeAttribute("marker-start");
       element.removeAttribute("marker-end");
+      element.removeAttribute("vector-effect");
+      element.style.removeProperty("vector-effect");
       pruneUnusedFillPatterns(canvas);
       pruneUnusedMarkers(canvas);
       return;
@@ -807,8 +833,10 @@
       element.style.opacity = "";
       element.style.fill = "";
       element.style.fillOpacity = "";
+      element.style.removeProperty("vector-effect");
       element.removeAttribute("marker-start");
       element.removeAttribute("marker-end");
+      element.removeAttribute("vector-effect");
       pruneUnusedFillPatterns(canvas);
       pruneUnusedMarkers(canvas);
       return;
@@ -816,7 +844,7 @@
 
     applyStroke(element, styleForStrokeHelpers(style));
     applyDash(element, styleForStrokeHelpers(style));
-    element.setAttribute("vector-effect", "non-scaling-stroke");
+    applyGeometryStrokeScaling(element, style);
 
     if (adapter?.capabilities?.fill) {
       const pattern = supportsFillPattern(adapter) ? ensureFillPattern(canvas, model, style) : null;
@@ -1041,6 +1069,7 @@
   function setControlVisibility(adapter) {
     const isTextObject = Boolean(adapter?.capabilities?.textObject);
     const isCallout = adapter?.type === "callout";
+    const isRoadObject = Boolean(adapter?.capabilities?.roadObject);
     const noText = Boolean(adapter?.capabilities?.noText);
     const hasPointEdit = Boolean(adapter?.capabilities?.pointEdit);
     const supportsTextFormatting = isTextObject || Boolean(adapter?.capabilities?.textFormatting);
@@ -1052,7 +1081,13 @@
     document.querySelectorAll(".line-only-control").forEach((control) => control.classList.toggle("gizli", !hasArrows));
     document.querySelectorAll(".text-object-control").forEach((control) => control.classList.toggle("gizli", !supportsTextFormatting));
     document.querySelectorAll(".closed-shape-control").forEach((control) => control.classList.toggle("gizli", !hasPointEdit));
+    document.querySelectorAll(".road-only-control").forEach((control) => control.classList.toggle("gizli", !isRoadObject));
+    controls?.colorButton?.classList.toggle("gizli", isRoadObject);
     controls?.textButton?.classList.toggle("gizli", noText);
+    if (isRoadObject) {
+      document.querySelector("#strokeColorPanel")?.classList.add("gizli");
+      controls?.colorButton?.setAttribute("aria-expanded", "false");
+    }
     if (noText) {
       document.querySelector("#lineTextPanel")?.classList.add("gizli");
       document.querySelector("#textColorPanel")?.classList.add("gizli");
@@ -1063,9 +1098,9 @@
       document.querySelector("#fillPatternPanel")?.classList.add("gizli");
       controls?.fillPatternButton?.setAttribute("aria-expanded", "false");
     }
-    controls?.strokeStepper?.classList.toggle("gizli", isCallout);
-    controls?.styleButton?.classList.toggle("gizli", isTextObject);
-    controls?.lineCapButton?.classList.toggle("gizli", isTextObject || isCallout);
+    controls?.strokeStepper?.classList.toggle("gizli", isCallout || isRoadObject);
+    controls?.styleButton?.classList.toggle("gizli", isTextObject || isRoadObject);
+    controls?.lineCapButton?.classList.toggle("gizli", isTextObject || isCallout || isRoadObject);
     controls?.textSide?.classList.toggle("gizli", noText || adapter?.type === "ellipse" || adapter?.type === "rectangle" || supportsTextFormatting);
   }
 
@@ -1148,6 +1183,7 @@
     const entry = activeEntry();
     if (!entry || !controls) {
       hidePanels();
+      Kroki.RoadInspector?.sync?.(null);
       return;
     }
 
@@ -1165,6 +1201,7 @@
     const primaryOpacityValue = isTextObject ? opacityPercent(style.opacity) : strokeOpacityValue;
 
     setControlVisibility(adapter);
+    Kroki.RoadInspector?.sync?.(entry);
     controls.colorButton?.style.setProperty("--side-ip-stroke-color", isTextObject ? label.color : style.stroke);
     controls.fillButton?.style.setProperty("--side-ip-fill-color", style.fill);
     controls.fillPatternButton?.style.setProperty("--side-ip-fill-color", style.fill === "none" ? "#ffffff" : style.fill);

@@ -42,32 +42,48 @@
     activeType = "";
   }
 
-  function resizeHandle(handle, sizes) {
+  function resizeHandle(handle, sizes, cp = {}) {
     handle.querySelector(".editor-object-cp-hit")?.setAttribute("r", String(sizes.touchRadius));
-    handle.querySelector(".editor-object-cp-visual")?.setAttribute("r", String(sizes.visibleRadius));
+    const visualCircle = handle.querySelector("circle.editor-object-cp-visual");
+    const visualRect = handle.querySelector("rect.editor-object-cp-visual");
+    visualCircle?.setAttribute("r", String(sizes.visibleRadius));
+    if (visualRect) {
+      const width = sizes.visibleRadius * (cp.visualWidthScale || 0.68);
+      const height = sizes.visibleRadius * (cp.visualHeightScale || 1.32);
+      visualRect.setAttribute("x", String(-width / 2));
+      visualRect.setAttribute("y", String(-height / 2));
+      visualRect.setAttribute("width", String(width));
+      visualRect.setAttribute("height", String(height));
+      visualRect.setAttribute("rx", String(width * 0.28));
+    }
   }
 
   function createHandle(cp, sizes) {
     const handle = utils.createSvgElement("g", {
-      class: "editor-object-cp",
+      class: "editor-object-cp" + (cp.role ? " editor-object-cp-role-" + String(cp.role).replace(/[^a-z0-9_-]/gi, "-") : ""),
       "data-point": cp.id,
+      "data-cp-role": cp.role || "",
       cursor: cp.cursor || ""
     });
+    const visual = cp.shape === "segment"
+      ? utils.createSvgElement("rect", { class: "editor-object-cp-visual editor-object-cp-segment-visual" })
+      : utils.createSvgElement("circle", { class: "editor-object-cp-visual" });
     handle.append(
       utils.createSvgElement("circle", { class: "editor-object-cp-hit" }),
-      utils.createSvgElement("circle", { class: "editor-object-cp-visual" })
+      visual
     );
     handle.addEventListener("pointerdown", (event) => {
       if (typeof onControlPointDown === "function") onControlPointDown(event, cp.id);
     });
-    resizeHandle(handle, sizes);
+    resizeHandle(handle, sizes, cp);
     updateHandle(handle, cp, sizes);
     return handle;
   }
 
   function updateHandle(handle, cp, sizes) {
-    resizeHandle(handle, sizes);
-    handle.setAttribute("transform", `translate(${cp.x} ${cp.y})`);
+    resizeHandle(handle, sizes, cp);
+    const rotation = Number.isFinite(cp.angle) ? ` rotate(${cp.angle})` : "";
+    handle.setAttribute("transform", `translate(${cp.x} ${cp.y})${rotation}`);
     handle.classList.toggle("is-preselect", mode === "preselect");
     if (cp.cursor) handle.style.cursor = cp.cursor;
   }

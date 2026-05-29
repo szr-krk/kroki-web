@@ -75,6 +75,18 @@
     return element ? [element, ...labelNodesFor(id)] : [];
   }
 
+  function isRoadLayerNode(node) {
+    return Boolean(node?.dataset?.krokiObject === "true" && node.dataset.shape === "road");
+  }
+
+  function keepRoadLayersAtBack() {
+    if (!objectLayer) return;
+    Array.from(objectLayer.children)
+      .filter(isRoadLayerNode)
+      .reverse()
+      .forEach((node) => objectLayer.insertBefore(node, objectLayer.firstChild));
+  }
+
   function removeLabelArtifacts(id) {
     objectLayer.querySelectorAll(`[data-label-for="${id}"], [data-for-line="${id}"], [data-for-shape="${id}"], [data-for-ellipse="${id}"]`).forEach((node) => node.remove());
     canvas.querySelectorAll(`[data-label-path-for="${id}"], [data-label-clip-for="${id}"], #editor-line-label-path-${id}, #editor-circle-clip-${id}, #editor-ellipse-clip-${id}`).forEach((node) => node.remove());
@@ -439,6 +451,8 @@
       else parent.append(element);
     }
     renderObject(model.id);
+    keepRoadLayersAtBack();
+    syncRoadIntersections(model.type === "road", options);
     return model;
   }
 
@@ -476,6 +490,17 @@
     if (options.styleControls !== false) Kroki.StyleManager?.syncControls?.();
   }
 
+  function syncRoadIntersections(shouldSync, options = {}) {
+    if (!shouldSync || options.roadIntersections === false) return;
+    const engine = Kroki.RoadIntersectionEngine;
+    try {
+      if (typeof engine?.scheduleRefresh === "function") engine.scheduleRefresh();
+      else engine?.refresh?.();
+    } catch (error) {
+      if (window.console?.warn) console.warn("Road intersection refresh skipped", error);
+    }
+  }
+
   function updateModel(id, updater, options = {}) {
     return withHistory(options, "Nesne guncelle", () => updateModelRaw(id, updater, options));
   }
@@ -488,6 +513,7 @@
     objectMap.set(id, normalized);
     renderObject(id);
     syncDependents(options);
+    syncRoadIntersections(normalized.type === "road", options);
     return normalized;
   }
 
@@ -501,6 +527,7 @@
     mutator(model);
     renderGeometry(id);
     syncDependents({ styleControls: false, ...options });
+    syncRoadIntersections(model.type === "road", options);
     return model;
   }
 
@@ -528,6 +555,7 @@
 
   function removeRaw(id) {
     const element = elementMap.get(id);
+    const wasRoad = objectMap.get(id)?.type === "road";
     removeLabelArtifacts(id);
     element?.remove();
     elementMap.delete(id);
@@ -536,6 +564,7 @@
     styleManager.cleanupDefs?.(canvas);
     if (Kroki.SelectionManager?.getActiveId?.() === id) Kroki.SelectionManager.clear();
     if (Kroki.MultiSelectManager?.getSelectedIds?.().includes(id)) Kroki.MultiSelectManager.sync();
+    syncRoadIntersections(wasRoad);
     return Boolean(element);
   }
 
@@ -560,6 +589,7 @@
     return withHistory(options, "One getir", () => {
       layerNodesFor(id).forEach((node) => objectLayer.append(node));
       syncGroupLayers();
+      keepRoadLayersAtBack();
       syncDependents(options);
       return true;
     });
@@ -573,6 +603,7 @@
       objectLayer.insertBefore(nodes[0], first);
       nodes.slice(1).forEach((node) => objectLayer.insertBefore(node, nodes[0].nextSibling));
       syncGroupLayers();
+      keepRoadLayersAtBack();
       syncDependents(options);
       return true;
     });
@@ -634,6 +665,7 @@
     groups.forEach((group) => {
       if (!seenUnits.has(group.id) && !objectLayer.querySelector(`[data-kroki-group-id="${group.id}"]`)) appendGroup(objectLayer, group.id);
     });
+    keepRoadLayersAtBack();
   }
 
   function getAll() {
@@ -650,6 +682,7 @@
       Kroki.GroupManager?.clear?.();
       styleManager.cleanupDefs?.(canvas);
       syncDependents(options);
+      syncRoadIntersections(true, options);
       return true;
     });
   }
@@ -659,6 +692,7 @@
       clear({ skipHistory: true, controlPoints: false, styleControls: false });
       (Array.isArray(models) ? models : []).forEach((model) => addRaw(model, { skipHistory: true }));
       syncDependents(options);
+      syncRoadIntersections((Array.isArray(models) ? models : []).some((model) => model?.type === "road"), options);
       return getAll();
     });
   }
@@ -671,6 +705,7 @@
     add,
     replaceAll,
     syncGroupLayers,
+    keepRoadLayersAtBack,
     readFromElement,
     syncFromDom,
     renderObject,

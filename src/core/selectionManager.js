@@ -50,14 +50,17 @@
   function resetPointEdit(id = activeId) {
     const model = manager.get(id);
     const adapter = manager.getAdapter(model);
-    if (!model?.metadata?.pointEdit || !adapter?.capabilities?.pointEdit) return;
-    manager.updateModel(id, (draft) => ({
-      ...draft,
-      metadata: {
-        ...(draft.metadata || {}),
-        pointEdit: false
-      }
-    }), { skipHistory: true, controlPoints: false, styleControls: false });
+    const shouldResetPointEdit = Boolean(model?.metadata?.pointEdit && adapter?.capabilities?.pointEdit);
+    const shouldResetRoadSelection = Boolean(model?.metadata?.roadSelection && adapter?.capabilities?.roadObject);
+    const shouldResetRoadBoundaryEdit = Boolean(model?.metadata?.roadBoundaryEdit && adapter?.capabilities?.roadObject);
+    if (!shouldResetPointEdit && !shouldResetRoadSelection && !shouldResetRoadBoundaryEdit) return;
+    manager.updateModel(id, (draft) => {
+      const metadata = { ...(draft.metadata || {}) };
+      if (shouldResetPointEdit) metadata.pointEdit = false;
+      if (shouldResetRoadSelection) delete metadata.roadSelection;
+      if (shouldResetRoadBoundaryEdit) delete metadata.roadBoundaryEdit;
+      return { ...draft, metadata };
+    }, { skipHistory: true, controlPoints: false, styleControls: false });
   }
 
   function select(id, nextMode, options = {}) {
@@ -104,9 +107,10 @@
       lastPoint: point,
       startClientX: event.clientX,
       startClientY: event.clientY,
-      moved: !extra.clearOnTap,
+      moved: !(extra.clearOnTap || extra.editTapPoint),
       clearOnTap: Boolean(extra.clearOnTap),
       cpId: extra.cpId || "",
+      editTapPoint: extra.editTapPoint || null,
       startState: adapter?.beginControlPointMove?.(model, extra.cpId, point, controlPoints.metrics()) || null,
       transaction: Kroki.HistoryManager?.begin?.(type === "control" ? "Geometri duzenle" : "Nesne tasi")
     };
@@ -152,7 +156,11 @@
     if (Kroki.MultiSelectManager?.handlePointerDown?.(event, hit)) return;
 
     if (activeId && mode === "edit") {
-      beginDrag("object", event);
+      const activeModel = getActiveModel();
+      const activeAdapter = manager.getAdapter(activeModel);
+      beginDrag("object", event, {
+        editTapPoint: hit?.model?.id === activeId && typeof activeAdapter?.handleEditTap === "function" ? point : null
+      });
       event.stopImmediatePropagation?.();
       event.stopPropagation();
       event.preventDefault();
@@ -239,6 +247,11 @@
       drag.captureTarget.releasePointerCapture(pointerId);
     } else if (pointerId != null && manager.canvas.hasPointerCapture?.(pointerId)) {
       manager.canvas.releasePointerCapture(pointerId);
+    }
+    if (!drag.moved && drag.editTapPoint) {
+      const model = getActiveModel();
+      const adapter = manager.getAdapter(model);
+      if (adapter?.handleEditTap?.(model, drag.editTapPoint)) sync();
     }
     if (drag.moved) Kroki.HistoryManager?.commit?.(drag.transaction, drag.type === "control" ? "Geometri duzenle" : "Nesne tasi");
     drag = null;

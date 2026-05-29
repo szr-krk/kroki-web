@@ -340,6 +340,81 @@
 
       <div id="editorSideIp" class="editor-side-ip gizli" aria-label="Aktif nesne özellikleri">
 
+        <div id="roadIpControls" class="road-ip-stack side-ip-control road-only-control gizli" aria-label="Yol ozellikleri">
+          <div class="road-ip-stepper road-global-control" aria-label="Serit sayisi">
+            <button id="btnRoadLaneCountPlus" class="road-ip-stepper-btn" type="button" aria-label="Serit sayisini arttir">+</button>
+            <input id="roadLaneCountIpInput" class="road-ip-stepper-number" type="number" min="1" max="5" step="1"
+              value="2" inputmode="numeric" aria-label="Serit sayisi">
+            <button id="btnRoadLaneCountMinus" class="road-ip-stepper-btn" type="button" aria-label="Serit sayisini azalt">-</button>
+          </div>
+          <div class="road-ip-stepper" aria-label="Serit genisligi">
+            <button id="btnRoadLaneWidthPlus" class="road-ip-stepper-btn" type="button" aria-label="Serit genisligini arttir">+</button>
+            <input id="roadLaneWidthIpInput" class="road-ip-stepper-number" type="number" min="10" max="180" step="5"
+              value="50" inputmode="numeric" aria-label="Serit genisligi">
+            <button id="btnRoadLaneWidthMinus" class="road-ip-stepper-btn" type="button" aria-label="Serit genisligini azalt">-</button>
+          </div>
+          <div class="road-boundary-shortcuts road-lane-only-control gizli" aria-label="Serit cizgileri">
+            <button id="btnRoadUpperLinePanel" class="side-ip-btn side-ip-tool road-ip-icon-btn" type="button"
+              aria-label="Ust cizgi" title="Ust cizgi">
+              <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                <path d="M10 15H38" stroke="currentColor" stroke-width="5" stroke-linecap="round"></path>
+                <path d="M13 31H35" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity=".32"></path>
+              </svg>
+            </button>
+            <button id="btnRoadLowerLinePanel" class="side-ip-btn side-ip-tool road-ip-icon-btn" type="button"
+              aria-label="Alt cizgi" title="Alt cizgi">
+              <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                <path d="M13 17H35" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity=".32"></path>
+                <path d="M10 33H38" stroke="currentColor" stroke-width="5" stroke-linecap="round"></path>
+              </svg>
+            </button>
+            <button id="btnRoadSectionDoneIp" class="side-ip-btn side-ip-tool road-ip-icon-btn road-section-done-btn" type="button"
+              aria-label="Serit secimini bitir" title="Serit secimini bitir">
+              <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                <path d="M12 24L21 33L37 15" stroke="currentColor" stroke-width="5" stroke-linecap="round"
+                  stroke-linejoin="round"></path>
+              </svg>
+            </button>
+          </div>
+          <button id="btnRoadLeftShoulderIp" class="side-ip-btn side-ip-tool road-ip-icon-btn road-global-control" type="button"
+            aria-label="Sol banket" title="Sol banket" aria-pressed="false">
+            <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+              <path d="M13 6V42" stroke="currentColor" stroke-width="5" stroke-linecap="round" opacity=".42"></path>
+              <path d="M24 6V42M35 6V42" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+            </svg>
+          </button>
+          <button id="btnRoadRightShoulderIp" class="side-ip-btn side-ip-tool road-ip-icon-btn road-global-control" type="button"
+            aria-label="Sag banket" title="Sag banket" aria-pressed="false">
+            <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+              <path d="M13 6V42M24 6V42" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+              <path d="M35 6V42" stroke="currentColor" stroke-width="5" stroke-linecap="round" opacity=".42"></path>
+            </svg>
+          </button>
+          <button id="btnRoadMarkingStyleIp" class="side-ip-btn side-ip-tool road-ip-icon-btn road-global-control" type="button"
+            aria-label="Yol cizgi stili" title="Yol cizgi stili">
+            <svg id="iconRoadMarkingStyle" viewBox="0 0 48 48" fill="none" aria-hidden="true"></svg>
+          </button>
+        </div>
+
+        <div id="roadBoundaryPanel" class="road-boundary-panel gizli" aria-label="Yol cizgi segmentleri">
+          <div class="road-boundary-panel-head">
+            <span id="roadBoundaryPanelTitle">Ust cizgi</span>
+            <button id="btnRoadBoundaryPanelClose" class="road-boundary-panel-close" type="button"
+              aria-label="Paneli kapat" title="Kapat">x</button>
+          </div>
+          <label class="road-boundary-count-row" for="roadBoundarySegmentCountSelect">
+            <span>Segment</span>
+            <select id="roadBoundarySegmentCountSelect" aria-label="Segment sayisi">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </label>
+          <div id="roadBoundarySegmentButtons" class="road-boundary-segment-grid" aria-label="Segment stilleri"></div>
+        </div>
+
         <button id="btnLineColor" class="side-ip-btn side-ip-tool side-ip-color-btn is-stroke" type="button"
           aria-label="Cizgi rengi" title="Cizgi rengi" aria-controls="strokeColorPanel"
           aria-expanded="false">
@@ -838,8 +913,54 @@
             <span>Yol Ekle</span>
             <button class="editor-library-close" type="button" data-rail-close>Kapat</button>
           </div>
-          <div class="editor-library-body">(Boş) - Hazır yollar daha sonra doldurulacak.</div>
-          <div class="editor-library-footer">Seçilen yol krokiye eklenecek.</div>
+          <div class="editor-library-body road-builder" id="roadBuilderPanel">
+            <div class="road-builder-stack">
+              <div class="road-builder-choice-group" role="radiogroup" aria-label="Yol profili">
+                <button class="road-builder-choice is-active" type="button" role="radio" aria-checked="true"
+                  data-road-profile="straight">Duz</button>
+                <button class="road-builder-choice" type="button" role="radio" aria-checked="false"
+                  data-road-profile="arc">Viraj</button>
+                <button class="road-builder-choice" type="button" role="radio" aria-checked="false"
+                  data-road-profile="sCurve">S viraj</button>
+              </div>
+              <div class="road-builder-choice-group is-two" role="radiogroup" aria-label="Yol yerlesimi">
+                <button class="road-builder-choice is-active" type="button" role="radio" aria-checked="true"
+                  data-road-orientation="horizontal">Yatay</button>
+                <button class="road-builder-choice" type="button" role="radio" aria-checked="false"
+                  data-road-orientation="vertical">Dikey</button>
+              </div>
+              <div class="road-builder-choice-group is-two" role="radiogroup" aria-label="Yol tipi">
+                <button class="road-builder-choice is-active" type="button" role="radio" aria-checked="true"
+                  data-road-kind="normal">Normal</button>
+                <button class="road-builder-choice" type="button" role="radio" aria-checked="false"
+                  data-road-kind="divided">Bolunmus</button>
+              </div>
+              <div class="road-builder-check-row">
+                <label class="road-builder-check">
+                  <input id="roadRightShoulderInput" type="checkbox">
+                  <span>Sag banket</span>
+                </label>
+                <label class="road-builder-check">
+                  <input id="roadLeftShoulderInput" type="checkbox">
+                  <span>Sol banket</span>
+                </label>
+              </div>
+              <div class="road-builder-picker" aria-label="Serit sayisi">
+                <span>Serit sayisi</span>
+                <div class="road-builder-stepper">
+                  <button id="btnRoadBuilderLaneCountMinus" class="road-builder-stepper-btn" type="button"
+                    aria-label="Serit sayisini azalt">-</button>
+                  <input id="roadLaneCountInput" class="road-builder-stepper-number" type="number" min="1" max="5"
+                    step="1" value="2" inputmode="numeric" aria-label="Serit sayisi">
+                  <button id="btnRoadBuilderLaneCountPlus" class="road-builder-stepper-btn" type="button"
+                    aria-label="Serit sayisini arttir">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="editor-library-footer road-builder-footer">
+            <button id="btnAddRoad" class="road-builder-add" type="button">Yolu Ekle</button>
+          </div>
         </div>
       </div>
 
@@ -907,9 +1028,13 @@
   <script src="src/adapters/rectangleAdapter.js"></script>
   <script src="src/adapters/closedShapeAdapter.js"></script>
   <script src="src/adapters/calloutAdapter.js"></script>
+  <script src="src/adapters/roadAdapter.js"></script>
+  <script src="src/geometry/roadIntersectionEngine.js"></script>
   <script src="src/adapters/textAdapter.js"></script>
   <script src="src/ui/editorTextComposer.js"></script>
   <script src="src/ui/editorBindings.js"></script>
+  <script src="src/ui/roadBuilder.js"></script>
+  <script src="src/ui/roadInspector.js"></script>
 </body>
 
 </html>

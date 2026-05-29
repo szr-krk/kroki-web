@@ -215,6 +215,12 @@
     return style.dashSize + " " + style.dashGap;
   }
 
+  function applyGeometryStrokeScaling(element, dashed) {
+    const vectorEffect = dashed ? "none" : "non-scaling-stroke";
+    element.setAttribute("vector-effect", vectorEffect);
+    element.style.setProperty("vector-effect", vectorEffect);
+  }
+
   function tipControlPoint(model, metrics = {}) {
     const offset = metrics.endpointOffset || 0;
     const direction = normalizedVector(model.geometry.center, model.geometry.tip);
@@ -344,34 +350,35 @@
     };
     const dashArray = dashArrayFor(style);
     if (dashArray) leaderAttrs["stroke-dasharray"] = dashArray;
+    const dashed = Boolean(dashArray);
+    const leader = utils.createSvgElement("line", leaderAttrs);
+    const arrow = utils.createSvgElement("path", {
+      class: "editor-callout-arrow",
+      d: arrowPath(center, tip, style.strokeWidth),
+      fill: style.stroke,
+      "fill-opacity": String(style.strokeOpacity),
+      stroke: style.stroke,
+      "stroke-opacity": String(style.strokeOpacity),
+      "stroke-width": String(Math.max(1, style.strokeWidth * 0.85)),
+      "stroke-linejoin": "round"
+    });
+    const boxElement = utils.createSvgElement("rect", {
+      class: "editor-callout-box",
+      x: String(box.x),
+      y: String(box.y),
+      width: String(box.width),
+      height: String(box.height),
+      rx: String(Math.min(BOX_RADIUS, box.width / 2, box.height / 2)),
+      ry: String(Math.min(BOX_RADIUS, box.width / 2, box.height / 2)),
+      fill: style.fill,
+      "fill-opacity": String(style.fillOpacity),
+      stroke: style.stroke,
+      "stroke-opacity": String(style.strokeOpacity),
+      "stroke-width": String(style.strokeWidth)
+    });
+    [leader, arrow, boxElement].forEach((item) => applyGeometryStrokeScaling(item, dashed));
 
-    element.append(
-      utils.createSvgElement("line", leaderAttrs),
-      utils.createSvgElement("path", {
-        class: "editor-callout-arrow",
-        d: arrowPath(center, tip, style.strokeWidth),
-        fill: style.stroke,
-        "fill-opacity": String(style.strokeOpacity),
-        stroke: style.stroke,
-        "stroke-opacity": String(style.strokeOpacity),
-        "stroke-width": String(Math.max(1, style.strokeWidth * 0.85)),
-        "stroke-linejoin": "round"
-      }),
-      utils.createSvgElement("rect", {
-        class: "editor-callout-box",
-        x: String(box.x),
-        y: String(box.y),
-        width: String(box.width),
-        height: String(box.height),
-        rx: String(Math.min(BOX_RADIUS, box.width / 2, box.height / 2)),
-        ry: String(Math.min(BOX_RADIUS, box.width / 2, box.height / 2)),
-        fill: style.fill,
-        "fill-opacity": String(style.fillOpacity),
-        stroke: style.stroke,
-        "stroke-opacity": String(style.strokeOpacity),
-        "stroke-width": String(style.strokeWidth)
-      })
-    );
+    element.append(leader, arrow, boxElement);
 
     element.append(createTextElement(label, lines, textX, startY, anchor, lineHeight));
   }
