@@ -14,13 +14,22 @@
   const PARALLEL_ANGLE_TOLERANCE = 8;
   const CROSS_ANGLE_MIN = 75;
   const CROSS_ANGLE_MAX = 105;
+  const MIN_CURB_PREVIEW_ANGLE = 15;
+  const CURB_RADIUS_MIN = 30;
+  const CURB_RADIUS_MAX = 90;
   const MASK_LAYER_ID = "roadIntersectionMaskLayer";
+  const CURB_LAYER_ID = "roadIntersectionCurbLayer";
   const DEBUG_LAYER_ID = "roadIntersectionDebugLayer";
   let lastIntersections = [];
+  let lastCurbPreviews = [];
   const engine = Kroki.RoadIntersectionEngine || {};
 
   function numberOr(value, fallback) {
     return utils.numberOr(value, fallback);
+  }
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
   }
 
   function boolOr(value, fallback) {
@@ -121,6 +130,10 @@
 
   function getLastIntersections() {
     return lastIntersections.slice();
+  }
+
+  function getLastCurbPreviews() {
+    return lastCurbPreviews.slice();
   }
 
   function warn(message, error) {
@@ -463,6 +476,168 @@
     return Math.abs(polygonArea(expandedPoints)) > EPSILON ? expandedPoints : points;
   }
 
+  function dotPoint(a, b) {
+    return a.x * b.x + a.y * b.y;
+  }
+
+  function addPoint(a, b) {
+    return { x: a.x + b.x, y: a.y + b.y };
+  }
+
+  function subtractPoint(a, b) {
+    return { x: a.x - b.x, y: a.y - b.y };
+  }
+
+  function scalePoint(value, amount) {
+    return { x: value.x * amount, y: value.y * amount };
+  }
+
+  function signOr(value, fallback) {
+    if (value > EPSILON) return 1;
+    if (value < -EPSILON) return -1;
+    return fallback >= 0 ? 1 : -1;
+  }
+
+  function curbPreviewRadius(axisA, axisB) {
+    const minRoadWidth = Math.min(axisA.totalWidth, axisB.totalWidth);
+    return clamp(minRoadWidth * 0.25, CURB_RADIUS_MIN, CURB_RADIUS_MAX);
+  }
+
+  function offsetAxisLinePoint(axis, sideSign) {
+    return addPoint(axis.start, scalePoint(axis.normal, sideSign * axis.totalWidth / 2));
+  }
+
+  function offsetAxisLineIntersection(axisA, sideA, axisB, sideB) {
+    const a0 = offsetAxisLinePoint(axisA, sideA);
+    const b0 = offsetAxisLinePoint(axisB, sideB);
+    return lineIntersection(a0, addPoint(a0, axisA.direction), b0, addPoint(b0, axisB.direction));
+  }
+
+  function validCurbPreview(curb) {
+    return Boolean(
+      curb?.supported
+      && isFinitePoint(curb.start)
+      && isFinitePoint(curb.end)
+      && isFinitePoint(curb.control)
+      && Number.isFinite(curb.radius)
+      && curb.radius > 0
+    );
+  }
+
+  function curbPathData(curb) {
+    if (!validCurbPreview(curb)) return "";
+    return `M ${curb.start.x} ${curb.start.y} Q ${curb.control.x} ${curb.control.y} ${curb.end.x} ${curb.end.y}`;
+  }
+
+  function createCurbPreview(intersection, cornerIndex, start, end, control, radius) {
+    const curb = {
+      intersectionId: `${intersection.roadAId || ""}:${intersection.roadBId || ""}`,
+      kind: intersection.intersectionKind,
+      cornerIndex,
+      center: point(intersection.approximateCenter),
+      start,
+      end,
+      control,
+      radius,
+      supported: true
+    };
+    return validCurbPreview(curb) ? curb : null;
+  }
+
+  function buildCrossCurbPreviews(intersection, axisA, axisB) {
+    const angle = normalizedParallelAngle(intersection.angleDeg);
+    if (!Number.isFinite(angle) || angle < MIN_CURB_PREVIEW_ANGLE) return [];
+
+    const center = point(intersection.approximateCenter);
+    const radius = curbPreviewRadius(axisA, axisB);
+    const maxAnchorDistance = Math.max(axisA.totalWidth, axisB.totalWidth) * 4 + radius;
+    const curbs = [];
+    [-1, 1].forEach((sideA) => {
+      [-1, 1].forEach((sideB) => {
+        const control = offsetAxisLineIntersection(axisA, sideA, axisB, sideB);
+        if (!isFinitePoint(control)) return;
+        if (Math.hypot(control.x - center.x, control.y - center.y) > maxAnchorDistance) return;
+
+        const fromCenter = subtractPoint(control, center);
+        const axisADirectionSign = signOr(dotPoint(fromCenter, axisA.direction), sideA);
+        const axisBDirectionSign = signOr(dotPoint(fromCenter, axisB.direction), sideB);
+        const start = addPoint(control, scalePoint(axisA.direction, axisADirectionSign * radius));
+        const end = addPoint(control, scalePoint(axisB.direction, axisBDirectionSign * radius));
+        const curb = createCurbPreview(intersection, curbs.length, start, end, control, radius);
+        if (curb) curbs.push(curb);
+      });
+    });
+    return curbs;
+  }
+
+  function branchOutDirection(axis, center) {
+    const projection = pointProjectionOnAxis(center, axis);
+    if (!projection) return null;
+    return projection.distanceToStart <= projection.distanceToEnd
+      ? axis.direction
+      : scalePoint(axis.direction, -1);
+  }
+
+  function buildTeeCurbPreviews(intersection, axisA, axisB) {
+    const mainAxis = intersection.roadAThrough && !intersection.roadBThrough ? axisA
+      : intersection.roadBThrough && !intersection.roadAThrough ? axisB
+        : null;
+    const branchAxis = mainAxis === axisA ? axisB : mainAxis === axisB ? axisA : null;
+    if (!mainAxis || !branchAxis) return [];
+
+    const center = point(intersection.approximateCenter);
+    const branchDirection = branchOutDirection(branchAxis, center);
+    if (!branchDirection) return [];
+
+    const radius = curbPreviewRadius(mainAxis, branchAxis);
+    const maxAnchorDistance = Math.max(mainAxis.totalWidth, branchAxis.totalWidth) * 4 + radius;
+    const mainSide = signOr(dotPoint(branchDirection, mainAxis.normal), 1);
+    const curbs = [];
+
+    [-1, 1].forEach((branchSide) => {
+      const control = offsetAxisLineIntersection(mainAxis, mainSide, branchAxis, branchSide);
+      if (!isFinitePoint(control)) return;
+      if (Math.hypot(control.x - center.x, control.y - center.y) > maxAnchorDistance) return;
+
+      const fromCenter = subtractPoint(control, center);
+      const mainDirectionSign = signOr(dotPoint(fromCenter, mainAxis.direction), branchSide);
+      const start = addPoint(control, scalePoint(mainAxis.direction, mainDirectionSign * radius));
+      const end = addPoint(control, scalePoint(branchDirection, radius));
+      const curb = createCurbPreview(intersection, curbs.length, start, end, control, radius);
+      if (curb) curbs.push(curb);
+    });
+    return curbs;
+  }
+
+  function buildCurbsForIntersection(intersection, roadsById) {
+    if (intersection?.type !== "flat-intersection") return [];
+    const kind = intersection.intersectionKind;
+    if (kind !== "cross" && kind !== "tee" && kind !== "skew") return [];
+
+    const roadA = roadsById.get(intersection.roadAId);
+    const roadB = roadsById.get(intersection.roadBId);
+    const axisA = getRoadAxisInfo(roadA);
+    const axisB = getRoadAxisInfo(roadB);
+    if (!axisA.supported || !axisB.supported || !isFinitePoint(intersection.approximateCenter)) return [];
+
+    if (kind === "tee") return buildTeeCurbPreviews(intersection, axisA, axisB);
+    return buildCrossCurbPreviews(intersection, axisA, axisB);
+  }
+
+  function buildCurbPreviewModel(intersections, roadModels) {
+    const roads = Array.isArray(roadModels) ? roadModels : getRoadModels();
+    const roadsById = new Map(roads.map((model) => [model?.id || "", model]));
+    const curbs = [];
+    (Array.isArray(intersections) ? intersections : []).forEach((intersection) => {
+      try {
+        curbs.push(...buildCurbsForIntersection(intersection, roadsById));
+      } catch (error) {
+        warn("Curb preview hesaplanamadi", error);
+      }
+    });
+    return curbs;
+  }
+
   function detectPairIntersection(roadA, roadB) {
     const roadAId = roadA?.id || "";
     const roadBId = roadB?.id || "";
@@ -540,15 +715,43 @@
     return Boolean(node?.dataset?.krokiObject === "true" && node.dataset.shape === "road");
   }
 
+  function isIntersectionObjectLayer(node) {
+    return node?.id === MASK_LAYER_ID || node?.id === CURB_LAYER_ID;
+  }
+
   function placeMaskLayer() {
     const canvas = manager.canvas;
     const objectLayer = manager.objectLayer || canvas?.querySelector("#editorObjects");
     const maskLayer = canvas?.querySelector("#" + MASK_LAYER_ID);
     if (!objectLayer || !maskLayer) return;
     if (maskLayer.parentNode !== objectLayer) objectLayer.append(maskLayer);
-    const firstNonRoad = Array.from(objectLayer.children).find((node) => node !== maskLayer && !isRoadObjectNode(node));
+    const firstNonRoad = Array.from(objectLayer.children).find((node) => (
+      node !== maskLayer && !isIntersectionObjectLayer(node) && !isRoadObjectNode(node)
+    ));
     if (firstNonRoad) objectLayer.insertBefore(maskLayer, firstNonRoad);
     else objectLayer.append(maskLayer);
+    const curbLayer = canvas.querySelector("#" + CURB_LAYER_ID);
+    if (curbLayer?.parentNode === objectLayer && maskLayer.nextSibling !== curbLayer) {
+      objectLayer.insertBefore(curbLayer, maskLayer.nextSibling);
+    }
+  }
+
+  function placeCurbLayer() {
+    const canvas = manager.canvas;
+    const objectLayer = manager.objectLayer || canvas?.querySelector("#editorObjects");
+    const curbLayer = canvas?.querySelector("#" + CURB_LAYER_ID);
+    if (!objectLayer || !curbLayer) return;
+    if (curbLayer.parentNode !== objectLayer) objectLayer.append(curbLayer);
+    const maskLayer = canvas.querySelector("#" + MASK_LAYER_ID);
+    if (maskLayer?.parentNode === objectLayer) {
+      if (maskLayer.nextSibling !== curbLayer) objectLayer.insertBefore(curbLayer, maskLayer.nextSibling);
+      return;
+    }
+    const firstNonRoad = Array.from(objectLayer.children).find((node) => (
+      node !== curbLayer && !isIntersectionObjectLayer(node) && !isRoadObjectNode(node)
+    ));
+    if (firstNonRoad) objectLayer.insertBefore(curbLayer, firstNonRoad);
+    else objectLayer.append(curbLayer);
   }
 
   function placeDebugLayer() {
@@ -576,6 +779,23 @@
     return layer;
   }
 
+  function ensureCurbLayer() {
+    const canvas = manager.canvas;
+    const objectLayer = manager.objectLayer || canvas?.querySelector("#editorObjects");
+    if (!canvas || !objectLayer) return null;
+    let layer = canvas.querySelector("#" + CURB_LAYER_ID);
+    if (!layer) {
+      layer = utils.createSvgElement("g", {
+        id: CURB_LAYER_ID,
+        "data-road-intersection-curb": "true",
+        "pointer-events": "none"
+      });
+      objectLayer.append(layer);
+    }
+    placeCurbLayer();
+    return layer;
+  }
+
   function ensureDebugLayer() {
     const canvas = manager.canvas;
     if (!canvas) return null;
@@ -596,6 +816,10 @@
 
   function clearIntersectionMasks() {
     ensureMaskLayer()?.replaceChildren();
+  }
+
+  function clearCurbPreview() {
+    ensureCurbLayer()?.replaceChildren();
   }
 
   function clearDebugOverlay() {
@@ -625,6 +849,50 @@
     });
     placeMaskLayer();
     return maskModels;
+  }
+
+  function renderCurbPreview(curbs) {
+    const layer = ensureCurbLayer();
+    if (!layer) return [];
+    layer.replaceChildren();
+    const rendered = [];
+
+    (Array.isArray(curbs) ? curbs : []).forEach((curb) => {
+      const d = curbPathData(curb);
+      if (!d) return;
+      rendered.push(curb);
+      const path = utils.createSvgElement("path", {
+        class: "road-intersection-curb-preview",
+        d,
+        fill: "none",
+        stroke: "#111827",
+        "stroke-width": "3",
+        "stroke-linecap": "round",
+        "stroke-linejoin": "round",
+        "vector-effect": "non-scaling-stroke",
+        "data-intersection-id": curb.intersectionId,
+        "data-corner-index": String(curb.cornerIndex),
+        "data-kind": curb.kind,
+        "pointer-events": "none"
+      });
+      layer.append(path);
+
+      if (engine.debug) {
+        const pointNode = utils.createSvgElement("circle", {
+          cx: String(curb.control.x),
+          cy: String(curb.control.y),
+          r: "4",
+          fill: "#111827",
+          stroke: "#ffffff",
+          "stroke-width": "1.5",
+          "vector-effect": "non-scaling-stroke",
+          "pointer-events": "none"
+        });
+        layer.append(pointNode);
+      }
+    });
+    placeCurbLayer();
+    return rendered;
   }
 
   function renderDebugOverlay(debugModels) {
@@ -677,6 +945,7 @@
 
   function refresh() {
     clearIntersectionMasks();
+    clearCurbPreview();
     clearDebugOverlay();
     const roads = getRoadModels();
     const intersections = [];
@@ -700,11 +969,20 @@
     }
 
     lastIntersections = intersections;
+    lastCurbPreviews = [];
     try {
       renderIntersectionMasks(intersections);
     } catch (error) {
       warn("Maskeler cizilemedi", error);
       clearIntersectionMasks();
+    }
+    try {
+      lastCurbPreviews = buildCurbPreviewModel(intersections, roads);
+      renderCurbPreview(lastCurbPreviews);
+    } catch (error) {
+      warn("Curb preview cizilemedi", error);
+      lastCurbPreviews = [];
+      clearCurbPreview();
     }
     try {
       renderDebugOverlay(debugModels);
@@ -733,7 +1011,10 @@
   function setDebug(value) {
     engine.debug = Boolean(value);
     if (engine.debug) scheduleRefresh();
-    else clearDebugOverlay();
+    else {
+      clearDebugOverlay();
+      renderCurbPreview(lastCurbPreviews);
+    }
     return engine.debug;
   }
 
@@ -747,9 +1028,13 @@
   engine.classifyRoadPair = classifyRoadPair;
   engine.detectPairIntersection = detectPairIntersection;
   engine.buildIntersectionDebugModel = buildIntersectionDebugModel;
+  engine.buildCurbPreviewModel = buildCurbPreviewModel;
   engine.renderIntersectionMasks = renderIntersectionMasks;
+  engine.renderCurbPreview = renderCurbPreview;
   engine.clearIntersectionMasks = clearIntersectionMasks;
+  engine.clearCurbPreview = clearCurbPreview;
   engine.getLastIntersections = getLastIntersections;
+  engine.getLastCurbPreviews = getLastCurbPreviews;
   engine.setDebug = setDebug;
   engine.refresh = refresh;
   engine.scheduleRefresh = scheduleRefresh;
