@@ -15,12 +15,15 @@
   const CROSS_ANGLE_MIN = 75;
   const CROSS_ANGLE_MAX = 105;
   const MIN_CURB_PREVIEW_ANGLE = 15;
-  const CURB_RADIUS_MIN = 30;
-  const CURB_RADIUS_MAX = 90;
+  const CURB_RADIUS_MIN = 35;
+  const CURB_RADIUS_MAX = 80;
   const MASK_LAYER_ID = "roadIntersectionMaskLayer";
+  const VISUAL_LAYER_ID = "roadIntersectionVisualLayer";
+  const CURB_BACK_MASK_LAYER_ID = "roadIntersectionCurbBackMaskLayer";
   const CURB_LAYER_ID = "roadIntersectionCurbLayer";
   const DEBUG_LAYER_ID = "roadIntersectionDebugLayer";
   let lastIntersections = [];
+  let lastIntersectionVisuals = [];
   let lastCurbPreviews = [];
   const engine = Kroki.RoadIntersectionEngine || {};
 
@@ -130,6 +133,10 @@
 
   function getLastIntersections() {
     return lastIntersections.slice();
+  }
+
+  function getLastIntersectionVisuals() {
+    return lastIntersectionVisuals.slice();
   }
 
   function getLastCurbPreviews() {
@@ -638,6 +645,57 @@
     return curbs;
   }
 
+  function supportsIntersectionVisual(intersection) {
+    return intersection?.type === "flat-intersection"
+      && (intersection.intersectionKind === "cross" || intersection.intersectionKind === "tee" || intersection.intersectionKind === "skew")
+      && validPolygon(intersection.overlapPolygon)
+      && isFinitePoint(intersection.approximateCenter);
+  }
+
+  function visualPatchPadding(intersection) {
+    const base = numberOr(intersection?.maskPadding, DEFAULT_EDGE_MASK_PADDING);
+    if (intersection?.intersectionKind === "tee") return Math.max(4, Math.min(14, base));
+    return Math.max(4, Math.min(18, base));
+  }
+
+  function buildIntersectionVisual(intersection, roadsById) {
+    if (!supportsIntersectionVisual(intersection)) return null;
+    const curbs = buildCurbsForIntersection(intersection, roadsById);
+    if (!curbs.length) return null;
+    const surfacePatch = expandPolygonFromCenter(intersection.overlapPolygon, visualPatchPadding(intersection));
+    if (!validPolygon(surfacePatch)) return null;
+    return {
+      intersectionId: `${intersection.roadAId || ""}:${intersection.roadBId || ""}`,
+      kind: intersection.intersectionKind,
+      center: point(intersection.approximateCenter),
+      surfacePatch,
+      maskPolygon: surfacePatch,
+      curbs,
+      supported: true
+    };
+  }
+
+  function buildIntersectionVisualModel(intersections, roadModels) {
+    const roads = Array.isArray(roadModels) ? roadModels : getRoadModels();
+    const roadsById = new Map(roads.map((model) => [model?.id || "", model]));
+    const visuals = [];
+    (Array.isArray(intersections) ? intersections : []).forEach((intersection) => {
+      try {
+        const visual = buildIntersectionVisual(intersection, roadsById);
+        if (visual) visuals.push(visual);
+      } catch (error) {
+        warn("Intersection visual hesaplanamadi", error);
+      }
+    });
+    return visuals;
+  }
+
+  function curbsFromVisuals(visuals) {
+    return (Array.isArray(visuals) ? visuals : [])
+      .flatMap((visual) => Array.isArray(visual?.curbs) ? visual.curbs : [])
+      .filter(validCurbPreview);
+  }
+
   function detectPairIntersection(roadA, roadB) {
     const roadAId = roadA?.id || "";
     const roadBId = roadB?.id || "";
@@ -716,7 +774,31 @@
   }
 
   function isIntersectionObjectLayer(node) {
-    return node?.id === MASK_LAYER_ID || node?.id === CURB_LAYER_ID;
+    return node?.id === MASK_LAYER_ID
+      || node?.id === VISUAL_LAYER_ID
+      || node?.id === CURB_BACK_MASK_LAYER_ID
+      || node?.id === CURB_LAYER_ID;
+  }
+
+  function placeIntersectionObjectLayers() {
+    const canvas = manager.canvas;
+    const objectLayer = manager.objectLayer || canvas?.querySelector("#editorObjects");
+    if (!objectLayer) return;
+    const maskLayer = canvas?.querySelector("#" + MASK_LAYER_ID);
+    const visualLayer = canvas?.querySelector("#" + VISUAL_LAYER_ID);
+    const curbBackMaskLayer = canvas?.querySelector("#" + CURB_BACK_MASK_LAYER_ID);
+    const curbLayer = canvas?.querySelector("#" + CURB_LAYER_ID);
+    [maskLayer, visualLayer, curbBackMaskLayer, curbLayer].forEach((layer) => {
+      if (layer && layer.parentNode !== objectLayer) objectLayer.append(layer);
+    });
+    let nextNode = Array.from(objectLayer.children).find((node) => (
+      !isIntersectionObjectLayer(node) && !isRoadObjectNode(node)
+    )) || null;
+    [curbLayer, curbBackMaskLayer, visualLayer, maskLayer].forEach((layer) => {
+      if (!layer) return;
+      if (layer.nextSibling !== nextNode) objectLayer.insertBefore(layer, nextNode);
+      nextNode = layer;
+    });
   }
 
   function placeMaskLayer() {
@@ -724,16 +806,23 @@
     const objectLayer = manager.objectLayer || canvas?.querySelector("#editorObjects");
     const maskLayer = canvas?.querySelector("#" + MASK_LAYER_ID);
     if (!objectLayer || !maskLayer) return;
-    if (maskLayer.parentNode !== objectLayer) objectLayer.append(maskLayer);
-    const firstNonRoad = Array.from(objectLayer.children).find((node) => (
-      node !== maskLayer && !isIntersectionObjectLayer(node) && !isRoadObjectNode(node)
-    ));
-    if (firstNonRoad) objectLayer.insertBefore(maskLayer, firstNonRoad);
-    else objectLayer.append(maskLayer);
-    const curbLayer = canvas.querySelector("#" + CURB_LAYER_ID);
-    if (curbLayer?.parentNode === objectLayer && maskLayer.nextSibling !== curbLayer) {
-      objectLayer.insertBefore(curbLayer, maskLayer.nextSibling);
-    }
+    placeIntersectionObjectLayers();
+  }
+
+  function placeVisualLayer() {
+    const canvas = manager.canvas;
+    const objectLayer = manager.objectLayer || canvas?.querySelector("#editorObjects");
+    const visualLayer = canvas?.querySelector("#" + VISUAL_LAYER_ID);
+    if (!objectLayer || !visualLayer) return;
+    placeIntersectionObjectLayers();
+  }
+
+  function placeCurbBackMaskLayer() {
+    const canvas = manager.canvas;
+    const objectLayer = manager.objectLayer || canvas?.querySelector("#editorObjects");
+    const curbBackMaskLayer = canvas?.querySelector("#" + CURB_BACK_MASK_LAYER_ID);
+    if (!objectLayer || !curbBackMaskLayer) return;
+    placeIntersectionObjectLayers();
   }
 
   function placeCurbLayer() {
@@ -741,17 +830,7 @@
     const objectLayer = manager.objectLayer || canvas?.querySelector("#editorObjects");
     const curbLayer = canvas?.querySelector("#" + CURB_LAYER_ID);
     if (!objectLayer || !curbLayer) return;
-    if (curbLayer.parentNode !== objectLayer) objectLayer.append(curbLayer);
-    const maskLayer = canvas.querySelector("#" + MASK_LAYER_ID);
-    if (maskLayer?.parentNode === objectLayer) {
-      if (maskLayer.nextSibling !== curbLayer) objectLayer.insertBefore(curbLayer, maskLayer.nextSibling);
-      return;
-    }
-    const firstNonRoad = Array.from(objectLayer.children).find((node) => (
-      node !== curbLayer && !isIntersectionObjectLayer(node) && !isRoadObjectNode(node)
-    ));
-    if (firstNonRoad) objectLayer.insertBefore(curbLayer, firstNonRoad);
-    else objectLayer.append(curbLayer);
+    placeIntersectionObjectLayers();
   }
 
   function placeDebugLayer() {
@@ -776,6 +855,40 @@
       objectLayer.append(layer);
     }
     placeMaskLayer();
+    return layer;
+  }
+
+  function ensureVisualLayer() {
+    const canvas = manager.canvas;
+    const objectLayer = manager.objectLayer || canvas?.querySelector("#editorObjects");
+    if (!canvas || !objectLayer) return null;
+    let layer = canvas.querySelector("#" + VISUAL_LAYER_ID);
+    if (!layer) {
+      layer = utils.createSvgElement("g", {
+        id: VISUAL_LAYER_ID,
+        "data-road-intersection-visual": "true",
+        "pointer-events": "none"
+      });
+      objectLayer.append(layer);
+    }
+    placeVisualLayer();
+    return layer;
+  }
+
+  function ensureCurbBackMaskLayer() {
+    const canvas = manager.canvas;
+    const objectLayer = manager.objectLayer || canvas?.querySelector("#editorObjects");
+    if (!canvas || !objectLayer) return null;
+    let layer = canvas.querySelector("#" + CURB_BACK_MASK_LAYER_ID);
+    if (!layer) {
+      layer = utils.createSvgElement("g", {
+        id: CURB_BACK_MASK_LAYER_ID,
+        "data-road-intersection-curb-back-mask": "true",
+        "pointer-events": "none"
+      });
+      objectLayer.append(layer);
+    }
+    placeCurbBackMaskLayer();
     return layer;
   }
 
@@ -818,6 +931,14 @@
     ensureMaskLayer()?.replaceChildren();
   }
 
+  function clearIntersectionVisuals() {
+    ensureVisualLayer()?.replaceChildren();
+  }
+
+  function clearCurbBackMasks() {
+    ensureCurbBackMaskLayer()?.replaceChildren();
+  }
+
   function clearCurbPreview() {
     ensureCurbLayer()?.replaceChildren();
   }
@@ -849,6 +970,66 @@
     });
     placeMaskLayer();
     return maskModels;
+  }
+
+  function renderIntersectionVisuals(visuals) {
+    const layer = ensureVisualLayer();
+    if (!layer) return [];
+    layer.replaceChildren();
+    const rendered = [];
+
+    (Array.isArray(visuals) ? visuals : []).forEach((visual) => {
+      const d = validPathData(visual?.surfacePatch);
+      if (!visual?.supported || !d) return;
+      rendered.push(visual);
+      const patch = utils.createSvgElement("path", {
+        class: "road-intersection-surface-patch",
+        d,
+        fill: ROAD_SURFACE_FILL,
+        stroke: "none",
+        "data-intersection-id": visual.intersectionId,
+        "data-kind": visual.kind,
+        "pointer-events": "none"
+      });
+      layer.append(patch);
+    });
+    placeVisualLayer();
+    return rendered;
+  }
+
+  function buildCurbBackMaskModel(visuals) {
+    return curbsFromVisuals(visuals).map((curb) => ({
+      ...curb,
+      pathData: curbPathData(curb),
+      strokeWidth: Math.max(11, Math.min(18, numberOr(curb.radius, CURB_RADIUS_MIN) * 0.18 + 5))
+    })).filter((mask) => mask.pathData);
+  }
+
+  function renderCurbBackMasks(visuals) {
+    const layer = ensureCurbBackMaskLayer();
+    if (!layer) return [];
+    layer.replaceChildren();
+    const masks = buildCurbBackMaskModel(visuals);
+
+    masks.forEach((mask) => {
+      const path = utils.createSvgElement("path", {
+        class: "road-intersection-curb-back-mask",
+        d: mask.pathData,
+        fill: "none",
+        stroke: ROAD_SURFACE_FILL,
+        "stroke-width": String(mask.strokeWidth),
+        "stroke-linecap": "round",
+        "stroke-linejoin": "round",
+        "vector-effect": "non-scaling-stroke",
+        "data-intersection-id": mask.intersectionId,
+        "data-corner-index": String(mask.cornerIndex),
+        "data-kind": mask.kind,
+        "pointer-events": "none"
+      });
+      layer.append(path);
+    });
+    placeCurbBackMaskLayer();
+    return masks;
   }
 
   function renderCurbPreview(curbs) {
@@ -945,6 +1126,8 @@
 
   function refresh() {
     clearIntersectionMasks();
+    clearIntersectionVisuals();
+    clearCurbBackMasks();
     clearCurbPreview();
     clearDebugOverlay();
     const roads = getRoadModels();
@@ -969,6 +1152,7 @@
     }
 
     lastIntersections = intersections;
+    lastIntersectionVisuals = [];
     lastCurbPreviews = [];
     try {
       renderIntersectionMasks(intersections);
@@ -977,11 +1161,17 @@
       clearIntersectionMasks();
     }
     try {
-      lastCurbPreviews = buildCurbPreviewModel(intersections, roads);
+      lastIntersectionVisuals = buildIntersectionVisualModel(intersections, roads);
+      renderIntersectionVisuals(lastIntersectionVisuals);
+      renderCurbBackMasks(lastIntersectionVisuals);
+      lastCurbPreviews = curbsFromVisuals(lastIntersectionVisuals);
       renderCurbPreview(lastCurbPreviews);
     } catch (error) {
-      warn("Curb preview cizilemedi", error);
+      warn("Intersection visual cizilemedi", error);
+      lastIntersectionVisuals = [];
       lastCurbPreviews = [];
+      clearIntersectionVisuals();
+      clearCurbBackMasks();
       clearCurbPreview();
     }
     try {
@@ -1029,11 +1219,16 @@
   engine.detectPairIntersection = detectPairIntersection;
   engine.buildIntersectionDebugModel = buildIntersectionDebugModel;
   engine.buildCurbPreviewModel = buildCurbPreviewModel;
+  engine.buildIntersectionVisualModel = buildIntersectionVisualModel;
   engine.renderIntersectionMasks = renderIntersectionMasks;
+  engine.renderIntersectionVisuals = renderIntersectionVisuals;
   engine.renderCurbPreview = renderCurbPreview;
   engine.clearIntersectionMasks = clearIntersectionMasks;
+  engine.clearIntersectionVisuals = clearIntersectionVisuals;
+  engine.clearCurbBackMasks = clearCurbBackMasks;
   engine.clearCurbPreview = clearCurbPreview;
   engine.getLastIntersections = getLastIntersections;
+  engine.getLastIntersectionVisuals = getLastIntersectionVisuals;
   engine.getLastCurbPreviews = getLastCurbPreviews;
   engine.setDebug = setDebug;
   engine.refresh = refresh;
