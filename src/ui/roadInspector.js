@@ -14,6 +14,13 @@
     { id: "doubleDash", title: "Cift kesik" },
     { id: "none", title: "Bos" }
   ];
+  const ROAD_PROFILES = [
+    { id: "straight", title: "Duz", short: "D" },
+    { id: "arc", title: "Viraj", short: "V" },
+    { id: "sCurve", title: "S viraj", short: "SV" }
+  ];
+  const MIN_S_CURVE_CONTROLS = 2;
+  const MAX_S_CURVE_CONTROLS = 5;
   const ROAD_LINE_COLOR = "#000000";
   let activeBoundaryKey = "";
 
@@ -25,6 +32,14 @@
     laneWidth: document.querySelector("#roadLaneWidthIpInput"),
     laneWidthPlus: document.querySelector("#btnRoadLaneWidthPlus"),
     laneWidthMinus: document.querySelector("#btnRoadLaneWidthMinus"),
+    profile: document.querySelector("#btnRoadProfileIp"),
+    profileLabel: document.querySelector("#lblRoadProfileIp"),
+    sCurveControls: document.querySelector("#roadSCurveControlIp"),
+    sCurveControlCount: document.querySelector("#roadSCurveControlCountIpInput"),
+    sCurveControlPlus: document.querySelector("#btnRoadSCurveControlPlus"),
+    sCurveControlMinus: document.querySelector("#btnRoadSCurveControlMinus"),
+    xAxisSymmetry: document.querySelector("#btnRoadXAxisSymmetryIp"),
+    yAxisSymmetry: document.querySelector("#btnRoadYAxisSymmetryIp"),
     upperLine: document.querySelector("#btnRoadUpperLinePanel"),
     lowerLine: document.querySelector("#btnRoadLowerLinePanel"),
     boundaryPanel: document.querySelector("#roadBoundaryPanel"),
@@ -38,6 +53,7 @@
     markingStyleIcon: document.querySelector("#iconRoadMarkingStyle"),
     sectionDone: document.querySelector("#btnRoadSectionDoneIp"),
     globalControls: Array.from(document.querySelectorAll("#roadIpControls .road-global-control")),
+    symmetryControls: Array.from(document.querySelectorAll("#roadIpControls .road-symmetry-control")),
     sectionControls: Array.from(document.querySelectorAll("#roadIpControls .road-lane-only-control"))
   };
 
@@ -65,7 +81,12 @@
 
   function normalizeConfig(model, source) {
     const adapter = adapterFor(model);
+    if (typeof adapter?.roadConfig === "function") return adapter.roadConfig(model, source || model?.metadata?.road || {});
     return adapter?.normalizeRoadConfig?.(source || model?.metadata?.road || {}) || source || {};
+  }
+
+  function isIslandRoad(model) {
+    return Boolean(adapterFor(model)?.isIsland?.(model));
   }
 
   function selectedSectionInfo(model) {
@@ -80,6 +101,11 @@
 
   function clampInt(value, min, max, fallback) {
     return Math.round(clamp(value, min, max, fallback));
+  }
+
+  function pickerInt(value, fallback) {
+    const number = Number(value);
+    return Math.round(Number.isFinite(number) ? number : fallback);
   }
 
   function resizedWidths(widths, count, fallback) {
@@ -150,6 +176,70 @@
         }
       };
     }, { label: label || "Yol guncelle" });
+  }
+
+  function updateActiveRoadModel(mutator, label) {
+    const model = activeRoadModel();
+    if (!model) return;
+    selection.promoteToEdit?.();
+    manager.updateModel(model.id, (draft) => {
+      mutator(draft, adapterFor(draft));
+      return draft;
+    }, { label: label || "Yol guncelle" });
+  }
+
+  function reflectActiveRoad(method, label) {
+    const model = activeRoadModel();
+    if (!model || isIslandRoad(model)) return;
+    updateActiveRoadModel((draft, adapter) => adapter?.[method]?.(draft), label);
+  }
+
+  function updateLaneCountValue(value, label) {
+    const model = activeRoadModel();
+    if (!model) return;
+    if (isIslandRoad(model)) {
+      updateActiveRoadModel((draft, adapter) => adapter?.setIslandLaneCount?.(draft, value), label || "Ada serit sayisi");
+      return;
+    }
+    updateRoad((config) => setLaneCount(config, value), label || "Yol serit sayisi");
+  }
+
+  function updateLaneWidthValue(value, label) {
+    const model = activeRoadModel();
+    if (!model) return;
+    const width = pickerInt(value, 50);
+    if (isIslandRoad(model)) {
+      updateActiveRoadModel((draft, adapter) => {
+        const section = adapter?.selectedSectionInfo?.(draft);
+        if (section?.sectionId) adapter?.setIslandSectionWidth?.(draft, section.sectionId, width);
+        else adapter?.setIslandLaneWidth?.(draft, width);
+      }, label || "Ada serit genisligi");
+      return;
+    }
+    updateActiveRoad((config, section, draft) => {
+      setSelectedSectionWidth(draft, config, section, width);
+    }, label || "Yol kesit genisligi");
+  }
+
+  function commitLaneWidthPicker() {
+    if (!controls.laneWidth || controls.laneWidth.value === "") return;
+    const width = pickerInt(controls.laneWidth.value, 50);
+    controls.laneWidth.value = String(width);
+    const model = activeRoadModel();
+    if (!model) return;
+    const config = normalizeConfig(model, model.metadata?.road);
+    const section = selectedSectionInfo(model);
+    if (pickerInt(section?.width || config.laneWidth, 50) === width) return;
+    updateLaneWidthValue(width, isIslandRoad(model) ? "Ada serit genisligi" : "Yol kesit genisligi");
+  }
+
+  function profileInfo(profile) {
+    return ROAD_PROFILES.find((item) => item.id === profile) || ROAD_PROFILES[0];
+  }
+
+  function nextProfile(profile) {
+    const index = Math.max(0, ROAD_PROFILES.findIndex((item) => item.id === profile));
+    return ROAD_PROFILES[(index + 1) % ROAD_PROFILES.length].id;
   }
 
   function togglePressed(button, value) {
@@ -390,12 +480,34 @@
     keepRoadLayersAtBack();
     const config = normalizeConfig(model, model.metadata?.road);
     const section = selectedSectionInfo(model);
+    const island = isIslandRoad(model);
     const sectionMode = Boolean(section);
     controls.globalControls.forEach((control) => control.classList.toggle("gizli", sectionMode));
     controls.sectionControls.forEach((control) => control.classList.toggle("gizli", !sectionMode));
+    controls.symmetryControls.forEach((control) => control.classList.toggle("gizli", island || sectionMode));
+    if (island) {
+      controls.profile?.classList.add("gizli");
+      controls.sCurveControls?.classList.add("gizli");
+      controls.leftShoulder?.classList.add("gizli");
+      controls.rightShoulder?.classList.add("gizli");
+      controls.markingStyle?.classList.add("gizli");
+    } else {
+      controls.profile?.classList.toggle("gizli", sectionMode);
+      controls.leftShoulder?.classList.toggle("gizli", sectionMode);
+      controls.rightShoulder?.classList.toggle("gizli", sectionMode);
+      controls.markingStyle?.classList.toggle("gizli", sectionMode);
+    }
+    if (controls.laneCount) controls.laneCount.max = island ? "3" : "5";
+    const profile = profileInfo(model.geometry?.profile);
+    controls.profile?.setAttribute("title", "Yol profili: " + profile.title);
+    controls.profile?.setAttribute("aria-label", "Yol profili: " + profile.title);
+    if (controls.profileLabel) controls.profileLabel.textContent = profile.short;
+    const sCurveCount = clampInt(adapterFor(model)?.sCurveControlCount?.(model), MIN_S_CURVE_CONTROLS, MAX_S_CURVE_CONTROLS, MIN_S_CURVE_CONTROLS);
+    if (controls.sCurveControlCount && controls.sCurveControlCount.value !== String(sCurveCount)) controls.sCurveControlCount.value = String(sCurveCount);
+    if (!island) controls.sCurveControls?.classList.toggle("gizli", sectionMode || model.geometry?.profile !== "sCurve");
     if (!sectionMode) closeBoundaryPanel();
     if (controls.laneCount && controls.laneCount.value !== String(config.laneCount)) controls.laneCount.value = String(config.laneCount);
-    const widthValue = sectionMode ? section.width : config.laneWidth;
+    const widthValue = pickerInt(sectionMode ? section.width : config.laneWidth, 50);
     if (controls.laneWidth && controls.laneWidth.value !== String(widthValue)) controls.laneWidth.value = String(widthValue);
     togglePressed(controls.leftShoulder, config.leftShoulder?.enabled);
     togglePressed(controls.rightShoulder, config.rightShoulder?.enabled);
@@ -406,18 +518,56 @@
     if (sectionMode) syncBoundaryPanel(config, section);
   }
 
-  controls.laneCountPlus?.addEventListener("click", () => updateRoad((config) => setLaneCount(config, config.laneCount + 1), "Yol serit sayisi"));
-  controls.laneCountMinus?.addEventListener("click", () => updateRoad((config) => setLaneCount(config, config.laneCount - 1), "Yol serit sayisi"));
-  controls.laneCount?.addEventListener("change", () => updateRoad((config) => setLaneCount(config, controls.laneCount.value), "Yol serit sayisi"));
-  controls.laneWidthPlus?.addEventListener("click", () => updateActiveRoad((config, section, model) => {
-    setSelectedSectionWidth(model, config, section, (section?.width || config.laneWidth) + 5);
-  }, "Yol kesit genisligi"));
-  controls.laneWidthMinus?.addEventListener("click", () => updateActiveRoad((config, section, model) => {
-    setSelectedSectionWidth(model, config, section, (section?.width || config.laneWidth) - 5);
-  }, "Yol kesit genisligi"));
-  controls.laneWidth?.addEventListener("change", () => updateActiveRoad((config, section, model) => {
-    setSelectedSectionWidth(model, config, section, controls.laneWidth.value);
-  }, "Yol kesit genisligi"));
+  controls.laneCountPlus?.addEventListener("click", () => {
+    const model = activeRoadModel();
+    const config = normalizeConfig(model, model?.metadata?.road);
+    updateLaneCountValue((config.laneCount || 1) + 1, isIslandRoad(model) ? "Ada serit sayisi" : "Yol serit sayisi");
+  });
+  controls.laneCountMinus?.addEventListener("click", () => {
+    const model = activeRoadModel();
+    const config = normalizeConfig(model, model?.metadata?.road);
+    updateLaneCountValue((config.laneCount || 1) - 1, isIslandRoad(model) ? "Ada serit sayisi" : "Yol serit sayisi");
+  });
+  controls.laneCount?.addEventListener("change", () => updateLaneCountValue(controls.laneCount.value, isIslandRoad(activeRoadModel()) ? "Ada serit sayisi" : "Yol serit sayisi"));
+  controls.laneWidthPlus?.addEventListener("click", () => {
+    const model = activeRoadModel();
+    const config = normalizeConfig(model, model?.metadata?.road);
+    const section = selectedSectionInfo(model);
+    const current = pickerInt(section?.width || config.laneWidth, 50);
+    updateLaneWidthValue(current + 5, isIslandRoad(model) ? "Ada serit genisligi" : "Yol kesit genisligi");
+  });
+  controls.laneWidthMinus?.addEventListener("click", () => {
+    const model = activeRoadModel();
+    const config = normalizeConfig(model, model?.metadata?.road);
+    const section = selectedSectionInfo(model);
+    const current = pickerInt(section?.width || config.laneWidth, 50);
+    updateLaneWidthValue(current - 5, isIslandRoad(model) ? "Ada serit genisligi" : "Yol kesit genisligi");
+  });
+  controls.laneWidth?.addEventListener("input", () => {
+    if (controls.laneWidth.value === "") return;
+    controls.laneWidth.value = String(pickerInt(controls.laneWidth.value, 50));
+  });
+  controls.laneWidth?.addEventListener("change", commitLaneWidthPicker);
+  controls.laneWidth?.addEventListener("blur", commitLaneWidthPicker);
+  controls.profile?.addEventListener("click", () => updateActiveRoadModel((draft, adapter) => {
+    adapter?.setProfile?.(draft, nextProfile(draft.geometry?.profile));
+  }, "Yol profili"));
+  controls.xAxisSymmetry?.addEventListener("click", () => reflectActiveRoad("reflectAcrossBoundsXAxis", "Yol X ekseni simetrisi"));
+  controls.yAxisSymmetry?.addEventListener("click", () => reflectActiveRoad("reflectAcrossBoundsYAxis", "Yol Y ekseni simetrisi"));
+  controls.sCurveControlPlus?.addEventListener("click", () => updateActiveRoadModel((draft, adapter) => {
+    if (draft.geometry?.profile !== "sCurve") return;
+    const count = adapter?.sCurveControlCount?.(draft) || MIN_S_CURVE_CONTROLS;
+    adapter?.setSCurveControlCount?.(draft, count + 1);
+  }, "S viraj kontrol noktasi"));
+  controls.sCurveControlMinus?.addEventListener("click", () => updateActiveRoadModel((draft, adapter) => {
+    if (draft.geometry?.profile !== "sCurve") return;
+    const count = adapter?.sCurveControlCount?.(draft) || MIN_S_CURVE_CONTROLS;
+    adapter?.setSCurveControlCount?.(draft, count - 1);
+  }, "S viraj kontrol noktasi"));
+  controls.sCurveControlCount?.addEventListener("change", () => updateActiveRoadModel((draft, adapter) => {
+    if (draft.geometry?.profile !== "sCurve") return;
+    adapter?.setSCurveControlCount?.(draft, controls.sCurveControlCount.value);
+  }, "S viraj kontrol noktasi"));
   controls.upperLine?.addEventListener("click", () => openBoundaryPanel("start", controls.upperLine));
   controls.lowerLine?.addEventListener("click", () => openBoundaryPanel("end", controls.lowerLine));
   controls.sectionDone?.addEventListener("click", clearSectionSelection);

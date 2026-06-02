@@ -571,6 +571,23 @@
   font-weight: 800;
 }
 
+#railMenuYol.editor-library-panel {
+  inset: 40px calc(var(--editor-rail-width) + 40px) auto auto;
+  width: min(600px, calc(100vw - var(--editor-rail-width) - 80px));
+  max-height: calc(100dvh - 80px);
+  place-items: stretch;
+}
+
+#railMenuYol .editor-library-card {
+  height: auto;
+  max-height: calc(100dvh - 80px);
+}
+
+#railMenuYol .editor-library-body {
+  flex: 0 1 auto;
+  min-height: auto;
+}
+
 .road-builder {
   font-weight: 800;
 }
@@ -591,6 +608,10 @@
 
 .road-builder-choice-group.is-two {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.road-builder-choice-group.is-four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .road-builder-choice {

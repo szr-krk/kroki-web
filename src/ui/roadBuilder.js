@@ -5,6 +5,7 @@
   if (!manager || !selection) return;
 
   const DEFAULT_LANE_WIDTH = 50;
+  const DEFAULT_ISLAND_INNER_DIAMETER = 160;
   const DEFAULT_SHOULDER_WIDTH = 20;
   const DIVIDED_LANE_COUNT = 2;
   const DEFAULT_ARC_RATIO = Math.tan((36 * Math.PI / 180) / 2);
@@ -15,6 +16,9 @@
     profileButtons: Array.from(panel?.querySelectorAll("[data-road-profile]") || []),
     orientationButtons: Array.from(panel?.querySelectorAll("[data-road-orientation]") || []),
     kindButtons: Array.from(panel?.querySelectorAll("[data-road-kind]") || []),
+    orientationGroup: panel?.querySelector("[aria-label='Yol yerlesimi']"),
+    kindGroup: panel?.querySelector("[aria-label='Yol tipi']"),
+    shoulderRow: panel?.querySelector(".road-builder-check-row"),
     laneCount: panel?.querySelector("#roadLaneCountInput"),
     laneCountMinus: panel?.querySelector("#btnRoadBuilderLaneCountMinus"),
     laneCountPlus: panel?.querySelector("#btnRoadBuilderLaneCountPlus"),
@@ -45,11 +49,16 @@
     });
   }
 
+  function isIslandRoad() {
+    return selectedValue(fields.profileButtons, "roadProfile", "straight") === "islandRing";
+  }
+
   function isDividedRoad() {
-    return selectedValue(fields.kindButtons, "roadKind", "normal") === "divided";
+    return !isIslandRoad() && selectedValue(fields.kindButtons, "roadKind", "normal") === "divided";
   }
 
   function laneCountFromInputs() {
+    if (isIslandRoad()) return intFrom(fields.laneCount, 1, 1, 3);
     return isDividedRoad() ? DIVIDED_LANE_COUNT : intFrom(fields.laneCount, 2, 1, 5);
   }
 
@@ -83,23 +92,60 @@
     const start = pointAlong(center, dir, -length / 2);
     const end = pointAlong(center, dir, length / 2);
     const profile = selectedValue(fields.profileButtons, "roadProfile", "straight");
+    if (profile === "islandRing") {
+      const laneCount = laneCountFromInputs();
+      const laneWidth = DEFAULT_LANE_WIDTH;
+      return {
+        profile,
+        center,
+        innerDiameter: DEFAULT_ISLAND_INNER_DIAMETER,
+        outerDiameter: DEFAULT_ISLAND_INNER_DIAMETER + laneCount * laneWidth * 2
+      };
+    }
     const geometry = { profile, start, end };
     if (profile === "arc") geometry.ratio = DEFAULT_ARC_RATIO;
     if (profile === "sCurve") {
       const bow = Math.min(140, length * 0.2);
-      geometry.c1 = {
-        x: start.x + dir.x * length / 3 + normal.x * bow,
-        y: start.y + dir.y * length / 3 + normal.y * bow
-      };
-      geometry.c2 = {
-        x: start.x + dir.x * length * 2 / 3 - normal.x * bow,
-        y: start.y + dir.y * length * 2 / 3 - normal.y * bow
-      };
+      geometry.controls = [
+        {
+          x: start.x + dir.x * length / 3 + normal.x * bow,
+          y: start.y + dir.y * length / 3 + normal.y * bow
+        },
+        {
+          x: start.x + dir.x * length * 2 / 3 - normal.x * bow,
+          y: start.y + dir.y * length * 2 / 3 - normal.y * bow
+        }
+      ];
+      geometry.controlCount = geometry.controls.length;
+      geometry.c1 = geometry.controls[0];
+      geometry.c2 = geometry.controls[1];
     }
     return geometry;
   }
 
   function roadConfigFromInputs() {
+    if (isIslandRoad()) {
+      const laneCount = laneCountFromInputs();
+      const laneWidth = DEFAULT_LANE_WIDTH;
+      return {
+        version: 1,
+        laneCount,
+        laneWidth,
+        laneWidths: Array.from({ length: laneCount }, () => laneWidth),
+        divided: false,
+        dividedLaneWidths: { left: [], right: [] },
+        leftShoulder: { enabled: false, width: 0 },
+        rightShoulder: { enabled: false, width: 0 },
+        innerShoulder: { enabled: false, width: 0 },
+        waterChannel: { enabled: false, width: 0 },
+        barrier: { enabled: false, width: 0 },
+        marking: { style: "dash", width: 2 },
+        edgeLine: { enabled: true, width: 2 },
+        autoIntersection: true,
+        bridge: false,
+        segments: [{ from: 0, to: 1, markingStyle: "dash" }]
+      };
+    }
     const divided = isDividedRoad();
     const laneCount = laneCountFromInputs();
     const laneWidth = DEFAULT_LANE_WIDTH;
@@ -143,14 +189,25 @@
   }
 
   function syncDividedControls() {
+    const island = isIslandRoad();
     const divided = isDividedRoad();
+    fields.orientationGroup?.classList.toggle("gizli", island);
+    fields.kindGroup?.classList.toggle("gizli", island);
+    fields.shoulderRow?.classList.toggle("gizli", island);
     [fields.leftShoulder, fields.rightShoulder].forEach((input) => {
       if (!input) return;
-      input.disabled = divided;
-      if (divided) input.checked = true;
+      input.disabled = island || divided;
+      if (island) input.checked = false;
+      else if (divided) input.checked = true;
     });
     if (fields.laneCount) {
-      if (divided) fields.laneCount.value = String(DIVIDED_LANE_COUNT);
+      if (island) {
+        fields.laneCount.max = "3";
+        fields.laneCount.value = String(laneCountFromInputs());
+      } else {
+        fields.laneCount.max = "5";
+        if (divided) fields.laneCount.value = String(DIVIDED_LANE_COUNT);
+      }
       fields.laneCount.disabled = divided;
     }
     if (fields.laneCountMinus) fields.laneCountMinus.disabled = divided;
@@ -159,7 +216,8 @@
 
   function stepLaneCount(delta) {
     if (!fields.laneCount || isDividedRoad()) return;
-    fields.laneCount.value = String(Math.min(5, Math.max(1, intFrom(fields.laneCount, 2, 1, 5) + delta)));
+    const max = isIslandRoad() ? 3 : 5;
+    fields.laneCount.value = String(Math.min(max, Math.max(1, intFrom(fields.laneCount, isIslandRoad() ? 1 : 2, 1, max) + delta)));
   }
 
   function roadInsertBeforeNode() {
@@ -185,7 +243,10 @@
 
   fields.add?.addEventListener("click", addRoad);
   fields.profileButtons.forEach((button) => {
-    button.addEventListener("click", () => selectButton(fields.profileButtons, "roadProfile", button.dataset.roadProfile));
+    button.addEventListener("click", () => {
+      selectButton(fields.profileButtons, "roadProfile", button.dataset.roadProfile);
+      syncDividedControls();
+    });
   });
   fields.orientationButtons.forEach((button) => {
     button.addEventListener("click", () => selectButton(fields.orientationButtons, "roadOrientation", button.dataset.roadOrientation));

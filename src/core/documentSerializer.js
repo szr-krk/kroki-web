@@ -107,7 +107,8 @@
         label: styleManager.normalizeLabel(model.label, model.type),
         metadata: cleanMetadata(model.metadata)
       })),
-      groups: Kroki.GroupManager?.getAll?.() || []
+      groups: Kroki.GroupManager?.getAll?.() || [],
+      roadIntersection: Kroki.RoadIntersectionEngine?.exportState?.() || null
     };
   }
 
@@ -130,8 +131,10 @@
       const liveIds = new Set(models.map((model) => model.id));
       Kroki.GroupManager?.replaceGroups?.(normalizeGroups(source.groups, idMap, liveIds));
       manager.getObjectsInDomOrder().forEach((model) => manager.renderObject(model.id));
+      Kroki.RoadIntersectionEngine?.importState?.(source.roadIntersection || null, { skipRefresh: true });
       Kroki.ControlPointManager?.clear?.();
       Kroki.StyleManager?.syncControls?.();
+      Kroki.RoadIntersectionEngine?.scheduleRefresh?.();
     };
 
     if (Kroki.HistoryManager?.suspend) Kroki.HistoryManager.suspend(runImport);

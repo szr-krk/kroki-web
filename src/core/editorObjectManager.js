@@ -452,7 +452,6 @@
     }
     renderObject(model.id);
     keepRoadLayersAtBack();
-    syncRoadIntersections(model.type === "road", options);
     return model;
   }
 
@@ -490,17 +489,6 @@
     if (options.styleControls !== false) Kroki.StyleManager?.syncControls?.();
   }
 
-  function syncRoadIntersections(shouldSync, options = {}) {
-    if (!shouldSync || options.roadIntersections === false) return;
-    const engine = Kroki.RoadIntersectionEngine;
-    try {
-      if (typeof engine?.scheduleRefresh === "function") engine.scheduleRefresh();
-      else engine?.refresh?.();
-    } catch (error) {
-      if (window.console?.warn) console.warn("Road intersection refresh skipped", error);
-    }
-  }
-
   function updateModel(id, updater, options = {}) {
     return withHistory(options, "Nesne guncelle", () => updateModelRaw(id, updater, options));
   }
@@ -513,7 +501,6 @@
     objectMap.set(id, normalized);
     renderObject(id);
     syncDependents(options);
-    syncRoadIntersections(normalized.type === "road", options);
     return normalized;
   }
 
@@ -527,7 +514,6 @@
     mutator(model);
     renderGeometry(id);
     syncDependents({ styleControls: false, ...options });
-    syncRoadIntersections(model.type === "road", options);
     return model;
   }
 
@@ -555,7 +541,6 @@
 
   function removeRaw(id) {
     const element = elementMap.get(id);
-    const wasRoad = objectMap.get(id)?.type === "road";
     removeLabelArtifacts(id);
     element?.remove();
     elementMap.delete(id);
@@ -564,7 +549,6 @@
     styleManager.cleanupDefs?.(canvas);
     if (Kroki.SelectionManager?.getActiveId?.() === id) Kroki.SelectionManager.clear();
     if (Kroki.MultiSelectManager?.getSelectedIds?.().includes(id)) Kroki.MultiSelectManager.sync();
-    syncRoadIntersections(wasRoad);
     return Boolean(element);
   }
 
@@ -682,7 +666,6 @@
       Kroki.GroupManager?.clear?.();
       styleManager.cleanupDefs?.(canvas);
       syncDependents(options);
-      syncRoadIntersections(true, options);
       return true;
     });
   }
@@ -692,7 +675,6 @@
       clear({ skipHistory: true, controlPoints: false, styleControls: false });
       (Array.isArray(models) ? models : []).forEach((model) => addRaw(model, { skipHistory: true }));
       syncDependents(options);
-      syncRoadIntersections((Array.isArray(models) ? models : []).some((model) => model?.type === "road"), options);
       return getAll();
     });
   }

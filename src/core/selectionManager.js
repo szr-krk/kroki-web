@@ -100,6 +100,7 @@
     const point = utils.pointFromEvent(manager.canvas, event);
     const model = getActiveModel();
     const adapter = manager.getAdapter(model);
+    if (model?.type === "road") Kroki.RoadIntersectionEngine?.setSuspended?.(true);
     drag = {
       type,
       pointerId: event.pointerId,
@@ -253,9 +254,14 @@
       const adapter = manager.getAdapter(model);
       if (adapter?.handleEditTap?.(model, drag.editTapPoint)) sync();
     }
-    if (drag.moved) Kroki.HistoryManager?.commit?.(drag.transaction, drag.type === "control" ? "Geometri duzenle" : "Nesne tasi");
+    const wasRoadDrag = getActiveModel()?.type === "road";
+    if (drag.moved && drag.transaction) Kroki.HistoryManager?.commit?.(drag.transaction, drag.type === "control" ? "Geometri duzenle" : "Nesne tasi");
     drag = null;
     if (shouldClear) clear();
+    if (wasRoadDrag) {
+      Kroki.RoadIntersectionEngine?.setSuspended?.(false);
+      Kroki.StyleManager?.syncControls?.();
+    }
   }
 
   function cancelDrag() {

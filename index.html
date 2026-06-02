@@ -353,6 +353,32 @@
               value="50" inputmode="numeric" aria-label="Serit genisligi">
             <button id="btnRoadLaneWidthMinus" class="road-ip-stepper-btn" type="button" aria-label="Serit genisligini azalt">-</button>
           </div>
+          <button id="btnRoadProfileIp" class="side-ip-btn side-ip-tool road-ip-icon-btn road-global-control" type="button"
+            aria-label="Yol profili" title="Yol profili">
+            <span id="lblRoadProfileIp" class="side-ip-text-mark">D</span>
+          </button>
+          <div id="roadSCurveControlIp" class="road-ip-stepper road-global-control gizli" aria-label="S viraj kontrol noktasi">
+            <button id="btnRoadSCurveControlPlus" class="road-ip-stepper-btn" type="button" aria-label="S viraj kontrol noktasini arttir">+</button>
+            <input id="roadSCurveControlCountIpInput" class="road-ip-stepper-number" type="number" min="2" max="5" step="1"
+              value="2" inputmode="numeric" aria-label="S viraj kontrol noktasi">
+            <button id="btnRoadSCurveControlMinus" class="road-ip-stepper-btn" type="button" aria-label="S viraj kontrol noktasini azalt">-</button>
+          </div>
+          <button id="btnRoadXAxisSymmetryIp" class="side-ip-btn side-ip-tool road-ip-icon-btn road-global-control road-symmetry-control" type="button"
+            aria-label="Yolu X eksenine gore yansit" title="X ekseni simetrisi">
+            <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
+              <path d="M0 19L40 19L40 0L0 19" fill="currentColor"></path>
+              <path d="M0 21L40 21L40 40Z" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linejoin="round"></path>
+            </svg>
+          </button>
+          <button id="btnRoadYAxisSymmetryIp" class="side-ip-btn side-ip-tool road-ip-icon-btn road-global-control road-symmetry-control" type="button"
+            aria-label="Yolu Y eksenine gore yansit" title="Y ekseni simetrisi">
+            <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
+              <path d="M21 0L21 40L40 40L21 0" fill="currentColor"></path>
+              <path d="M19 0L19 40L0 40Z" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linejoin="round"></path>
+            </svg>
+          </button>
           <div class="road-boundary-shortcuts road-lane-only-control gizli" aria-label="Serit cizgileri">
             <button id="btnRoadUpperLinePanel" class="side-ip-btn side-ip-tool road-ip-icon-btn" type="button"
               aria-label="Ust cizgi" title="Ust cizgi">
@@ -915,13 +941,15 @@
           </div>
           <div class="editor-library-body road-builder" id="roadBuilderPanel">
             <div class="road-builder-stack">
-              <div class="road-builder-choice-group" role="radiogroup" aria-label="Yol profili">
+              <div class="road-builder-choice-group is-four" role="radiogroup" aria-label="Yol profili">
                 <button class="road-builder-choice is-active" type="button" role="radio" aria-checked="true"
                   data-road-profile="straight">Duz</button>
                 <button class="road-builder-choice" type="button" role="radio" aria-checked="false"
                   data-road-profile="arc">Viraj</button>
                 <button class="road-builder-choice" type="button" role="radio" aria-checked="false"
                   data-road-profile="sCurve">S viraj</button>
+                <button class="road-builder-choice" type="button" role="radio" aria-checked="false"
+                  data-road-profile="islandRing">Ada</button>
               </div>
               <div class="road-builder-choice-group is-two" role="radiogroup" aria-label="Yol yerlesimi">
                 <button class="road-builder-choice is-active" type="button" role="radio" aria-checked="true"
@@ -1029,7 +1057,7 @@
   <script src="src/adapters/closedShapeAdapter.js"></script>
   <script src="src/adapters/calloutAdapter.js"></script>
   <script src="src/adapters/roadAdapter.js"></script>
-  <script src="src/geometry/roadIntersectionEngine.js"></script>
+  <script src="src/core/roadIntersectionEngine.js"></script>
   <script src="src/adapters/textAdapter.js"></script>
   <script src="src/ui/editorTextComposer.js"></script>
   <script src="src/ui/editorBindings.js"></script>
