@@ -26,8 +26,9 @@
     return safe || fallback || generateId();
   }
 
-  function isObjectChild(id) {
-    return Boolean(Kroki.EditorObjectManager?.get?.(id));
+  function canGroupObject(id) {
+    const model = Kroki.EditorObjectManager?.get?.(id);
+    return Boolean(model && model.type !== "road");
   }
 
   function isGroupChild(id) {
@@ -35,11 +36,11 @@
   }
 
   function childExists(id) {
-    return isObjectChild(id) || isGroupChild(id);
+    return canGroupObject(id) || isGroupChild(id);
   }
 
   function leafIdsForChild(childId, seen = new Set()) {
-    if (isObjectChild(childId)) return [childId];
+    if (canGroupObject(childId)) return [childId];
     const group = groups.get(childId);
     if (!group || seen.has(childId)) return [];
     seen.add(childId);
@@ -266,7 +267,7 @@
       const children = [];
       draft.children.forEach((childId) => {
         let resolvedId = "";
-        if (isObjectChild(childId)) resolvedId = childId;
+        if (canGroupObject(childId)) resolvedId = childId;
         else if (draftMap.has(childId) && resolveDraft(childId)) resolvedId = childId;
         if (!resolvedId || resolvedId === id || seenChildren.has(resolvedId)) return;
         seenChildren.add(resolvedId);
@@ -301,7 +302,7 @@
     const source = getRaw(groupId);
     if (!source) return null;
     const children = source.children.map((id) => {
-      if (isObjectChild(id)) return idMap?.get?.(id);
+      if (canGroupObject(id)) return idMap?.get?.(id);
       if (isGroupChild(id)) return cloneGroup(id, idMap, options, false)?.id;
       return "";
     }).filter(Boolean);
@@ -331,6 +332,7 @@
     getLeafObjectIds,
     getDescendantGroupIds,
     groupForObject,
+    canGroupObject,
     has(id) {
       return groups.has(id);
     }

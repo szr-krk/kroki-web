@@ -23,6 +23,21 @@
   const MIN_ISLAND_INNER_DIAMETER = 20;
   const MIN_ISLAND_LANE_WIDTH = 10;
   const MAX_ISLAND_DIAMETER = 1600;
+  const DEFAULT_BARRIER_SPACING = 42;
+  const MIN_BARRIER_SPACING = 18;
+  const MAX_BARRIER_SPACING = 180;
+  const MAX_BARRIERS_PER_SIDE = 2;
+  const BARRIER_DEPTH = 8;
+  const BARRIER_TOP_WIDTH = 4;
+  const BARRIER_POST_WIDTH = 3;
+  const BARRIER_HIT_TOLERANCE = 16;
+  const BARRIER_EDGE_ORDER = ["rightOuter", "rightInner", "leftInner", "leftOuter"];
+  const BARRIER_END_CAP_STATES = [
+    { start: false, end: false },
+    { start: false, end: true },
+    { start: true, end: false },
+    { start: true, end: true }
+  ];
 
   const DEFAULT_ROAD_CONFIG = {
     version: 1,
@@ -39,6 +54,7 @@
     marking: { style: "dash", width: 2 },
     edgeLine: { enabled: true, width: 2 },
     boundaryStyles: {},
+    barriers: [],
     autoIntersection: true,
     bridge: false,
     segments: [{ from: 0, to: 1, markingStyle: "dash" }]
@@ -531,11 +547,150 @@
       .filter(Boolean));
   }
 
+  function barrierSide(value) {
+    return value === "left" ? "left" : "right";
+  }
+
+  function barrierEdge(value, sideFallback = "right") {
+    if (BARRIER_EDGE_ORDER.includes(value)) return value;
+    return barrierSide(sideFallback) === "left" ? "leftOuter" : "rightOuter";
+  }
+
+  function barrierEdgeSide(edgeKey) {
+    return edgeKey === "leftOuter" || edgeKey === "rightInner" ? "left" : "right";
+  }
+
+  function mirrorBarrierEdge(edgeKey) {
+    if (edgeKey === "rightOuter") return "leftOuter";
+    if (edgeKey === "leftOuter") return "rightOuter";
+    if (edgeKey === "rightInner") return "leftInner";
+    if (edgeKey === "leftInner") return "rightInner";
+    return edgeKey;
+  }
+
+  function barrierEdgeSortValue(edgeKey) {
+    if (edgeKey === "rightOuter") return 0;
+    if (edgeKey === "rightInner") return 1;
+    if (edgeKey === "leftInner") return 2;
+    if (edgeKey === "leftOuter") return 3;
+    return 4;
+  }
+
+  function barrierEdgeTitle(edgeKey, divided = false) {
+    if (!divided) return barrierEdgeSide(edgeKey) === "left" ? "sol" : "sag";
+    if (edgeKey === "rightOuter") return "gidis sag";
+    if (edgeKey === "rightInner") return "gidis sol";
+    if (edgeKey === "leftInner") return "donus sag";
+    if (edgeKey === "leftOuter") return "donus sol";
+    return barrierEdgeSide(edgeKey) === "left" ? "sol" : "sag";
+  }
+
+  function barrierSpacing(value) {
+    return clampInt(value, MIN_BARRIER_SPACING, MAX_BARRIER_SPACING, DEFAULT_BARRIER_SPACING);
+  }
+
+  function barrierId(value, fallback) {
+    const safe = String(value || "")
+      .replace(/[^a-zA-Z0-9_-]/g, "_")
+      .replace(/^([^a-zA-Z_])/, "_$1")
+      .slice(0, 80);
+    return safe || fallback;
+  }
+
+  function boundaryForBarrierEdge(config, edgeKey) {
+    const cleanEdge = barrierEdge(edgeKey);
+    const section = crossSection(config);
+    if (!section.boundaries.length) return null;
+    if (cleanEdge === "leftOuter") {
+      const boundary = section.boundaries[section.boundaries.length - 1];
+      return boundary ? { ...boundary, key: "end", edgeKey: cleanEdge, side: "left" } : null;
+    }
+    if (cleanEdge === "rightOuter") {
+      const boundary = section.boundaries[0];
+      return boundary ? { ...boundary, key: "start", edgeKey: cleanEdge, side: "right" } : null;
+    }
+    if (!config.divided) return null;
+    if (cleanEdge === "rightInner") {
+      const innerShoulder = section.sections.find((item) => item.role === "innerShoulder" && item.side === "right");
+      const rightLanes = section.sections.filter((item) => item.role === "lane" && item.side === "right");
+      const rightLane = rightLanes[rightLanes.length - 1];
+      const target = innerShoulder || rightLane;
+      const boundary = section.boundaries.find((item) => item.id === target?.endBoundaryId);
+      return boundary ? { ...boundary, key: "end", edgeKey: cleanEdge, side: "left" } : null;
+    }
+    if (cleanEdge === "leftInner") {
+      const innerShoulder = section.sections.find((item) => item.role === "innerShoulder" && item.side === "left");
+      const leftLane = section.sections.find((item) => item.role === "lane" && item.side === "left");
+      const target = innerShoulder || leftLane;
+      const boundary = section.boundaries.find((item) => item.id === target?.startBoundaryId);
+      return boundary ? { ...boundary, key: "start", edgeKey: cleanEdge, side: "right" } : null;
+    }
+    return null;
+  }
+
+  function outerBoundaryForSide(config, side) {
+    return boundaryForBarrierEdge(config, barrierSide(side) === "left" ? "leftOuter" : "rightOuter");
+  }
+
+  function normalizeBarrierFreePoint(value, fallback) {
+    return point(value, fallback);
+  }
+
+  function normalizeBarrierFree(source = {}) {
+    source = source && typeof source === "object" ? source : {};
+    const start = normalizeBarrierFreePoint(source.start, { x: 0, y: 0 });
+    const end = normalizeBarrierFreePoint(source.end, start);
+    return {
+      start,
+      end,
+      c1: normalizeBarrierFreePoint(source.c1, lerp(start, end, 1 / 3)),
+      c2: normalizeBarrierFreePoint(source.c2, lerp(start, end, 2 / 3))
+    };
+  }
+
+  function normalizeBarrierEndCaps(source = {}) {
+    return {
+      start: boolOr(source?.start, false),
+      end: boolOr(source?.end, false)
+    };
+  }
+
+  function normalizeBarriers(source, config) {
+    const counters = Object.create(null);
+    return (Array.isArray(source) ? source : []).map((item, index) => {
+      const edgeKey = barrierEdge(item?.edgeKey || item?.edge, item?.side);
+      counters[edgeKey] = counters[edgeKey] || 0;
+      if (counters[edgeKey] >= MAX_BARRIERS_PER_SIDE) return null;
+      const boundary = boundaryForBarrierEdge(config, edgeKey);
+      if (!boundary) return null;
+      const side = boundary.side;
+      const rawFrom = clamp(numberOr(item?.from, 0), 0, 0.98);
+      const rawTo = clamp(numberOr(item?.to, 1), 0.02, 1);
+      const from = Math.min(rawFrom, rawTo - 0.02);
+      const to = Math.max(rawTo, from + 0.02);
+      counters[edgeKey] += 1;
+      return {
+        id: barrierId(item?.id, `barrier_${edgeKey}_${index + 1}`),
+        edgeKey,
+        side,
+        boundaryId: boundary.id,
+        boundaryKey: boundary.key,
+        sectionId: String(item?.sectionId || ""),
+        from: clamp(from, 0, 0.98),
+        to: clamp(to, 0.02, 1),
+        attached: boolOr(item?.attached, true),
+        spacing: barrierSpacing(item?.spacing),
+        endCaps: normalizeBarrierEndCaps(item?.endCaps),
+        free: item?.attached === false ? normalizeBarrierFree(item.free) : null
+      };
+    }).filter(Boolean);
+  }
+
   function normalizeRoadConfig(source = {}) {
     const base = DEFAULT_ROAD_CONFIG;
     const laneCount = clampInt(source.laneCount, 1, MAX_LANES, base.laneCount);
     const laneWidth = widthOr(source.laneWidth, base.laneWidth, 10, 180);
-    return {
+    const config = {
       version: 1,
       laneCount,
       laneWidth,
@@ -559,10 +714,13 @@
         width: widthOr(source.edgeLine?.width, base.edgeLine.width, 1, 16)
       },
       boundaryStyles: normalizeBoundaryStyles(source.boundaryStyles),
+      barriers: [],
       autoIntersection: boolOr(source.autoIntersection, base.autoIntersection),
       bridge: boolOr(source.bridge, base.bridge),
       segments: normalizeSegments(source.segments)
     };
+    config.barriers = normalizeBarriers(source.barriers, config);
+    return config;
   }
 
   function safeParseJson(text, fallback) {
@@ -593,6 +751,7 @@
       config.innerShoulder.enabled = false;
       config.waterChannel.enabled = false;
       config.barrier.enabled = false;
+      config.barriers = [];
     }
     return config;
   }
@@ -1006,6 +1165,478 @@
     }
   }
 
+  function selectedBarrierId(model) {
+    return String(model?.metadata?.roadBarrierEdit?.id || "");
+  }
+
+  function barrierById(config, id) {
+    return (config.barriers || []).find((item) => item.id === id) || null;
+  }
+
+  function sideOutwardSign(side) {
+    return side === "left" ? 1 : -1;
+  }
+
+  function barrierBoundary(config, barrier) {
+    const edgeKey = barrierEdge(barrier?.edgeKey || barrier?.edge, barrier?.side);
+    const boundary = boundaryForBarrierEdge(config, edgeKey);
+    return boundary ? { ...boundary, edgeKey, side: boundary.side } : null;
+  }
+
+  function cubicPointAt(free, t) {
+    const p01 = lerp(free.start, free.c1, t);
+    const p12 = lerp(free.c1, free.c2, t);
+    const p23 = lerp(free.c2, free.end, t);
+    return lerp(lerp(p01, p12, t), lerp(p12, p23, t), t);
+  }
+
+  function cubicTangentAt(free, t) {
+    return {
+      x: 3 * (1 - t) * (1 - t) * (free.c1.x - free.start.x)
+        + 6 * (1 - t) * t * (free.c2.x - free.c1.x)
+        + 3 * t * t * (free.end.x - free.c2.x),
+      y: 3 * (1 - t) * (1 - t) * (free.c1.y - free.start.y)
+        + 6 * (1 - t) * t * (free.c2.y - free.c1.y)
+        + 3 * t * t * (free.end.y - free.c2.y)
+    };
+  }
+
+  function tangentNormal(tangent) {
+    const length = Math.hypot(tangent.x, tangent.y) || 1;
+    return {
+      tangent: { x: tangent.x / length, y: tangent.y / length },
+      normal: { x: -tangent.y / length, y: tangent.x / length }
+    };
+  }
+
+  function barrierAttachedSample(model, barrier, boundary, t) {
+    const tangent = tangentAt(model, t);
+    const axes = tangentNormal(tangent);
+    const base = offsetPointAt(model, t, boundary.offset);
+    const sign = sideOutwardSign(barrier.side);
+    return {
+      t,
+      base,
+      top: {
+        x: base.x + axes.normal.x * sign * BARRIER_DEPTH,
+        y: base.y + axes.normal.y * sign * BARRIER_DEPTH
+      },
+      tangent: axes.tangent
+    };
+  }
+
+  function freeFromAttached(model, barrier, boundary) {
+    const start = barrierAttachedSample(model, barrier, boundary, barrier.from).base;
+    const end = barrierAttachedSample(model, barrier, boundary, barrier.to).base;
+    const c1 = barrierAttachedSample(model, barrier, boundary, barrier.from + (barrier.to - barrier.from) / 3).base;
+    const c2 = barrierAttachedSample(model, barrier, boundary, barrier.from + 2 * (barrier.to - barrier.from) / 3).base;
+    return { start, end, c1, c2 };
+  }
+
+  function barrierFreeSample(barrier, t) {
+    const free = normalizeBarrierFree(barrier.free);
+    const axes = tangentNormal(cubicTangentAt(free, t));
+    const base = cubicPointAt(free, t);
+    const sign = sideOutwardSign(barrier.side);
+    return {
+      t,
+      base,
+      top: {
+        x: base.x + axes.normal.x * sign * BARRIER_DEPTH,
+        y: base.y + axes.normal.y * sign * BARRIER_DEPTH
+      },
+      tangent: axes.tangent
+    };
+  }
+
+  function barrierSample(model, barrier, boundary, t) {
+    return barrier.attached
+      ? barrierAttachedSample(model, barrier, boundary, barrier.from + (barrier.to - barrier.from) * t)
+      : barrierFreeSample(barrier, t);
+  }
+
+  function barrierSamples(model, barrier, boundary, count = 72) {
+    return Array.from({ length: count + 1 }, (_, index) => barrierSample(model, barrier, boundary, index / count));
+  }
+
+  function sampleLength(samples, key = "base") {
+    let total = 0;
+    for (let index = 0; index < samples.length - 1; index += 1) {
+      const a = samples[index][key];
+      const b = samples[index + 1][key];
+      total += Math.hypot(b.x - a.x, b.y - a.y);
+    }
+    return total;
+  }
+
+  function sampleAtDistance(samples, distance, key = "base") {
+    if (!samples.length) return null;
+    if (distance <= 0) return samples[0];
+    let walked = 0;
+    for (let index = 0; index < samples.length - 1; index += 1) {
+      const a = samples[index];
+      const b = samples[index + 1];
+      const segmentLength = Math.hypot(b[key].x - a[key].x, b[key].y - a[key].y);
+      if (walked + segmentLength >= distance) {
+        const ratio = segmentLength > 0 ? (distance - walked) / segmentLength : 0;
+        return {
+          t: a.t + (b.t - a.t) * ratio,
+          base: lerp(a.base, b.base, ratio),
+          top: lerp(a.top, b.top, ratio),
+          tangent: tangentNormal(lerp(a.tangent, b.tangent, ratio)).tangent
+        };
+      }
+      walked += segmentLength;
+    }
+    return samples[samples.length - 1];
+  }
+
+  function barrierPostSamples(samples, spacing) {
+    const total = sampleLength(samples);
+    if (total <= 0) return [];
+    const cleanSpacing = barrierSpacing(spacing);
+    const count = Math.max(1, Math.floor(total / cleanSpacing));
+    const distances = Array.from({ length: count + 1 }, (_, index) => total * index / count);
+    return distances.map((distance) => sampleAtDistance(samples, distance)).filter(Boolean);
+  }
+
+  function topPathData(samples, posts = [], endCaps = {}) {
+    if (!samples.length) return "";
+    const caps = normalizeBarrierEndCaps(endCaps);
+    if (posts.length > 4) {
+      const startRamp = posts[1];
+      const endRamp = posts[posts.length - 2];
+      const firstRail = posts[2];
+      const lastRail = posts[posts.length - 3];
+      const railStart = caps.start ? firstRail : samples[0];
+      const railEnd = caps.end ? lastRail : samples[samples.length - 1];
+      const rail = samples
+        .filter((sample) => sample.t > railStart.t && sample.t < railEnd.t)
+        .map((sample) => sample.top);
+      return pathFromPoints([
+        ...(caps.start ? [startRamp.base] : []),
+        railStart.top,
+        ...rail,
+        railEnd.top,
+        ...(caps.end ? [endRamp.base] : [])
+      ]);
+    }
+    return pathFromPoints([
+      ...(caps.start ? [samples[0].base] : []),
+      ...samples.map((sample) => sample.top),
+      ...(caps.end ? [samples[samples.length - 1].base] : [])
+    ]);
+  }
+
+  function postsPathData(posts, endCaps = {}) {
+    const caps = normalizeBarrierEndCaps(endCaps);
+    if (posts.length <= 4) {
+      const endpointPosts = [
+        ...(!caps.start && posts[0] ? [posts[0]] : []),
+        ...(!caps.end && posts[posts.length - 1] ? [posts[posts.length - 1]] : [])
+      ];
+      return endpointPosts.map((post) => {
+        return `M ${formatPoint(post.top)} L ${formatPoint(post.base)}`;
+      }).join(" ");
+    }
+    const startIndex = caps.start ? 2 : 0;
+    const endIndex = caps.end ? posts.length - 2 : posts.length;
+    return posts.slice(startIndex, endIndex).map((post) => {
+      return `M ${formatPoint(post.top)} L ${formatPoint(post.base)}`;
+    }).join(" ");
+  }
+
+  function addBarrierStroke(parent, className, d, width, attrs = {}) {
+    const path = addPath(parent, className, d, attrs);
+    if (!path) return null;
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", ROAD_LINE_COLOR);
+    path.setAttribute("stroke-width", String(width));
+    path.setAttribute("stroke-linecap", "butt");
+    path.setAttribute("stroke-linejoin", "miter");
+    path.setAttribute("vector-effect", "none");
+    path.style.setProperty("vector-effect", "none");
+    return path;
+  }
+
+  function renderBarrier(model, parent, config, barrier) {
+    const boundary = barrierBoundary(config, barrier);
+    if (!boundary) return;
+    const group = utils.createSvgElement("g", {
+      class: "editor-road-barrier" + (selectedBarrierId(model) === barrier.id ? " is-selected" : ""),
+      "data-road-barrier-id": barrier.id,
+      "data-road-barrier-edge": barrier.edgeKey || barrierEdge(barrier.edgeKey, barrier.side),
+      "data-road-barrier-side": barrier.side
+    });
+    const samples = barrierSamples(model, barrier, boundary);
+    const posts = barrierPostSamples(samples, barrier.spacing);
+    if (selectedBarrierId(model) === barrier.id) {
+      addBarrierStroke(group, "editor-road-barrier-selected", topPathData(samples, posts, barrier.endCaps), BARRIER_TOP_WIDTH + 9);
+    }
+    addBarrierStroke(group, "editor-road-barrier-top", topPathData(samples, posts, barrier.endCaps), BARRIER_TOP_WIDTH);
+    addBarrierStroke(group, "editor-road-barrier-posts", postsPathData(posts, barrier.endCaps), BARRIER_POST_WIDTH);
+    parent.append(group);
+  }
+
+  function renderBarriers(model, element, config) {
+    (config.barriers || []).forEach((barrier) => renderBarrier(model, element, config, barrier));
+  }
+
+  function distanceToSamples(pointValue, samples, key = "base") {
+    let best = Infinity;
+    for (let index = 0; index < samples.length - 1; index += 1) {
+      best = Math.min(best, lineGeometry.distanceToSegment(samples[index][key], samples[index + 1][key], pointValue));
+    }
+    return best;
+  }
+
+  function barrierHitInfo(model, pointValue, tolerance = BARRIER_HIT_TOLERANCE) {
+    const config = roadConfig(model);
+    const hitTolerance = Math.max(BARRIER_HIT_TOLERANCE, tolerance);
+    let best = null;
+    (config.barriers || []).forEach((barrier) => {
+      const boundary = barrierBoundary(config, barrier);
+      if (!boundary) return;
+      const samples = barrierSamples(model, barrier, boundary, 48);
+      const distance = Math.min(distanceToSamples(pointValue, samples, "base"), distanceToSamples(pointValue, samples, "top"));
+      if (distance <= hitTolerance && (!best || distance < best.distance)) {
+        best = { barrier, distance };
+      }
+    });
+    return best;
+  }
+
+  function selectedBarrierInfo(model) {
+    const id = selectedBarrierId(model);
+    if (!id) return null;
+    const config = roadConfig(model);
+    const barrier = barrierById(config, id);
+    if (!barrier) return null;
+    const edgeKey = barrierEdge(barrier.edgeKey, barrier.side);
+    const boundary = barrierBoundary(config, barrier);
+    return {
+      ...barrier,
+      edgeKey,
+      side: boundary?.side || barrier.side,
+      title: barrierEdgeTitle(edgeKey, config.divided),
+      endCaps: normalizeBarrierEndCaps(barrier.endCaps),
+      boundary
+    };
+  }
+
+  function outerBarrierTargets(model, sectionInfo = selectedSectionInfo(model)) {
+    if (!sectionInfo || isIslandGeometry(model?.geometry)) return [];
+    if (sectionInfo.role !== "lane" && sectionInfo.role !== "shoulder" && sectionInfo.role !== "innerShoulder") return [];
+    const config = roadConfig(model);
+    const targets = [];
+    function pushTarget(edgeKey, boundaryKey) {
+      const boundary = boundaryForBarrierEdge(config, edgeKey);
+      const selectedBoundaryId = boundaryKey === "end" ? sectionInfo.endBoundaryId : sectionInfo.startBoundaryId;
+      if (!boundary || selectedBoundaryId !== boundary.id) return;
+      targets.push({
+        edgeKey,
+        side: boundary.side,
+        title: barrierEdgeTitle(edgeKey, config.divided),
+        boundaryId: boundary.id,
+        boundaryKey,
+        sectionId: sectionInfo.sectionId,
+        count: (config.barriers || []).filter((barrier) => barrierEdge(barrier.edgeKey, barrier.side) === edgeKey).length
+      });
+    }
+    pushTarget("rightOuter", "start");
+    if (config.divided) {
+      pushTarget("rightInner", "end");
+      pushTarget("leftInner", "start");
+    }
+    pushTarget("leftOuter", "end");
+    return targets.map((target) => ({
+      ...target,
+      remaining: Math.max(0, MAX_BARRIERS_PER_SIDE - target.count)
+    }));
+  }
+
+  function nextBarrierTarget(model, sectionInfo = selectedSectionInfo(model)) {
+    return outerBarrierTargets(model, sectionInfo)
+      .filter((target) => target.remaining > 0)
+      .sort((a, b) => a.count - b.count || barrierEdgeSortValue(a.edgeKey) - barrierEdgeSortValue(b.edgeKey))[0] || null;
+  }
+
+  function generateBarrierId(config, edgeKey) {
+    const used = new Set((config.barriers || []).map((barrier) => barrier.id));
+    let index = 1;
+    let id = "";
+    do {
+      id = `barrier_${edgeKey}_${Date.now().toString(36)}_${index}`;
+      index += 1;
+    } while (used.has(id));
+    return id;
+  }
+
+  function addBarrierToConfig(model, config, sectionInfo = selectedSectionInfo(model)) {
+    const target = nextBarrierTarget(model, sectionInfo);
+    if (!target) return null;
+    const barrier = {
+      id: generateBarrierId(config, target.edgeKey),
+      edgeKey: target.edgeKey,
+      side: target.side,
+      boundaryId: target.boundaryId,
+      boundaryKey: target.boundaryKey,
+      sectionId: target.sectionId,
+      from: 0,
+      to: 1,
+      attached: true,
+      spacing: DEFAULT_BARRIER_SPACING,
+      endCaps: { start: false, end: false },
+      free: null
+    };
+    config.barriers = normalizeBarriers([...(config.barriers || []), barrier], config);
+    model.metadata = {
+      ...(model.metadata || {}),
+      roadBarrierEdit: { id: barrier.id },
+      roadSelection: {
+        sectionId: target.sectionId,
+        laneId: sectionInfo?.laneId || "",
+        role: sectionInfo?.role || "",
+        startBoundaryId: sectionInfo?.startBoundaryId || "",
+        endBoundaryId: sectionInfo?.endBoundaryId || "",
+        startBoundaryRole: sectionInfo?.startBoundaryRole || "",
+        endBoundaryRole: sectionInfo?.endBoundaryRole || ""
+      }
+    };
+    delete model.metadata.roadBoundaryEdit;
+    return barrier;
+  }
+
+  function updateBarrier(config, barrierId, mutator) {
+    const barriers = (config.barriers || []).map((barrier) => {
+      if (barrier.id !== barrierId) return barrier;
+      const next = utils.clonePlain(barrier);
+      mutator(next);
+      return next;
+    });
+    config.barriers = normalizeBarriers(barriers, config);
+  }
+
+  function setBarrierAttached(model, config, barrierId, attached) {
+    updateBarrier(config, barrierId, (barrier) => {
+      barrier.attached = Boolean(attached);
+      if (barrier.attached) {
+        barrier.free = null;
+        return;
+      }
+      const boundary = barrierBoundary(config, barrier);
+      barrier.free = boundary ? freeFromAttached(model, barrier, boundary) : normalizeBarrierFree(barrier.free);
+    });
+  }
+
+  function setBarrierSpacing(config, barrierId, spacing) {
+    updateBarrier(config, barrierId, (barrier) => {
+      barrier.spacing = barrierSpacing(spacing);
+    });
+  }
+
+  function barrierEndCapStateIndex(endCaps) {
+    const caps = normalizeBarrierEndCaps(endCaps);
+    const index = BARRIER_END_CAP_STATES.findIndex((state) => (
+      state.start === caps.start && state.end === caps.end
+    ));
+    return Math.max(0, index);
+  }
+
+  function cycleBarrierEndCaps(config, barrierId) {
+    const id = String(barrierId || "");
+    if (!id) return false;
+    let updated = false;
+    updateBarrier(config, id, (barrier) => {
+      const currentIndex = barrierEndCapStateIndex(barrier.endCaps);
+      barrier.endCaps = BARRIER_END_CAP_STATES[(currentIndex + 1) % BARRIER_END_CAP_STATES.length];
+      updated = true;
+    });
+    return updated;
+  }
+
+  function removeBarrierFromConfig(model, config, barrierId = selectedBarrierId(model)) {
+    const id = String(barrierId || "");
+    if (!id) return false;
+    const barriers = config.barriers || [];
+    const nextBarriers = barriers.filter((barrier) => barrier.id !== id);
+    if (nextBarriers.length === barriers.length) return false;
+    config.barriers = normalizeBarriers(nextBarriers, config);
+    const metadata = { ...(model.metadata || {}) };
+    if (metadata.roadBarrierEdit?.id === id) delete metadata.roadBarrierEdit;
+    model.metadata = metadata;
+    return true;
+  }
+
+  function clearBarrierSelection(model) {
+    const metadata = { ...(model.metadata || {}) };
+    delete metadata.roadBarrierEdit;
+    model.metadata = metadata;
+  }
+
+  function selectedBarrierControlPoints(model, metrics, mode) {
+    if (mode !== "edit") return [];
+    const info = selectedBarrierInfo(model);
+    if (!info) return [];
+    const config = roadConfig(model);
+    const boundary = barrierBoundary(config, info);
+    if (!boundary) return [];
+    if (info.attached) {
+      const from = barrierAttachedSample(model, info, boundary, info.from);
+      const to = barrierAttachedSample(model, info, boundary, info.to);
+      return [
+        { id: `barrier:${info.id}:from`, ...from.base, role: "road-barrier", cursor: "grab" },
+        { id: `barrier:${info.id}:to`, ...to.base, role: "road-barrier", cursor: "grab" }
+      ];
+    }
+    const free = normalizeBarrierFree(info.free || freeFromAttached(model, info, boundary));
+    return [
+      { id: `barrier:${info.id}:from`, ...free.start, role: "road-barrier", cursor: "grab" },
+      { id: `barrier:${info.id}:to`, ...free.end, role: "road-barrier", cursor: "grab" },
+      { id: `barrier:${info.id}:c1`, ...free.c1, role: "road-barrier-free", cursor: "grab" },
+      { id: `barrier:${info.id}:c2`, ...free.c2, role: "road-barrier-free", cursor: "grab" }
+    ];
+  }
+
+  function parseBarrierControlId(cpId) {
+    const match = /^barrier:([^:]+):(from|to|c1|c2)$/.exec(String(cpId || ""));
+    return match ? { id: match[1], key: match[2] } : null;
+  }
+
+  function moveBarrierControlPoint(model, cpId, worldPoint, modifiers = {}) {
+    const parsed = parseBarrierControlId(cpId);
+    if (!parsed) return false;
+    const config = roadConfig(model);
+    const barrier = barrierById(config, parsed.id);
+    if (!barrier) return true;
+    if (barrier.attached) {
+      const pathLength = Math.max(1, centerlineLength(model));
+      const unit = modifiers.metrics?.unit || 1;
+      const minGap = clamp(unit * 24 / pathLength, 0.01, 0.08);
+      const t = parameterAtPoint(model, worldPoint);
+      updateBarrier(config, parsed.id, (draft) => {
+        if (parsed.key === "from") draft.from = clamp(t, 0, draft.to - minGap);
+        if (parsed.key === "to") draft.to = clamp(t, draft.from + minGap, 1);
+      });
+    } else {
+      updateBarrier(config, parsed.id, (draft) => {
+        const boundary = barrierBoundary(config, draft);
+        const free = normalizeBarrierFree(draft.free || (boundary ? freeFromAttached(model, draft, boundary) : null));
+        if (parsed.key === "from") free.start = { x: worldPoint.x, y: worldPoint.y };
+        if (parsed.key === "to") free.end = { x: worldPoint.x, y: worldPoint.y };
+        if (parsed.key === "c1") free.c1 = { x: worldPoint.x, y: worldPoint.y };
+        if (parsed.key === "c2") free.c2 = { x: worldPoint.x, y: worldPoint.y };
+        draft.free = free;
+      });
+    }
+    model.metadata = {
+      ...(model.metadata || {}),
+      road: config,
+      roadBarrierEdit: { id: parsed.id }
+    };
+    return true;
+  }
+
   function segmentBoundaryControlPoints(model, metrics, mode) {
     if (mode !== "edit") return [];
     const config = roadConfig(model);
@@ -1150,6 +1781,11 @@
       right: leftLaneWidths.slice().reverse()
     };
     config.boundaryStyles = boundaryStyles;
+    config.barriers = normalizeBarriers((config.barriers || []).map((barrier) => ({
+      ...barrier,
+      edgeKey: mirrorBarrierEdge(barrierEdge(barrier.edgeKey, barrier.side)),
+      side: barrierEdgeSide(mirrorBarrierEdge(barrierEdge(barrier.edgeKey, barrier.side)))
+    })), config);
     return config;
   }
 
@@ -1173,8 +1809,21 @@
       ...(model.metadata || {}),
       road: mirrorRoadConfig(roadConfig(model))
     };
+    metadata.road.barriers = normalizeBarriers((metadata.road.barriers || []).map((barrier) => {
+      if (barrier.attached || !barrier.free) return barrier;
+      return {
+        ...barrier,
+        free: {
+          start: reflectPointAcrossAxis(barrier.free.start, axis, axisValue),
+          end: reflectPointAcrossAxis(barrier.free.end, axis, axisValue),
+          c1: reflectPointAcrossAxis(barrier.free.c1, axis, axisValue),
+          c2: reflectPointAcrossAxis(barrier.free.c2, axis, axisValue)
+        }
+      };
+    }), metadata.road);
     delete metadata.roadSelection;
     delete metadata.roadBoundaryEdit;
+    delete metadata.roadBarrierEdit;
     model.metadata = metadata;
     return model;
   }
@@ -1547,6 +2196,20 @@
   }
 
   function handleEditTap(model, pointValue) {
+    const barrierHit = barrierHitInfo(model, pointValue);
+    if (barrierHit?.barrier) {
+      Kroki.EditorObjectManager?.updateModel?.(model.id, (draft) => {
+        const config = roadConfig(draft);
+        const barrier = barrierById(config, barrierHit.barrier.id);
+        const section = barrier?.sectionId ? crossSection(config).sections.find((item) => item.id === barrier.sectionId) : null;
+        const metadata = { ...(draft.metadata || {}) };
+        metadata.roadBarrierEdit = { id: barrierHit.barrier.id };
+        delete metadata.roadBoundaryEdit;
+        if (section) metadata.roadSelection = sectionInfoFromSection(section);
+        return { ...draft, metadata };
+      }, { skipHistory: true });
+      return true;
+    }
     const section = sectionAtPoint(model, pointValue);
     const nextSelection = section ? {
       sectionId: section.sectionId,
@@ -1567,6 +2230,7 @@
         delete metadata.roadSelection;
         delete metadata.roadBoundaryEdit;
       }
+      delete metadata.roadBarrierEdit;
       return { ...draft, metadata };
     }, { skipHistory: true });
     return true;
@@ -1615,10 +2279,12 @@
       renderSelectedSection(model, element, section);
       section.boundaries.forEach((boundary) => addBoundaryLine(element, model, boundary, config));
       renderActiveBoundaryEdit(model, element, section, config);
+      renderBarriers(model, element, config);
       element.removeAttribute("transform");
     },
 
     hitTest(model, pointValue, tolerance) {
+      if (barrierHitInfo(model, pointValue, tolerance)) return true;
       if (isIslandGeometry(model?.geometry)) {
         const center = point(model.geometry.center);
         const radii = islandRadii(model.geometry);
@@ -1630,6 +2296,8 @@
     },
 
     getControlPoints(model, metrics, mode) {
+      const barrierPoints = selectedBarrierControlPoints(model, metrics, mode);
+      if (barrierPoints.length) return barrierPoints;
       if (isIslandGeometry(model?.geometry)) {
         const center = point(model.geometry.center);
         const radii = islandRadii(model.geometry);
@@ -1658,6 +2326,7 @@
     },
 
     moveControlPoint(model, cpId, worldPoint, modifiers = {}) {
+      if (moveBarrierControlPoint(model, cpId, worldPoint, modifiers)) return;
       if (isIslandGeometry(model?.geometry)) {
         if (cpId === "island-inner" || cpId === "island-outer") {
           const center = point(model.geometry.center);
@@ -1730,6 +2399,14 @@
     normalizeMarkingStyle,
     selectedSectionInfo,
     selectedLaneInfo: selectedSectionInfo,
+    selectedBarrierInfo,
+    barrierTargetsForSelection: outerBarrierTargets,
+    addBarrierToConfig,
+    setBarrierAttached,
+    setBarrierSpacing,
+    cycleBarrierEndCaps,
+    removeBarrierFromConfig,
+    clearBarrierSelection,
     sectionAtPoint,
     laneAtPoint: sectionAtPoint,
     setSectionWidth,

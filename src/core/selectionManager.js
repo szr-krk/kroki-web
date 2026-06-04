@@ -39,12 +39,14 @@
       if (!Kroki.MultiSelectManager?.hasSelection?.()) hidePanels();
       Kroki.StyleManager?.syncControls?.();
       setEditorState();
+      Kroki.MultiSelectManager?.syncControls?.();
       return;
     }
     showPanels();
     controlPoints.show(activeId, mode, { onControlPointDown: startControlPointDrag });
     Kroki.StyleManager?.syncControls?.();
     setEditorState();
+    Kroki.MultiSelectManager?.syncControls?.();
   }
 
   function resetPointEdit(id = activeId) {
@@ -53,12 +55,14 @@
     const shouldResetPointEdit = Boolean(model?.metadata?.pointEdit && adapter?.capabilities?.pointEdit);
     const shouldResetRoadSelection = Boolean(model?.metadata?.roadSelection && adapter?.capabilities?.roadObject);
     const shouldResetRoadBoundaryEdit = Boolean(model?.metadata?.roadBoundaryEdit && adapter?.capabilities?.roadObject);
-    if (!shouldResetPointEdit && !shouldResetRoadSelection && !shouldResetRoadBoundaryEdit) return;
+    const shouldResetRoadBarrierEdit = Boolean(model?.metadata?.roadBarrierEdit && adapter?.capabilities?.roadObject);
+    if (!shouldResetPointEdit && !shouldResetRoadSelection && !shouldResetRoadBoundaryEdit && !shouldResetRoadBarrierEdit) return;
     manager.updateModel(id, (draft) => {
       const metadata = { ...(draft.metadata || {}) };
       if (shouldResetPointEdit) metadata.pointEdit = false;
       if (shouldResetRoadSelection) delete metadata.roadSelection;
       if (shouldResetRoadBoundaryEdit) delete metadata.roadBoundaryEdit;
+      if (shouldResetRoadBarrierEdit) delete metadata.roadBarrierEdit;
       return { ...draft, metadata };
     }, { skipHistory: true, controlPoints: false, styleControls: false });
   }
@@ -268,6 +272,28 @@
     stopDrag({ pointerId: drag?.pointerId });
   }
 
+  function deleteSelectedBarrier() {
+    const model = getActiveModel();
+    const adapter = manager.getAdapter(model);
+    const barrier = adapter?.selectedBarrierInfo?.(model);
+    if (!barrier || typeof adapter?.removeBarrierFromConfig !== "function") return false;
+    manager.updateModel(model.id, (draft) => {
+      const draftAdapter = manager.getAdapter(draft);
+      const config = draftAdapter?.roadConfig?.(draft, draft.metadata?.road) || draft.metadata?.road || {};
+      const selected = draftAdapter?.selectedBarrierInfo?.(draft);
+      if (!draftAdapter?.removeBarrierFromConfig?.(draft, config, selected?.id || barrier.id)) return draft;
+      return {
+        ...draft,
+        metadata: {
+          ...(draft.metadata || {}),
+          road: draftAdapter?.roadConfig?.(draft, config) || config
+        }
+      };
+    }, { label: "Yol bariyeri sil" });
+    sync();
+    return true;
+  }
+
   function deleteActive(event) {
     event?.stopPropagation();
     event?.preventDefault();
@@ -277,6 +303,7 @@
       return;
     }
     if (!activeId) return;
+    if (deleteSelectedBarrier()) return;
     const id = activeId;
     clear();
     manager.remove(id);

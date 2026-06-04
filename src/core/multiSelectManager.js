@@ -33,6 +33,23 @@
     return manager.getAdapter(id);
   }
 
+  function canSelectId(id) {
+    const model = manager.get(id);
+    if (!model) return false;
+    return Kroki.GroupManager?.canGroupObject?.(id) ?? model.type !== "road";
+  }
+
+  function canSelectGroup(groupId) {
+    const group = Kroki.GroupManager?.get?.(groupId);
+    if (!group) return false;
+    const leaves = Kroki.GroupManager?.getLeafObjectIds?.(groupId) || group.children || [];
+    return leaves.length > 0 && leaves.every(canSelectId);
+  }
+
+  function activeSelectionIsRoad() {
+    return Kroki.SelectionManager?.getActiveModel?.()?.type === "road";
+  }
+
   function modelBounds(id) {
     const model = manager.get(id);
     const adapter = adapterFor(id);
@@ -342,6 +359,7 @@
 
   function syncControls() {
     const has = selectedIds.size > 0;
+    const disableMultiSelect = activeSelectionIsRoad();
     const hasActiveGroup = Boolean(activeGroupId);
     const groupedSelectionChildren = hasActiveGroup ? [] : groupingChildrenFromSelection();
     const hasGroupUnits = groupedSelectionChildren.some((id) => Kroki.GroupManager?.has?.(id));
@@ -353,9 +371,9 @@
     button?.classList.toggle("is-active", multiMode);
     button?.setAttribute("aria-pressed", String(multiMode));
     if (button) {
-      button.disabled = false;
-      button.setAttribute("aria-disabled", "false");
-      button.setAttribute("title", "Çoklu seç");
+      button.disabled = disableMultiSelect;
+      button.setAttribute("aria-disabled", String(disableMultiSelect));
+      button.setAttribute("title", disableMultiSelect ? "Yollar çoklu seçime dahil edilemez" : "Çoklu seç");
     }
     if (doneButton) {
       doneButton.disabled = false;
@@ -379,9 +397,9 @@
 
   function sync() {
     selectedIds.forEach((id) => {
-      if (!manager.get(id)) selectedIds.delete(id);
+      if (!canSelectId(id)) selectedIds.delete(id);
     });
-    if (activeGroupId && !Kroki.GroupManager?.has?.(activeGroupId)) activeGroupId = "";
+    if (activeGroupId && !canSelectGroup(activeGroupId)) activeGroupId = "";
     if (!selectedIds.size) {
       activeGroupId = "";
       removeSelectionElements();
@@ -436,9 +454,9 @@
   function selectIds(ids, options = {}) {
     selectedIds.clear();
     (Array.isArray(ids) ? ids : []).forEach((id) => {
-      if (manager.get(id)) selectedIds.add(id);
+      if (canSelectId(id)) selectedIds.add(id);
     });
-    activeGroupId = options.groupId && Kroki.GroupManager?.has?.(options.groupId) ? options.groupId : "";
+    activeGroupId = options.groupId && canSelectGroup(options.groupId) ? options.groupId : "";
     mode = options.mode || "preselect";
     Kroki.SelectionManager?.clear?.({ silent: true, preserveMulti: true });
     Kroki.ControlPointManager?.clear?.();
@@ -447,7 +465,7 @@
 
   function addIds(ids, options = {}) {
     (Array.isArray(ids) ? ids : []).forEach((id) => {
-      if (manager.get(id)) selectedIds.add(id);
+      if (canSelectId(id)) selectedIds.add(id);
     });
     activeGroupId = "";
     mode = selectedIds.size ? options.mode || mode || "preselect" : "";
@@ -458,7 +476,7 @@
 
   function selectGroup(groupId, options = {}) {
     const group = Kroki.GroupManager?.get?.(groupId);
-    if (!group) return false;
+    if (!group || !canSelectGroup(groupId)) return false;
     selectIds(Kroki.GroupManager?.getLeafObjectIds?.(groupId) || group.children, { ...options, groupId });
     return true;
   }
@@ -468,6 +486,7 @@
     return (Kroki.GroupManager?.getAll?.() || [])
       .map((group) => ({ group, leaves: Kroki.GroupManager?.getLeafObjectIds?.(group.id) || group.children }))
       .filter((entry) => (
+        entry.leaves.every(canSelectId) &&
         entry.leaves.length === selectedIds.size &&
         entry.leaves.every((id) => selectedIds.has(id))
       ))
@@ -479,7 +498,7 @@
     const children = [];
     (Kroki.GroupManager?.getAll?.() || [])
       .map((group) => ({ group, leaves: Kroki.GroupManager?.getLeafObjectIds?.(group.id) || group.children }))
-      .filter((entry) => entry.leaves.length > 0 && entry.leaves.every((id) => remaining.has(id)))
+      .filter((entry) => entry.leaves.length > 0 && entry.leaves.every(canSelectId) && entry.leaves.every((id) => remaining.has(id)))
       .sort((a, b) => b.leaves.length - a.leaves.length)
       .forEach((entry) => {
         if (!entry.leaves.every((id) => remaining.has(id))) return;
@@ -514,7 +533,7 @@
   }
 
   function toggleId(id) {
-    if (!manager.get(id)) return;
+    if (!canSelectId(id)) return;
     activeGroupId = "";
     if (selectedIds.has(id)) selectedIds.delete(id);
     else selectedIds.add(id);
@@ -527,14 +546,14 @@
 
   function toggleGroup(groupId) {
     const group = Kroki.GroupManager?.get?.(groupId);
-    if (!group) return;
+    if (!group || !canSelectGroup(groupId)) return;
     const leaves = Kroki.GroupManager?.getLeafObjectIds?.(groupId) || group.children;
     const allSelected = leaves.every((id) => selectedIds.has(id));
     if (allSelected) {
       leaves.forEach((id) => selectedIds.delete(id));
     } else {
       leaves.forEach((id) => {
-        if (manager.get(id)) selectedIds.add(id);
+        if (canSelectId(id)) selectedIds.add(id);
       });
     }
     const selected = Array.from(selectedIds);
@@ -1104,7 +1123,7 @@
       };
       const isTap = rect.width < 1 && rect.height < 1;
       const ids = isTap ? [] : manager.getObjectsInDomOrder()
-        .filter((model) => intersects(rect, modelBounds(model.id)))
+        .filter((model) => canSelectId(model.id) && intersects(rect, modelBounds(model.id)))
         .map((model) => model.id);
       if (ids.length) addIds(ids, { mode: "preselect" });
       removeMarquee();
@@ -1116,6 +1135,10 @@
   button?.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
+    if (button.disabled || activeSelectionIsRoad()) {
+      syncControls();
+      return;
+    }
     if (multiMode) {
       clear();
       return;
@@ -1136,7 +1159,7 @@
     multiMode = true;
     window.krokiEditorRail?.resetCizimAraci?.();
     const activeId = Kroki.SelectionManager?.getActiveId?.();
-    if (activeId && manager.get(activeId)) selectIds([activeId], { mode: "preselect" });
+    if (activeId && canSelectId(activeId)) selectIds([activeId], { mode: "preselect" });
     else syncControls();
   });
 
@@ -1153,6 +1176,7 @@
     selectGroup,
     toggleId,
     sync,
+    syncControls,
     handlePointerDown,
     handlePointerMove,
     stopDrag,

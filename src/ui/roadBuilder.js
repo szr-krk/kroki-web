@@ -7,9 +7,11 @@
   const DEFAULT_LANE_WIDTH = 50;
   const DEFAULT_ISLAND_INNER_DIAMETER = 160;
   const DEFAULT_SHOULDER_WIDTH = 20;
+  const DEFAULT_BARRIER_SPACING = 42;
   const DIVIDED_LANE_COUNT = 2;
   const DEFAULT_ARC_RATIO = Math.tan((36 * Math.PI / 180) / 2);
   const panel = document.querySelector("#roadBuilderPanel");
+  let lastDivided = false;
 
   const fields = {
     add: document.querySelector("#btnAddRoad"),
@@ -18,12 +20,15 @@
     kindButtons: Array.from(panel?.querySelectorAll("[data-road-kind]") || []),
     orientationGroup: panel?.querySelector("[aria-label='Yol yerlesimi']"),
     kindGroup: panel?.querySelector("[aria-label='Yol tipi']"),
-    shoulderRow: panel?.querySelector(".road-builder-check-row"),
+    shoulderRow: panel?.querySelector(".road-builder-shoulder-row"),
+    barrierRow: panel?.querySelector(".road-builder-barrier-row"),
     laneCount: panel?.querySelector("#roadLaneCountInput"),
     laneCountMinus: panel?.querySelector("#btnRoadBuilderLaneCountMinus"),
     laneCountPlus: panel?.querySelector("#btnRoadBuilderLaneCountPlus"),
     leftShoulder: panel?.querySelector("#roadLeftShoulderInput"),
-    rightShoulder: panel?.querySelector("#roadRightShoulderInput")
+    rightShoulder: panel?.querySelector("#roadRightShoulderInput"),
+    leftBarrier: panel?.querySelector("#roadLeftBarrierInput"),
+    rightBarrier: panel?.querySelector("#roadRightBarrierInput")
   };
 
   function numberFrom(input, fallback, min, max) {
@@ -123,6 +128,27 @@
     return geometry;
   }
 
+  function roadBarrier(edgeKey, side) {
+    return {
+      id: `builder_barrier_${edgeKey}`,
+      edgeKey,
+      side,
+      from: 0,
+      to: 1,
+      attached: true,
+      spacing: DEFAULT_BARRIER_SPACING,
+      endCaps: { start: false, end: false },
+      free: null
+    };
+  }
+
+  function roadBarriersFromInputs() {
+    const barriers = [];
+    if (fields.rightBarrier?.checked) barriers.push(roadBarrier("rightOuter", "right"));
+    if (fields.leftBarrier?.checked) barriers.push(roadBarrier("leftOuter", "left"));
+    return barriers;
+  }
+
   function roadConfigFromInputs() {
     if (isIslandRoad()) {
       const laneCount = laneCountFromInputs();
@@ -143,6 +169,7 @@
         edgeLine: { enabled: true, width: 2 },
         autoIntersection: true,
         bridge: false,
+        barriers: [],
         segments: [{ from: 0, to: 1, markingStyle: "dash" }]
       };
     }
@@ -184,6 +211,7 @@
       edgeLine: { enabled: true, width: 2 },
       autoIntersection: true,
       bridge: false,
+      barriers: roadBarriersFromInputs(),
       segments: [{ from: 0, to: 1, markingStyle: "dash" }]
     };
   }
@@ -191,14 +219,22 @@
   function syncDividedControls() {
     const island = isIslandRoad();
     const divided = isDividedRoad();
+    const becameDivided = divided && !lastDivided;
     fields.orientationGroup?.classList.toggle("gizli", island);
     fields.kindGroup?.classList.toggle("gizli", island);
     fields.shoulderRow?.classList.toggle("gizli", island);
+    fields.barrierRow?.classList.toggle("gizli", island);
     [fields.leftShoulder, fields.rightShoulder].forEach((input) => {
       if (!input) return;
       input.disabled = island || divided;
       if (island) input.checked = false;
       else if (divided) input.checked = true;
+    });
+    [fields.leftBarrier, fields.rightBarrier].forEach((input) => {
+      if (!input) return;
+      input.disabled = island;
+      if (island) input.checked = false;
+      else if (becameDivided) input.checked = true;
     });
     if (fields.laneCount) {
       if (island) {
@@ -212,6 +248,7 @@
     }
     if (fields.laneCountMinus) fields.laneCountMinus.disabled = divided;
     if (fields.laneCountPlus) fields.laneCountPlus.disabled = divided;
+    lastDivided = divided;
   }
 
   function stepLaneCount(delta) {

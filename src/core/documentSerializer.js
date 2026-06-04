@@ -26,6 +26,7 @@
     delete clean.draft;
     delete clean.pointEdit;
     delete clean.roadSelection;
+    delete clean.roadBarrierEdit;
     return clean;
   }
 

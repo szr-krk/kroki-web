@@ -15,6 +15,7 @@
   const objectMap = new Map();
   const elementMap = new Map();
   let idSeed = 1;
+  let viewportLabelFrame = 0;
 
   const canvas = document.querySelector("#editorCanvas");
   const objectLayer = document.querySelector("#editorObjects");
@@ -411,6 +412,31 @@
     else renderStraightLineLabel(model, adapter, text);
   }
 
+  function labelDependsOnViewport(model) {
+    const adapter = adapterFor(model);
+    if (!adapter || isShapeLabelType(model?.type)) return false;
+    if (adapter.capabilities?.noText || adapter.capabilities?.textObject || adapter.capabilities?.ownsLabel) return false;
+    if (!(model?.label?.text || "").trim()) return false;
+    return Boolean(adapter.capabilities?.curvedLabel || typeof adapter.offsetPathData === "function");
+  }
+
+  function renderViewportDependentLabels() {
+    objectMap.forEach((model) => {
+      if (labelDependsOnViewport(model)) renderLabel(model);
+    });
+  }
+
+  function scheduleViewportDependentLabels() {
+    if (viewportLabelFrame) return;
+    const schedule = window.requestAnimationFrame
+      ? (callback) => window.requestAnimationFrame(callback)
+      : (callback) => window.setTimeout(callback, 16);
+    viewportLabelFrame = schedule(() => {
+      viewportLabelFrame = 0;
+      renderViewportDependentLabels();
+    });
+  }
+
   function renderObject(id) {
     const model = objectMap.get(id);
     const element = elementMap.get(id);
@@ -679,6 +705,8 @@
     });
   }
 
+  canvas.addEventListener("kroki:viewboxchange", scheduleViewportDependentLabels);
+
   Kroki.EditorObjectManager = {
     canvas,
     objectLayer,
@@ -692,6 +720,7 @@
     syncFromDom,
     renderObject,
     renderGeometry,
+    renderViewportDependentLabels,
     updateModel,
     updateGeometry,
     updateStyle,

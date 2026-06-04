@@ -537,10 +537,20 @@
   background: #f8fafc;
 }
 
-.editor-library-header span {
+.editor-library-header > span {
+  min-width: 0;
+  flex: 1 1 auto;
   color: #111827;
   font-size: 20px;
   font-weight: 900;
+}
+
+.editor-library-header-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .editor-library-close {
@@ -770,6 +780,12 @@
   background: #a7f3d0;
 }
 
+.road-builder-header-actions .road-builder-add {
+  min-height: 44px;
+  padding: 0 14px;
+  font-size: 15px;
+}
+
 @media (max-width: 960px) {
   .road-builder-picker {
     grid-template-columns: 1fr;
@@ -805,5 +821,280 @@
     --editor-rail-width: 68px;
     --editor-rail-padding: 5px;
     --editor-rail-button-size: 58px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  #editor {
+    --editor-rail-width: 68px;
+    --editor-rail-padding: 6px;
+    --editor-rail-button-size: 56px;
+  }
+
+  .editor-rail,
+  .editor-side-ip {
+    gap: 8px;
+  }
+
+  .rail-btn svg {
+    width: 44px;
+    height: 44px;
+  }
+
+  .rail-btn .rail-svg-arac {
+    width: 40px;
+    height: 40px;
+  }
+
+  .rail-menu-panel.editor-library-panel {
+    inset: 24px calc(var(--editor-rail-width) + 24px) 24px 24px;
+  }
+
+  #railMenuYol.editor-library-panel {
+    inset: 24px calc(var(--editor-rail-width) + 24px) auto auto;
+    width: min(560px, calc(100vw - var(--editor-rail-width) - 48px));
+    max-height: calc(100dvh - 48px);
+  }
+
+  #railMenuYol .editor-library-card {
+    max-height: calc(100dvh - 48px);
+  }
+}
+
+@media (max-width: 767px), (max-width: 960px) and (max-height: 520px) and (orientation: landscape) {
+  #editor {
+    --editor-rail-width: 56px;
+    --editor-rail-padding: 4px;
+    --editor-rail-button-size: 48px;
+  }
+
+  .editor-rail,
+  .editor-side-ip {
+    gap: 6px;
+  }
+
+  .editor-floating-toolbar {
+    top: 8px;
+    left: 8px;
+    max-width: calc(100vw - var(--editor-rail-width) - 16px);
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .floating-toolbar-group {
+    gap: 4px;
+  }
+
+  .floating-tool-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .floating-tool-btn svg {
+    width: 25px;
+    height: 25px;
+  }
+
+  .rail-btn svg {
+    width: 38px;
+    height: 38px;
+  }
+
+  .rail-btn .rail-svg-arac {
+    width: 34px;
+    height: 34px;
+  }
+
+  .editor-top-ip {
+    top: 6px;
+    left: 100px;
+    right: calc(var(--editor-rail-width) + 6px);
+    max-width: none;
+    padding: 4px;
+    gap: 3px;
+    justify-content: flex-start;
+  }
+
+  .top-ip-btn {
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding: 0 8px;
+    gap: 4px;
+    font-size: 11px;
+  }
+
+  .top-ip-btn svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .closed-shape-draft-panel {
+    max-width: calc(100vw - var(--editor-rail-width) - 12px);
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .closed-shape-draft-btn {
+    min-height: 38px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
+
+  .closed-shape-draft-hint {
+    min-height: 38px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+
+  .side-ip-btn {
+    border-width: 2px;
+    border-radius: 7px;
+  }
+
+  .side-ip-btn svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  .rail-menu-panel {
+    top: 6px;
+    right: calc(var(--editor-rail-width) + 6px);
+    width: min(232px, calc(100vw - var(--editor-rail-width) - 12px));
+    max-height: calc(100dvh - 12px);
+    padding: 9px;
+    gap: 7px;
+  }
+
+  .rail-menu-title {
+    font-size: 15px;
+  }
+
+  .rail-menu-btn {
+    min-height: 40px;
+    padding: 0 9px;
+    font-size: 13px;
+  }
+
+  .rail-menu-note {
+    font-size: 12px;
+  }
+
+  .rail-tool-grid {
+    gap: 7px;
+  }
+
+  .rail-tool-btn svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .rail-menu-panel.editor-library-panel {
+    inset: 12px calc(var(--editor-rail-width) + 12px) 12px 12px;
+  }
+
+  .editor-library-header {
+    min-height: 52px;
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .editor-library-header span {
+    font-size: 17px;
+  }
+
+  .editor-library-close {
+    min-height: 40px;
+    padding: 0 10px;
+    font-size: 13px;
+  }
+
+  .editor-library-body {
+    padding: 10px;
+  }
+
+  .editor-library-footer {
+    padding: 9px 10px;
+    font-size: 13px;
+  }
+
+  #railMenuYol.editor-library-panel {
+    inset: 12px calc(var(--editor-rail-width) + 12px) auto auto;
+    width: min(520px, calc(100vw - var(--editor-rail-width) - 24px));
+    max-height: calc(100dvh - 24px);
+  }
+
+  #railMenuYol .editor-library-card {
+    max-height: calc(100dvh - 24px);
+  }
+
+  .road-builder-stack {
+    gap: 8px;
+  }
+
+  .road-builder-choice-group,
+  .road-builder-check-row {
+    gap: 6px;
+  }
+
+  .road-builder-choice,
+  .road-builder-check {
+    min-height: 42px;
+    font-size: 12px;
+  }
+
+  .road-builder-choice {
+    padding: 0 4px;
+  }
+
+  .road-builder-check {
+    grid-template-columns: 18px 1fr;
+    gap: 5px;
+    padding: 0 7px;
+  }
+
+  .road-builder-check input {
+    width: 18px;
+    height: 18px;
+  }
+
+  .road-builder-picker {
+    gap: 7px;
+    padding: 7px 8px;
+  }
+
+  .road-builder-picker > span {
+    font-size: 13px;
+  }
+
+  .road-builder-add {
+    min-height: 42px;
+    padding: 0 14px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 960px) and (max-height: 520px) and (orientation: landscape) {
+  #editor {
+    --editor-rail-width: 52px;
+    --editor-rail-padding: 3px;
+    --editor-rail-button-size: 46px;
+  }
+
+  .editor-rail,
+  .editor-side-ip {
+    gap: 4px;
+  }
+
+  .rail-menu-panel.editor-library-panel {
+    inset: 8px calc(var(--editor-rail-width) + 8px) 8px 8px;
+  }
+
+  #railMenuYol.editor-library-panel {
+    inset: 8px calc(var(--editor-rail-width) + 8px) auto auto;
+    max-height: calc(100dvh - 16px);
+  }
+
+  #railMenuYol .editor-library-card {
+    max-height: calc(100dvh - 16px);
   }
 }

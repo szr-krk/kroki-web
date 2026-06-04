@@ -402,6 +402,49 @@
               </svg>
             </button>
           </div>
+          <button id="btnRoadAddBarrierIp" class="side-ip-btn side-ip-tool road-ip-icon-btn road-barrier-add-control gizli" type="button"
+            aria-label="Bariyer ekle" title="Bariyer ekle">
+            <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+              <path d="M10 17H38" stroke="currentColor" stroke-width="4" stroke-linecap="butt"></path>
+              <path d="M13 34L16 17M22 34V17M30 34V17M35 34L32 17" stroke="currentColor" stroke-width="3"
+                stroke-linecap="butt"></path>
+            </svg>
+          </button>
+          <div id="roadBarrierControlsIp" class="road-barrier-controls road-barrier-only-control gizli" aria-label="Bariyer ozellikleri">
+            <button id="btnRoadBarrierAttachedIp" class="side-ip-btn side-ip-tool road-ip-icon-btn" type="button"
+              aria-label="Yola yapisik" title="Yola yapisik" aria-pressed="true">
+              <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                <path d="M9 32C17 24 31 24 39 32" stroke="currentColor" stroke-width="3" stroke-linecap="butt"></path>
+                <path d="M11 18C19 10 29 10 37 18" stroke="currentColor" stroke-width="4" stroke-linecap="butt"></path>
+                <path d="M15 31L18 17M24 28V14M33 31L30 17" stroke="currentColor" stroke-width="2.8"
+                  stroke-linecap="butt"></path>
+              </svg>
+            </button>
+            <button id="btnRoadBarrierEndCapsIp" class="side-ip-btn side-ip-tool road-ip-icon-btn road-barrier-end-btn" type="button"
+              aria-label="Bariyer uçları" title="Bariyer uçları">
+              <span id="lblRoadBarrierEndCapsIp" class="side-ip-text-mark road-barrier-end-mark" aria-hidden="true"><strong>İki Uç</strong><span>Açık</span></span>
+            </button>
+            <div class="road-ip-stepper road-barrier-spacing-stepper" aria-label="Direk araligi">
+              <button id="btnRoadBarrierSpacingPlus" class="road-ip-stepper-btn" type="button" aria-label="Direk araligini arttir">+</button>
+              <input id="roadBarrierSpacingIpInput" class="road-ip-stepper-number" type="number" min="18" max="180" step="1"
+                value="42" inputmode="numeric" aria-label="Direk araligi">
+              <button id="btnRoadBarrierSpacingMinus" class="road-ip-stepper-btn" type="button" aria-label="Direk araligini azalt">-</button>
+            </div>
+            <button id="btnRoadBarrierDeleteIp" class="side-ip-btn side-ip-tool road-ip-icon-btn road-barrier-delete-btn" type="button"
+              aria-label="Bariyeri sil" title="Bariyeri sil">
+              <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                <path d="M12 15H36M20 20V34M28 20V34M18 15L20 10H28L30 15M16 15L18 38H30L32 15"
+                  stroke="currentColor" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter"></path>
+              </svg>
+            </button>
+            <button id="btnRoadBarrierDoneIp" class="side-ip-btn side-ip-tool road-ip-icon-btn road-section-done-btn" type="button"
+              aria-label="Bariyer duzenlemeyi bitir" title="Bariyer duzenlemeyi bitir">
+              <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                <path d="M12 24L21 33L37 15" stroke="currentColor" stroke-width="5" stroke-linecap="round"
+                  stroke-linejoin="round"></path>
+              </svg>
+            </button>
+          </div>
           <button id="btnRoadLeftShoulderIp" class="side-ip-btn side-ip-tool road-ip-icon-btn road-global-control" type="button"
             aria-label="Sol banket" title="Sol banket" aria-pressed="false">
             <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
@@ -937,7 +980,10 @@
         <div class="editor-library-card">
           <div class="editor-library-header">
             <span>Yol Ekle</span>
-            <button class="editor-library-close" type="button" data-rail-close>Kapat</button>
+            <div class="editor-library-header-actions road-builder-header-actions">
+              <button id="btnAddRoad" class="road-builder-add" type="button">Yolu Ekle</button>
+              <button class="editor-library-close" type="button" data-rail-close>Kapat</button>
+            </div>
           </div>
           <div class="editor-library-body road-builder" id="roadBuilderPanel">
             <div class="road-builder-stack">
@@ -963,14 +1009,24 @@
                 <button class="road-builder-choice" type="button" role="radio" aria-checked="false"
                   data-road-kind="divided">Bolunmus</button>
               </div>
-              <div class="road-builder-check-row">
+              <div class="road-builder-check-row road-builder-shoulder-row">
                 <label class="road-builder-check">
                   <input id="roadRightShoulderInput" type="checkbox">
-                  <span>Sag banket</span>
+                  <span>Sağ banket</span>
                 </label>
                 <label class="road-builder-check">
                   <input id="roadLeftShoulderInput" type="checkbox">
                   <span>Sol banket</span>
+                </label>
+              </div>
+              <div class="road-builder-check-row road-builder-barrier-row">
+                <label class="road-builder-check">
+                  <input id="roadRightBarrierInput" type="checkbox">
+                  <span>Sağ bariyer</span>
+                </label>
+                <label class="road-builder-check">
+                  <input id="roadLeftBarrierInput" type="checkbox">
+                  <span>Sol bariyer</span>
                 </label>
               </div>
               <div class="road-builder-picker" aria-label="Serit sayisi">
@@ -985,9 +1041,6 @@
                 </div>
               </div>
             </div>
-          </div>
-          <div class="editor-library-footer road-builder-footer">
-            <button id="btnAddRoad" class="road-builder-add" type="button">Yolu Ekle</button>
           </div>
         </div>
       </div>

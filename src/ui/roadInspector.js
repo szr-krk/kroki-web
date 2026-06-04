@@ -27,9 +27,11 @@
   const controls = {
     root: document.querySelector("#roadIpControls"),
     laneCount: document.querySelector("#roadLaneCountIpInput"),
+    laneCountControl: document.querySelector("#roadLaneCountIpInput")?.closest(".road-ip-stepper"),
     laneCountPlus: document.querySelector("#btnRoadLaneCountPlus"),
     laneCountMinus: document.querySelector("#btnRoadLaneCountMinus"),
     laneWidth: document.querySelector("#roadLaneWidthIpInput"),
+    laneWidthControl: document.querySelector("#roadLaneWidthIpInput")?.closest(".road-ip-stepper"),
     laneWidthPlus: document.querySelector("#btnRoadLaneWidthPlus"),
     laneWidthMinus: document.querySelector("#btnRoadLaneWidthMinus"),
     profile: document.querySelector("#btnRoadProfileIp"),
@@ -42,6 +44,16 @@
     yAxisSymmetry: document.querySelector("#btnRoadYAxisSymmetryIp"),
     upperLine: document.querySelector("#btnRoadUpperLinePanel"),
     lowerLine: document.querySelector("#btnRoadLowerLinePanel"),
+    addBarrier: document.querySelector("#btnRoadAddBarrierIp"),
+    barrierControls: document.querySelector("#roadBarrierControlsIp"),
+    barrierAttached: document.querySelector("#btnRoadBarrierAttachedIp"),
+    barrierEndCaps: document.querySelector("#btnRoadBarrierEndCapsIp"),
+    barrierEndCapsLabel: document.querySelector("#lblRoadBarrierEndCapsIp"),
+    barrierSpacing: document.querySelector("#roadBarrierSpacingIpInput"),
+    barrierSpacingPlus: document.querySelector("#btnRoadBarrierSpacingPlus"),
+    barrierSpacingMinus: document.querySelector("#btnRoadBarrierSpacingMinus"),
+    barrierDelete: document.querySelector("#btnRoadBarrierDeleteIp"),
+    barrierDone: document.querySelector("#btnRoadBarrierDoneIp"),
     boundaryPanel: document.querySelector("#roadBoundaryPanel"),
     boundaryPanelTitle: document.querySelector("#roadBoundaryPanelTitle"),
     boundaryPanelClose: document.querySelector("#btnRoadBoundaryPanelClose"),
@@ -56,6 +68,10 @@
     symmetryControls: Array.from(document.querySelectorAll("#roadIpControls .road-symmetry-control")),
     sectionControls: Array.from(document.querySelectorAll("#roadIpControls .road-lane-only-control"))
   };
+  const bindHoldAction = window.krokiObjectEditCore?.bindHoldAction || ((button, action) => {
+    button?.addEventListener("click", action);
+    return () => {};
+  });
 
   function activeRoadModel() {
     const model = selection.getActiveModel?.();
@@ -91,6 +107,70 @@
 
   function selectedSectionInfo(model) {
     return adapterFor(model)?.selectedSectionInfo?.(model) || null;
+  }
+
+  function selectedBarrierInfo(model) {
+    return adapterFor(model)?.selectedBarrierInfo?.(model) || null;
+  }
+
+  function barrierTargetsForSelection(model, section) {
+    return adapterFor(model)?.barrierTargetsForSelection?.(model, section) || [];
+  }
+
+  function nextBarrierTarget(model, section) {
+    return barrierTargetsForSelection(model, section)
+      .filter((target) => target.remaining > 0)
+      .sort((a, b) => a.count - b.count || barrierTargetSortValue(a.edgeKey) - barrierTargetSortValue(b.edgeKey))[0] || null;
+  }
+
+  function barrierTargetSortValue(edgeKey) {
+    if (edgeKey === "rightOuter") return 0;
+    if (edgeKey === "rightInner") return 1;
+    if (edgeKey === "leftInner") return 2;
+    if (edgeKey === "leftOuter") return 3;
+    return 4;
+  }
+
+  function barrierTargetTitle(target) {
+    if (target?.title) return target.title;
+    if (!target?.edgeKey) return target?.side === "left" ? "sol" : "sag";
+    if (target.edgeKey === "rightOuter") return "gidis sag";
+    if (target.edgeKey === "rightInner") return "gidis sol";
+    if (target.edgeKey === "leftInner") return "donus sag";
+    if (target.edgeKey === "leftOuter") return "donus sol";
+    return target.side === "left" ? "sol" : "sag";
+  }
+
+  function barrierEndCaps(endCaps) {
+    return {
+      start: Boolean(endCaps?.start),
+      end: Boolean(endCaps?.end)
+    };
+  }
+
+  function barrierEndCapsTitle(endCaps) {
+    const caps = barrierEndCaps(endCaps);
+    if (caps.start && caps.end) return "Çift kapalı";
+    if (caps.end) return "Sağ kapalı";
+    if (caps.start) return "Sol kapalı";
+    return "Açık";
+  }
+
+  function barrierEndCapsLabel(endCaps) {
+    const caps = barrierEndCaps(endCaps);
+    if (caps.start && caps.end) return ["Çift", "Kapalı"];
+    if (caps.end) return ["Sağ", "Kapalı"];
+    if (caps.start) return ["Sol", "Kapalı"];
+    return ["İki Uç", "Açık"];
+  }
+
+  function setBarrierEndCapsLabel(endCaps) {
+    if (!controls.barrierEndCapsLabel) return;
+    controls.barrierEndCapsLabel.replaceChildren(...barrierEndCapsLabel(endCaps).map((line, index) => {
+      const node = document.createElement(index ? "span" : "strong");
+      node.textContent = line;
+      return node;
+    }));
   }
 
   function clamp(value, min, max, fallback) {
@@ -231,6 +311,57 @@
     const section = selectedSectionInfo(model);
     if (pickerInt(section?.width || config.laneWidth, 50) === width) return;
     updateLaneWidthValue(width, isIslandRoad(model) ? "Ada serit genisligi" : "Yol kesit genisligi");
+  }
+
+  function updateSelectedBarrier(mutator, label) {
+    updateActiveRoad((config, section, draft) => {
+      const adapter = adapterFor(draft);
+      const barrier = adapter?.selectedBarrierInfo?.(draft);
+      if (!barrier) return;
+      mutator(adapter, draft, config, barrier, section);
+      draft.metadata = {
+        ...(draft.metadata || {}),
+        roadBarrierEdit: { id: barrier.id }
+      };
+    }, label || "Yol bariyeri");
+  }
+
+  function updateBarrierSpacingValue(value, label) {
+    const spacing = clampInt(value, 18, 180, 42);
+    updateSelectedBarrier((adapter, draft, config, barrier) => {
+      adapter?.setBarrierSpacing?.(config, barrier.id, spacing);
+    }, label || "Bariyer direk araligi");
+  }
+
+  function commitBarrierSpacingPicker() {
+    if (!controls.barrierSpacing || controls.barrierSpacing.value === "") return;
+    const spacing = clampInt(controls.barrierSpacing.value, 18, 180, 42);
+    controls.barrierSpacing.value = String(spacing);
+    const model = activeRoadModel();
+    const barrier = selectedBarrierInfo(model);
+    if (!barrier || clampInt(barrier.spacing, 18, 180, 42) === spacing) return;
+    updateBarrierSpacingValue(spacing);
+  }
+
+  function nudgeBarrierSpacing(delta) {
+    const barrier = selectedBarrierInfo(activeRoadModel());
+    if (!barrier) return;
+    updateBarrierSpacingValue(clampInt(barrier.spacing, 18, 180, 42) + delta);
+  }
+
+  function deleteSelectedBarrier() {
+    updateActiveRoad((config, section, draft) => {
+      const adapter = adapterFor(draft);
+      const barrier = adapter?.selectedBarrierInfo?.(draft);
+      if (!barrier) return;
+      adapter?.removeBarrierFromConfig?.(draft, config, barrier.id);
+    }, "Yol bariyeri sil");
+  }
+
+  function cycleSelectedBarrierEndCaps() {
+    updateSelectedBarrier((adapter, draft, config, barrier) => {
+      adapter?.cycleBarrierEndCaps?.(config, barrier.id);
+    }, "Bariyer uçları");
   }
 
   function profileInfo(profile) {
@@ -394,7 +525,18 @@
       const metadata = { ...(draft.metadata || {}) };
       delete metadata.roadSelection;
       delete metadata.roadBoundaryEdit;
+      delete metadata.roadBarrierEdit;
       return { ...draft, metadata };
+    }, { skipHistory: true });
+  }
+
+  function clearBarrierSelection() {
+    const model = activeRoadModel();
+    if (!model) return;
+    manager.updateModel(model.id, (draft) => {
+      const adapter = adapterFor(draft);
+      adapter?.clearBarrierSelection?.(draft);
+      return draft;
     }, { skipHistory: true });
   }
 
@@ -480,11 +622,41 @@
     keepRoadLayersAtBack();
     const config = normalizeConfig(model, model.metadata?.road);
     const section = selectedSectionInfo(model);
+    const barrier = selectedBarrierInfo(model);
     const island = isIslandRoad(model);
-    const sectionMode = Boolean(section);
-    controls.globalControls.forEach((control) => control.classList.toggle("gizli", sectionMode));
+    const barrierMode = Boolean(barrier);
+    const sectionMode = Boolean(section) && !barrierMode;
+    const barrierTargets = !barrierMode && sectionMode ? barrierTargetsForSelection(model, section) : [];
+    const addBarrierTarget = barrierTargets.filter((target) => target.remaining > 0)
+      .sort((a, b) => a.count - b.count || barrierTargetSortValue(a.edgeKey) - barrierTargetSortValue(b.edgeKey))[0] || null;
+    controls.globalControls.forEach((control) => control.classList.toggle("gizli", sectionMode || barrierMode));
     controls.sectionControls.forEach((control) => control.classList.toggle("gizli", !sectionMode));
-    controls.symmetryControls.forEach((control) => control.classList.toggle("gizli", island || sectionMode));
+    controls.symmetryControls.forEach((control) => control.classList.toggle("gizli", island || sectionMode || barrierMode));
+    controls.laneWidthControl?.classList.toggle("gizli", barrierMode);
+    controls.addBarrier?.classList.toggle("gizli", barrierTargets.length === 0);
+    if (controls.addBarrier) {
+      controls.addBarrier.disabled = !addBarrierTarget;
+      controls.addBarrier.setAttribute("aria-disabled", String(!addBarrierTarget));
+      controls.addBarrier.setAttribute("title", addBarrierTarget ? "Bariyer ekle (" + barrierTargetTitle(addBarrierTarget) + ")" : "Bu kenara en fazla iki bariyer eklenebilir");
+      controls.addBarrier.setAttribute("aria-label", addBarrierTarget ? "Bariyer ekle " + barrierTargetTitle(addBarrierTarget) : "Bariyer ekle");
+    }
+    controls.barrierControls?.classList.toggle("gizli", !barrierMode);
+    if (barrierMode) {
+      closeBoundaryPanel();
+      togglePressed(controls.barrierAttached, barrier.attached);
+      controls.barrierAttached?.setAttribute("title", barrier.attached ? "Yola yapisik" : "Serbest bariyer");
+      controls.barrierAttached?.setAttribute("aria-label", barrier.attached ? "Yola yapisik" : "Serbest bariyer");
+      const endCapsTitle = "Bariyer uçları: " + barrierEndCapsTitle(barrier.endCaps);
+      setBarrierEndCapsLabel(barrier.endCaps);
+      if (controls.barrierEndCaps) {
+        controls.barrierEndCaps.disabled = false;
+        controls.barrierEndCaps.setAttribute("aria-disabled", "false");
+        controls.barrierEndCaps.setAttribute("title", endCapsTitle);
+        controls.barrierEndCaps.setAttribute("aria-label", endCapsTitle);
+      }
+      const spacing = clampInt(barrier.spacing, 18, 180, 42);
+      if (controls.barrierSpacing && controls.barrierSpacing.value !== String(spacing)) controls.barrierSpacing.value = String(spacing);
+    }
     if (island) {
       controls.profile?.classList.add("gizli");
       controls.sCurveControls?.classList.add("gizli");
@@ -492,10 +664,10 @@
       controls.rightShoulder?.classList.add("gizli");
       controls.markingStyle?.classList.add("gizli");
     } else {
-      controls.profile?.classList.toggle("gizli", sectionMode);
-      controls.leftShoulder?.classList.toggle("gizli", sectionMode);
-      controls.rightShoulder?.classList.toggle("gizli", sectionMode);
-      controls.markingStyle?.classList.toggle("gizli", sectionMode);
+      controls.profile?.classList.toggle("gizli", sectionMode || barrierMode);
+      controls.leftShoulder?.classList.toggle("gizli", sectionMode || barrierMode);
+      controls.rightShoulder?.classList.toggle("gizli", sectionMode || barrierMode);
+      controls.markingStyle?.classList.toggle("gizli", sectionMode || barrierMode);
     }
     if (controls.laneCount) controls.laneCount.max = island ? "3" : "5";
     const profile = profileInfo(model.geometry?.profile);
@@ -504,7 +676,7 @@
     if (controls.profileLabel) controls.profileLabel.textContent = profile.short;
     const sCurveCount = clampInt(adapterFor(model)?.sCurveControlCount?.(model), MIN_S_CURVE_CONTROLS, MAX_S_CURVE_CONTROLS, MIN_S_CURVE_CONTROLS);
     if (controls.sCurveControlCount && controls.sCurveControlCount.value !== String(sCurveCount)) controls.sCurveControlCount.value = String(sCurveCount);
-    if (!island) controls.sCurveControls?.classList.toggle("gizli", sectionMode || model.geometry?.profile !== "sCurve");
+    if (!island) controls.sCurveControls?.classList.toggle("gizli", sectionMode || barrierMode || model.geometry?.profile !== "sCurve");
     if (!sectionMode) closeBoundaryPanel();
     if (controls.laneCount && controls.laneCount.value !== String(config.laneCount)) controls.laneCount.value = String(config.laneCount);
     const widthValue = pickerInt(sectionMode ? section.width : config.laneWidth, 50);
@@ -570,6 +742,23 @@
   }, "S viraj kontrol noktasi"));
   controls.upperLine?.addEventListener("click", () => openBoundaryPanel("start", controls.upperLine));
   controls.lowerLine?.addEventListener("click", () => openBoundaryPanel("end", controls.lowerLine));
+  controls.addBarrier?.addEventListener("click", () => updateActiveRoad((config, section, draft) => {
+    adapterFor(draft)?.addBarrierToConfig?.(draft, config, section);
+  }, "Yol bariyeri ekle"));
+  controls.barrierAttached?.addEventListener("click", () => updateSelectedBarrier((adapter, draft, config, barrier) => {
+    adapter?.setBarrierAttached?.(draft, config, barrier.id, !barrier.attached);
+  }, "Bariyer yola yapisik"));
+  controls.barrierEndCaps?.addEventListener("click", cycleSelectedBarrierEndCaps);
+  bindHoldAction(controls.barrierSpacingPlus, () => nudgeBarrierSpacing(1), { repeatDelay: 55 });
+  bindHoldAction(controls.barrierSpacingMinus, () => nudgeBarrierSpacing(-1), { repeatDelay: 55 });
+  controls.barrierSpacing?.addEventListener("input", () => {
+    if (controls.barrierSpacing.value === "") return;
+    controls.barrierSpacing.value = String(clampInt(controls.barrierSpacing.value, 18, 180, 42));
+  });
+  controls.barrierSpacing?.addEventListener("change", commitBarrierSpacingPicker);
+  controls.barrierSpacing?.addEventListener("blur", commitBarrierSpacingPicker);
+  controls.barrierDelete?.addEventListener("click", deleteSelectedBarrier);
+  controls.barrierDone?.addEventListener("click", clearBarrierSelection);
   controls.sectionDone?.addEventListener("click", clearSectionSelection);
   controls.boundaryPanelClose?.addEventListener("click", closeBoundaryPanel);
   controls.segmentCount?.addEventListener("change", () => updateActiveRoad((config, section, model) => {

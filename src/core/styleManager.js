@@ -633,19 +633,20 @@
     return visibleSize / Math.max(1, normalizeStrokeWidth(strokeWidth));
   }
 
-  function markerId(type, strokeWidth) {
+  function markerId(type, strokeWidth, strokeOpacity) {
     const visualStroke = Math.max(3, normalizeStrokeWidth(strokeWidth));
     const visibleSize = visualStroke * 2 + 10;
     return [
       "editor-line-marker",
       type,
       "sw" + normalizeStrokeWidth(strokeWidth),
+      "so" + Math.round(normalizeOpacity(strokeOpacity) * 10000),
       "v" + Math.round(visibleSize * 100)
     ].join("-");
   }
 
-  function markerUrl(type, strokeWidth) {
-    return type === "none" ? "" : "url(#" + markerId(type, strokeWidth) + ")";
+  function markerUrl(type, strokeWidth, strokeOpacity) {
+    return type === "none" ? "" : "url(#" + markerId(type, strokeWidth, strokeOpacity) + ")";
   }
 
   function ensureMarkerDefs(canvas) {
@@ -656,12 +657,12 @@
     return defs;
   }
 
-  function ensureMarker(canvas, type, strokeWidth) {
+  function ensureMarker(canvas, type, strokeWidth, strokeOpacity) {
     if (type === "none") return null;
     const config = MARKER_BASE[type];
     if (!config) return null;
     const defs = ensureMarkerDefs(canvas);
-    const id = markerId(type, strokeWidth);
+    const id = markerId(type, strokeWidth, strokeOpacity);
     const existing = defs.querySelector("#" + id);
     if (existing) return existing;
     const size = markerStrokeUnitSize(strokeWidth);
@@ -676,6 +677,7 @@
       markerUnits: "strokeWidth"
     });
     config.draw(marker);
+    Array.from(marker.children).forEach((child) => child.setAttribute("opacity", String(normalizeOpacity(strokeOpacity))));
     defs.append(marker);
     return marker;
   }
@@ -787,10 +789,10 @@
       return;
     }
 
-    ensureMarker(canvas, style.arrowStart, style.strokeWidth);
-    ensureMarker(canvas, style.arrowEnd, style.strokeWidth);
-    const startMarker = markerUrl(style.arrowStart, style.strokeWidth);
-    const endMarker = markerUrl(style.arrowEnd, style.strokeWidth);
+    ensureMarker(canvas, style.arrowStart, style.strokeWidth, style.strokeOpacity);
+    ensureMarker(canvas, style.arrowEnd, style.strokeWidth, style.strokeOpacity);
+    const startMarker = markerUrl(style.arrowStart, style.strokeWidth, style.strokeOpacity);
+    const endMarker = markerUrl(style.arrowEnd, style.strokeWidth, style.strokeOpacity);
     if (startMarker) element.setAttribute("marker-start", startMarker);
     else element.removeAttribute("marker-start");
     if (endMarker) element.setAttribute("marker-end", endMarker);
