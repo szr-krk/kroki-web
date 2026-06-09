@@ -365,7 +365,9 @@
 
     const rotation = isCircle && model.label.position.rotateMode === "flat" ? 0 : geometry.rotation || 0;
     labelGroup.setAttribute("clip-path", `url(#${labelClipId(model)})`);
-    labelGroup.setAttribute("transform", `rotate(${rotation} ${geometry.cx} ${geometry.cy})`);
+    labelGroup.removeAttribute("transform");
+    if (rotation) textElement.setAttribute("transform", `rotate(${rotation} ${geometry.cx} ${geometry.cy})`);
+    else textElement.removeAttribute("transform");
 
     const rx = isCircle ? geometry.r : geometry.rx;
     const ry = isCircle ? geometry.r : geometry.ry;

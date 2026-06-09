@@ -315,8 +315,11 @@
       });
     });
     const terminalCorners = [];
+    const terminalCenters = [];
     if (!isIsland && left.length && right.length) {
       terminalCorners.push(left[0], right[0], left[left.length - 1], right[right.length - 1]);
+      if (samples[0]?.center) terminalCenters.push(samples[0].center);
+      if (samples[samples.length - 1]?.center) terminalCenters.push(samples[samples.length - 1].center);
     }
     const polygon = simplifyPoints([...left, ...right.slice().reverse()]);
     if (polygon.length < 3) return null;
@@ -335,6 +338,7 @@
         right: { boundaryId: rightBoundaryId, ...contourBoundaryStyle(config, rightBoundaryId) }
       },
       terminalCorners,
+      terminalCenters,
       polygon,
       bounds: boundsOfPoints(polygon)
     };
@@ -350,6 +354,30 @@
       if (intersect) inside = !inside;
     }
     return inside;
+  }
+
+  function pointNearPolygon(point, polygon, tolerance = 1.5) {
+    if (!point || !Array.isArray(polygon) || polygon.length < 2) return false;
+    if (pointInPolygon(point, polygon)) return true;
+    for (let index = 0; index < polygon.length; index += 1) {
+      if (distanceToSegment(point, polygon[index], polygon[(index + 1) % polygon.length]) <= tolerance) return true;
+    }
+    return false;
+  }
+
+  function surfaceHasTerminalInIntersection(surface, otherSurface, hull) {
+    const tolerance = Math.max(2, INTERSECTION_PAD * 2);
+    return (surface?.terminalCenters || []).some((point) => (
+      pointNearPolygon(point, otherSurface?.polygon, tolerance) ||
+      pointNearPolygon(point, hull, tolerance)
+    ));
+  }
+
+  function terminalRoadIdsForPair(a, b, hull) {
+    const ids = [];
+    if (surfaceHasTerminalInIntersection(a, b, hull)) ids.push(a.id);
+    if (surfaceHasTerminalInIntersection(b, a, hull)) ids.push(b.id);
+    return ids;
   }
 
   function segmentIntersectionParam(a, b, c, d) {
@@ -461,14 +489,23 @@
     return `M ${fmt(item.entry.x)} ${fmt(item.entry.y)} Q ${fmt(item.control.x)} ${fmt(item.control.y)} ${fmt(item.exit.x)} ${fmt(item.exit.y)}`;
   }
 
+  function qControlWithEdit(baseControl, edit) {
+    return {
+      x: baseControl.x + numberOr(edit?.controlDx, 0),
+      y: baseControl.y + numberOr(edit?.controlDy, 0)
+    };
+  }
+
   function qSegmentFromEvent(event, mode) {
-    const entryVector = normalizeVector({ x: event.baseEntry.x - event.control.x, y: event.baseEntry.y - event.control.y });
-    const exitVector = normalizeVector({ x: event.baseExit.x - event.control.x, y: event.baseExit.y - event.control.y });
+    const baseControl = event.baseControl || event.control;
+    const entryVector = normalizeVector({ x: event.baseEntry.x - baseControl.x, y: event.baseEntry.y - baseControl.y });
+    const exitVector = normalizeVector({ x: event.baseExit.x - baseControl.x, y: event.baseExit.y - baseControl.y });
     return {
       key: event.key,
       mode,
       entry: { x: event.entry.x, y: event.entry.y },
       control: { x: event.control.x, y: event.control.y },
+      baseControl: { x: baseControl.x, y: baseControl.y },
       exit: { x: event.exit.x, y: event.exit.y },
       baseEntry: { x: event.baseEntry.x, y: event.baseEntry.y },
       baseExit: { x: event.baseExit.x, y: event.baseExit.y },
@@ -478,6 +515,8 @@
       exitCut: event.exitCut,
       entryMaxCut: event.entryMaxCut,
       exitMaxCut: event.exitMaxCut,
+      entryTrack: event.entryTrack,
+      exitTrack: event.exitTrack,
       d: qSegmentPath(event)
     };
   }
@@ -491,9 +530,13 @@
     source.forEach((value, key) => {
       const entryCut = Number(value?.entryCut);
       const exitCut = Number(value?.exitCut);
+      const controlDx = Number(value?.controlDx);
+      const controlDy = Number(value?.controlDy);
       const clean = {};
       if (Number.isFinite(entryCut)) clean.entryCut = entryCut;
       if (Number.isFinite(exitCut)) clean.exitCut = exitCut;
+      if (Number.isFinite(controlDx) && Math.abs(controlDx) >= 0.01) clean.controlDx = controlDx;
+      if (Number.isFinite(controlDy) && Math.abs(controlDy) >= 0.01) clean.controlDy = controlDy;
       if (Object.keys(clean).length) copy.set(String(key), clean);
     });
     return copy;
@@ -505,7 +548,9 @@
       qEndpointEdits: Array.from(cloneQEndpointEditsMap().entries()).map(([key, value]) => ({
         key,
         ...(Number.isFinite(Number(value.entryCut)) ? { entryCut: Number(value.entryCut) } : {}),
-        ...(Number.isFinite(Number(value.exitCut)) ? { exitCut: Number(value.exitCut) } : {})
+        ...(Number.isFinite(Number(value.exitCut)) ? { exitCut: Number(value.exitCut) } : {}),
+        ...(Number.isFinite(Number(value.controlDx)) ? { controlDx: Number(value.controlDx) } : {}),
+        ...(Number.isFinite(Number(value.controlDy)) ? { controlDy: Number(value.controlDy) } : {})
       }))
     };
   }
@@ -517,9 +562,13 @@
       if (!key) return;
       const entryCut = Number(item.entryCut);
       const exitCut = Number(item.exitCut);
+      const controlDx = Number(item.controlDx);
+      const controlDy = Number(item.controlDy);
       const clean = {};
       if (Number.isFinite(entryCut)) clean.entryCut = entryCut;
       if (Number.isFinite(exitCut)) clean.exitCut = exitCut;
+      if (Number.isFinite(controlDx) && Math.abs(controlDx) >= 0.01) clean.controlDx = controlDx;
+      if (Number.isFinite(controlDy) && Math.abs(controlDy) >= 0.01) clean.controlDy = controlDy;
       if (Object.keys(clean).length) next.set(key, clean);
     });
     qEndpointEdits = next;
@@ -529,10 +578,104 @@
   }
 
   function qCutFromPoint(item, side, point) {
+    const track = side === "entry" ? item.entryTrack : item.exitTrack;
+    const trackCut = cutFromTravelTrack(track, point);
+    if (Number.isFinite(trackCut)) return trackCut;
     const dir = side === "entry" ? item.entryDir : item.exitDir;
     const maxCut = side === "entry" ? item.entryMaxCut : item.exitMaxCut;
-    const projected = ((point?.x || 0) - item.control.x) * dir.x + ((point?.y || 0) - item.control.y) * dir.y;
+    const origin = item.baseControl || item.control;
+    const projected = ((point?.x || 0) - origin.x) * dir.x + ((point?.y || 0) - origin.y) * dir.y;
     return clamp(projected, 0.25, Math.max(0.25, numberOr(maxCut, SMOOTH_RADIUS * 3.2)));
+  }
+
+  function cutFromTravelTrack(track, point) {
+    if (!point || !Array.isArray(track?.points) || track.points.length < 2) return NaN;
+    let best = null;
+    for (let index = 0; index < track.points.length - 1; index += 1) {
+      const a = track.points[index];
+      const b = track.points[index + 1];
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const lenSq = dx * dx + dy * dy;
+      if (lenSq <= EPS) continue;
+      const t = clamp(((point.x - a.x) * dx + (point.y - a.y) * dy) / lenSq, 0, 1);
+      const projected = { x: a.x + dx * t, y: a.y + dy * t };
+      const distanceValue = dist(point, projected);
+      const cut = a.cut + (b.cut - a.cut) * t;
+      if (!best || distanceValue < best.distance) best = { distance: distanceValue, cut };
+    }
+    if (!best) return NaN;
+    return clamp(best.cut, 0.25, Math.max(0.25, numberOr(track.maxCut, best.cut)));
+  }
+
+  function uniqueSortedCuts(cuts, maxCut) {
+    const cleanMax = Math.max(0.25, numberOr(maxCut, 0.25));
+    const rounded = new Set();
+    (cuts || []).forEach((cut) => {
+      const value = clamp(numberOr(cut, 0), 0, cleanMax);
+      rounded.add(Math.round(value * 1000) / 1000);
+    });
+    rounded.add(0);
+    rounded.add(Math.round(cleanMax * 1000) / 1000);
+    return Array.from(rounded).sort((a, b) => a - b);
+  }
+
+  function buildOpenTravelTrack(points, metrics, originS, direction, maxCut) {
+    const cleanMax = Math.max(0.25, numberOr(maxCut, 0.25));
+    const cuts = [0, cleanMax];
+    for (let index = 0; index < points.length; index += 1) {
+      const vertexS = metrics.cumulative[index];
+      const cut = direction < 0 ? originS - vertexS : vertexS - originS;
+      if (cut > EPS && cut < cleanMax - EPS) cuts.push(cut);
+    }
+    return {
+      maxCut: cleanMax,
+      points: uniqueSortedCuts(cuts, cleanMax).map((cut) => ({
+        cut,
+        ...openPointAtDistance(points, metrics, originS + direction * cut)
+      }))
+    };
+  }
+
+  function closedForwardDistance(fromS, toS, total) {
+    if (!total) return 0;
+    return normalizeDistanceOnClosed(toS - fromS, total);
+  }
+
+  function buildClosedTravelTrack(points, metrics, originS, direction, maxCut) {
+    const cleanMax = Math.max(0.25, numberOr(maxCut, 0.25));
+    const cuts = [0, cleanMax];
+    for (let index = 0; index < points.length; index += 1) {
+      const vertexS = metrics.cumulative[index];
+      const cut = direction < 0
+        ? closedForwardDistance(vertexS, originS, metrics.total)
+        : closedForwardDistance(originS, vertexS, metrics.total);
+      if (cut > EPS && cut < cleanMax - EPS) cuts.push(cut);
+    }
+    return {
+      maxCut: cleanMax,
+      points: uniqueSortedCuts(cuts, cleanMax).map((cut) => ({
+        cut,
+        ...closedPointAtDistance(points, metrics, originS + direction * cut)
+      }))
+    };
+  }
+
+  function closedCandidateLimit(candidates, candidateIndex, direction, total, radius) {
+    if (!total) return 0.25;
+    const safetyGap = Math.max(2.5, radius * 0.35);
+    if (!Array.isArray(candidates) || candidates.length <= 1) {
+      return Math.max(2, total * 0.45);
+    }
+    const current = candidates[candidateIndex];
+    const neighborIndex = direction < 0
+      ? (candidateIndex - 1 + candidates.length) % candidates.length
+      : (candidateIndex + 1) % candidates.length;
+    const neighbor = candidates[neighborIndex];
+    const distanceValue = direction < 0
+      ? closedForwardDistance(neighbor.currentS, current.currentS, total)
+      : closedForwardDistance(current.currentS, neighbor.currentS, total);
+    return Math.max(2, distanceValue - safetyGap);
   }
 
   function svgPointFromEvent(event) {
@@ -551,6 +694,15 @@
     const length = dist(a, b);
     if (length <= EPS) return dist(point, a);
     return Math.abs((b.x - a.x) * (a.y - point.y) - (a.x - point.x) * (b.y - a.y)) / length;
+  }
+
+  function distanceToSegment(point, a, b) {
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq <= EPS) return dist(point, a);
+    const t = clamp(((point.x - a.x) * dx + (point.y - a.y) * dy) / lenSq, 0, 1);
+    return dist(point, { x: a.x + dx * t, y: a.y + dy * t });
   }
 
   function simplifyPolylineRdp(points, tolerance = 0.35) {
@@ -837,11 +989,12 @@
       const cut = Math.min(radius, backLimit * 0.48, forwardLimit * 0.48);
       if (cut < 1.2) continue;
 
-      const control = { x: current.x, y: current.y };
+      const baseControl = { x: current.x, y: current.y };
       const baseEntry = openPointAtDistance(clean, metrics, currentS - cut);
       const baseExit = openPointAtDistance(clean, metrics, currentS + cut);
-      const key = qEventKey(control, baseEntry, baseExit);
+      const key = qEventKey(baseControl, baseEntry, baseExit);
       const edit = qEditForKey(key);
+      const control = qControlWithEdit(baseControl, edit);
       // Açık dış-contour parçalarında Q endpoint CP'leri kendi kenarı boyunca
       // parçanın gerçek başlangıç/bitiş ucuna kadar gidebilmeli. Önceki sınırlama
       // radius*3.4 civarında kaldığı için CP sadece kısa bir mesafe hareket ediyordu.
@@ -857,6 +1010,7 @@
         end,
         entry: openPointAtDistance(clean, metrics, start),
         control,
+        baseControl,
         exit: openPointAtDistance(clean, metrics, end),
         baseEntry,
         baseExit,
@@ -864,6 +1018,8 @@
         exitCut,
         entryMaxCut,
         exitMaxCut,
+        entryTrack: buildOpenTravelTrack(clean, metrics, currentS, -1, entryMaxCut),
+        exitTrack: buildOpenTravelTrack(clean, metrics, currentS, 1, exitMaxCut),
         key
       });
     }
@@ -892,7 +1048,7 @@
     const metrics = buildClosedPathMetrics(clean);
     if (!metrics.total) return pathFromPoints(clean, true);
 
-    const rawEvents = [];
+    const candidates = [];
     clean.forEach((current, index) => {
       const prev = clean[(index - 1 + clean.length) % clean.length];
       const next = clean[(index + 1) % clean.length];
@@ -909,37 +1065,55 @@
       if (cut < 1.2) return;
 
       const currentS = metrics.cumulative[index];
-      const control = { x: current.x, y: current.y };
+      const baseControl = { x: current.x, y: current.y };
       const baseEntryS = normalizeDistanceOnClosed(currentS - cut, metrics.total);
       const baseExitS = normalizeDistanceOnClosed(currentS + cut, metrics.total);
       const baseEntry = closedPointAtDistance(clean, metrics, baseEntryS);
       const baseExit = closedPointAtDistance(clean, metrics, baseExitS);
-      const key = qEventKey(control, baseEntry, baseExit);
-      const edit = qEditForKey(key);
-      const entryMaxCut = Math.min(backLimit * 0.92, Math.max(radius * 3.4, cut));
-      const exitMaxCut = Math.min(forwardLimit * 0.92, Math.max(radius * 3.4, cut));
-      const entryCut = clamp(numberOr(edit.entryCut, cut), 2, Math.max(2, entryMaxCut));
-      const exitCut = clamp(numberOr(edit.exitCut, cut), 2, Math.max(2, exitMaxCut));
-      const entryS = normalizeDistanceOnClosed(currentS - entryCut, metrics.total);
-      const exitS = normalizeDistanceOnClosed(currentS + exitCut, metrics.total);
-      const entry = closedPointAtDistance(clean, metrics, entryS);
-      const exit = closedPointAtDistance(clean, metrics, exitS);
-      rawEvents.push({
+      const key = qEventKey(baseControl, baseEntry, baseExit);
+      candidates.push({
         index,
-        entryS,
-        exitS,
-        entry,
-        control,
-        exit,
+        currentS,
+        baseControl,
         corner: current,
         baseEntry,
         baseExit,
+        cut,
+        key
+      });
+    });
+
+    if (!candidates.length) return pathFromPoints(clean, true);
+    candidates.sort((a, b) => a.currentS - b.currentS);
+
+    const rawEvents = candidates.map((candidate, candidateIndex) => {
+      const edit = qEditForKey(candidate.key);
+      const entryMaxCut = Math.max(2, closedCandidateLimit(candidates, candidateIndex, -1, metrics.total, radius));
+      const exitMaxCut = Math.max(2, closedCandidateLimit(candidates, candidateIndex, 1, metrics.total, radius));
+      const entryCut = clamp(numberOr(edit.entryCut, candidate.cut), 2, entryMaxCut);
+      const exitCut = clamp(numberOr(edit.exitCut, candidate.cut), 2, exitMaxCut);
+      const entryS = normalizeDistanceOnClosed(candidate.currentS - entryCut, metrics.total);
+      const exitS = normalizeDistanceOnClosed(candidate.currentS + exitCut, metrics.total);
+      const control = qControlWithEdit(candidate.baseControl, edit);
+      return {
+        index: candidate.index,
+        entryS,
+        exitS,
+        entry: closedPointAtDistance(clean, metrics, entryS),
+        control,
+        baseControl: candidate.baseControl,
+        exit: closedPointAtDistance(clean, metrics, exitS),
+        corner: candidate.corner,
+        baseEntry: candidate.baseEntry,
+        baseExit: candidate.baseExit,
         entryCut,
         exitCut,
         entryMaxCut,
         exitMaxCut,
-        key
-      });
+        entryTrack: buildClosedTravelTrack(clean, metrics, candidate.currentS, -1, entryMaxCut),
+        exitTrack: buildClosedTravelTrack(clean, metrics, candidate.currentS, 1, exitMaxCut),
+        key: candidate.key
+      };
     });
 
     if (!rawEvents.length) return pathFromPoints(clean, true);
@@ -1039,7 +1213,12 @@
         if (hits.length < 3) continue;
         const hull = expandPolygon(convexHull(hits), INTERSECTION_PAD);
         if (hull.length < 3) continue;
-        shapes.push({ roadIds: [a.id, b.id], points: hull, d: smoothClosedPath(hull, Math.min(10, SMOOTH_RADIUS), hull) });
+        shapes.push({
+          roadIds: [a.id, b.id],
+          terminalRoadIds: terminalRoadIdsForPair(a, b, hull),
+          points: hull,
+          d: smoothClosedPath(hull, Math.min(10, SMOOTH_RADIUS), hull)
+        });
         memberIds.add(a.id);
         memberIds.add(b.id);
       }
@@ -1239,20 +1418,34 @@
     return roadShapesFor(id).some((shape) => pointInPolygon(point, shape.points));
   }
 
-  function refineTransition(model, adapter, offset, id, a, b, targetInside) {
+  function shouldPreserveBoundaryForShape(id, boundary, shape) {
+    if (boundary?.role !== "marking") return false;
+    const terminalIds = Array.isArray(shape?.terminalRoadIds) ? shape.terminalRoadIds : [];
+    if (!terminalIds.length) return false;
+    return !terminalIds.includes(id);
+  }
+
+  function pointInsideRoadShapesForLine(id, point, boundary = null) {
+    return roadShapesFor(id).some((shape) => {
+      if (shouldPreserveBoundaryForShape(id, boundary, shape)) return false;
+      return pointInPolygon(point, shape.points);
+    });
+  }
+
+  function refineTransition(model, adapter, offset, id, a, b, targetInside, boundary = null) {
     let lo = a;
     let hi = b;
     for (let i = 0; i < 12; i += 1) {
       const mid = (lo + hi) / 2;
       const point = samplePoint(model, adapter, mid, offset);
-      const inside = point ? pointInsideRoadShapes(id, point) : false;
+      const inside = point ? pointInsideRoadShapesForLine(id, point, boundary) : false;
       if (inside === targetInside) hi = mid;
       else lo = mid;
     }
     return (lo + hi) / 2;
   }
 
-  function visibleRangesForLine(id, offset = 0, from = 0, to = 1) {
+  function visibleRangesForLine(id, offset = 0, from = 0, to = 1, boundary = null) {
     const start = clamp(numberOr(from, 0), 0, 1);
     const end = clamp(numberOr(to, 1), 0, 1);
     if (end <= start) return [];
@@ -1266,13 +1459,13 @@
     for (let i = 0; i <= count; i += 1) {
       const t = start + (end - start) * i / count;
       const point = samplePoint(model, adapter, t, offset);
-      samples.push({ t, inside: point ? pointInsideRoadShapes(id, point) : false });
+      samples.push({ t, inside: point ? pointInsideRoadShapesForLine(id, point, boundary) : false });
     }
 
     const cuts = [start, end];
     for (let i = 1; i < samples.length; i += 1) {
       if (samples[i - 1].inside !== samples[i].inside) {
-        cuts.push(refineTransition(model, adapter, offset, id, samples[i - 1].t, samples[i].t, samples[i].inside));
+        cuts.push(refineTransition(model, adapter, offset, id, samples[i - 1].t, samples[i].t, samples[i].inside, boundary));
       }
     }
     const sorted = Array.from(new Set(cuts.map((value) => Math.round(value * 1000000) / 1000000))).sort((a, b) => a - b);
@@ -1283,7 +1476,7 @@
       if (b - a < 0.0008) continue;
       const mid = (a + b) / 2;
       const point = samplePoint(model, adapter, mid, offset);
-      if (point && !pointInsideRoadShapes(id, point)) ranges.push({ from: a, to: b });
+      if (point && !pointInsideRoadShapesForLine(id, point, boundary)) ranges.push({ from: a, to: b });
     }
     return ranges;
   }
@@ -1334,6 +1527,7 @@
   function isPointInQCutZone(point, qSegments = lastQSegments) {
     if (!point || !Array.isArray(qSegments) || !qSegments.length) return false;
     return qSegments.some((q) => {
+      if (isPointNearConsumedQTrack(point, q, "entry") || isPointNearConsumedQTrack(point, q, "exit")) return true;
       const entryDistance = perpendicularDistanceToLine(point, q.control, q.entry);
       const exitDistance = perpendicularDistanceToLine(point, q.control, q.exit);
       const entryDir = normalizeVector({ x: q.entry.x - q.control.x, y: q.entry.y - q.control.y });
@@ -1345,6 +1539,110 @@
       return (entryProjection >= -0.65 && entryProjection <= entryLimit && entryDistance <= 1.4)
         || (exitProjection >= -0.65 && exitProjection <= exitLimit && exitDistance <= 1.4);
     });
+  }
+
+  function trackPointAtCut(track, cut) {
+    if (!Array.isArray(track?.points) || !track.points.length) return null;
+    const cleanCut = clamp(numberOr(cut, 0), 0, Math.max(0, numberOr(track.maxCut, cut)));
+    for (let index = 0; index < track.points.length - 1; index += 1) {
+      const a = track.points[index];
+      const b = track.points[index + 1];
+      if (cleanCut >= a.cut - EPS && cleanCut <= b.cut + EPS) {
+        const span = b.cut - a.cut;
+        if (Math.abs(span) <= EPS) return { x: a.x, y: a.y, cut: cleanCut };
+        const t = clamp((cleanCut - a.cut) / span, 0, 1);
+        return {
+          cut: cleanCut,
+          x: a.x + (b.x - a.x) * t,
+          y: a.y + (b.y - a.y) * t
+        };
+      }
+    }
+    const last = track.points[track.points.length - 1];
+    return { x: last.x, y: last.y, cut: cleanCut };
+  }
+
+  function consumedTrackPoints(q, side) {
+    const track = side === "entry" ? q?.entryTrack : q?.exitTrack;
+    const cutLimit = side === "entry" ? q?.entryCut : q?.exitCut;
+    if (!Array.isArray(track?.points) || track.points.length < 2) return [];
+    const cleanLimit = clamp(numberOr(cutLimit, 0), 0, Math.max(0, numberOr(track.maxCut, cutLimit)));
+    const points = [];
+    track.points.forEach((point) => {
+      if (point.cut <= cleanLimit + EPS) addPointIfFar(points, point, 0.05);
+    });
+    const endpoint = trackPointAtCut(track, cleanLimit);
+    if (endpoint) addPointIfFar(points, endpoint, 0.05);
+    return points;
+  }
+
+  function isPointNearConsumedQTrack(point, q, side, tolerance = 2.4) {
+    const points = consumedTrackPoints(q, side);
+    if (points.length < 2) return false;
+    for (let index = 0; index < points.length - 1; index += 1) {
+      if (distanceToSegment(point, points[index], points[index + 1]) <= tolerance) return true;
+    }
+    return false;
+  }
+
+  function sliceBoundarySegment(segment, fromT, toT) {
+    const cleanFrom = clamp(numberOr(fromT, 0), 0, 1);
+    const cleanTo = clamp(numberOr(toT, 1), 0, 1);
+    if (cleanTo - cleanFrom < EPS) return null;
+    const sourceT0 = Number(segment?.sourceT0);
+    const sourceT1 = Number(segment?.sourceT1);
+    return {
+      ...segment,
+      a: interpolate(segment.a, segment.b, cleanFrom),
+      b: interpolate(segment.a, segment.b, cleanTo),
+      sourceT0: Number.isFinite(sourceT0) && Number.isFinite(sourceT1)
+        ? sourceT0 + (sourceT1 - sourceT0) * cleanFrom
+        : segment?.sourceT0,
+      sourceT1: Number.isFinite(sourceT0) && Number.isFinite(sourceT1)
+        ? sourceT0 + (sourceT1 - sourceT0) * cleanTo
+        : segment?.sourceT1
+    };
+  }
+
+  function visibleBoundarySegmentsOutsideQ(segment, qSegments = lastQSegments) {
+    if (!segment || !Array.isArray(qSegments) || !qSegments.length) return segment ? [segment] : [];
+    const length = dist(segment.a, segment.b);
+    if (length < EPS) return [];
+    const sampleCount = clamp(Math.ceil(length / 4), 2, 48);
+    const samples = [];
+    for (let index = 0; index <= sampleCount; index += 1) {
+      const t = index / sampleCount;
+      samples.push({
+        t,
+        inside: isPointInQCutZone(interpolate(segment.a, segment.b, t), qSegments)
+      });
+    }
+    const cuts = [0, 1];
+    for (let index = 1; index < samples.length; index += 1) {
+      if (samples[index - 1].inside === samples[index].inside) continue;
+      let lo = samples[index - 1].t;
+      let hi = samples[index].t;
+      const loInside = samples[index - 1].inside;
+      for (let step = 0; step < 10; step += 1) {
+        const mid = (lo + hi) / 2;
+        const midInside = isPointInQCutZone(interpolate(segment.a, segment.b, mid), qSegments);
+        if (midInside === loInside) lo = mid;
+        else hi = mid;
+      }
+      cuts.push((lo + hi) / 2);
+    }
+    const sorted = Array.from(new Set(cuts.map((value) => Math.round(value * 1000000) / 1000000))).sort((a, b) => a - b);
+    const visible = [];
+    for (let index = 0; index < sorted.length - 1; index += 1) {
+      const fromT = sorted[index];
+      const toT = sorted[index + 1];
+      if (toT - fromT < 0.0008) continue;
+      const mid = (fromT + toT) / 2;
+      if (isPointInQCutZone(interpolate(segment.a, segment.b, mid), qSegments)) continue;
+      const piece = sliceBoundarySegment(segment, fromT, toT);
+      if (piece && dist(piece.a, piece.b) >= MIN_POINT_DISTANCE) visible.push(piece);
+    }
+    return visible;
   }
 
   function offsetLinePiece(piece, amount) {
@@ -1374,27 +1672,27 @@
     const pieces = [];
     (boundarySegments || []).forEach((segment) => {
       if (segment.kind !== "side") return;
-      const mid = interpolate(segment.a, segment.b, 0.5);
-      if (isPointInQCutZone(mid, qSegments)) return;
-      segmentStyleParts(segment).forEach((part) => {
-        const gap = Math.max(4, part.width * 2);
-        if (part.style === "doubleSolid" || part.style === "doubleDash") {
-          const dashed = part.style === "doubleDash";
-          addStyledPiece(pieces, part, dashed, -gap / 2);
-          addStyledPiece(pieces, part, dashed, gap / 2);
-          return;
-        }
-        if (part.style === "leftSolidRightDash") {
-          addStyledPiece(pieces, part, true, -gap / 2);
-          addStyledPiece(pieces, part, false, gap / 2);
-          return;
-        }
-        if (part.style === "rightSolidLeftDash") {
-          addStyledPiece(pieces, part, false, -gap / 2);
-          addStyledPiece(pieces, part, true, gap / 2);
-          return;
-        }
-        addStyledPiece(pieces, part, part.style === "dash", 0);
+      visibleBoundarySegmentsOutsideQ(segment, qSegments).forEach((visibleSegment) => {
+        segmentStyleParts(visibleSegment).forEach((part) => {
+          const gap = Math.max(4, part.width * 2);
+          if (part.style === "doubleSolid" || part.style === "doubleDash") {
+            const dashed = part.style === "doubleDash";
+            addStyledPiece(pieces, part, dashed, -gap / 2);
+            addStyledPiece(pieces, part, dashed, gap / 2);
+            return;
+          }
+          if (part.style === "leftSolidRightDash") {
+            addStyledPiece(pieces, part, true, -gap / 2);
+            addStyledPiece(pieces, part, false, gap / 2);
+            return;
+          }
+          if (part.style === "rightSolidLeftDash") {
+            addStyledPiece(pieces, part, false, -gap / 2);
+            addStyledPiece(pieces, part, true, gap / 2);
+            return;
+          }
+          addStyledPiece(pieces, part, part.style === "dash", 0);
+        });
       });
     });
     return pieces;
@@ -1546,6 +1844,8 @@
       unit,
       visualRadius: 24 * unit,
       hitRadius: 36 * unit,
+      controlVisualRadius: 18 * unit,
+      controlHitRadius: 30 * unit,
       hitStroke: 30 * unit,
       guideStroke: Math.max(1.4 * unit, 0.8)
     };
@@ -1572,6 +1872,15 @@
     layer.querySelectorAll(".road-intersection-q-fixed-control").forEach((node) => {
       node.setAttribute("r", fmt(5 * sizes.unit));
       node.setAttribute("stroke-width", fmt(1.5 * sizes.unit));
+    });
+
+    layer.querySelectorAll(".road-intersection-q-control-hit").forEach((node) => {
+      node.setAttribute("r", fmt(sizes.controlHitRadius));
+    });
+
+    layer.querySelectorAll(".road-intersection-q-control-visual").forEach((node) => {
+      node.setAttribute("r", fmt(sizes.controlVisualRadius));
+      node.setAttribute("stroke-width", fmt(3 * sizes.unit));
     });
 
     layer.querySelectorAll(".road-intersection-q-endpoint-hit").forEach((node) => {
@@ -1605,6 +1914,23 @@
     return true;
   }
 
+  function updateQControlEdit(item, point) {
+    if (!item || !point) return false;
+    const baseControl = item.baseControl || item.control;
+    const nextDx = point.x - baseControl.x;
+    const nextDy = point.y - baseControl.y;
+    const current = { ...(qEndpointEdits.get(item.key) || {}) };
+    const previousDx = numberOr(current.controlDx, 0);
+    const previousDy = numberOr(current.controlDy, 0);
+    if (Math.hypot(previousDx - nextDx, previousDy - nextDy) < 0.01) return false;
+    if (Math.abs(nextDx) < 0.01) delete current.controlDx;
+    else current.controlDx = nextDx;
+    if (Math.abs(nextDy) < 0.01) delete current.controlDy;
+    else current.controlDy = nextDy;
+    qEndpointEdits.set(item.key, current);
+    return true;
+  }
+
   function stopQEndpointDrag(event) {
     if (!qEndpointDrag) return;
     const drag = qEndpointDrag;
@@ -1626,7 +1952,11 @@
     event.stopPropagation();
     const item = qSegmentByKey(qEndpointDrag.key);
     if (!item) return;
-    if (updateQEndpointEdit(item, qEndpointDrag.side, svgPointFromEvent(event))) qEndpointDrag.moved = true;
+    const point = svgPointFromEvent(event);
+    const moved = qEndpointDrag.side === "control"
+      ? updateQControlEdit(item, point)
+      : updateQEndpointEdit(item, qEndpointDrag.side, point);
+    if (moved) qEndpointDrag.moved = true;
     render();
   }
 
@@ -1643,10 +1973,50 @@
       moved: false,
       transaction: Kroki.HistoryManager?.begin?.("Kavsak Q duzenle")
     };
-    try { manager.canvas.setPointerCapture?.(event.pointerId); } catch (_) {}
+    if (event.isTrusted !== false) {
+      try { manager.canvas.setPointerCapture?.(event.pointerId); } catch (_) {}
+    }
     window.addEventListener("pointermove", handleQEndpointDrag, true);
     window.addEventListener("pointerup", stopQEndpointDrag, true);
     window.addEventListener("pointercancel", stopQEndpointDrag, true);
+  }
+
+  function startQControlDrag(event, key) {
+    startQEndpointDrag(event, key, "control");
+  }
+
+  function createQControlHandle(item, sizes) {
+    const point = item.control;
+    const group = createSvgElement("g", {
+      class: "editor-object-cp road-intersection-q-control",
+      "data-q-key": item.key,
+      "data-q-side": "control",
+      "pointer-events": "all",
+      cursor: "move"
+    });
+    const hit = createSvgElement("circle", {
+      class: "editor-object-cp-hit road-intersection-q-control-hit",
+      cx: fmt(point.x),
+      cy: fmt(point.y),
+      r: fmt(sizes.controlHitRadius),
+      fill: "transparent",
+      stroke: "transparent",
+      "pointer-events": "all"
+    });
+    const visual = createSvgElement("circle", {
+      class: "editor-object-cp-visual road-intersection-q-control-visual",
+      cx: fmt(point.x),
+      cy: fmt(point.y),
+      r: fmt(sizes.controlVisualRadius),
+      fill: "#ffffff",
+      stroke: "#f97316",
+      "stroke-width": fmt(3 * sizes.unit),
+      "pointer-events": "none",
+      "vector-effect": "none"
+    });
+    group.append(hit, visual);
+    group.addEventListener("pointerdown", (event) => startQControlDrag(event, item.key), true);
+    return group;
   }
 
   function createQEndpointHandle(item, side, sizes) {
@@ -1729,18 +2099,7 @@
           "stroke-dasharray": `${fmt(sizes.guideStroke * 4)} ${fmt(sizes.guideStroke * 3)}`,
           "pointer-events": "none"
         });
-        const unit = utils.svgUnitsPerScreenPx?.(manager.canvas) || 1;
-        const fixed = createSvgElement("circle", {
-          class: "road-intersection-q-fixed-control",
-          cx: fmt(item.control.x),
-          cy: fmt(item.control.y),
-          r: fmt(5 * unit),
-          fill: "#ffffff",
-          stroke: "#f97316",
-          "stroke-width": fmt(1.5 * unit),
-          "pointer-events": "none"
-        });
-        layer.append(fixed, createQEndpointHandle(item, "entry", sizes), createQEndpointHandle(item, "exit", sizes));
+        layer.append(createQControlHandle(item, sizes), createQEndpointHandle(item, "entry", sizes), createQEndpointHandle(item, "exit", sizes));
       }
     });
   }
@@ -1822,7 +2181,7 @@
     scheduleRefresh();
   }
   function isQInteractionTarget(target) {
-    return Boolean(target?.closest?.(".road-intersection-q-endpoint,.road-intersection-q-hit"));
+    return Boolean(target?.closest?.(".road-intersection-q-endpoint,.road-intersection-q-control,.road-intersection-q-hit"));
   }
 
   function handleCanvasQOutsidePointerDown(event) {

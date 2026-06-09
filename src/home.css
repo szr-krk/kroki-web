@@ -30,6 +30,15 @@ body {
   -webkit-touch-callout: none;
 }
 
+@font-face {
+  font-family: "KrokiSignNarrow";
+  src:
+    local("Arial Narrow"),
+    local("ArialNarrow"),
+    local("Arial Narrow Regular"),
+    url("./arial-narrow.ttf") format("truetype");
+}
+
 button,
 input,
 textarea,
@@ -73,7 +82,7 @@ select {
   background: linear-gradient(180deg, rgba(255, 255, 255, .84), rgba(255, 255, 255, .58) 42%, rgba(255, 255, 255, .72));
 }
 
-#home > :not(.modal-panel) {
+#home> :not(.modal-panel) {
   position: relative;
   z-index: 1;
 }
@@ -358,7 +367,7 @@ select {
   background: #f8fafc;
 }
 
-.modal-ust > span {
+.modal-ust>span {
   font-size: 20px;
   font-weight: 900;
 }

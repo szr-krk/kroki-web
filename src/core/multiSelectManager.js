@@ -50,28 +50,81 @@
     return Kroki.SelectionManager?.getActiveModel?.()?.type === "road";
   }
 
-  function modelBounds(id) {
+  function adapterBounds(id) {
     const model = manager.get(id);
     const adapter = adapterFor(id);
     return model && adapter?.getBounds ? adapter.getBounds(model) : null;
   }
 
-  function unionBounds(boundsList) {
-    const usable = boundsList.filter(Boolean);
+  function boundsPoints(bounds) {
+    if (!bounds) return [];
+    const x = Number(bounds.x);
+    const y = Number(bounds.y);
+    const width = Number(bounds.width);
+    const height = Number(bounds.height);
+    if (![x, y, width, height].every(Number.isFinite)) return [];
+    return [
+      { x, y },
+      { x: x + width, y },
+      { x: x + width, y: y + height },
+      { x, y: y + height }
+    ];
+  }
+
+  function boundsFromPoints(points) {
+    const usable = (points || []).filter((point) => (
+      Number.isFinite(Number(point?.x)) && Number.isFinite(Number(point?.y))
+    ));
     if (!usable.length) return null;
-    const minX = Math.min(...usable.map((bounds) => bounds.x));
-    const minY = Math.min(...usable.map((bounds) => bounds.y));
-    const maxX = Math.max(...usable.map((bounds) => bounds.x + bounds.width));
-    const maxY = Math.max(...usable.map((bounds) => bounds.y + bounds.height));
+    const minX = Math.min(...usable.map((point) => Number(point.x)));
+    const minY = Math.min(...usable.map((point) => Number(point.y)));
+    const maxX = Math.max(...usable.map((point) => Number(point.x)));
+    const maxY = Math.max(...usable.map((point) => Number(point.y)));
     return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
   }
 
+  function transformedElementPoints(element) {
+    if (!element?.getBBox || !manager.canvas?.createSVGPoint) return [];
+    try {
+      const box = element.getBBox();
+      const elementScreen = element.getScreenCTM?.();
+      const canvasScreen = manager.canvas.getScreenCTM?.();
+      const matrix = elementScreen && canvasScreen
+        ? canvasScreen.inverse().multiply(elementScreen)
+        : element.getCTM?.();
+      if (!matrix) return [];
+      const point = manager.canvas.createSVGPoint();
+      return boundsPoints(box).map((corner) => {
+        point.x = corner.x;
+        point.y = corner.y;
+        return point.matrixTransform(matrix);
+      });
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function modelVisualPoints(id) {
+    const points = transformedElementPoints(manager.getElement?.(id));
+    if (points.length) return points;
+    return boundsPoints(adapterBounds(id));
+  }
+
+  function groupVisualPoints(group) {
+    return (Kroki.GroupManager?.getLeafObjectIds?.(group?.id) || group?.children || [])
+      .flatMap(modelVisualPoints);
+  }
+
+  function modelBounds(id) {
+    return boundsFromPoints(modelVisualPoints(id));
+  }
+
   function selectionBounds() {
-    return unionBounds(Array.from(selectedIds).map(modelBounds));
+    return boundsFromPoints(Array.from(selectedIds).flatMap(modelVisualPoints));
   }
 
   function groupBounds(group) {
-    return unionBounds((Kroki.GroupManager?.getLeafObjectIds?.(group?.id) || group?.children || []).map(modelBounds));
+    return boundsFromPoints(groupVisualPoints(group));
   }
 
   function intersects(a, b) {
@@ -100,7 +153,13 @@
   }
 
   function normalizeFrame(frame, fallbackBounds = selectionBounds()) {
-    const fallback = frameFromBounds(fallbackBounds);
+    const fallback = frameFromBounds(fallbackBounds) || (frame ? {
+      cx: Number(frame.cx) || 0,
+      cy: Number(frame.cy) || 0,
+      width: Math.max(GROUP_MIN_SIZE, Number(frame.width) || GROUP_MIN_SIZE),
+      height: Math.max(GROUP_MIN_SIZE, Number(frame.height) || GROUP_MIN_SIZE),
+      rotation: utils.normalizeRotation?.(frame.rotation || 0) ?? (frame.rotation || 0)
+    } : null);
     if (!fallback) return null;
     return {
       cx: utils.numberOr?.(frame?.cx, fallback.cx) ?? fallback.cx,
@@ -139,13 +198,41 @@
     };
   }
 
+  function frameCornerPoints(frame) {
+    if (!frame) return [];
+    return [
+      frameLocalPoint(frame, -frame.width / 2, -frame.height / 2),
+      frameLocalPoint(frame, frame.width / 2, -frame.height / 2),
+      frameLocalPoint(frame, frame.width / 2, frame.height / 2),
+      frameLocalPoint(frame, -frame.width / 2, frame.height / 2)
+    ];
+  }
+
+  function frameBounds(frame) {
+    return boundsFromPoints(frameCornerPoints(frame));
+  }
+
+  function containsBounds(outer, inner, tolerance = 1.5) {
+    if (!outer || !inner) return false;
+    return (
+      outer.x <= inner.x + tolerance &&
+      outer.y <= inner.y + tolerance &&
+      outer.x + outer.width >= inner.x + inner.width - tolerance &&
+      outer.y + outer.height >= inner.y + inner.height - tolerance
+    );
+  }
+
   function groupFrame(groupId) {
     const group = groupId ? Kroki.GroupManager?.get?.(groupId) : null;
     if (!group) return null;
-    return normalizeFrame(group.metadata?.frame, groupBounds(group));
+    const bounds = groupBounds(group);
+    const storedFrame = normalizeFrame(group.metadata?.frame, bounds);
+    if (storedFrame && (!bounds || containsBounds(frameBounds(storedFrame), bounds))) return storedFrame;
+    return normalizeFrame(bounds ? frameFromBounds(bounds, 0) : group.metadata?.frame, bounds);
   }
 
   function activeGroupFrame() {
+    if (drag?.type === "group-control" && drag.currentFrame) return drag.currentFrame;
     return groupFrame(activeGroupId);
   }
 
@@ -837,6 +924,7 @@
   }
 
   function updateGroupGeometry(nextFrame, mapper, options = {}) {
+    if (drag?.type === "group-control") drag.currentFrame = nextFrame;
     drag.startModels.forEach((source, id) => {
       manager.updateModel(id, (draft) => transformModelFromStart(draft, source, mapper, options), {
         skipHistory: true,
@@ -913,6 +1001,7 @@
       startClientY: event.clientY,
       moved: false,
       frame,
+      currentFrame: frame,
       startModels: new Map(Array.from(selectedIds).map((id) => [id, clonePlain(manager.get(id))])),
       startGroupFrames: groupTreeFrames(activeGroupId),
       transaction: Kroki.HistoryManager?.begin?.(cpId === "rotate" ? "Grup dondur" : "Grup boyutlandir")

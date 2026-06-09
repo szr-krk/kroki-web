@@ -5,10 +5,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Kroki Pro</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;800;900&display=swap"
-    rel="stylesheet" />
   <link rel="stylesheet" href="src/home.css" />
   <link rel="stylesheet" href="src/editor.css" />
   <link rel="stylesheet" href="src/editor-line.css" />
@@ -716,21 +712,55 @@
           <button class="fill-pattern-option" type="button" role="radio" aria-checked="false"
             data-fill-pattern="paver" aria-label="Kilit tasi" title="Kilit tasi">
             <svg viewBox="0 0 48 48" aria-hidden="true">
-              <rect x="8" y="8" width="32" height="32" rx="5" fill="#d1d5db"></rect>
-              <path d="M8 24H40M24 8V24M16 24V40M32 24V40M8 8H40V40H8Z"
-                stroke="#475569" stroke-width="2" fill="none"></path>
+              <defs>
+                <clipPath id="fillPatternPaverIconClip">
+                  <rect x="8" y="8" width="32" height="32" rx="5"></rect>
+                </clipPath>
+                <path id="fillPatternPaverIconLayout"
+                  d="M0 0 L2 0 L3 1 L7 1 L8 0 L10 0 L10 6 L8 6 L7 5 L3 5 L2 6 L0 6 Z M-5 5 L-3 5 L-2 6 L2 6 L3 5 L5 5 L5 11 L3 11 L2 10 L-2 10 L-3 11 L-5 11 Z M5 5 L7 5 L8 6 L12 6 L13 5 L15 5 L15 11 L13 11 L12 10 L8 10 L7 11 L5 11 Z M10 0 L12 0 L13 1 L17 1 L18 0 L20 0 L20 6 L18 6 L17 5 L13 5 L12 6 L10 6 Z M15 5 L17 5 L18 6 L22 6 L23 5 L25 5 L25 11 L23 11 L22 10 L18 10 L17 11 L15 11 Z"></path>
+              </defs>
+              <rect x="8" y="8" width="32" height="32" rx="5" fill="#c9c9c7"></rect>
+              <g clip-path="url(#fillPatternPaverIconClip)">
+                <g transform="matrix(1.1 0 0 1.1 13.5 8)" fill="none" stroke="#1f2933" stroke-width=".78"
+                  stroke-linejoin="miter">
+                  <use href="#fillPatternPaverIconLayout"></use>
+                  <use href="#fillPatternPaverIconLayout" transform="translate(0 10)"></use>
+                  <use href="#fillPatternPaverIconLayout" transform="translate(0 20)"></use>
+                </g>
+                <path d="M11 10.6L13 10M24 11.7L26.2 11M17 25.6L19 25M31 31.5L33.5 30.8"
+                  stroke="#f8fafc" stroke-width=".8" fill="none" stroke-linecap="round" opacity=".65"></path>
+              </g>
             </svg>
           </button>
           <button class="fill-pattern-option" type="button" role="radio" aria-checked="false"
-            data-fill-pattern="paverTexture" aria-label="Kilit tasi doku" title="Kilit tasi doku">
+            data-fill-pattern="paverTexture" aria-label="Kilit tasi buyuk" title="Kilit tasi buyuk">
             <svg viewBox="0 0 48 48" aria-hidden="true">
-              <rect x="8" y="8" width="32" height="32" rx="5" fill="#cbd5e1"></rect>
-              <path d="M8 24H40M24 8V24M16 24V40M32 24V40M8 8H40V40H8Z"
-                stroke="#334155" stroke-width="2" fill="none"></path>
-              <path d="M13 15L18 13M28 16L35 18M14 33L21 31M29 29L34 33"
-                stroke="#f8fafc" stroke-width="1.3" fill="none" stroke-linecap="round" opacity=".8"></path>
-              <circle cx="28" cy="13" r="1.2" fill="#475569" opacity=".45"></circle>
-              <circle cx="19" cy="35" r="1" fill="#475569" opacity=".42"></circle>
+              <defs>
+                <clipPath id="fillPatternPaverTextureIconClip">
+                  <rect x="8" y="8" width="32" height="32" rx="5"></rect>
+                </clipPath>
+                <path id="fillPatternPaverTextureIconLayout"
+                  d="M0 0 L2 0 L3 1 L7 1 L8 0 L10 0 L10 6 L8 6 L7 5 L3 5 L2 6 L0 6 Z M-5 5 L-3 5 L-2 6 L2 6 L3 5 L5 5 L5 11 L3 11 L2 10 L-2 10 L-3 11 L-5 11 Z M5 5 L7 5 L8 6 L12 6 L13 5 L15 5 L15 11 L13 11 L12 10 L8 10 L7 11 L5 11 Z M10 0 L12 0 L13 1 L17 1 L18 0 L20 0 L20 6 L18 6 L17 5 L13 5 L12 6 L10 6 Z M15 5 L17 5 L18 6 L22 6 L23 5 L25 5 L25 11 L23 11 L22 10 L18 10 L17 11 L15 11 Z"></path>
+              </defs>
+              <rect x="8" y="8" width="32" height="32" rx="5" fill="#d6d4ce"></rect>
+              <g clip-path="url(#fillPatternPaverTextureIconClip)">
+                <g transform="matrix(1.65 0 0 1.65 13.5 8)" fill="#d6d4ce" stroke="#3f3f3f" stroke-width=".6"
+                  stroke-linejoin="miter">
+                  <use href="#fillPatternPaverTextureIconLayout"></use>
+                  <use href="#fillPatternPaverTextureIconLayout" transform="translate(0 10)"></use>
+                  <use href="#fillPatternPaverTextureIconLayout" transform="translate(0 20)"></use>
+                </g>
+                <g transform="matrix(1.65 0 0 1.65 13.68 8.18)" fill="none" stroke="#ffffff" stroke-width=".22"
+                  stroke-linejoin="miter" opacity=".72">
+                  <use href="#fillPatternPaverTextureIconLayout"></use>
+                  <use href="#fillPatternPaverTextureIconLayout" transform="translate(0 10)"></use>
+                  <use href="#fillPatternPaverTextureIconLayout" transform="translate(0 20)"></use>
+                </g>
+                <path d="M11 10.6L13.2 10M28 13.6L30.2 13M18 32.5L20.4 31.8M34 29L36.5 28.3"
+                  stroke="#f8fafc" stroke-width=".75" fill="none" stroke-linecap="round" opacity=".65"></path>
+                <circle cx="29" cy="22" r=".7" fill="#8f8c84" opacity=".34"></circle>
+                <circle cx="18" cy="36" r=".65" fill="#8f8c84" opacity=".32"></circle>
+              </g>
             </svg>
           </button>
           <button class="fill-pattern-option" type="button" role="radio" aria-checked="false"

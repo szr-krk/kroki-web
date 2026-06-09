@@ -55,53 +55,75 @@
     { id: "shape", title: "Metin sekille doner" },
     { id: "flat", title: "Metin yatay kalir" }
   ];
+  const PAVER_LAYOUT_PATH = "M 0 0 L 2 0 L 3 1 L 7 1 L 8 0 L 10 0 L 10 6 L 8 6 L 7 5 L 3 5 L 2 6 L 0 6 Z M -5 5 L -3 5 L -2 6 L 2 6 L 3 5 L 5 5 L 5 11 L 3 11 L 2 10 L -2 10 L -3 11 L -5 11 Z M 5 5 L 7 5 L 8 6 L 12 6 L 13 5 L 15 5 L 15 11 L 13 11 L 12 10 L 8 10 L 7 11 L 5 11 Z M 10 0 L 12 0 L 13 1 L 17 1 L 18 0 L 20 0 L 20 6 L 18 6 L 17 5 L 13 5 L 12 6 L 10 6 Z M 15 5 L 17 5 L 18 6 L 22 6 L 23 5 L 25 5 L 25 11 L 23 11 L 22 10 L 18 10 L 17 11 L 15 11 Z";
+
   const FILL_PATTERNS = [
     { id: "none", title: "Duz dolgu" },
     {
       id: "paver",
       title: "Kilit tasi",
-      defaultFill: "#d1d5db",
-      width: 28,
-      height: 18,
+      defaultFill: "#c9c9c7",
+      width: 20,
+      height: 10,
       draw(pattern) {
         pattern.append(
           utils.createSvgElement("path", {
-            d: "M0 9H28M14 0V9M7 9V18M21 9V18M0 0H28V18H0Z",
+            d: PAVER_LAYOUT_PATH,
             fill: "none",
-            stroke: "#475569",
-            "stroke-width": "1.05",
-            "stroke-linecap": "square",
-            opacity: ".52"
+            stroke: "#1f2933",
+            "stroke-width": ".22",
+            "stroke-linejoin": "miter",
+            opacity: ".78"
+          }),
+          utils.createSvgElement("path", {
+            d: "M1 .9L2.2 .55M8.8 2L10 1.65M14.5 .9L15.7 .55M1.3 6.6L2.5 6.25M8.4 7.85L9.8 7.45M16.2 6.6L17.4 6.25",
+            fill: "none",
+            stroke: "#f8fafc",
+            "stroke-width": ".1",
+            "stroke-linecap": "round",
+            opacity: ".32"
           })
         );
       }
     },
     {
       id: "paverTexture",
-      title: "Kilit tasi doku",
-      defaultFill: "#cbd5e1",
-      width: 36,
-      height: 24,
+      title: "Kilit tasi buyuk",
+      defaultFill: "#d6d4ce",
+      width: 30,
+      height: 15,
       draw(pattern) {
         pattern.append(
           utils.createSvgElement("path", {
-            d: "M0 12H36M18 0V12M9 12V24M27 12V24M0 0H36V24H0Z",
-            fill: "none",
-            stroke: "#334155",
-            "stroke-width": "1.15",
-            opacity: ".52"
+            d: PAVER_LAYOUT_PATH,
+            transform: "scale(1.5)",
+            fill: "#d6d4ce",
+            stroke: "#383838",
+            "stroke-width": ".19",
+            "stroke-linejoin": "miter",
+            opacity: ".78"
           }),
           utils.createSvgElement("path", {
-            d: "M4 5L7 3M15 7L19 5M25 4L30 6M5 18L11 16M21 19L25 17M31 15L34 18",
+            d: PAVER_LAYOUT_PATH,
+            transform: "matrix(1.5 0 0 1.5 .15 .15)",
             fill: "none",
             stroke: "#f8fafc",
-            "stroke-width": ".9",
-            "stroke-linecap": "round",
-            opacity: ".38"
+            "stroke-width": ".067",
+            "stroke-linejoin": "miter",
+            opacity: ".46"
           }),
-          utils.createSvgElement("circle", { cx: "12", cy: "4", r: ".8", fill: "#475569", opacity: ".28" }),
-          utils.createSvgElement("circle", { cx: "31", cy: "8", r: ".75", fill: "#475569", opacity: ".26" }),
-          utils.createSvgElement("circle", { cx: "17", cy: "18", r: ".85", fill: "#475569", opacity: ".25" })
+          utils.createSvgElement("path", {
+            d: "M1 .9L2.3 .55M8.8 2L10.2 1.6M14.7 .9L15.9 .55M1.4 6.65L2.7 6.25M8.5 7.85L9.9 7.45M16.2 6.65L17.6 6.25",
+            transform: "scale(1.5)",
+            fill: "none",
+            stroke: "#ffffff",
+            "stroke-width": ".067",
+            "stroke-linecap": "round",
+            opacity: ".35"
+          }),
+          utils.createSvgElement("circle", { cx: "6.3", cy: "1.35", r: ".18", fill: "#8f8c84", opacity: ".2" }),
+          utils.createSvgElement("circle", { cx: "20.1", cy: "4.8", r: ".15", fill: "#8f8c84", opacity: ".18" }),
+          utils.createSvgElement("circle", { cx: "11.4", cy: "12.6", r: ".165", fill: "#8f8c84", opacity: ".2" })
         );
       }
     },
