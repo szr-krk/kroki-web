@@ -238,7 +238,7 @@
           lastPoint: drag.lastPoint,
           metrics: controlPoints.metrics()
         });
-      }, { skipHistory: true });
+      }, { skipHistory: true, styleControls: Boolean(adapter.capabilities?.trafficSign) });
       drag.lastPoint = point;
       event.preventDefault();
     }

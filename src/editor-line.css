@@ -113,6 +113,22 @@
   stroke: rgba(220, 38, 38, .22);
 }
 
+.editor-traffic-sign-selection {
+  pointer-events: none;
+  stroke: none;
+  vector-effect: none;
+}
+
+.editor-traffic-sign-selection.is-preselect {
+  fill: rgba(239, 68, 68, .5);
+  stroke: none;
+}
+
+.editor-traffic-sign-selection.is-edit {
+  fill: rgba(34, 197, 94, .5);
+  stroke: none;
+}
+
 .editor-multi-selection {
   fill: none;
   pointer-events: none;

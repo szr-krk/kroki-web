@@ -385,6 +385,16 @@
       .toLocaleUpperCase("tr-TR");
   }
 
+  function normalizeTrafficSignLabelText(value) {
+    return String(value || "")
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n");
+  }
+
+  function normalizeLabelTextForType(value, type) {
+    return type === "trafficSign" ? normalizeTrafficSignLabelText(value) : normalizeLabelText(value);
+  }
+
   function normalizeLabelSize(value) {
     return Math.max(1, Math.round(numberOr(value, 18)));
   }
@@ -475,7 +485,7 @@
     const source = label || {};
     const defaultColor = type === "callout" ? "#000000" : "#111827";
     return {
-      text: normalizeLabelText(source.text || source.labelText),
+      text: normalizeLabelTextForType(source.text || source.labelText, type),
       size: normalizeLabelSize(source.size || source.labelSize),
       color: colorOr(source.color || source.labelColor, defaultColor),
       opacity: normalizeOpacity(source.opacity ?? source.labelOpacity ?? 1),
@@ -1090,24 +1100,32 @@
     controls?.textColorButton?.setAttribute("aria-expanded", "false");
   }
 
-  function setControlVisibility(adapter) {
+  function setControlVisibility(adapter, model) {
     const isTextObject = Boolean(adapter?.capabilities?.textObject);
     const isCallout = adapter?.type === "callout";
     const isRoadObject = Boolean(adapter?.capabilities?.roadObject);
-    const noText = Boolean(adapter?.capabilities?.noText);
+    const isTrafficSign = Boolean(adapter?.capabilities?.trafficSign);
+    const trafficSignHasText = isTrafficSign && (adapter?.hasEditableText?.(model) ?? true);
+    const noText = Boolean(adapter?.capabilities?.noText) || (isTrafficSign && !trafficSignHasText);
     const hasPointEdit = Boolean(adapter?.capabilities?.pointEdit);
     const supportsTextFormatting = isTextObject || Boolean(adapter?.capabilities?.textFormatting);
     const hasFill = Boolean(adapter?.capabilities?.fill);
     const hasFillPattern = supportsFillPattern(adapter);
     const hasArrows = Boolean(adapter?.capabilities?.arrows);
+    const trafficSignTextOnly = isTrafficSign && !noText;
+    const textSizeControl = controls?.textSizeValue?.closest?.(".line-text-size-picker");
     document.querySelectorAll(".shape-only-control").forEach((control) => control.classList.toggle("gizli", !hasFill));
     document.querySelectorAll(".fill-pattern-control").forEach((control) => control.classList.toggle("gizli", !hasFillPattern));
     document.querySelectorAll(".line-only-control").forEach((control) => control.classList.toggle("gizli", !hasArrows));
     document.querySelectorAll(".text-object-control").forEach((control) => control.classList.toggle("gizli", !supportsTextFormatting));
     document.querySelectorAll(".closed-shape-control").forEach((control) => control.classList.toggle("gizli", !hasPointEdit));
     document.querySelectorAll(".road-only-control").forEach((control) => control.classList.toggle("gizli", !isRoadObject));
-    controls?.colorButton?.classList.toggle("gizli", isRoadObject);
+    document.querySelectorAll(".traffic-sign-only-control").forEach((control) => control.classList.toggle("gizli", !isTrafficSign));
+    controls?.colorButton?.classList.toggle("gizli", isRoadObject || isTrafficSign);
     controls?.textButton?.classList.toggle("gizli", noText);
+    textSizeControl?.classList.toggle("gizli", trafficSignTextOnly);
+    controls?.textAlign?.classList.toggle("gizli", trafficSignTextOnly);
+    controls?.textColorButton?.classList.toggle("gizli", trafficSignTextOnly);
     if (isRoadObject) {
       document.querySelector("#strokeColorPanel")?.classList.add("gizli");
       controls?.colorButton?.setAttribute("aria-expanded", "false");
@@ -1118,14 +1136,22 @@
       controls?.textButton?.setAttribute("aria-expanded", "false");
       controls?.textColorButton?.setAttribute("aria-expanded", "false");
     }
+    if (trafficSignTextOnly) {
+      document.querySelector("#textColorPanel")?.classList.add("gizli");
+      controls?.textColorButton?.setAttribute("aria-expanded", "false");
+    }
     if (!hasFillPattern) {
       document.querySelector("#fillPatternPanel")?.classList.add("gizli");
       controls?.fillPatternButton?.setAttribute("aria-expanded", "false");
     }
-    controls?.strokeStepper?.classList.toggle("gizli", isCallout || isRoadObject);
-    controls?.styleButton?.classList.toggle("gizli", isTextObject || isRoadObject);
-    controls?.lineCapButton?.classList.toggle("gizli", isTextObject || isCallout || isRoadObject);
-    controls?.textSide?.classList.toggle("gizli", noText || adapter?.type === "ellipse" || adapter?.type === "rectangle" || supportsTextFormatting);
+    if (isTrafficSign) {
+      document.querySelector("#strokeColorPanel")?.classList.add("gizli");
+      controls?.colorButton?.setAttribute("aria-expanded", "false");
+    }
+    controls?.strokeStepper?.classList.toggle("gizli", isCallout || isRoadObject || isTrafficSign);
+    controls?.styleButton?.classList.toggle("gizli", isTextObject || isRoadObject || isTrafficSign);
+    controls?.lineCapButton?.classList.toggle("gizli", isTextObject || isCallout || isRoadObject || isTrafficSign);
+    controls?.textSide?.classList.toggle("gizli", noText || isTrafficSign || adapter?.type === "ellipse" || adapter?.type === "rectangle" || supportsTextFormatting);
   }
 
   function updateStyle(patch) {
@@ -1143,6 +1169,21 @@
     const entry = activeEntry();
     if (!entry) return;
     selection.promoteToEdit();
+    if (entry.adapter?.capabilities?.trafficSign && Object.prototype.hasOwnProperty.call(patch || {}, "text")) {
+      manager.updateModel(entry.model.id, (model) => ({
+        ...model,
+        label: normalizeLabel({
+          ...model.label,
+          ...(patch || {}),
+          position: { ...(model.label?.position || {}), ...((patch || {}).position || {}) }
+        }, model.type),
+        metadata: {
+          ...(model.metadata || {}),
+          signTextInitialized: true
+        }
+      }), { label: "Metin guncelle", ...options });
+      return;
+    }
     manager.updateLabel(entry.model.id, patch, options);
   }
 
@@ -1165,6 +1206,65 @@
       return;
     }
     updateStyle({ strokeWidth: normalizeStrokeWidth(entry.model.style.strokeWidth + delta) });
+  }
+
+  function activeTrafficSignEntry() {
+    const entry = activeEntry();
+    return entry?.adapter?.capabilities?.trafficSign ? entry : null;
+  }
+
+  function updateTrafficSignScale(deltaPercent) {
+    const entry = activeTrafficSignEntry();
+    if (!entry || entry.multi) return;
+    selection.promoteToEdit();
+    manager.updateGeometry(entry.model.id, (draft) => {
+      const baseScale = Math.max(0.0001, numberOr(draft.metadata?.signBaseScale, 0.08));
+      const current = numberOr(draft.geometry?.scale, baseScale);
+      const currentPercent = Math.round(current / baseScale * 100);
+      const nextPercent = Math.max(1, currentPercent + deltaPercent);
+      draft.geometry.scale = Math.min(4, Math.max(0.005, baseScale * nextPercent / 100));
+    }, { label: "Levha olcegi guncelle", styleControls: true });
+  }
+
+  function updateTrafficSignScaleInput(value) {
+    const entry = activeTrafficSignEntry();
+    if (!entry || entry.multi) return;
+    const percent = Math.max(1, Math.round(numberOr(value, NaN)));
+    if (!Number.isFinite(percent)) return;
+    selection.promoteToEdit();
+    manager.updateGeometry(entry.model.id, (draft) => {
+      const baseScale = Math.max(0.0001, numberOr(draft.metadata?.signBaseScale, 0.08));
+      draft.geometry.scale = Math.min(4, Math.max(0.005, baseScale * percent / 100));
+    }, { label: "Levha olcegi guncelle", styleControls: true });
+  }
+
+  function updateTrafficSignRotation(delta) {
+    const entry = activeTrafficSignEntry();
+    if (!entry || entry.multi) return;
+    selection.promoteToEdit();
+    manager.updateGeometry(entry.model.id, (draft) => {
+      draft.geometry.rotation = utils.normalizeRotation(numberOr(draft.geometry?.rotation, 0) + delta);
+    }, { label: "Levha acisi guncelle", styleControls: true });
+  }
+
+  function updateTrafficSignRotationInput(value) {
+    const entry = activeTrafficSignEntry();
+    if (!entry || entry.multi) return;
+    const rotation = numberOr(value, NaN);
+    if (!Number.isFinite(rotation)) return;
+    selection.promoteToEdit();
+    manager.updateGeometry(entry.model.id, (draft) => {
+      draft.geometry.rotation = utils.normalizeRotation(rotation);
+    }, { label: "Levha acisi guncelle", styleControls: true });
+  }
+
+  function syncTrafficSignControls(model) {
+    const baseScale = Math.max(0.0001, numberOr(model.metadata?.signBaseScale, 0.08));
+    const scale = numberOr(model.geometry?.scale, baseScale);
+    const percent = Math.round(scale / baseScale * 100);
+    const rotation = Math.round(utils.normalizeRotation(model.geometry?.rotation || 0));
+    if (controls?.trafficSignScaleInput && controls.trafficSignScaleInput.value !== String(percent)) controls.trafficSignScaleInput.value = String(percent);
+    if (controls?.trafficSignRotateInput && controls.trafficSignRotateInput.value !== String(rotation)) controls.trafficSignRotateInput.value = String(rotation);
   }
 
   function updatePrimaryColor(color) {
@@ -1203,6 +1303,13 @@
     controls.textInput.style.fontSize = "";
   }
 
+  function normalizeTextInputValue(value) {
+    const entry = activeEntry();
+    return entry?.adapter?.capabilities?.trafficSign
+      ? normalizeTrafficSignLabelText(value)
+      : normalizeLabelText(value);
+  }
+
   function syncControls() {
     const entry = activeEntry();
     if (!entry || !controls) {
@@ -1213,9 +1320,10 @@
 
     const { model, adapter } = entry;
     const isTextObject = isTextObjectEntry(entry);
+    const isTrafficSign = Boolean(adapter?.capabilities?.trafficSign);
     const supportsTextFormatting = isTextObject || Boolean(adapter?.capabilities?.textFormatting);
     const style = normalizeStyle(model.style, model.type);
-    const label = normalizeLabel(model.label, model.type);
+    const label = adapter?.effectiveLabel?.(model) || normalizeLabel(model.label, model.type);
     const dashPattern = choiceById(DASH_PATTERNS, style.dash);
     const lineCap = choiceById(LINE_CAPS, style.lineCap);
     const fillPattern = choiceById(FILL_PATTERNS, style.fillPattern);
@@ -1224,8 +1332,11 @@
     const textOpacityValue = opacityPercent(label.opacity);
     const primaryOpacityValue = isTextObject ? opacityPercent(style.opacity) : strokeOpacityValue;
 
-    setControlVisibility(adapter);
+    setControlVisibility(adapter, model);
     Kroki.RoadInspector?.sync?.(entry);
+    if (isTrafficSign) {
+      syncTrafficSignControls(model);
+    }
     controls.colorButton?.style.setProperty("--side-ip-stroke-color", isTextObject ? label.color : style.stroke);
     controls.fillButton?.style.setProperty("--side-ip-fill-color", style.fill);
     controls.fillPatternButton?.style.setProperty("--side-ip-fill-color", style.fill === "none" ? "#ffffff" : style.fill);
@@ -1241,8 +1352,9 @@
     controls.fillPatternButton?.classList.toggle("is-active", fillPattern.id !== "none");
     controls.fillPatternButton?.setAttribute("title", fillPatternLabel);
     controls.fillPatternButton?.setAttribute("aria-label", fillPatternLabel);
-    controls.textButton?.setAttribute("title", isTextObject ? "Metni duzenle" : "Cizgi metni");
-    controls.textButton?.setAttribute("aria-label", isTextObject ? "Metni duzenle" : "Cizgi metni");
+    const textButtonLabel = isTextObject ? "Metni duzenle" : isTrafficSign ? "Levha metni" : "Cizgi metni";
+    controls.textButton?.setAttribute("title", textButtonLabel);
+    controls.textButton?.setAttribute("aria-label", textButtonLabel);
     controls.textButton?.setAttribute("aria-controls", isTextObject ? "freeTextComposer" : "lineTextPanel");
     if (controls.colorInput) controls.colorInput.value = isTextObject ? label.color : style.stroke;
     if (controls.fillInput) controls.fillInput.value = style.fill === "none" ? "#ffffff" : style.fill;
@@ -1411,7 +1523,7 @@
       strokeMinus: document.querySelector("#btnLineStrokeWidthMinus"),
       strokePlus: document.querySelector("#btnLineStrokeWidthPlus"),
       strokeInput: document.querySelector("#lineStrokeWidthInput"),
-      strokeStepper: document.querySelector(".side-ip-stepper-vertical"),
+      strokeStepper: document.querySelector("#lineStrokeWidthStepper"),
       colorButton: document.querySelector("#btnLineColor"),
       colorInput: document.querySelector("#lineColorInput"),
       strokeColorPanel: document.querySelector("#strokeColorPanel"),
@@ -1426,6 +1538,12 @@
       fillPatternButton: document.querySelector("#btnFillPattern"),
       fillPatternPanel: document.querySelector("#fillPatternPanel"),
       fillPatternChoices: Array.from(document.querySelectorAll("button[data-fill-pattern]")),
+      trafficSignScaleMinus: document.querySelector("#btnTrafficSignScaleMinus"),
+      trafficSignScalePlus: document.querySelector("#btnTrafficSignScalePlus"),
+      trafficSignScaleInput: document.querySelector("#trafficSignScaleInput"),
+      trafficSignRotateMinus: document.querySelector("#btnTrafficSignRotateMinus"),
+      trafficSignRotatePlus: document.querySelector("#btnTrafficSignRotatePlus"),
+      trafficSignRotateInput: document.querySelector("#trafficSignRotateInput"),
       textColorPanel: document.querySelector("#textColorPanel"),
       textOpacityInput: document.querySelector("#textOpacityInput"),
       textOpacityValue: document.querySelector("#textOpacityValue"),
@@ -1487,6 +1605,26 @@
     bindHoldAction(controls.dashGapPlus, () => updateStyle({ dashGap: normalizeDashGap(activeEntry()?.model.style.dashGap + 1, 1) }));
     bindHoldAction(controls.textSizeMinus, () => updateLabel({ size: normalizeLabelSize(activeEntry()?.model.label.size - 1) }));
     bindHoldAction(controls.textSizePlus, () => updateLabel({ size: normalizeLabelSize(activeEntry()?.model.label.size + 1) }));
+    bindHoldAction(controls.trafficSignScaleMinus, () => updateTrafficSignScale(-1));
+    bindHoldAction(controls.trafficSignScalePlus, () => updateTrafficSignScale(1));
+    bindHoldAction(controls.trafficSignRotateMinus, () => updateTrafficSignRotation(-1));
+    bindHoldAction(controls.trafficSignRotatePlus, () => updateTrafficSignRotation(1));
+    controls.trafficSignScaleInput?.addEventListener("input", () => {
+      if (controls.trafficSignScaleInput.value === "") return;
+      updateTrafficSignScaleInput(controls.trafficSignScaleInput.value);
+    });
+    controls.trafficSignScaleInput?.addEventListener("change", () => {
+      updateTrafficSignScaleInput(controls.trafficSignScaleInput.value);
+      syncControls();
+    });
+    controls.trafficSignRotateInput?.addEventListener("input", () => {
+      if (controls.trafficSignRotateInput.value === "" || controls.trafficSignRotateInput.value === "-") return;
+      updateTrafficSignRotationInput(controls.trafficSignRotateInput.value);
+    });
+    controls.trafficSignRotateInput?.addEventListener("change", () => {
+      updateTrafficSignRotationInput(controls.trafficSignRotateInput.value);
+      syncControls();
+    });
 
     controls.strokeInput?.addEventListener("input", () => {
       if (controls.strokeInput.value === "") return;
@@ -1577,7 +1715,7 @@
     controls.textInput?.addEventListener("focus", beginTextInputHistory);
     controls.textInput?.addEventListener("input", () => {
       beginTextInputHistory();
-      const normalized = normalizeLabelText(controls.textInput.value);
+      const normalized = normalizeTextInputValue(controls.textInput.value);
       if (controls.textInput.value !== normalized) {
         const selectionStart = controls.textInput.selectionStart;
         const selectionEnd = controls.textInput.selectionEnd;

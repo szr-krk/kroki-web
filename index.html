@@ -480,6 +480,25 @@
           <div id="roadBoundarySegmentButtons" class="road-boundary-segment-grid" aria-label="Segment stilleri"></div>
         </div>
 
+        <div class="traffic-sign-ip-stack side-ip-control traffic-sign-only-control gizli" aria-label="Levha ozellikleri">
+          <div id="trafficSignScaleStepper" class="side-ip-stepper-vertical" aria-label="Levha olcegi">
+            <button id="btnTrafficSignScalePlus" class="side-ip-stepper-btn" type="button"
+              aria-label="Levha olcegini yuzde 1 arttir">+</button>
+            <input id="trafficSignScaleInput" class="side-ip-stepper-number" type="number" min="1" step="1"
+              value="100" inputmode="numeric" aria-label="Levha olcegi yuzde">
+            <button id="btnTrafficSignScaleMinus" class="side-ip-stepper-btn" type="button"
+              aria-label="Levha olcegini yuzde 1 azalt">-</button>
+          </div>
+          <div id="trafficSignRotateStepper" class="side-ip-stepper-vertical" aria-label="Levha acisi">
+            <button id="btnTrafficSignRotatePlus" class="side-ip-stepper-btn" type="button"
+              aria-label="Levha acisini 1 derece arttir">+</button>
+            <input id="trafficSignRotateInput" class="side-ip-stepper-number" type="number" min="-180" max="180"
+              step="1" value="0" inputmode="numeric" aria-label="Levha acisi">
+            <button id="btnTrafficSignRotateMinus" class="side-ip-stepper-btn" type="button"
+              aria-label="Levha acisini 1 derece azalt">-</button>
+          </div>
+        </div>
+
         <button id="btnLineColor" class="side-ip-btn side-ip-tool side-ip-color-btn is-stroke" type="button"
           aria-label="Cizgi rengi" title="Cizgi rengi" aria-controls="strokeColorPanel"
           aria-expanded="false">
@@ -556,7 +575,7 @@
             aria-label="Alti cizili" title="Alti cizili" aria-pressed="false">U</button>
         </div>
 
-        <div class="side-ip-stepper-vertical side-ip-control" aria-label="Cizgi kalinligi">
+        <div id="lineStrokeWidthStepper" class="side-ip-stepper-vertical side-ip-control" aria-label="Cizgi kalinligi">
           <button id="btnLineStrokeWidthPlus" class="side-ip-stepper-btn" type="button"
             aria-label="Cizgi kalinligini arttir">+</button>
           <input id="lineStrokeWidthInput" class="side-ip-stepper-number" type="number" min="1" step="1"
@@ -1090,10 +1109,18 @@
         <div class="editor-library-card">
           <div class="editor-library-header">
             <span>Levha Ekle</span>
-            <button class="editor-library-close" type="button" data-rail-close>Kapat</button>
+            <div class="editor-library-header-actions">
+              <button id="btnTrafficSignAdd" class="editor-library-ok gizli" type="button">Tamam</button>
+              <button class="editor-library-close" type="button" data-rail-close>Kapat</button>
+            </div>
           </div>
-          <div class="editor-library-body">(Boş) - Levhalar daha sonra doldurulacak.</div>
-          <div class="editor-library-footer">Seçilen levha krokiye eklenecek.</div>
+          <div class="editor-library-body traffic-sign-library">
+            <div id="trafficSignCategoryList" class="traffic-sign-category-list" aria-label="Levha listeleri"></div>
+            <div class="traffic-sign-browser">
+              <div id="trafficSignGrid" class="traffic-sign-grid" aria-label="Levhalar"></div>
+            </div>
+          </div>
+          <div id="trafficSignSelectedLabel" class="editor-library-footer">Seçilen levha: Yok</div>
         </div>
       </div>
 
@@ -1117,6 +1144,9 @@
   <script src="src/editor-camera.js"></script>
   <script src="src/editor-object-edit.js"></script>
   <script src="src/editor-stroke-style.js"></script>
+  <script src="src/data/traffic-signs-tanzim-levhalari.generated.js"></script>
+  <script src="src/data/traffic-signs-uyari-levhalari.generated.js"></script>
+  <script src="src/core/trafficSignCatalog.js"></script>
   <script src="src/core/shapeRegistry.js"></script>
   <script src="src/core/styleManager.js"></script>
   <script src="src/core/editorObjectManager.js"></script>
@@ -1142,10 +1172,12 @@
   <script src="src/adapters/roadAdapter.js"></script>
   <script src="src/core/roadIntersectionEngine.js"></script>
   <script src="src/adapters/textAdapter.js"></script>
+  <script src="src/adapters/trafficSignAdapter.js"></script>
   <script src="src/ui/editorTextComposer.js"></script>
   <script src="src/ui/editorBindings.js"></script>
   <script src="src/ui/roadBuilder.js"></script>
   <script src="src/ui/roadInspector.js"></script>
+  <script src="src/ui/trafficSignLibrary.js"></script>
 </body>
 
 </html>

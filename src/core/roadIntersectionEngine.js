@@ -373,6 +373,104 @@
     ));
   }
 
+  function nearestSurfaceSample(surface, point) {
+    if (!surface?.samples?.length || !point) return null;
+    let best = null;
+    surface.samples.forEach((sample) => {
+      const distanceValue = dist(point, sample.center);
+      if (!best || distanceValue < best.distance) best = { sample, distance: distanceValue };
+    });
+    return best?.sample || null;
+  }
+
+  function signedOffsetOnSurface(surface, point) {
+    const sample = nearestSurfaceSample(surface, point);
+    if (!sample || !point) return 0;
+    return (point.x - sample.center.x) * sample.normal.x + (point.y - sample.center.y) * sample.normal.y;
+  }
+
+  function surfaceTerminalEndpoints(surface) {
+    const samples = surface?.samples || [];
+    if (samples.length < 2) return [];
+    return [
+      { t: 0, point: samples[0].center, farPoint: samples[samples.length - 1].center },
+      { t: 1, point: samples[samples.length - 1].center, farPoint: samples[0].center }
+    ];
+  }
+
+  function terminalOpenSign(surface, hostSurface, endpoint) {
+    const farOffset = signedOffsetOnSurface(hostSurface, endpoint.farPoint);
+    if (Math.abs(farOffset) > 1) return farOffset > 0 ? 1 : -1;
+    const samples = surface?.samples || [];
+    const probeIndex = endpoint.t === 0
+      ? Math.min(samples.length - 1, Math.max(1, Math.round(samples.length * 0.25)))
+      : Math.max(0, Math.min(samples.length - 2, Math.round(samples.length * 0.75)));
+    const probeOffset = signedOffsetOnSurface(hostSurface, samples[probeIndex]?.center || endpoint.farPoint);
+    if (Math.abs(probeOffset) > 1) return probeOffset > 0 ? 1 : -1;
+    return 0;
+  }
+
+  function surfaceTerminalAttachments(surface, hostSurface) {
+    if (!surface || !hostSurface || surface.id === hostSurface.id) return [];
+    const tolerance = Math.max(2, INTERSECTION_PAD * 2);
+    return surfaceTerminalEndpoints(surface).map((endpoint) => {
+      if (!pointNearPolygon(endpoint.point, hostSurface.polygon, tolerance)) return null;
+      const openSign = terminalOpenSign(surface, hostSurface, endpoint);
+      if (!openSign) return null;
+      return {
+        roadId: surface.id,
+        hostId: hostSurface.id,
+        host: hostSurface,
+        point: endpoint.point,
+        openSign
+      };
+    }).filter(Boolean);
+  }
+
+  function attachmentSideValue(attachment, point) {
+    return signedOffsetOnSurface(attachment.host, point) * attachment.openSign;
+  }
+
+  function isOnAttachmentOpenSide(attachment, point, pad = 0) {
+    return attachmentSideValue(attachment, point) >= -Math.max(0, pad);
+  }
+
+  function clipPolygonToAttachmentOpenSide(points, attachment, pad = 0) {
+    if (!Array.isArray(points) || points.length < 3 || !attachment) return points || [];
+    const valueAt = (point) => attachmentSideValue(attachment, point) + Math.max(0, pad);
+    const clipped = [];
+    for (let index = 0; index < points.length; index += 1) {
+      const current = points[index];
+      const previous = points[(index - 1 + points.length) % points.length];
+      const currentValue = valueAt(current);
+      const previousValue = valueAt(previous);
+      const currentInside = currentValue >= -EPS;
+      const previousInside = previousValue >= -EPS;
+      if (currentInside !== previousInside) {
+        const denom = previousValue - currentValue;
+        const t = Math.abs(denom) <= EPS ? 0 : clamp(previousValue / denom, 0, 1);
+        addPointIfFar(clipped, interpolate(previous, current, t), 0.12);
+      }
+      if (currentInside) addPointIfFar(clipped, current, 0.12);
+    }
+    return clipped.length >= 3 ? clipped : [];
+  }
+
+  function terminalAttachmentsForPair(a, b) {
+    return [
+      ...surfaceTerminalAttachments(a, b),
+      ...surfaceTerminalAttachments(b, a)
+    ];
+  }
+
+  function clippedHullForTerminalAttachments(hull, a, b) {
+    let clipped = hull || [];
+    terminalAttachmentsForPair(a, b).forEach((attachment) => {
+      if (clipped.length >= 3) clipped = clipPolygonToAttachmentOpenSide(clipped, attachment, INTERSECTION_PAD);
+    });
+    return clipped.length >= 3 ? clipped : hull;
+  }
+
   function terminalRoadIdsForPair(a, b, hull) {
     const ids = [];
     if (surfaceHasTerminalInIntersection(a, b, hull)) ids.push(a.id);
@@ -1211,11 +1309,12 @@
         if (!boundsOverlap(a.bounds, b.bounds, 2)) continue;
         const hits = polygonIntersections(a.polygon, b.polygon);
         if (hits.length < 3) continue;
-        const hull = expandPolygon(convexHull(hits), INTERSECTION_PAD);
+        const baseHull = convexHull(hits);
+        const hull = expandPolygon(clippedHullForTerminalAttachments(baseHull, a, b), INTERSECTION_PAD);
         if (hull.length < 3) continue;
         shapes.push({
           roadIds: [a.id, b.id],
-          terminalRoadIds: terminalRoadIdsForPair(a, b, hull),
+          terminalRoadIds: terminalRoadIdsForPair(a, b, baseHull),
           points: hull,
           d: smoothClosedPath(hull, Math.min(10, SMOOTH_RADIUS), hull)
         });
@@ -1227,7 +1326,25 @@
   }
 
   function pointInsideOtherSurfaces(point, sourceId, surfaces) {
-    return surfaces.some((surface) => surface.id !== sourceId && boundsOverlap(surface.bounds, { minX: point.x, maxX: point.x, minY: point.y, maxY: point.y }, 0.5) && pointInPolygon(point, surface.polygon));
+    const sourceSurface = (surfaces || []).find((surface) => surface.id === sourceId) || null;
+    return surfaces.some((surface) => {
+      if (surface.id === sourceId || !boundsOverlap(surface.bounds, { minX: point.x, maxX: point.x, minY: point.y, maxY: point.y }, 0.5)) return false;
+      if (!pointInPolygon(point, surface.polygon)) return false;
+      const attachments = sourceSurface ? surfaceTerminalAttachments(surface, sourceSurface) : [];
+      if (attachments.length && !attachments.some((attachment) => isOnAttachmentOpenSide(attachment, point, INTERSECTION_PAD))) return false;
+      return true;
+    });
+  }
+
+  function isTerminalOppositeSideNearHost(surface, point, surfaces) {
+    if (!surface || !point) return false;
+    return (surfaces || []).some((hostSurface) => {
+      if (hostSurface.id === surface.id) return false;
+      return surfaceTerminalAttachments(surface, hostSurface).some((attachment) => (
+        !isOnAttachmentOpenSide(attachment, point, 0.75) &&
+        pointNearPolygon(point, hostSurface.polygon, Math.max(8, surface.half + INTERSECTION_PAD * 2))
+      ));
+    });
   }
 
   function splitSegmentByPolygonIntersections(a, b, sourceId, surfaces) {
@@ -1287,6 +1404,7 @@
           const toT = params[p + 1];
           if (toT - fromT < EPS) continue;
           const mid = interpolate(a, b, (fromT + toT) / 2);
+          if (isTerminalOppositeSideNearHost(surface, mid, surfaces)) continue;
           if (pointInsideOtherSurfaces(mid, surface.id, surfaces)) continue;
           const from = interpolate(a, b, fromT);
           const to = interpolate(a, b, toT);
