@@ -1,0 +1,84 @@
+# Editör
+
+Editör, tek bir SVG canvas üzerinde çizim, seçim, kamera hareketi, nesne düzenleme, yol üretimi ve levha ekleme işlemlerini bir araya getirir. DOM iskeleti `index.html` içindedir; davranış küçük UI dosyaları ile `window.Kroki` çekirdeğine dağıtılmıştır.
+
+## İlgili kod dosyaları
+
+- `index.html`: `#editor`, `#editorCanvas`, bütün araç çubukları ve paneller.
+- `src/editor-state.js`: aktif çizim aracı, düzenlenen DOM nesnesi ve düzenleme modu.
+- `src/editor-camera.js`: pan, zoom, pinch ve viewBox dönüşümleri.
+- `src/editor-object-edit.js`: üst/yan araç çubuğu referansları ve ortak UI yardımcıları.
+- `src/ui/editorBindings.js`: çizim araçlarını pointer taslağına ve nesne oluşturmaya bağlar.
+- `src/ui/editorTextComposer.js`: serbest metin oluşturma/düzenleme paneli.
+- `src/editor.css`, `src/editor-line.css`: yerleşim ve nesne/düzenleme stilleri.
+
+Bağlantılar: [[Menü Sistemi]], [[Nesne Sistemi]], [[Seçim Sistemi]], [[Kontrol Noktaları]].
+
+## Canvas ve katmanlar
+
+Canvas başlangıç viewBox'ı `0 0 1200 800` değeridir.
+
+- `#editorObjects`: belge nesneleri ve onların etiketleri. Grup yöneticisi bu katmanda iç içe `<g>` düğümleri kurar.
+- `#editorEditLayer`: tekli/çoklu seçim görselleri ve kontrol noktaları.
+- `#roadIntersectionContourLayer`: gerektiğinde `RoadIntersectionEngine` tarafından `#editorObjects` içine eklenir; yol düğümlerinin üstünde, diğer nesnelerin altında tutulur.
+- `#editorObjectDefs`, `#editorLineDefs`, `#editorFillPatternDefs`: etiket path/clip, ok marker ve dolgu pattern ihtiyaçlarında dinamik oluşturulur.
+
+## Kamera davranışları
+
+- Mouse tekerleği pointer konumunu sabit tutarak üstel zoom yapar.
+- Orta mouse veya `Space` + sol mouse pan başlatır.
+- Boş canvas üzerinde tek parmak pan; iki pointer pinch-zoom yapar.
+- Ölçek sınırı `0.05`–`64` arasındadır.
+- Kamera değişimi `kroki:viewboxchange` olayı üretir; kontrol noktaları, seçim ve viewport'a bağlı metin etiketleri bu olayla yeniden senkronize edilir.
+- Sağ raydaki ekrana sığdır düğmesi viewBox'ı ilk değere döndürür; nesne sınırlarına göre otomatik fit hesabı yapmaz.
+- Kamera hareketi başladığında aktif nesne çizim taslağı veya seçim sürüklemesi sonlandırılır.
+
+## Çizim akışı
+
+`editor-rail.js` bir çizim aracını aktif eder ve `kroki:active-tool-change` olayı yayınlar. `editorBindings.js` canvas pointer olaylarını aşağıdaki tiplere çevirir:
+
+- `cizgi` → `line`
+- `arc` → `arc`
+- `curve`, `cubic` → `bezier` (`quadratic` veya `cubic`)
+- `daire` → `circle`
+- `elips` → `ellipse`
+- `dikdortgen` → `rectangle`
+- `kapali` → `closedShape`
+- `olcu` → `callout`
+- `metin` → pointer taslağı yerine `FreeTextComposer`
+
+Pointer ile sürüklenen taslaklar geçmiş kaydı atlanarak canlı güncellenir. Boyut 2 SVG biriminden küçükse nesne silinir; aksi halde tek bir “Nesne ekle” geçmiş işlemi commit edilir ve nesne düzenleme modunda seçilir.
+
+## Kapalı şekil taslağı
+
+- Her tap bir köşe ekler; en az üç nokta olunca “Şekli Kapat” etkinleşir.
+- Her segment başlangıçta iki noktanın ortasındaki quadratic kontrol noktasıyla temsil edilir.
+- Kapatma `closed: true`, `draft: false`, `pointEdit: false` yazar.
+- Araç değiştirmek veya iptal etmek tamamlanmamış taslağı geçmişe eklemeden kaldırır.
+
+## Metin oluşturma
+
+Serbest metin aracı canvas merkezine yakın (`viewBox` merkezinin yatay merkezi, yüksekliğin `%46` noktası) bir `text` nesnesi ekler. Panel metin, boyut, opaklık, hizalama, kalın/italik/altı çizili ve renk alanlarını yönetir. Ayrıntı: [[Nesne Sistemi#Metin]].
+
+## Etkileşim önceliği
+
+1. Kamera capture-phase dinleyicileri pan/pinch koşullarını değerlendirir.
+2. `SelectionManager` hit-test ve tekli/çoklu seçimi değerlendirir.
+3. Aktif çizim aracı varsa `editorBindings` taslak üretir.
+
+Modal, açık ray paneli veya serbest metin composer görünürken `krokiEditorState.isBlockingOverlayOpen()` canvas etkileşimini engeller.
+
+## Bağlı modüller
+
+- Nesne üretimi ve render: [[Nesne Sistemi]].
+- Seçim ve grup etkileşimi: [[Seçim Sistemi]].
+- Tutamaçlar: [[Kontrol Noktaları]].
+- Sağ ray ve üst araç çubukları: [[Menü Sistemi]].
+- Yol ve kavşak: [[Yol Sistemi]], [[Kavşak Sistemi]].
+- Geçmiş: [[Undo Redo]].
+
+## Belirsiz
+
+- Canvas ölçü biriminin gerçek dünya karşılığı yoktur; tüm genişlik ve mesafeler SVG birimi olarak ele alınır.
+- “Ekrana sığdır” adının belge nesnelerini kapsaması beklenebilir, fakat mevcut davranış yalnız başlangıç viewBox'ına sıfırlamadır.
+

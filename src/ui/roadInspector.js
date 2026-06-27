@@ -19,6 +19,12 @@
     { id: "arc", title: "Viraj", short: "V" },
     { id: "sCurve", title: "S viraj", short: "SV" }
   ];
+  const POCKET_STATES = [
+    { id: "none", title: "Cep yok" },
+    { id: "right", title: "Sa\u011f cep" },
+    { id: "left", title: "Sol cep" },
+    { id: "double", title: "\u00c7ift cep" }
+  ];
   const MIN_S_CURVE_CONTROLS = 2;
   const MAX_S_CURVE_CONTROLS = 5;
   const ROAD_LINE_COLOR = "#000000";
@@ -36,6 +42,8 @@
     laneWidthMinus: document.querySelector("#btnRoadLaneWidthMinus"),
     profile: document.querySelector("#btnRoadProfileIp"),
     profileLabel: document.querySelector("#lblRoadProfileIp"),
+    pocket: document.querySelector("#btnRoadPocketIp"),
+    pocketLabel: document.querySelector("#lblRoadPocketIp"),
     sCurveControls: document.querySelector("#roadSCurveControlIp"),
     sCurveControlCount: document.querySelector("#roadSCurveControlCountIpInput"),
     sCurveControlPlus: document.querySelector("#btnRoadSCurveControlPlus"),
@@ -64,6 +72,7 @@
     markingStyle: document.querySelector("#btnRoadMarkingStyleIp"),
     markingStyleIcon: document.querySelector("#iconRoadMarkingStyle"),
     sectionDone: document.querySelector("#btnRoadSectionDoneIp"),
+    pocketIslandDone: document.querySelector("#btnRoadPocketIslandDoneIp"),
     globalControls: Array.from(document.querySelectorAll("#roadIpControls .road-global-control")),
     symmetryControls: Array.from(document.querySelectorAll("#roadIpControls .road-symmetry-control")),
     sectionControls: Array.from(document.querySelectorAll("#roadIpControls .road-lane-only-control"))
@@ -111,6 +120,10 @@
 
   function selectedBarrierInfo(model) {
     return adapterFor(model)?.selectedBarrierInfo?.(model) || null;
+  }
+
+  function selectedPocketIslandInfo(model) {
+    return adapterFor(model)?.selectedPocketIslandInfo?.(model) || null;
   }
 
   function barrierTargetsForSelection(model, section) {
@@ -373,6 +386,18 @@
     return ROAD_PROFILES[(index + 1) % ROAD_PROFILES.length].id;
   }
 
+  function pocketState(model) {
+    const adapter = adapterFor(model);
+    const id = adapter?.pocketMode?.(model) || "none";
+    return POCKET_STATES.find((item) => item.id === id) || POCKET_STATES[0];
+  }
+
+  function nextPocketState(model) {
+    const current = pocketState(model);
+    const index = Math.max(0, POCKET_STATES.findIndex((item) => item.id === current.id));
+    return POCKET_STATES[(index + 1) % POCKET_STATES.length];
+  }
+
   function togglePressed(button, value) {
     button?.classList.toggle("is-active", Boolean(value));
     button?.setAttribute("aria-pressed", String(Boolean(value)));
@@ -526,6 +551,8 @@
       delete metadata.roadSelection;
       delete metadata.roadBoundaryEdit;
       delete metadata.roadBarrierEdit;
+      delete metadata.roadPocketEdit;
+      delete metadata.roadPocketIslandEdit;
       return { ...draft, metadata };
     }, { skipHistory: true });
   }
@@ -537,6 +564,17 @@
       const adapter = adapterFor(draft);
       adapter?.clearBarrierSelection?.(draft);
       return draft;
+    }, { skipHistory: true });
+  }
+
+  function clearPocketIslandSelection() {
+    const model = activeRoadModel();
+    if (!model) return;
+    Kroki.StyleManager?.hidePanels?.();
+    manager.updateModel(model.id, (draft) => {
+      const metadata = { ...(draft.metadata || {}) };
+      delete metadata.roadPocketIslandEdit;
+      return { ...draft, metadata };
     }, { skipHistory: true });
   }
 
@@ -616,6 +654,7 @@
     const visible = Boolean(model);
     controls.root?.classList.toggle("gizli", !visible);
     if (!visible) {
+      controls.pocketIslandDone?.classList.add("gizli");
       closeBoundaryPanel();
       return;
     }
@@ -623,14 +662,22 @@
     const config = normalizeConfig(model, model.metadata?.road);
     const section = selectedSectionInfo(model);
     const barrier = selectedBarrierInfo(model);
+    const pocketIsland = selectedPocketIslandInfo(model);
+    const pocketIslandMode = Boolean(pocketIsland);
+    controls.root?.classList.toggle("gizli", pocketIslandMode);
+    controls.pocketIslandDone?.classList.toggle("gizli", !pocketIslandMode);
     const island = isIslandRoad(model);
     const barrierMode = Boolean(barrier);
     const sectionMode = Boolean(section) && !barrierMode;
-    const barrierTargets = !barrierMode && sectionMode ? barrierTargetsForSelection(model, section) : [];
+    if (pocketIslandMode) closeBoundaryPanel();
+    const pocketSectionMode = sectionMode && section?.role === "pocket";
+    const barrierTargets = !barrierMode && sectionMode && !pocketSectionMode ? barrierTargetsForSelection(model, section) : [];
     const addBarrierTarget = barrierTargets.filter((target) => target.remaining > 0)
       .sort((a, b) => a.count - b.count || barrierTargetSortValue(a.edgeKey) - barrierTargetSortValue(b.edgeKey))[0] || null;
     controls.globalControls.forEach((control) => control.classList.toggle("gizli", sectionMode || barrierMode));
     controls.sectionControls.forEach((control) => control.classList.toggle("gizli", !sectionMode));
+    controls.upperLine?.classList.toggle("gizli", !sectionMode || pocketSectionMode);
+    controls.lowerLine?.classList.toggle("gizli", !sectionMode || pocketSectionMode);
     controls.symmetryControls.forEach((control) => control.classList.toggle("gizli", island || sectionMode || barrierMode));
     controls.laneWidthControl?.classList.toggle("gizli", barrierMode);
     controls.addBarrier?.classList.toggle("gizli", barrierTargets.length === 0);
@@ -659,12 +706,14 @@
     }
     if (island) {
       controls.profile?.classList.add("gizli");
+      controls.pocket?.classList.add("gizli");
       controls.sCurveControls?.classList.add("gizli");
       controls.leftShoulder?.classList.add("gizli");
       controls.rightShoulder?.classList.add("gizli");
       controls.markingStyle?.classList.add("gizli");
     } else {
       controls.profile?.classList.toggle("gizli", sectionMode || barrierMode);
+      controls.pocket?.classList.toggle("gizli", sectionMode || barrierMode || model.geometry?.profile !== "straight");
       controls.leftShoulder?.classList.toggle("gizli", sectionMode || barrierMode);
       controls.rightShoulder?.classList.toggle("gizli", sectionMode || barrierMode);
       controls.markingStyle?.classList.toggle("gizli", sectionMode || barrierMode);
@@ -674,10 +723,15 @@
     controls.profile?.setAttribute("title", "Yol profili: " + profile.title);
     controls.profile?.setAttribute("aria-label", "Yol profili: " + profile.title);
     if (controls.profileLabel) controls.profileLabel.textContent = profile.short;
+    const pocket = pocketState(model);
+    controls.pocket?.setAttribute("title", pocket.title);
+    controls.pocket?.setAttribute("aria-label", pocket.title);
+    if (controls.pocketLabel) controls.pocketLabel.textContent = pocket.title;
+    togglePressed(controls.pocket, pocket.id !== "none");
     const sCurveCount = clampInt(adapterFor(model)?.sCurveControlCount?.(model), MIN_S_CURVE_CONTROLS, MAX_S_CURVE_CONTROLS, MIN_S_CURVE_CONTROLS);
     if (controls.sCurveControlCount && controls.sCurveControlCount.value !== String(sCurveCount)) controls.sCurveControlCount.value = String(sCurveCount);
     if (!island) controls.sCurveControls?.classList.toggle("gizli", sectionMode || barrierMode || model.geometry?.profile !== "sCurve");
-    if (!sectionMode) closeBoundaryPanel();
+    if (!sectionMode || pocketSectionMode) closeBoundaryPanel();
     if (controls.laneCount && controls.laneCount.value !== String(config.laneCount)) controls.laneCount.value = String(config.laneCount);
     const widthValue = pickerInt(sectionMode ? section.width : config.laneWidth, 50);
     if (controls.laneWidth && controls.laneWidth.value !== String(widthValue)) controls.laneWidth.value = String(widthValue);
@@ -687,7 +741,7 @@
     controls.markingStyle?.setAttribute("title", "Yol cizgi stili: " + marking.title);
     controls.markingStyle?.setAttribute("aria-label", "Yol cizgi stili: " + marking.title);
     renderLineStyleIcon(controls.markingStyleIcon, config.marking?.style);
-    if (sectionMode) syncBoundaryPanel(config, section);
+    if (sectionMode && !pocketSectionMode) syncBoundaryPanel(config, section);
   }
 
   controls.laneCountPlus?.addEventListener("click", () => {
@@ -724,6 +778,10 @@
   controls.profile?.addEventListener("click", () => updateActiveRoadModel((draft, adapter) => {
     adapter?.setProfile?.(draft, nextProfile(draft.geometry?.profile));
   }, "Yol profili"));
+  controls.pocket?.addEventListener("click", () => updateActiveRoadModel((draft, adapter) => {
+    if (draft.geometry?.profile !== "straight") return;
+    adapter?.setPocketMode?.(draft, nextPocketState(draft).id);
+  }, "Yol cebi"));
   controls.xAxisSymmetry?.addEventListener("click", () => reflectActiveRoad("reflectAcrossBoundsXAxis", "Yol X ekseni simetrisi"));
   controls.yAxisSymmetry?.addEventListener("click", () => reflectActiveRoad("reflectAcrossBoundsYAxis", "Yol Y ekseni simetrisi"));
   controls.sCurveControlPlus?.addEventListener("click", () => updateActiveRoadModel((draft, adapter) => {
@@ -760,6 +818,7 @@
   controls.barrierDelete?.addEventListener("click", deleteSelectedBarrier);
   controls.barrierDone?.addEventListener("click", clearBarrierSelection);
   controls.sectionDone?.addEventListener("click", clearSectionSelection);
+  controls.pocketIslandDone?.addEventListener("click", clearPocketIslandSelection);
   controls.boundaryPanelClose?.addEventListener("click", closeBoundaryPanel);
   controls.segmentCount?.addEventListener("change", () => updateActiveRoad((config, section, model) => {
     const boundary = boundaryFor(section);

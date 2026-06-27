@@ -29,7 +29,10 @@
 
   function setSelected(sign) {
     selectedKey = sign?.key || "";
-    if (selectedLabel) selectedLabel.textContent = "Seçilen levha: " + (sign?.name || "Yok");
+    if (selectedLabel) {
+      const signLabel = sign ? `${sign.code ? sign.code + " - " : ""}${sign.name || "Levha"}` : "Yok";
+      selectedLabel.textContent = "Seçilen levha: " + signLabel;
+    }
     addButton?.classList.toggle("gizli", !selectedKey);
     syncTileSelection();
   }

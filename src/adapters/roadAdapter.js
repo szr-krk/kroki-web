@@ -31,6 +31,14 @@
   const BARRIER_TOP_WIDTH = 4;
   const BARRIER_POST_WIDTH = 3;
   const BARRIER_HIT_TOLERANCE = 16;
+  const POCKET_MODES = ["none", "right", "left", "double"];
+  const DEFAULT_POCKET_WIDTH = 50;
+  const DEFAULT_POCKET_GAP = 20;
+  const DEFAULT_POCKET_ISLAND_STYLE = {
+    fill: "#dcfce7",
+    fillOpacity: 1,
+    fillPattern: "grass"
+  };
   const BARRIER_EDGE_ORDER = ["rightOuter", "rightInner", "leftInner", "leftOuter"];
   const BARRIER_END_CAP_STATES = [
     { start: false, end: false },
@@ -54,6 +62,7 @@
     marking: { style: "dash", width: 2 },
     edgeLine: { enabled: true, width: 2 },
     boundaryStyles: {},
+    pockets: { left: null, right: null },
     barriers: [],
     autoIntersection: true,
     bridge: false,
@@ -488,6 +497,32 @@
     };
   }
 
+  function normalizePocket(source, fallbackWidth = DEFAULT_POCKET_WIDTH) {
+    if (!source || typeof source !== "object") return null;
+    const width = widthOr(source.width, fallbackWidth, 10, 180);
+    const outerFrom = clamp(numberOr(source.outerFrom, 0.08), 0, 0.78);
+    const outerTo = clamp(numberOr(source.outerTo, 0.92), outerFrom + 0.11, 1);
+    const innerFrom = clamp(numberOr(source.innerFrom, 0.27), outerFrom + 0.025, outerTo - 0.085);
+    const innerTo = clamp(numberOr(source.innerTo, 0.73), innerFrom + 0.06, outerTo - 0.025);
+    return {
+      outerFrom,
+      innerFrom,
+      innerTo,
+      outerTo,
+      width,
+      outset: widthOr(source.outset, width / 2 + DEFAULT_POCKET_GAP, width / 2, 600),
+      islandStyle: styleManager.normalizeStyle(source.islandStyle || DEFAULT_POCKET_ISLAND_STYLE, "closedShape")
+    };
+  }
+
+  function normalizePockets(source, fallbackWidth = DEFAULT_POCKET_WIDTH) {
+    const value = source && typeof source === "object" ? source : {};
+    return {
+      left: normalizePocket(value.left, fallbackWidth),
+      right: normalizePocket(value.right, fallbackWidth)
+    };
+  }
+
   function normalizeWidthList(source, count, fallbackWidth) {
     const list = Array.isArray(source) ? source : [];
     return Array.from({ length: count }, (_, index) => widthOr(list[index], fallbackWidth, 10, 180));
@@ -714,6 +749,7 @@
         width: widthOr(source.edgeLine?.width, base.edgeLine.width, 1, 16)
       },
       boundaryStyles: normalizeBoundaryStyles(source.boundaryStyles),
+      pockets: normalizePockets(source.pockets, laneWidth),
       barriers: [],
       autoIntersection: boolOr(source.autoIntersection, base.autoIntersection),
       bridge: boolOr(source.bridge, base.bridge),
@@ -959,6 +995,286 @@
     return "edge";
   }
 
+  function pocketMode(value) {
+    const config = value?.metadata ? roadConfig(value) : normalizeRoadConfig(value || {});
+    const hasRight = Boolean(config.pockets?.right);
+    const hasLeft = Boolean(config.pockets?.left);
+    if (hasRight && hasLeft) return "double";
+    if (hasRight) return "right";
+    if (hasLeft) return "left";
+    return "none";
+  }
+
+  function defaultPocket(config) {
+    return normalizePocket({}, config?.laneWidth || DEFAULT_POCKET_WIDTH);
+  }
+
+  function setPocketMode(model, mode) {
+    if (!model || model.geometry?.profile !== STRAIGHT) return false;
+    const nextMode = POCKET_MODES.includes(mode) ? mode : "none";
+    const config = roadConfig(model);
+    const current = normalizePockets(config.pockets, config.laneWidth);
+    config.pockets = {
+      right: nextMode === "right" || nextMode === "double" ? (current.right || defaultPocket(config)) : null,
+      left: nextMode === "left" || nextMode === "double" ? (current.left || defaultPocket(config)) : null
+    };
+    const metadata = { ...(model.metadata || {}), road: normalizeRoadConfig(config) };
+    delete metadata.roadSelection;
+    delete metadata.roadBoundaryEdit;
+    delete metadata.roadBarrierEdit;
+    if (nextMode === "none") {
+      delete metadata.roadPocketEdit;
+      delete metadata.roadPocketIslandEdit;
+    }
+    else {
+      const selectedSide = metadata.roadPocketEdit?.side;
+      if (!selectedSide || !config.pockets[selectedSide]) delete metadata.roadPocketEdit;
+      const selectedIslandSide = metadata.roadPocketIslandEdit?.side;
+      if (!selectedIslandSide || !config.pockets[selectedIslandSide]) delete metadata.roadPocketIslandEdit;
+    }
+    model.metadata = metadata;
+    return true;
+  }
+
+  function pocketSideSign(side) {
+    return side === "left" ? 1 : -1;
+  }
+
+  function pocketGeometry(model, side, config = roadConfig(model)) {
+    if (model?.geometry?.profile !== STRAIGHT) return null;
+    const pocket = config.pockets?.[side];
+    if (!pocket) return null;
+    const section = crossSection(config);
+    const sign = pocketSideSign(side);
+    const attachMagnitude = Math.max(0, section.totalWidth / 2 - pocket.width / 2);
+    const bodyMagnitude = section.totalWidth / 2 + pocket.outset;
+    const attachOffset = sign * attachMagnitude;
+    const bodyOffset = sign * bodyMagnitude;
+    const centerPoints = [
+      offsetPointAt(model, pocket.outerFrom, attachOffset),
+      offsetPointAt(model, pocket.innerFrom, bodyOffset),
+      offsetPointAt(model, pocket.innerTo, bodyOffset),
+      offsetPointAt(model, pocket.outerTo, attachOffset)
+    ];
+    return { side, sign, config: pocket, section, attachOffset, bodyOffset, centerPoints };
+  }
+
+  function offsetPolyline(points, amount) {
+    if (!Array.isArray(points) || points.length < 2) return [];
+    const segmentNormals = [];
+    for (let index = 0; index < points.length - 1; index += 1) {
+      const dx = points[index + 1].x - points[index].x;
+      const dy = points[index + 1].y - points[index].y;
+      const length = Math.hypot(dx, dy) || 1;
+      segmentNormals.push({ x: -dy / length, y: dx / length });
+    }
+    return points.map((item, index) => {
+      if (index === 0) return { x: item.x + segmentNormals[0].x * amount, y: item.y + segmentNormals[0].y * amount };
+      if (index === points.length - 1) {
+        const normal = segmentNormals[segmentNormals.length - 1];
+        return { x: item.x + normal.x * amount, y: item.y + normal.y * amount };
+      }
+      const before = segmentNormals[index - 1];
+      const after = segmentNormals[index];
+      const mx = before.x + after.x;
+      const my = before.y + after.y;
+      const mLength = Math.hypot(mx, my) || 1;
+      const miter = { x: mx / mLength, y: my / mLength };
+      const denominator = Math.max(0.25, Math.abs(miter.x * after.x + miter.y * after.y));
+      const scale = amount / denominator;
+      return { x: item.x + miter.x * scale, y: item.y + miter.y * scale };
+    });
+  }
+
+  function pocketBoundaryPoints(geometry) {
+    const half = geometry.config.width / 2;
+    return {
+      first: offsetPolyline(geometry.centerPoints, -half),
+      second: offsetPolyline(geometry.centerPoints, half)
+    };
+  }
+
+  function pocketBandPathData(geometry) {
+    if (!geometry) return "";
+    const boundaries = pocketBoundaryPoints(geometry);
+    return pathFromPoints([...boundaries.first, ...boundaries.second.slice().reverse()], true);
+  }
+
+  function pocketBandPoints(geometry) {
+    if (!geometry) return [];
+    const boundaries = pocketBoundaryPoints(geometry);
+    return [...boundaries.first, ...boundaries.second.slice().reverse()];
+  }
+
+  function pointInSimplePolygon(pointValue, polygon) {
+    let inside = false;
+    for (let index = 0, previousIndex = polygon.length - 1; index < polygon.length; previousIndex = index, index += 1) {
+      const current = polygon[index];
+      const previous = polygon[previousIndex];
+      const intersects = ((current.y > pointValue.y) !== (previous.y > pointValue.y))
+        && pointValue.x < (previous.x - current.x) * (pointValue.y - current.y) / ((previous.y - current.y) || 1e-9) + current.x;
+      if (intersects) inside = !inside;
+    }
+    return inside;
+  }
+
+  function pocketOutsideHostValue(model, geometry, pointValue) {
+    const signed = signedOffsetAtPoint(model, pointValue);
+    if (!signed) return -Infinity;
+    return signed.offset * geometry.sign - geometry.section.totalWidth / 2;
+  }
+
+  function pocketBoundaryVisiblePaths(model, geometry, points) {
+    const paths = [];
+    let current = [];
+    const finish = () => {
+      if (current.length >= 2) paths.push(current);
+      current = [];
+    };
+    for (let index = 0; index < points.length - 1; index += 1) {
+      const a = points[index];
+      const b = points[index + 1];
+      const aValue = pocketOutsideHostValue(model, geometry, a);
+      const bValue = pocketOutsideHostValue(model, geometry, b);
+      const aOutside = aValue > 0.01;
+      const bOutside = bValue > 0.01;
+      if (aOutside && !current.length) current.push(a);
+      if (aOutside !== bOutside) {
+        const denominator = bValue - aValue;
+        const alpha = Math.abs(denominator) < 1e-9 ? 0.5 : clamp(-aValue / denominator, 0, 1);
+        const crossing = lerp(a, b, alpha);
+        if (aOutside) {
+          current.push(crossing);
+          finish();
+        } else {
+          current = [crossing];
+        }
+      }
+      if (bOutside) current.push(b);
+    }
+    finish();
+    return paths;
+  }
+
+  function compactPolyline(points) {
+    const result = [];
+    (points || []).forEach((item) => {
+      const previous = result[result.length - 1];
+      if (!previous || Math.hypot(item.x - previous.x, item.y - previous.y) > 0.01) result.push(item);
+    });
+    return result;
+  }
+
+  function polylineLength(points) {
+    let total = 0;
+    for (let index = 0; index < (points || []).length - 1; index += 1) {
+      total += Math.hypot(points[index + 1].x - points[index].x, points[index + 1].y - points[index].y);
+    }
+    return total;
+  }
+
+  function longestVisiblePocketBoundary(model, geometry, points) {
+    return pocketBoundaryVisiblePaths(model, geometry, points)
+      .sort((a, b) => polylineLength(b) - polylineLength(a))[0] || [];
+  }
+
+  function pocketContourGeometry(model, geometry) {
+    if (!geometry) return null;
+    const boundaries = pocketBoundaryPoints(geometry);
+    const candidates = [boundaries.first, boundaries.second].map((points) => {
+      const visible = longestVisiblePocketBoundary(model, geometry, points);
+      const outside = visible.length
+        ? visible.reduce((sum, item) => sum + pocketOutsideHostValue(model, geometry, item), 0) / visible.length
+        : -Infinity;
+      return { points: visible, outside };
+    }).filter((item) => item.points.length >= 2).sort((a, b) => b.outside - a.outside);
+    if (candidates.length < 2) return null;
+    const outer = candidates[0].points;
+    const inner = candidates[1].points;
+    const hostOffset = geometry.sign * geometry.section.totalWidth / 2;
+    const hostStart = offsetPointAt(model, 0, hostOffset);
+    const hostEnd = offsetPointAt(model, 1, hostOffset);
+    const islandPoints = compactPolyline([
+      inner[0],
+      inner[inner.length - 1],
+      ...inner.slice(1, -1).reverse()
+    ]);
+    return {
+      side: geometry.side,
+      outer,
+      inner,
+      outerPoints: compactPolyline([hostStart, ...outer, hostEnd]),
+      islandPoints
+    };
+  }
+
+  function pocketIslandArea(points) {
+    let area = 0;
+    for (let index = 0, previous = points.length - 1; index < points.length; previous = index, index += 1) {
+      area += points[previous].x * points[index].y - points[index].x * points[previous].y;
+    }
+    return Math.abs(area) / 2;
+  }
+
+  function intersectRanges(first, second) {
+    const result = [];
+    (first || []).forEach((a) => {
+      (second || []).forEach((b) => {
+        const from = Math.max(a.from, b.from);
+        const to = Math.min(a.to, b.to);
+        if (to - from >= 0.0008) result.push({ from, to });
+      });
+    });
+    return result;
+  }
+
+  function pocketVisibleRangesForBoundary(model, lineOffset, from, to, boundary) {
+    const start = clamp(numberOr(from, 0), 0, 1);
+    const end = clamp(numberOr(to, 1), 0, 1);
+    if (end <= start) return [];
+    const isOuterBoundary = boundary?.role === "edge" && (!boundary.before || !boundary.after);
+    if (!isOuterBoundary || model?.geometry?.profile !== STRAIGHT) return [{ from: start, to: end }];
+    const geometries = activePocketGeometries(model).filter((geometry) => lineOffset * geometry.sign > 0);
+    if (!geometries.length) return [{ from: start, to: end }];
+    const polygons = geometries.map((geometry) => pocketBandPoints(geometry));
+    const hiddenAt = (t) => {
+      const pointValue = offsetPointAt(model, t, lineOffset);
+      return polygons.some((polygon) => pointInSimplePolygon(pointValue, polygon));
+    };
+    const sampleCount = Math.max(24, Math.ceil(160 * (end - start)));
+    const samples = [];
+    for (let index = 0; index <= sampleCount; index += 1) {
+      const t = start + (end - start) * index / sampleCount;
+      samples.push({ t, hidden: hiddenAt(t) });
+    }
+    const cuts = [start, end];
+    for (let index = 1; index < samples.length; index += 1) {
+      if (samples[index - 1].hidden === samples[index].hidden) continue;
+      let low = samples[index - 1].t;
+      let high = samples[index].t;
+      const target = samples[index].hidden;
+      for (let iteration = 0; iteration < 12; iteration += 1) {
+        const mid = (low + high) / 2;
+        if (hiddenAt(mid) === target) high = mid;
+        else low = mid;
+      }
+      cuts.push((low + high) / 2);
+    }
+    const sorted = Array.from(new Set(cuts.map((value) => Math.round(value * 1000000) / 1000000))).sort((a, b) => a - b);
+    const ranges = [];
+    for (let index = 0; index < sorted.length - 1; index += 1) {
+      const range = { from: sorted[index], to: sorted[index + 1] };
+      if (range.to - range.from < 0.0008 || hiddenAt((range.from + range.to) / 2)) continue;
+      ranges.push(range);
+    }
+    return ranges;
+  }
+
+  function activePocketGeometries(model, config = roadConfig(model)) {
+    if (model?.geometry?.profile !== STRAIGHT) return [];
+    return ["right", "left"].map((side) => pocketGeometry(model, side, config)).filter(Boolean);
+  }
+
   function strokeAttributes(element, color, width, dash = "") {
     element.setAttribute("fill", "none");
     element.setAttribute("stroke", color);
@@ -1030,48 +1346,75 @@
     return engine.visibleRangesForLine(model.id, lineOffset, from, to, boundary) || [{ from, to }];
   }
 
+  function terminalHostDashedRanges(model, lineOffset, from, to, boundary) {
+    const engine = Kroki.RoadIntersectionEngine;
+    if (!engine || typeof engine.terminalHostDashedRangesForLine !== "function") return [];
+    return engine.terminalHostDashedRangesForLine(model.id, lineOffset, from, to, boundary) || [];
+  }
+
   function shouldSkipRoadBoundary(model, boundary) {
     const engine = Kroki.RoadIntersectionEngine;
     const isOuterEdge = boundary?.role === "edge" && (!boundary.before || !boundary.after);
     // Kavşakta sadece yolun gerçek dış sınır edge'leri iptal edilir.
     // Banket/shoulder ile taşıt yolu arasındaki iç edge çizgileri banket çizgisi olarak kalmalıdır.
-    return Boolean(isOuterEdge && engine?.isRoadMember?.(model.id));
+    const pocketOwnsBoundary = isOuterEdge && activePocketGeometries(model)
+      .some((geometry) => boundary.offset * geometry.sign > 0);
+    return Boolean(isOuterEdge && (pocketOwnsBoundary || engine?.isRoadMember?.(model.id)));
   }
 
   function addStyledLine(parent, model, offset, marking, className, boundary = null) {
     if (shouldSkipRoadBoundary(model, boundary)) return;
     const segments = marking.segments?.length ? marking.segments : [{ from: 0, to: 1, style: marking.style, width: marking.width }];
-    const drawSegment = (lineOffset, segment, dashed) => {
-      intersectionVisibleRanges(model, lineOffset, segment.from, segment.to, boundary).forEach((range) => {
+    const drawSegment = (lineOffset, segment, dashed, derivedShoulderDash = false) => {
+      const intersectionRanges = derivedShoulderDash
+        ? terminalHostDashedRanges(model, lineOffset, segment.from, segment.to, boundary)
+        : intersectionVisibleRanges(model, lineOffset, segment.from, segment.to, boundary);
+      const ranges = intersectRanges(
+        intersectionRanges,
+        pocketVisibleRangesForBoundary(model, lineOffset, segment.from, segment.to, boundary)
+      );
+      ranges.forEach((range) => {
         if (!range || range.to <= range.from) return;
-        const path = addPath(parent, className, offsetPathDataRange(model, lineOffset, range.from, range.to));
+        const effectiveDashed = derivedShoulderDash || dashed;
+        const derivedClassName = derivedShoulderDash
+          ? `${className} editor-road-intersection-shoulder-dash`
+          : className;
+        const path = addPath(parent, derivedClassName, offsetPathDataRange(model, lineOffset, range.from, range.to));
         if (path) {
-          strokeAttributes(path, ROAD_LINE_COLOR, segment.width, dashed ? "18 14" : "");
+          strokeAttributes(path, ROAD_LINE_COLOR, segment.width, effectiveDashed ? "18 14" : "");
           path.dataset.visibleFrom = String(range.from);
           path.dataset.visibleTo = String(range.to);
+          if (boundary?.id) path.dataset.roadBoundaryId = String(boundary.id);
+          if (derivedShoulderDash) {
+            path.dataset.intersectionShoulderDash = "true";
+          }
         }
       });
     };
-    segments.forEach((segment) => {
+    const renderSegment = (segment, derivedShoulderDash = false) => {
       if (segment.style === "none") return;
       const gap = Math.max(4, segment.width * 2);
       if (segment.style === "doubleSolid" || segment.style === "doubleDash") {
         const dashed = segment.style === "doubleDash";
-        drawSegment(offset - gap / 2, segment, dashed);
-        drawSegment(offset + gap / 2, segment, dashed);
+        drawSegment(offset - gap / 2, segment, dashed, derivedShoulderDash);
+        drawSegment(offset + gap / 2, segment, dashed, derivedShoulderDash);
         return;
       }
       if (segment.style === "leftSolidRightDash") {
-        drawSegment(offset + gap / 2, segment, false);
-        drawSegment(offset - gap / 2, segment, true);
+        drawSegment(offset + gap / 2, segment, false, derivedShoulderDash);
+        drawSegment(offset - gap / 2, segment, true, derivedShoulderDash);
         return;
       }
       if (segment.style === "rightSolidLeftDash") {
-        drawSegment(offset - gap / 2, segment, false);
-        drawSegment(offset + gap / 2, segment, true);
+        drawSegment(offset - gap / 2, segment, false, derivedShoulderDash);
+        drawSegment(offset + gap / 2, segment, true, derivedShoulderDash);
         return;
       }
-      drawSegment(offset, segment, Boolean(dashForStyle(segment.style)));
+      drawSegment(offset, segment, Boolean(dashForStyle(segment.style)), derivedShoulderDash);
+    };
+    segments.forEach((segment) => {
+      renderSegment(segment, false);
+      renderSegment(segment, true);
     });
   }
 
@@ -1082,6 +1425,113 @@
     // Geometri gerektiğinde surfacePathData(...) hesap içinde kullanılmaya devam edebilir,
     // fakat normal render'da görünmeyen/etkisiz beyaz kapalı shape üretmiyoruz.
     return null;
+  }
+
+  function selectedPocketSide(model) {
+    const side = String(model?.metadata?.roadPocketEdit?.side || "");
+    if (side !== "left" && side !== "right") return "";
+    const config = roadConfig(model);
+    return model?.geometry?.profile === STRAIGHT && config.pockets?.[side] ? side : "";
+  }
+
+  function selectedPocketIslandSide(model) {
+    const side = String(model?.metadata?.roadPocketIslandEdit?.side || "");
+    if (side !== "left" && side !== "right") return "";
+    const config = roadConfig(model);
+    return model?.geometry?.profile === STRAIGHT && config.pockets?.[side] ? side : "";
+  }
+
+  function selectedPocketIslandInfo(model) {
+    const side = selectedPocketIslandSide(model);
+    if (!side) return null;
+    const pocket = roadConfig(model).pockets?.[side];
+    return pocket ? { side, style: styleManager.normalizeStyle(pocket.islandStyle, "closedShape") } : null;
+  }
+
+  function updatePocketIslandStyle(model, patch) {
+    const side = selectedPocketIslandSide(model);
+    if (!side) return false;
+    const config = roadConfig(model);
+    const pocket = config.pockets?.[side];
+    if (!pocket) return false;
+    pocket.islandStyle = styleManager.normalizeStyle({ ...(pocket.islandStyle || {}), ...(patch || {}) }, "closedShape");
+    model.metadata = {
+      ...(model.metadata || {}),
+      road: normalizeRoadConfig(config),
+      roadPocketIslandEdit: { side }
+    };
+    return true;
+  }
+
+  function intersectionAuxiliaryContours(model) {
+    const config = roadConfig(model);
+    const selectedIsland = selectedPocketIslandSide(model);
+    return activePocketGeometries(model, config).flatMap((geometry) => {
+      const contour = pocketContourGeometry(model, geometry);
+      if (!contour) return [];
+      const common = {
+        ownerId: model.id,
+        side: geometry.side,
+        stroke: config.edgeLine?.enabled === false ? "none" : ROAD_LINE_COLOR,
+        strokeWidth: config.edgeLine?.width || 2,
+        cornerHints: null,
+        blockedHints: []
+      };
+      const items = [{
+        ...common,
+        id: `pocket:${model.id}:${geometry.side}:outer`,
+        role: "outer",
+        points: contour.outerPoints,
+        closed: false,
+        cornerHints: contour.outerPoints.slice(1, -1),
+        className: "editor-road-edge editor-road-pocket-line"
+      }];
+      if (pocketIslandArea(contour.islandPoints) >= 1) {
+        items.push({
+          ...common,
+          id: `pocket:${model.id}:${geometry.side}:island`,
+          role: "island",
+          points: contour.islandPoints,
+          closed: true,
+          cornerHints: contour.islandPoints,
+          fillStyle: styleManager.normalizeStyle(geometry.config.islandStyle, "closedShape"),
+          fillModelId: `${model.id}-pocket-${geometry.side}-island`,
+          selected: selectedIsland === geometry.side,
+          className: "editor-road-edge editor-road-pocket-line"
+        });
+      }
+      return items;
+    });
+  }
+
+  function renderSelectedPocket(model, element, config) {
+    const side = selectedPocketSide(model);
+    if (!side) return;
+    const geometry = pocketGeometry(model, side, config);
+    addPath(element, "editor-road-lane-highlight editor-road-pocket-highlight", pocketBandPathData(geometry), {
+      "data-road-pocket-selection": side
+    });
+  }
+
+  function pocketIslandHitInfo(model, pointValue) {
+    for (const geometry of activePocketGeometries(model)) {
+      const contour = pocketContourGeometry(model, geometry);
+      if (!contour || pocketIslandArea(contour.islandPoints) < 1) continue;
+      if (pointInSimplePolygon(pointValue, contour.islandPoints)) return { side: geometry.side, geometry, contour };
+    }
+    return null;
+  }
+
+  function pocketHitInfo(model, pointValue, tolerance = 0) {
+    let best = null;
+    activePocketGeometries(model).forEach((geometry) => {
+      for (let index = 0; index < geometry.centerPoints.length - 1; index += 1) {
+        const distance = lineGeometry.distanceToSegment(geometry.centerPoints[index], geometry.centerPoints[index + 1], pointValue);
+        if (distance > geometry.config.width / 2 + Math.max(0, tolerance)) continue;
+        if (!best || distance < best.distance) best = { side: geometry.side, geometry, distance };
+      }
+    });
+    return best;
   }
 
   function selectedSectionId(model) {
@@ -1107,6 +1557,21 @@
   }
 
   function selectedSectionInfo(model) {
+    const pocketSide = selectedPocketSide(model);
+    if (pocketSide) {
+      const pocket = roadConfig(model).pockets[pocketSide];
+      return {
+        sectionId: `pocket:${pocketSide}`,
+        laneId: `pocket:${pocketSide}`,
+        role: "pocket",
+        side: pocketSide,
+        width: pocket.width,
+        startBoundaryId: "",
+        endBoundaryId: "",
+        startBoundaryRole: "edge",
+        endBoundaryRole: "edge"
+      };
+    }
     const sectionId = selectedSectionId(model);
     if (!sectionId) return null;
     const section = crossSection(roadConfig(model));
@@ -1574,6 +2039,65 @@
     model.metadata = metadata;
   }
 
+  function selectedPocketControlPoints(model, _metrics, mode) {
+    if (mode !== "edit") return [];
+    const side = selectedPocketSide(model);
+    if (!side) return [];
+    const geometry = pocketGeometry(model, side);
+    if (!geometry) return [];
+    const pocket = geometry.config;
+    const midT = (pocket.innerFrom + pocket.innerTo) / 2;
+    return [
+      { id: `pocket:${side}:outerFrom`, ...geometry.centerPoints[0], role: "road-pocket-end", cursor: "grab" },
+      { id: `pocket:${side}:innerFrom`, ...geometry.centerPoints[1], role: "road-pocket-length", cursor: "grab" },
+      { id: `pocket:${side}:offset`, ...offsetPointAt(model, midT, geometry.bodyOffset), role: "road-pocket-offset", cursor: "grab" },
+      { id: `pocket:${side}:innerTo`, ...geometry.centerPoints[2], role: "road-pocket-length", cursor: "grab" },
+      { id: `pocket:${side}:outerTo`, ...geometry.centerPoints[3], role: "road-pocket-end", cursor: "grab" }
+    ];
+  }
+
+  function parsePocketControlId(cpId) {
+    const match = /^pocket:(left|right):(outerFrom|innerFrom|offset|innerTo|outerTo)$/.exec(String(cpId || ""));
+    return match ? { side: match[1], key: match[2] } : null;
+  }
+
+  function movePocketControlPoint(model, cpId, worldPoint, modifiers = {}) {
+    const parsed = parsePocketControlId(cpId);
+    if (!parsed) return false;
+    const config = roadConfig(model);
+    const pocket = config.pockets?.[parsed.side];
+    if (!pocket || model.geometry?.profile !== STRAIGHT) return true;
+    const pathLength = Math.max(1, centerlineLength(model));
+    const minGap = clamp((modifiers.metrics?.unit || 1) * 24 / pathLength, 0.015, 0.08);
+    const t = parameterAtPoint(model, worldPoint);
+
+    if (parsed.key === "outerFrom") pocket.outerFrom = clamp(t, 0, pocket.innerFrom - minGap);
+    if (parsed.key === "outerTo") pocket.outerTo = clamp(t, pocket.innerTo + minGap, 1);
+    if (parsed.key === "innerFrom") {
+      const taperSpan = pocket.innerFrom - pocket.outerFrom;
+      pocket.innerFrom = clamp(t, taperSpan, pocket.innerTo - minGap);
+      pocket.outerFrom = pocket.innerFrom - taperSpan;
+    }
+    if (parsed.key === "innerTo") {
+      const taperSpan = pocket.outerTo - pocket.innerTo;
+      pocket.innerTo = clamp(t, pocket.innerFrom + minGap, 1 - taperSpan);
+      pocket.outerTo = pocket.innerTo + taperSpan;
+    }
+    if (parsed.key === "offset") {
+      const signed = signedOffsetAtPoint(model, worldPoint);
+      const section = crossSection(config);
+      const magnitude = signed ? signed.offset * pocketSideSign(parsed.side) : section.totalWidth / 2 + pocket.outset;
+      pocket.outset = clamp(magnitude - section.totalWidth / 2, pocket.width / 2, 600);
+    }
+
+    model.metadata = {
+      ...(model.metadata || {}),
+      road: normalizeRoadConfig(config),
+      roadPocketEdit: { side: parsed.side }
+    };
+    return true;
+  }
+
   function selectedBarrierControlPoints(model, metrics, mode) {
     if (mode !== "edit") return [];
     const info = selectedBarrierInfo(model);
@@ -1780,6 +2304,11 @@
       left: config.dividedLaneWidths.right.slice().reverse(),
       right: leftLaneWidths.slice().reverse()
     };
+    const leftPocket = config.pockets?.left || null;
+    config.pockets = {
+      left: config.pockets?.right || null,
+      right: leftPocket
+    };
     config.boundaryStyles = boundaryStyles;
     config.barriers = normalizeBarriers((config.barriers || []).map((barrier) => ({
       ...barrier,
@@ -1824,6 +2353,10 @@
     delete metadata.roadSelection;
     delete metadata.roadBoundaryEdit;
     delete metadata.roadBarrierEdit;
+    if (metadata.roadPocketEdit?.side === "left") metadata.roadPocketEdit = { side: "right" };
+    else if (metadata.roadPocketEdit?.side === "right") metadata.roadPocketEdit = { side: "left" };
+    if (metadata.roadPocketIslandEdit?.side === "left") metadata.roadPocketIslandEdit = { side: "right" };
+    else if (metadata.roadPocketIslandEdit?.side === "right") metadata.roadPocketIslandEdit = { side: "left" };
     model.metadata = metadata;
     return model;
   }
@@ -1834,8 +2367,14 @@
       const radii = islandRadii(model.geometry);
       return { x: center.x - radii.outerRadius, y: center.y - radii.outerRadius, width: radii.outerRadius * 2, height: radii.outerRadius * 2 };
     }
-    const section = crossSection(roadConfig(model));
-    return boundsFromPoints(surfaceOutline(model, section.totalWidth));
+    const config = roadConfig(model);
+    const section = crossSection(config);
+    const points = surfaceOutline(model, section.totalWidth);
+    activePocketGeometries(model, config).forEach((geometry) => {
+      const boundaries = pocketBoundaryPoints(geometry);
+      points.push(...boundaries.first, ...boundaries.second);
+    });
+    return boundsFromPoints(points);
   }
 
   function reflectAcrossBoundsAxis(model, axis) {
@@ -1876,6 +2415,12 @@
     const next = convertProfileGeometry(model, profile);
     if (!next) return model;
     model.geometry = next;
+    if (next.profile !== STRAIGHT && (model.metadata?.roadPocketEdit || model.metadata?.roadPocketIslandEdit)) {
+      const metadata = { ...(model.metadata || {}) };
+      delete metadata.roadPocketEdit;
+      delete metadata.roadPocketIslandEdit;
+      model.metadata = metadata;
+    }
     return model;
   }
 
@@ -2064,6 +2609,11 @@
     const nextWidth = widthOr(width, config.laneWidth || DEFAULT_ROAD_CONFIG.laneWidth, 10, 180);
     const parts = String(sectionId || "").split(":");
     if (parts.length === 2) {
+      if (parts[0] === "pocket" && config.pockets?.[parts[1]]) {
+        config.pockets[parts[1]].width = nextWidth;
+        config.pockets[parts[1]].outset = Math.max(config.pockets[parts[1]].outset, nextWidth / 2);
+        return;
+      }
       if (parts[0] === "shoulder") {
         if (parts[1] === "right") config.rightShoulder.width = nextWidth;
         if (parts[1] === "left") config.leftShoulder.width = nextWidth;
@@ -2205,7 +2755,33 @@
         const metadata = { ...(draft.metadata || {}) };
         metadata.roadBarrierEdit = { id: barrierHit.barrier.id };
         delete metadata.roadBoundaryEdit;
+        delete metadata.roadPocketEdit;
+        delete metadata.roadPocketIslandEdit;
         if (section) metadata.roadSelection = sectionInfoFromSection(section);
+        return { ...draft, metadata };
+      }, { skipHistory: true });
+      return true;
+    }
+    const pocketIslandHit = pocketIslandHitInfo(model, pointValue);
+    if (pocketIslandHit) {
+      Kroki.EditorObjectManager?.updateModel?.(model.id, (draft) => {
+        const metadata = { ...(draft.metadata || {}), roadPocketIslandEdit: { side: pocketIslandHit.side } };
+        delete metadata.roadSelection;
+        delete metadata.roadBoundaryEdit;
+        delete metadata.roadBarrierEdit;
+        delete metadata.roadPocketEdit;
+        return { ...draft, metadata };
+      }, { skipHistory: true });
+      return true;
+    }
+    const pocketHit = pocketHitInfo(model, pointValue);
+    if (pocketHit) {
+      Kroki.EditorObjectManager?.updateModel?.(model.id, (draft) => {
+        const metadata = { ...(draft.metadata || {}), roadPocketEdit: { side: pocketHit.side } };
+        delete metadata.roadSelection;
+        delete metadata.roadBoundaryEdit;
+        delete metadata.roadBarrierEdit;
+        delete metadata.roadPocketIslandEdit;
         return { ...draft, metadata };
       }, { skipHistory: true });
       return true;
@@ -2231,6 +2807,8 @@
         delete metadata.roadBoundaryEdit;
       }
       delete metadata.roadBarrierEdit;
+      delete metadata.roadPocketEdit;
+      delete metadata.roadPocketIslandEdit;
       return { ...draft, metadata };
     }, { skipHistory: true });
     return true;
@@ -2277,6 +2855,7 @@
       element.replaceChildren();
       renderSurface(model, element, section);
       renderSelectedSection(model, element, section);
+      renderSelectedPocket(model, element, config);
       section.boundaries.forEach((boundary) => addBoundaryLine(element, model, boundary, config));
       renderActiveBoundaryEdit(model, element, section, config);
       renderBarriers(model, element, config);
@@ -2285,6 +2864,8 @@
 
     hitTest(model, pointValue, tolerance) {
       if (barrierHitInfo(model, pointValue, tolerance)) return true;
+      if (pocketIslandHitInfo(model, pointValue)) return true;
+      if (pocketHitInfo(model, pointValue, tolerance)) return true;
       if (isIslandGeometry(model?.geometry)) {
         const center = point(model.geometry.center);
         const radii = islandRadii(model.geometry);
@@ -2296,6 +2877,9 @@
     },
 
     getControlPoints(model, metrics, mode) {
+      if (selectedPocketIslandSide(model)) return [];
+      const pocketPoints = selectedPocketControlPoints(model, metrics, mode);
+      if (pocketPoints.length) return pocketPoints;
       const barrierPoints = selectedBarrierControlPoints(model, metrics, mode);
       if (barrierPoints.length) return barrierPoints;
       if (isIslandGeometry(model?.geometry)) {
@@ -2326,6 +2910,7 @@
     },
 
     moveControlPoint(model, cpId, worldPoint, modifiers = {}) {
+      if (movePocketControlPoint(model, cpId, worldPoint, modifiers)) return;
       if (moveBarrierControlPoint(model, cpId, worldPoint, modifiers)) return;
       if (isIslandGeometry(model?.geometry)) {
         if (cpId === "island-inner" || cpId === "island-outer") {
@@ -2383,8 +2968,10 @@
     },
 
     renderSelection(element, model, style, mode) {
-      const section = crossSection(roadConfig(model));
-      element.setAttribute("d", surfacePathData(model, section.totalWidth));
+      const config = roadConfig(model);
+      const section = crossSection(config);
+      const pocketPaths = activePocketGeometries(model, config).map((geometry) => pocketBandPathData(geometry));
+      element.setAttribute("d", [surfacePathData(model, section.totalWidth), ...pocketPaths].filter(Boolean).join(" "));
       if (isIslandGeometry(model?.geometry)) element.setAttribute("fill-rule", "evenodd");
       else element.removeAttribute("fill-rule");
       element.setAttribute("stroke-width", "4");
@@ -2397,6 +2984,11 @@
     normalizeRoadConfig,
     roadConfig,
     normalizeMarkingStyle,
+    pocketMode,
+    setPocketMode,
+    intersectionAuxiliaryContours,
+    selectedPocketIslandInfo,
+    updatePocketIslandStyle,
     selectedSectionInfo,
     selectedLaneInfo: selectedSectionInfo,
     selectedBarrierInfo,

@@ -436,6 +436,14 @@
     return Boolean(adapter?.capabilities?.fill && !adapter?.capabilities?.ownsLabel);
   }
 
+  function pocketIslandInfo(adapter, model) {
+    return adapter?.selectedPocketIslandInfo?.(model) || null;
+  }
+
+  function supportsFillPatternTarget(adapter, model) {
+    return supportsFillPattern(adapter) || Boolean(pocketIslandInfo(adapter, model));
+  }
+
   function defaultStyleFor(type) {
     const fill = isShapeWithFill(type) ? "#ffffff" : "none";
     return {
@@ -782,7 +790,7 @@
     const defs = canvas?.querySelector?.("#editorFillPatternDefs");
     if (!defs) return;
     const usedIds = new Set();
-    canvas.querySelectorAll("#editorObjects [data-kroki-object='true']").forEach((element) => {
+    canvas.querySelectorAll("#editorObjects [data-kroki-object='true'], #editorObjects [fill]").forEach((element) => {
       collectPaintId(element, "fill", usedIds);
     });
     defs.querySelectorAll("pattern[id^='editor-fill-pattern-']").forEach((pattern) => {
@@ -1110,7 +1118,7 @@
     const hasPointEdit = Boolean(adapter?.capabilities?.pointEdit);
     const supportsTextFormatting = isTextObject || Boolean(adapter?.capabilities?.textFormatting);
     const hasFill = Boolean(adapter?.capabilities?.fill);
-    const hasFillPattern = supportsFillPattern(adapter);
+    const hasFillPattern = supportsFillPatternTarget(adapter, model);
     const hasArrows = Boolean(adapter?.capabilities?.arrows);
     const trafficSignTextOnly = isTrafficSign && !noText;
     const textSizeControl = controls?.textSizeValue?.closest?.(".line-text-size-picker");
@@ -1162,6 +1170,13 @@
       return;
     }
     selection.promoteToEdit();
+    if (pocketIslandInfo(entry.adapter, entry.model) && typeof entry.adapter?.updatePocketIslandStyle === "function") {
+      manager.updateModel(entry.model.id, (draft) => {
+        entry.adapter.updatePocketIslandStyle(draft, patch);
+        return draft;
+      }, { label: "Cep kapali alan deseni" });
+      return;
+    }
     manager.updateStyle(entry.model.id, patch);
   }
 
@@ -1322,7 +1337,8 @@
     const isTextObject = isTextObjectEntry(entry);
     const isTrafficSign = Boolean(adapter?.capabilities?.trafficSign);
     const supportsTextFormatting = isTextObject || Boolean(adapter?.capabilities?.textFormatting);
-    const style = normalizeStyle(model.style, model.type);
+    const selectedPocketIsland = pocketIslandInfo(adapter, model);
+    const style = normalizeStyle(selectedPocketIsland?.style || model.style, selectedPocketIsland ? "closedShape" : model.type);
     const label = adapter?.effectiveLabel?.(model) || normalizeLabel(model.label, model.type);
     const dashPattern = choiceById(DASH_PATTERNS, style.dash);
     const lineCap = choiceById(LINE_CAPS, style.lineCap);
@@ -1663,13 +1679,14 @@
     controls.fillPatternChoices.forEach((button) => {
       button.addEventListener("click", () => {
         const entry = activeEntry();
-        if (!entry || !supportsFillPattern(entry.adapter)) return;
+        if (!entry || !supportsFillPatternTarget(entry.adapter, entry.model)) return;
         const pattern = normalizeFillPattern(button.dataset.fillPattern);
-        const currentStyle = normalizeStyle(entry.model.style, entry.model.type);
+        const selectedPocketIsland = pocketIslandInfo(entry.adapter, entry.model);
+        const currentStyle = normalizeStyle(selectedPocketIsland?.style || entry.model.style, selectedPocketIsland ? "closedShape" : entry.model.type);
         if (currentStyle.fillPattern === pattern) return;
         const patternChoice = choiceById(FILL_PATTERNS, pattern);
         const patch = { fillPattern: pattern };
-        if (pattern !== "none" && (currentStyle.fill === "none" || currentStyle.fill === "#ffffff")) {
+        if (pattern !== "none" && (selectedPocketIsland || currentStyle.fill === "none" || currentStyle.fill === "#ffffff")) {
           patch.fill = patternChoice.defaultFill || "#d1d5db";
         }
         updateStyle(patch);
@@ -1789,6 +1806,7 @@
     readLabelFromElement,
     writeStyleDataset,
     applyStyleToElement,
+    ensureFillPattern,
     cleanupDefs,
     syncControls,
     hidePanels,

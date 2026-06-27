@@ -56,13 +56,17 @@
     const shouldResetRoadSelection = Boolean(model?.metadata?.roadSelection && adapter?.capabilities?.roadObject);
     const shouldResetRoadBoundaryEdit = Boolean(model?.metadata?.roadBoundaryEdit && adapter?.capabilities?.roadObject);
     const shouldResetRoadBarrierEdit = Boolean(model?.metadata?.roadBarrierEdit && adapter?.capabilities?.roadObject);
-    if (!shouldResetPointEdit && !shouldResetRoadSelection && !shouldResetRoadBoundaryEdit && !shouldResetRoadBarrierEdit) return;
+    const shouldResetRoadPocketEdit = Boolean(model?.metadata?.roadPocketEdit && adapter?.capabilities?.roadObject);
+    const shouldResetRoadPocketIslandEdit = Boolean(model?.metadata?.roadPocketIslandEdit && adapter?.capabilities?.roadObject);
+    if (!shouldResetPointEdit && !shouldResetRoadSelection && !shouldResetRoadBoundaryEdit && !shouldResetRoadBarrierEdit && !shouldResetRoadPocketEdit && !shouldResetRoadPocketIslandEdit) return;
     manager.updateModel(id, (draft) => {
       const metadata = { ...(draft.metadata || {}) };
       if (shouldResetPointEdit) metadata.pointEdit = false;
       if (shouldResetRoadSelection) delete metadata.roadSelection;
       if (shouldResetRoadBoundaryEdit) delete metadata.roadBoundaryEdit;
       if (shouldResetRoadBarrierEdit) delete metadata.roadBarrierEdit;
+      if (shouldResetRoadPocketEdit) delete metadata.roadPocketEdit;
+      if (shouldResetRoadPocketIslandEdit) delete metadata.roadPocketIslandEdit;
       return { ...draft, metadata };
     }, { skipHistory: true, controlPoints: false, styleControls: false });
   }

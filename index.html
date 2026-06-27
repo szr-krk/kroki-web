@@ -353,6 +353,10 @@
             aria-label="Yol profili" title="Yol profili">
             <span id="lblRoadProfileIp" class="side-ip-text-mark">D</span>
           </button>
+          <button id="btnRoadPocketIp" class="side-ip-btn side-ip-tool road-ip-icon-btn road-global-control road-pocket-cycle-btn" type="button"
+            aria-label="Cep yok" title="Cep yok">
+            <span id="lblRoadPocketIp" class="side-ip-text-mark road-pocket-cycle-mark">Cep yok</span>
+          </button>
           <div id="roadSCurveControlIp" class="road-ip-stepper road-global-control gizli" aria-label="S viraj kontrol noktasi">
             <button id="btnRoadSCurveControlPlus" class="road-ip-stepper-btn" type="button" aria-label="S viraj kontrol noktasini arttir">+</button>
             <input id="roadSCurveControlCountIpInput" class="road-ip-stepper-number" type="number" min="2" max="5" step="1"
@@ -548,6 +552,13 @@
             <path d="M9 22H39M22 9V22M16 22V39M32 22V39"
               stroke="currentColor" stroke-width="2.3" stroke-linecap="round" opacity=".78"></path>
             <path d="M11 11H37V37H11Z" stroke="#ffffff" stroke-width="1.2" opacity=".72"></path>
+          </svg>
+        </button>
+        <button id="btnRoadPocketIslandDoneIp" class="side-ip-btn side-ip-tool road-ip-icon-btn road-pocket-island-control gizli"
+          type="button" aria-label="Cep kapali alan duzenlemesini bitir" title="Tamam">
+          <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+            <path d="M12 24L21 33L37 15" stroke="currentColor" stroke-width="5" stroke-linecap="round"
+              stroke-linejoin="round"></path>
           </svg>
         </button>
         <button id="btnClosedShapeEdit" class="side-ip-btn side-ip-tool side-ip-shape-edit-btn closed-shape-control gizli"
@@ -1146,6 +1157,7 @@
   <script src="src/editor-stroke-style.js"></script>
   <script src="src/data/traffic-signs-tanzim-levhalari.generated.js"></script>
   <script src="src/data/traffic-signs-uyari-levhalari.generated.js"></script>
+  <script src="src/data/traffic-signs-bilgi-levhalari.generated.js"></script>
   <script src="src/core/trafficSignCatalog.js"></script>
   <script src="src/core/shapeRegistry.js"></script>
   <script src="src/core/styleManager.js"></script>

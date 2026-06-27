@@ -68,6 +68,19 @@
   pointer-events: none;
 }
 
+.editor-road-pocket-island-fill {
+  pointer-events: visiblePainted;
+}
+
+.editor-road-pocket-island-highlight {
+  fill: rgba(59, 130, 246, .2);
+  pointer-events: none;
+  stroke: rgba(37, 99, 235, .78);
+  stroke-dasharray: 8 6;
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
 .editor-road-barrier {
   pointer-events: none;
 }
@@ -1191,6 +1204,22 @@
   border-color: #059669;
   background: #d1fae5;
   color: #064e3b;
+}
+
+.road-pocket-cycle-btn {
+  min-height: var(--editor-rail-button-size);
+  padding: 5px;
+}
+
+.side-ip-text-mark.road-pocket-cycle-mark {
+  display: grid;
+  place-items: center;
+  max-width: 100%;
+  text-align: center;
+  white-space: normal;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.05;
 }
 
 @media (min-width: 768px) and (max-width: 1199px) {

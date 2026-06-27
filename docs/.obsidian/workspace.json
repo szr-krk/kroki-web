@@ -1,0 +1,204 @@
+{
+  "main": {
+    "id": "5f2c691be6a5c1c7",
+    "type": "split",
+    "children": [
+      {
+        "id": "432df7e15d62d4bb",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "da52d8b777271f3d",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "Yeni sekme"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "6bd8d005c9f316bf",
+    "type": "split",
+    "children": [
+      {
+        "id": "e23d9ad7c80797f7",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f14097906327ad0a",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Dosya Gezgini"
+            }
+          },
+          {
+            "id": "250fee89255628a1",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Ara"
+            }
+          },
+          {
+            "id": "2dc7f2e322ed2142",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Yer İmleri"
+            }
+          }
+        ],
+        "currentTab": 1
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "c371abc9fbcd63e8",
+    "type": "split",
+    "children": [
+      {
+        "id": "8ac18b7002bf95d7",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "b66e742b826373a3",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Yol Sistemi.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Yol Sistemi için geri bağlantılar"
+            }
+          },
+          {
+            "id": "c50738f9b4f3a8e7",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Yol Sistemi.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Yol Sistemi'dan giden bağlantılar"
+            }
+          },
+          {
+            "id": "e4042a982c72d606",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Etiketler"
+            }
+          },
+          {
+            "id": "739023e740c46e6b",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Tüm özellikler"
+            }
+          },
+          {
+            "id": "b4c7781c9d468e20",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Yol Sistemi.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Yol Sistemi ana hatları"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Hızlı geçişi aç": false,
+      "graph:Grafik görünümünü aç": false,
+      "canvas:Yeni tuval oluşturun": false,
+      "daily-notes:Bugünün Notunu Aç": false,
+      "templates:Şablon ekle": false,
+      "command-palette:Komut paletini aç": false,
+      "bases:Yeni taban oluştur": false
+    }
+  },
+  "active": "250fee89255628a1",
+  "lastOpenFiles": [
+    "Açık Hatalar.md",
+    "Kavşak Sistemi.md",
+    "Yol Sistemi.md",
+    "Editör.md",
+    "Yeni Özellikler.md",
+    "Undo Redo.md",
+    "Trafik Levhası Sistemi.md",
+    "Şerit Sistemi.md",
+    "Serializer.md",
+    "Seçim Sistemi.md",
+    "Proje Haritası.md",
+    "Nesne Sistemi.md",
+    "Mimari Kararlar.md",
+    "Menü Sistemi.md",
+    "Kontrol Noktaları.md",
+    "Home.md",
+    "Codex Talimatları.md",
+    "kroki_notları"
+  ]
+}
