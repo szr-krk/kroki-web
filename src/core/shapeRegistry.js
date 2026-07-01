@@ -44,7 +44,7 @@
 
   function typeFromElement(element) {
     const shape = element?.dataset?.shape;
-    if (shape === "arc" || shape === "bezier" || shape === "circle" || shape === "ellipse" || shape === "rectangle" || shape === "closedShape" || shape === "text" || shape === "callout" || shape === "road" || shape === "trafficSign") return shape;
+    if (shape === "arc" || shape === "bezier" || shape === "circle" || shape === "ellipse" || shape === "rectangle" || shape === "closedShape" || shape === "text" || shape === "callout" || shape === "road" || shape === "trafficSign" || shape === "otherSymbol" || shape === "vehicle") return shape;
     if (element?.tagName?.toLowerCase() === "circle") return "circle";
     if (element?.tagName?.toLowerCase() === "ellipse") return "ellipse";
     if (element?.tagName?.toLowerCase() === "rect" && element?.classList?.contains("editor-rectangle")) return "rectangle";
@@ -53,6 +53,8 @@
     if (element?.tagName?.toLowerCase() === "g" && element?.classList?.contains("editor-callout")) return "callout";
     if (element?.tagName?.toLowerCase() === "g" && element?.classList?.contains("editor-road")) return "road";
     if (element?.tagName?.toLowerCase() === "g" && element?.classList?.contains("editor-traffic-sign")) return "trafficSign";
+    if (element?.tagName?.toLowerCase() === "g" && element?.classList?.contains("editor-other-symbol")) return "otherSymbol";
+    if (element?.tagName?.toLowerCase() === "g" && element?.classList?.contains("editor-vehicle")) return "vehicle";
     if (element?.classList?.contains("editor-cizgi") || element?.tagName?.toLowerCase() === "line") return "line";
     return "";
   }

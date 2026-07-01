@@ -35,7 +35,7 @@ Home modalları yer tutucudur. Yol için `RoadBuilder` model üretimi mevcut; ka
 
 ### Araç ve diğer sembol kütüphaneleri
 
-Sağ ray panelleri vardır fakat içerik boştur. [[Trafik Levhası Sistemi]] kategori/grid/add akışı benzer katalog UI'si için mevcut referanstır; veri ve adapter tipi henüz yoktur.
+Araç ve diğer sembol sağ ray panelleri katalog verisiyle çalışır. Diğer semboller teknik olarak ayrı `otherSymbol` nesne tipidir; seçim, kopyalama, gruplama, ratiolu ölçek ve döndürme akışında levha ile aynı `catalogObject` kontrol davranışını paylaşır.
 
 ### Kılavuz
 
@@ -67,4 +67,3 @@ Engine `setDebug` ve `resetQEndpointEdits` API'lerini açar. UI düğmesi yoktur
 
 - Öncelik, hedef platform, dosya API'si ve şablon depolama kararı kodda yoktur.
 - “Alanı Resim Kaydet” için alanın kullanıcı seçimi mi, mevcut viewBox mı, yoksa nesne bounds'u mu olacağı tanımlı değildir.
-

@@ -503,6 +503,67 @@
           </div>
         </div>
 
+        <div id="vehicleIpStack" class="vehicle-ip-stack side-ip-control vehicle-only-control gizli" aria-label="Arac ozellikleri">
+          <button id="btnVehicleLabelToggleIp" class="side-ip-btn side-ip-tool vehicle-ip-btn" type="button"
+            aria-label="Arac etiketi" title="Arac etiketi" aria-controls="vehicleLabelPanel" aria-expanded="false">
+            <span class="side-ip-text-mark vehicle-ip-text-mark">Abc</span>
+          </button>
+          <label class="side-ip-btn side-ip-tool vehicle-color-picker vehicle-ip-btn" aria-label="Arac rengi"
+            title="Arac rengi">
+            <input id="vehicleColorInput" type="color" value="#dc2626" aria-label="Arac rengi">
+            <svg class="vehicle-ip-icon vehicle-color-icon" viewBox="0 0 49 57" aria-hidden="true">
+              <path class="vehicle-ip-color-fill"
+                d="M 27.7 23.3 Q 34.3 9.3 45.6 0 L 48.1 1.8 Q 41.8 14.9 30.2 25.4 L 27.7 23.3 Z M 0.1 29.4 C 2.1 4.1 30.2 5.7 34.1 11.1 C 31.3 14.9 28.6 19 26.6 23.3 C 25.5 23.5 21.2 23.3 21.2 30.6 Q 20.9 32.4 18.4 34.4 C 31.6 35.5 30.7 26.9 30.7 26 C 34.1 23.1 37 19.7 39.9 16.3 C 41.5 18.1 47 26 41.1 29 C 33.6 31.7 30.7 37.6 33.6 44.6 Q 34.5 46.2 33.4 46.6 C 9.4 56.8 -0.8 39.6 0.1 29.4 M 19.1 15.4 A 0.2 0.2 90 0 0 25.9 15.4 A 0.2 0.2 90 0 0 19.1 15.4 M 10.5 18.8 A 0.2 0.2 90 0 0 17.3 18.8 A 0.2 0.2 90 0 0 10.5 18.8 M 6 26.9 A 0.2 0.2 90 0 0 12.8 26.9 A 0.2 0.2 90 0 0 6 26.9 M 6.9 36.5 A 0.2 0.2 90 0 0 13.7 36.5 A 0.2 0.2 90 0 0 6.9 36.5 M 21.4 42.8 A 0.2 0.2 90 0 0 14.6 42.8 A 0.2 0.2 90 0 0 21.4 42.8 Z M 22.3 30.3 C 21.8 24.2 26.4 24 27.3 24.2 L 29.8 26 C 30.4 29.4 27.5 33.7 20 33.7 Q 22.3 32.2 22.3 30.3 Z">
+              </path>
+            </svg>
+          </label>
+          <button id="btnVehicleViewIp" class="side-ip-btn side-ip-tool vehicle-ip-btn" type="button"
+            aria-label="Arac gorunumu" title="Arac gorunumu">
+            <svg class="vehicle-ip-icon vehicle-view-icon" viewBox="0 0 52 52" aria-hidden="true">
+              <path class="vehicle-ip-color-fill"
+                d="M 20 16 L 25.6 16 C 27.2 13.4 29.4 11.5 34.4 10.4 L 26 10.4 C 23.8 11.4 21.8 13.4 20 16 Z M 25.8 10 L 34.6 10 C 43 11.6 49.2 38 33.2 44.6 C 25.4 46.2 18.4 43.6 16.2 31 L 12.6 31 L 21.8 19.2 L 28.6 31 L 25 31 C 25.4 36.4 28.8 41.2 31.4 42 C 36.2 41.4 43.4 20.2 31.6 12.4 C 28.6 13 26.6 16 26 17 L 26 17 L 18.2 17 C 20 14.6 22.4 11 25.8 10 M 15.2 30 L 17.2 30 C 17.4 34 19.2 45.8 30.4 43.4 C 24.8 40 24.2 34.6 23.8 30 L 26.4 30 L 21.8 21.2 L 15.2 30 Z">
+              </path>
+            </svg>
+            <span id="lblVehicleViewIp" class="side-ip-text-mark vehicle-ip-text-mark">Ust</span>
+          </button>
+          <button id="btnVehicleGhostIp" class="side-ip-btn side-ip-tool vehicle-ip-btn" type="button"
+            aria-label="Temsili arac gorunumu" title="Temsili arac gorunumu" aria-pressed="false">
+            <span class="side-ip-text-mark vehicle-ip-text-mark">Temsili</span>
+          </button>
+          <button id="btnVehicleFlipXIp" class="side-ip-btn side-ip-tool vehicle-ip-btn" type="button"
+            aria-label="Arac X ekseni simetrisi" title="X ekseni simetrisi" aria-pressed="false">
+            <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
+              <path d="M0 19L40 19L40 0L0 19" fill="currentColor"></path>
+              <path d="M0 21L40 21L40 40Z" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linejoin="round"></path>
+            </svg>
+          </button>
+          <button id="btnVehicleFlipYIp" class="side-ip-btn side-ip-tool vehicle-ip-btn" type="button"
+            aria-label="Arac Y ekseni simetrisi" title="Y ekseni simetrisi" aria-pressed="false">
+            <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
+              <path d="M21 0L21 40L40 40L21 0" fill="currentColor"></path>
+              <path d="M19 0L19 40L0 40Z" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linejoin="round"></path>
+            </svg>
+          </button>
+          <div id="vehicleRotateStepper" class="side-ip-stepper-vertical" aria-label="Arac acisi">
+            <button id="btnVehicleRotatePlus" class="side-ip-stepper-btn" type="button"
+              aria-label="Arac acisini 1 derece arttir">+</button>
+            <input id="vehicleRotateInput" class="side-ip-stepper-number" type="number" min="-180" max="180"
+              step="1" value="0" inputmode="numeric" aria-label="Arac acisi">
+            <button id="btnVehicleRotateMinus" class="side-ip-stepper-btn" type="button"
+              aria-label="Arac acisini 1 derece azalt">-</button>
+          </div>
+          <div id="vehicleScaleStepper" class="side-ip-stepper-vertical" aria-label="Arac boyutu">
+            <button id="btnVehicleScalePlus" class="side-ip-stepper-btn" type="button"
+              aria-label="Arac boyutunu yuzde 1 arttir">+</button>
+            <input id="vehicleScaleInput" class="side-ip-stepper-number" type="number" min="20" max="300"
+              step="1" value="100" inputmode="numeric" aria-label="Arac boyutu">
+            <button id="btnVehicleScaleMinus" class="side-ip-stepper-btn" type="button"
+              aria-label="Arac boyutunu yuzde 1 azalt">-</button>
+          </div>
+        </div>
+
         <button id="btnLineColor" class="side-ip-btn side-ip-tool side-ip-color-btn is-stroke" type="button"
           aria-label="Cizgi rengi" title="Cizgi rengi" aria-controls="strokeColorPanel"
           aria-expanded="false">
@@ -928,6 +989,41 @@
         </div>
       </div>
 
+      <div id="vehicleLabelPanel" class="line-text-panel vehicle-label-panel gizli" aria-label="Arac etiketi">
+        <input id="vehicleLabelInput" class="vehicle-label-input" type="text" maxlength="24" autocomplete="off"
+          aria-label="Arac etiketi" placeholder="Etiket">
+        <div class="vehicle-label-actions" aria-label="Etiket konumu">
+          <button class="line-text-icon-btn vehicle-label-position-choice" type="button"
+            data-vehicle-label-position="top" aria-label="Etiket ustte" title="Etiket ustte">
+            <svg class="vehicle-label-position-icon" viewBox="0 0 48 48" aria-hidden="true">
+              <rect class="vehicle-label-position-car" x="14" y="18" width="20" height="12" rx="3"></rect>
+              <text x="24" y="10" text-anchor="middle">Abc</text>
+            </svg>
+          </button>
+          <button class="line-text-icon-btn vehicle-label-position-choice" type="button"
+            data-vehicle-label-position="right" aria-label="Etiket sagda" title="Etiket sagda">
+            <svg class="vehicle-label-position-icon" viewBox="0 0 48 48" aria-hidden="true">
+              <rect class="vehicle-label-position-car" x="14" y="18" width="20" height="12" rx="3"></rect>
+              <text x="39" y="25" text-anchor="middle">Abc</text>
+            </svg>
+          </button>
+          <button class="line-text-icon-btn vehicle-label-position-choice" type="button"
+            data-vehicle-label-position="bottom" aria-label="Etiket altta" title="Etiket altta">
+            <svg class="vehicle-label-position-icon" viewBox="0 0 48 48" aria-hidden="true">
+              <rect class="vehicle-label-position-car" x="14" y="18" width="20" height="12" rx="3"></rect>
+              <text x="24" y="40" text-anchor="middle">Abc</text>
+            </svg>
+          </button>
+          <button class="line-text-icon-btn vehicle-label-position-choice" type="button"
+            data-vehicle-label-position="left" aria-label="Etiket solda" title="Etiket solda">
+            <svg class="vehicle-label-position-icon" viewBox="0 0 48 48" aria-hidden="true">
+              <rect class="vehicle-label-position-car" x="14" y="18" width="20" height="12" rx="3"></rect>
+              <text x="9" y="25" text-anchor="middle">Abc</text>
+            </svg>
+          </button>
+        </div>
+      </div>
+
       <div class="rail-menu-panel gizli" id="railMenuAna" role="dialog" aria-label="Ana menü">
         <div class="rail-menu-title">Ana Menü</div>
         <button id="btnEditorTamEkran" class="rail-menu-btn" type="button" aria-label="Tam ekran"
@@ -1109,10 +1205,18 @@
         <div class="editor-library-card">
           <div class="editor-library-header">
             <span>Araç Ekle</span>
-            <button class="editor-library-close" type="button" data-rail-close>Kapat</button>
+            <div class="editor-library-header-actions">
+              <button id="btnVehicleAdd" class="editor-library-ok gizli" type="button">Tamam</button>
+              <button class="editor-library-close" type="button" data-rail-close>Kapat</button>
+            </div>
           </div>
-          <div class="editor-library-body">(Boş) - Araçlar daha sonra doldurulacak.</div>
-          <div class="editor-library-footer">Seçilen araç krokiye eklenecek.</div>
+          <div class="editor-library-body vehicle-library">
+            <div id="vehicleTypeList" class="vehicle-type-list" aria-label="Arac turleri"></div>
+            <div class="vehicle-variant-browser">
+              <div id="vehicleVariantGrid" class="vehicle-variant-grid" aria-label="Arac cesitleri"></div>
+            </div>
+          </div>
+          <div id="vehicleSelectedLabel" class="editor-library-footer">Secilen arac: Yok</div>
         </div>
       </div>
 
@@ -1139,10 +1243,18 @@
         <div class="editor-library-card">
           <div class="editor-library-header">
             <span>Diğer Sembol Ekle</span>
-            <button class="editor-library-close" type="button" data-rail-close>Kapat</button>
+            <div class="editor-library-header-actions">
+              <button id="btnOtherSymbolAdd" class="editor-library-ok gizli" type="button">Tamam</button>
+              <button class="editor-library-close" type="button" data-rail-close>Kapat</button>
+            </div>
           </div>
-          <div class="editor-library-body">(Boş) - Diğer semboller daha sonra doldurulacak.</div>
-          <div class="editor-library-footer">Seçilen sembol krokiye eklenecek.</div>
+          <div class="editor-library-body catalog-library">
+            <div id="otherSymbolCategoryList" class="catalog-category-list" aria-label="Sembol listeleri"></div>
+            <div class="catalog-browser">
+              <div id="otherSymbolGrid" class="catalog-grid" aria-label="Semboller"></div>
+            </div>
+          </div>
+          <div id="otherSymbolSelectedLabel" class="editor-library-footer">Secilen sembol: Yok</div>
         </div>
       </div>
 
@@ -1158,7 +1270,11 @@
   <script src="src/data/traffic-signs-tanzim-levhalari.generated.js"></script>
   <script src="src/data/traffic-signs-uyari-levhalari.generated.js"></script>
   <script src="src/data/traffic-signs-bilgi-levhalari.generated.js"></script>
+  <script src="src/data/other-symbols.generated.js"></script>
+  <script src="src/data/vehicle-catalog-data.js"></script>
   <script src="src/core/trafficSignCatalog.js"></script>
+  <script src="src/core/otherSymbolCatalog.js"></script>
+  <script src="src/core/vehicleCatalog.js"></script>
   <script src="src/core/shapeRegistry.js"></script>
   <script src="src/core/styleManager.js"></script>
   <script src="src/core/editorObjectManager.js"></script>
@@ -1185,11 +1301,15 @@
   <script src="src/core/roadIntersectionEngine.js"></script>
   <script src="src/adapters/textAdapter.js"></script>
   <script src="src/adapters/trafficSignAdapter.js"></script>
+  <script src="src/adapters/otherSymbolAdapter.js"></script>
+  <script src="src/adapters/vehicleAdapter.js"></script>
   <script src="src/ui/editorTextComposer.js"></script>
   <script src="src/ui/editorBindings.js"></script>
   <script src="src/ui/roadBuilder.js"></script>
   <script src="src/ui/roadInspector.js"></script>
+  <script src="src/ui/vehicleLibrary.js"></script>
   <script src="src/ui/trafficSignLibrary.js"></script>
+  <script src="src/ui/otherSymbolLibrary.js"></script>
 </body>
 
 </html>

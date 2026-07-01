@@ -1,0 +1,573 @@
+(() => {
+  const Kroki = window.Kroki = window.Kroki || {};
+  const utils = Kroki.EditorUtils;
+  const registry = Kroki.ShapeRegistry;
+  const catalog = Kroki.VehicleCatalog;
+  if (!utils || !registry || !catalog) return;
+
+  const MIN_SCALE = 0.05;
+  const MAX_SCALE = 4;
+  const SELECTION_RADIUS_SCALE = 1.12;
+  const MULTI_SELECTION_STROKE_WIDTH = 4;
+  const VEHICLE_LABEL_POSITIONS = ["top", "right", "bottom", "left"];
+  const VEHICLE_LABEL_MAX_LENGTH = 24;
+
+  function clampScale(value) {
+    const scale = Number(value);
+    if (!Number.isFinite(scale)) return 1;
+    return Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale));
+  }
+
+  function normalizeVehicleLabelText(value) {
+    return String(value || "").replace(/[\r\n]+/g, " ").slice(0, VEHICLE_LABEL_MAX_LENGTH);
+  }
+
+  function normalizeVehicleLabelPosition(value) {
+    return VEHICLE_LABEL_POSITIONS.includes(value) ? value : "top";
+  }
+
+  function normalizeVehicleMetadata(metadata = {}) {
+    return {
+      ...metadata,
+      vehicleLabelText: normalizeVehicleLabelText(metadata.vehicleLabelText),
+      vehicleLabelPosition: normalizeVehicleLabelPosition(metadata.vehicleLabelPosition)
+    };
+  }
+
+  function create(tag, attrs = {}) {
+    const element = utils.createSvgElement(tag, attrs);
+    Object.entries(attrs || {}).forEach(([name, value]) => {
+      if (value == null) element.removeAttribute(name);
+    });
+    return element;
+  }
+
+  function append(parent, tag, attrs = {}) {
+    const child = create(tag, attrs);
+    parent.append(child);
+    return child;
+  }
+
+  function vehicleFromModel(model) {
+    const metadata = model?.metadata || {};
+    return catalog.findVariant(metadata.vehicleVariantKey)
+      || catalog.findVariant(metadata.vehicleTypeId, metadata.vehicleVariantId)
+      || catalog.allVariants()[0]
+      || null;
+  }
+
+  function vehicleView(model, variant) {
+    return catalog.normalizeView(variant, model?.metadata?.vehicleView || "top");
+  }
+
+  function baseMetrics(model) {
+    const variant = vehicleFromModel(model);
+    const view = vehicleView(model, variant);
+    const dimensions = catalog.dimensionsForView(variant, view);
+    const scale = clampScale(model.geometry?.scale);
+    return {
+      variant,
+      view,
+      kind: variant?.kind || "car",
+      baseWidth: dimensions.width,
+      baseHeight: dimensions.height,
+      width: dimensions.width * scale,
+      height: dimensions.height * scale,
+      scale
+    };
+  }
+
+  function selectionRadiusFor(model) {
+    const metrics = baseMetrics(model);
+    return Math.max(metrics.width, metrics.height) * SELECTION_RADIUS_SCALE / 2;
+  }
+
+  function bodyStyle(metadata = {}) {
+    const ghost = Boolean(metadata.vehicleGhost);
+    return {
+      fill: ghost ? "#ffffff" : (metadata.vehicleColor || "#dc2626"),
+      stroke: "#111827",
+      strokeWidth: 2.2,
+      dash: ghost ? "1 1" : null
+    };
+  }
+
+  function wheel(group, x, y, r, metadata) {
+    append(group, "circle", {
+      cx: x,
+      cy: y,
+      r,
+      fill: metadata?.vehicleGhost ? "#ffffff" : "#111827",
+      stroke: "#111827",
+      "stroke-width": 1.6
+    });
+  }
+
+  function parseViewBox(viewBox) {
+    const parts = String(viewBox || "").trim().split(/[\s,]+/).map(Number);
+    if (parts.length !== 4 || parts.some((part) => !Number.isFinite(part)) || parts[2] <= 0 || parts[3] <= 0) {
+      return null;
+    }
+    return { x: parts[0], y: parts[1], width: parts[2], height: parts[3] };
+  }
+
+  function customViewFor(variant, view) {
+    const custom = variant?.views?.[view];
+    return custom && Array.isArray(custom.paths) && custom.paths.length && parseViewBox(custom.viewBox)
+      ? custom
+      : null;
+  }
+
+  function pathStyleFor(role, metadata = {}, path = {}) {
+    const style = bodyStyle(metadata);
+    const color = metadata?.vehicleColor || "#dc2626";
+    const cleanRole = role || "detail";
+    const attrs = {
+      fill: "none",
+      stroke: style.stroke,
+      "stroke-width": path.strokeWidth || 3,
+      "stroke-linecap": path.lineCap || (style.dash ? "butt" : "round"),
+      "stroke-linejoin": path.lineJoin || "round",
+      "stroke-dasharray": style.dash
+    };
+
+    if (cleanRole === "body") {
+      attrs.fill = style.fill;
+      attrs.stroke = style.stroke;
+      attrs["stroke-width"] = path.strokeWidth || style.strokeWidth;
+    } else if (cleanRole === "frame") {
+      attrs.stroke = metadata?.vehicleGhost ? style.stroke : color;
+    } else if (cleanRole === "window") {
+      attrs.fill = metadata?.vehicleGhost ? "#ffffff" : "rgba(255,255,255,.32)";
+      attrs.stroke = style.stroke;
+      attrs["stroke-width"] = path.strokeWidth || 2.4;
+    } else if (cleanRole === "solid") {
+      attrs.fill = path.fill || style.stroke;
+      attrs.stroke = path.stroke || style.stroke;
+    } else if (cleanRole === "wheel") {
+      attrs.fill = path.fill || "none";
+      attrs.stroke = path.stroke || style.stroke;
+    }
+
+    if (path.fill) attrs.fill = path.fill === "vehicle" ? style.fill : path.fill;
+    if (path.stroke) attrs.stroke = path.stroke === "vehicle" ? (metadata?.vehicleGhost ? style.stroke : color) : path.stroke;
+    if (metadata?.vehicleGhost && path.ghost === "preserve") attrs["stroke-dasharray"] = null;
+    return attrs;
+  }
+
+  function drawCustomVehicleArt(group, metrics, metadata = {}) {
+    const { variant, baseWidth: w, baseHeight: h, view } = metrics;
+    const custom = customViewFor(variant, view);
+    const box = parseViewBox(custom?.viewBox);
+    if (!custom || !box) return false;
+    const scale = Math.min(w / box.width, h / box.height);
+    const fittedWidth = box.width * scale;
+    const fittedHeight = box.height * scale;
+    const offsetX = (w - fittedWidth) / 2;
+    const offsetY = (h - fittedHeight) / 2;
+
+    const art = append(group, "g", {
+      transform: [
+        `translate(${-w / 2 + offsetX} ${-h / 2 + offsetY})`,
+        `scale(${scale})`,
+        `translate(${-box.x} ${-box.y})`
+      ].join(" ")
+    });
+
+    custom.paths.forEach((path) => {
+      if (!path?.d) return;
+      append(art, "path", {
+        d: path.d,
+        ...pathStyleFor(path.role, metadata, path)
+      });
+    });
+    return true;
+  }
+
+  function drawNarrowTop(group, w, h, metadata) {
+    const style = bodyStyle(metadata);
+    const r = Math.max(3, w * 0.24);
+    append(group, "line", {
+      x1: 0,
+      y1: -h * 0.34,
+      x2: 0,
+      y2: h * 0.34,
+      stroke: style.stroke,
+      "stroke-width": Math.max(3, w * 0.18),
+      "stroke-linecap": "round",
+      "stroke-dasharray": style.dash
+    });
+    wheel(group, 0, -h * 0.42, r, metadata);
+    wheel(group, 0, h * 0.42, r, metadata);
+    append(group, "line", {
+      x1: -w * 0.45,
+      y1: -h * 0.08,
+      x2: w * 0.45,
+      y2: -h * 0.08,
+      stroke: style.stroke,
+      "stroke-width": Math.max(1.5, w * 0.08),
+      "stroke-linecap": "round",
+      "stroke-dasharray": style.dash
+    });
+  }
+
+  function drawTopBody(group, w, h, metadata, kind) {
+    const style = bodyStyle(metadata);
+    const rx = Math.max(3, Math.min(w, h) * (kind === "car" ? 0.22 : 0.12));
+    append(group, "rect", {
+      x: -w / 2,
+      y: -h / 2,
+      width: w,
+      height: h,
+      rx,
+      fill: style.fill,
+      stroke: style.stroke,
+      "stroke-width": style.strokeWidth,
+      "stroke-dasharray": style.dash
+    });
+
+    if (kind === "long" || kind === "rail") {
+      append(group, "line", {
+        x1: -w * 0.35,
+        y1: -h * 0.28,
+        x2: w * 0.35,
+        y2: -h * 0.28,
+        stroke: style.stroke,
+        "stroke-width": 1.5,
+        "stroke-dasharray": style.dash
+      });
+      append(group, "line", {
+        x1: -w * 0.35,
+        y1: h * 0.28,
+        x2: w * 0.35,
+        y2: h * 0.28,
+        stroke: style.stroke,
+        "stroke-width": 1.5,
+        "stroke-dasharray": style.dash
+      });
+    } else {
+      append(group, "ellipse", {
+        cx: 0,
+        cy: -h * 0.08,
+        rx: w * 0.34,
+        ry: h * 0.17,
+        fill: metadata?.vehicleGhost ? "#ffffff" : "rgba(255,255,255,.28)",
+        stroke: style.stroke,
+        "stroke-width": 1.4,
+        "stroke-dasharray": style.dash
+      });
+      append(group, "line", {
+        x1: -w * 0.36,
+        y1: h * 0.16,
+        x2: w * 0.36,
+        y2: h * 0.16,
+        stroke: style.stroke,
+        "stroke-width": 1.3,
+        "stroke-dasharray": style.dash
+      });
+    }
+  }
+
+  function drawSideBody(group, w, h, metadata, kind) {
+    const style = bodyStyle(metadata);
+    const bodyHeight = kind === "narrow" ? h * 0.45 : h * 0.62;
+    append(group, "rect", {
+      x: -w / 2,
+      y: -bodyHeight / 2,
+      width: w,
+      height: bodyHeight,
+      rx: Math.max(3, bodyHeight * 0.18),
+      fill: style.fill,
+      stroke: style.stroke,
+      "stroke-width": style.strokeWidth,
+      "stroke-dasharray": style.dash
+    });
+
+    if (kind !== "narrow") {
+      append(group, "path", {
+        d: `M${-w * 0.28} ${-bodyHeight / 2}H${w * 0.15}L${w * 0.3} 0H${-w * 0.38}Z`,
+        fill: metadata?.vehicleGhost ? "#ffffff" : "rgba(255,255,255,.32)",
+        stroke: style.stroke,
+        "stroke-width": 1.4,
+        "stroke-dasharray": style.dash
+      });
+    }
+
+    const wr = Math.max(3, Math.min(w, h) * 0.12);
+    wheel(group, -w * 0.32, bodyHeight * 0.44, wr, metadata);
+    wheel(group, w * 0.32, bodyHeight * 0.44, wr, metadata);
+  }
+
+  function drawUpsideDown(group, w, h, metadata, kind) {
+    const ghostMetadata = { ...metadata, vehicleGhost: Boolean(metadata?.vehicleGhost), vehicleColor: "#ffffff" };
+    drawTopBody(group, w, h, ghostMetadata, kind);
+    append(group, "line", {
+      x1: -w * 0.34,
+      y1: -h * 0.34,
+      x2: w * 0.34,
+      y2: h * 0.34,
+      stroke: "#111827",
+      "stroke-width": 1.6,
+      "stroke-linecap": "round",
+      "stroke-dasharray": metadata?.vehicleGhost ? "7 5" : null
+    });
+    append(group, "line", {
+      x1: w * 0.34,
+      y1: -h * 0.34,
+      x2: -w * 0.34,
+      y2: h * 0.34,
+      stroke: "#111827",
+      "stroke-width": 1.6,
+      "stroke-linecap": "round",
+      "stroke-dasharray": metadata?.vehicleGhost ? "7 5" : null
+    });
+  }
+
+  function drawVehicleArt(group, metrics, metadata = {}) {
+    if (drawCustomVehicleArt(group, metrics, metadata)) return;
+    const { baseWidth: w, baseHeight: h, kind, view } = metrics;
+    if (kind === "narrow" && view !== "side") {
+      drawNarrowTop(group, w, h, metadata);
+      return;
+    }
+    if (view === "side") {
+      drawSideBody(group, w, h, metadata, kind);
+      return;
+    }
+    if (view === "upsideDown") {
+      drawUpsideDown(group, w, h, metadata, kind);
+      return;
+    }
+    drawTopBody(group, w, h, metadata, kind);
+  }
+
+  function renderPreviewSvg(variant, options = {}) {
+    const view = catalog.normalizeView(variant, options.view || "side");
+    const dimensions = catalog.dimensionsForView(variant, view);
+    const pad = 1.45;
+    const svg = create("svg", {
+      viewBox: `${-dimensions.width * pad / 2} ${-dimensions.height * pad / 2} ${dimensions.width * pad} ${dimensions.height * pad}`,
+      preserveAspectRatio: "xMidYMid meet",
+      "aria-hidden": "true"
+    });
+    const group = append(svg, "g");
+    drawVehicleArt(group, {
+      variant,
+      view,
+      kind: variant?.kind || "car",
+      baseWidth: dimensions.width,
+      baseHeight: dimensions.height
+    }, {
+      vehicleColor: options.color || variant?.color || "#dc2626",
+      vehicleGhost: false
+    });
+    return svg;
+  }
+
+  function pointDistance(model, point) {
+    const geometry = model.geometry || {};
+    return Math.hypot(point.x - geometry.cx, point.y - geometry.cy);
+  }
+
+  function cpPoint(model, metrics) {
+    const radius = selectionRadiusFor(model);
+    const distance = radius + (metrics?.handleGap || 0);
+    const radians = utils.normalizeRotation(model.geometry?.rotation || 0) * Math.PI / 180;
+    return {
+      x: model.geometry.cx + Math.cos(radians) * distance,
+      y: model.geometry.cy + Math.sin(radians) * distance
+    };
+  }
+
+  function rotatedOffset(offset, angleDeg) {
+    const angle = angleDeg * Math.PI / 180;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    return {
+      x: offset.x * cos - offset.y * sin,
+      y: offset.x * sin + offset.y * cos
+    };
+  }
+
+  function vehicleLabelPoint(model, metrics, position) {
+    const gap = 16;
+    const halfWidth = metrics.width / 2;
+    const halfHeight = metrics.height / 2;
+    const local = {
+      top: { x: 0, y: -halfHeight - gap },
+      right: { x: halfWidth + gap, y: 0 },
+      bottom: { x: 0, y: halfHeight + gap },
+      left: { x: -halfWidth - gap, y: 0 }
+    }[normalizeVehicleLabelPosition(position)];
+    const offset = rotatedOffset(local, utils.normalizeRotation(model.geometry?.rotation || 0));
+    return {
+      x: model.geometry.cx + offset.x,
+      y: model.geometry.cy + offset.y
+    };
+  }
+
+  function renderVehicleLabel(parent, model, metrics, metadata) {
+    const text = normalizeVehicleLabelText(metadata.vehicleLabelText).trim();
+    if (!text) return;
+    const point = vehicleLabelPoint(model, metrics, metadata.vehicleLabelPosition);
+    const label = create("text", {
+      class: "editor-vehicle-label",
+      x: point.x,
+      y: point.y,
+      "text-anchor": "middle",
+      "dominant-baseline": "middle"
+    });
+    label.textContent = text;
+    parent.append(label);
+  }
+
+  const adapter = {
+    elementTag: "g",
+    className: "editor-vehicle",
+    capabilities: { arrows: false, fill: false, curvedLabel: false, ownsLabel: true, noText: true, vehicleObject: true },
+
+    create(initialData = {}) {
+      const variant = initialData.variant || catalog.findVariant(initialData.vehicleVariantKey) || catalog.allVariants()[0];
+      const metadata = normalizeVehicleMetadata(catalog.metadataFor(variant, initialData.metadata || {}));
+      const center = initialData.center || initialData.point || {};
+      const geometry = initialData.geometry || {};
+      return {
+        type: "vehicle",
+        geometry: {
+          cx: utils.numberOr(geometry.cx ?? center.x ?? initialData.x, 0),
+          cy: utils.numberOr(geometry.cy ?? center.y ?? initialData.y, 0),
+          scale: clampScale(geometry.scale ?? initialData.scale ?? 1),
+          rotation: utils.normalizeRotation(geometry.rotation ?? initialData.rotation)
+        },
+        style: initialData.style,
+        label: initialData.label,
+        metadata
+      };
+    },
+
+    readFromElement(element) {
+      return {
+        id: element.dataset.objectId,
+        type: "vehicle",
+        geometry: {
+          cx: utils.numberOr(element.dataset.cx, 0),
+          cy: utils.numberOr(element.dataset.cy, 0),
+          scale: clampScale(element.dataset.scale),
+          rotation: utils.normalizeRotation(element.dataset.rotation)
+        },
+        style: {},
+        label: {},
+        metadata: {
+          vehicleVariantKey: element.dataset.vehicleVariantKey || "",
+          vehicleView: element.dataset.vehicleView || "top",
+          vehicleColor: element.dataset.vehicleColor || "#dc2626",
+          vehicleGhost: element.dataset.vehicleGhost === "true",
+          vehicleFlipX: element.dataset.vehicleFlipX === "true",
+          vehicleFlipY: element.dataset.vehicleFlipY === "true",
+          vehicleLabelText: element.dataset.vehicleLabelText || "",
+          vehicleLabelPosition: element.dataset.vehicleLabelPosition || "top"
+        }
+      };
+    },
+
+    render(model, element) {
+      const metadata = normalizeVehicleMetadata(model.metadata || {});
+      const metrics = baseMetrics(model);
+      const group = create("g", {
+        class: "editor-vehicle-body",
+        transform: [
+          `translate(${model.geometry.cx} ${model.geometry.cy})`,
+          `rotate(${utils.normalizeRotation(model.geometry.rotation)})`,
+          `scale(${metrics.scale})`,
+          `scale(${metadata.vehicleFlipX ? -1 : 1} ${metadata.vehicleFlipY ? -1 : 1})`
+        ].join(" ")
+      });
+      drawVehicleArt(group, metrics, metadata);
+      element.replaceChildren(group);
+      renderVehicleLabel(element, model, metrics, metadata);
+      element.dataset.cx = String(model.geometry.cx);
+      element.dataset.cy = String(model.geometry.cy);
+      element.dataset.scale = String(metrics.scale);
+      element.dataset.rotation = String(utils.normalizeRotation(model.geometry.rotation));
+      element.dataset.vehicleVariantKey = metadata.vehicleVariantKey || "";
+      element.dataset.vehicleView = metrics.view;
+      element.dataset.vehicleColor = metadata.vehicleColor || "";
+      element.dataset.vehicleGhost = String(Boolean(metadata.vehicleGhost));
+      element.dataset.vehicleFlipX = String(Boolean(metadata.vehicleFlipX));
+      element.dataset.vehicleFlipY = String(Boolean(metadata.vehicleFlipY));
+      element.dataset.vehicleLabelText = metadata.vehicleLabelText || "";
+      element.dataset.vehicleLabelPosition = metadata.vehicleLabelPosition || "top";
+    },
+
+    hitTest(model, point, tolerance) {
+      return pointDistance(model, point) <= selectionRadiusFor(model) + tolerance;
+    },
+
+    getControlPoints(model, metrics) {
+      return [{
+        id: "rotate",
+        ...cpPoint(model, metrics),
+        role: "rotate",
+        cursor: "grab"
+      }];
+    },
+
+    moveControlPoint(model, cpId, worldPoint) {
+      if (cpId !== "rotate") return;
+      model.geometry.rotation = utils.normalizeRotation(
+        Math.atan2(worldPoint.y - model.geometry.cy, worldPoint.x - model.geometry.cx) * 180 / Math.PI
+      );
+    },
+
+    move(model, dx, dy) {
+      model.geometry.cx += dx;
+      model.geometry.cy += dy;
+    },
+
+    getBounds(model) {
+      const radius = selectionRadiusFor(model);
+      return {
+        x: model.geometry.cx - radius,
+        y: model.geometry.cy - radius,
+        width: radius * 2,
+        height: radius * 2
+      };
+    },
+
+    clone(model) {
+      return utils.clonePlain(model);
+    },
+
+    createSelectionElement() {
+      return utils.createSvgElement("circle", { class: "editor-object-selection editor-traffic-sign-selection editor-vehicle-selection" });
+    },
+
+    renderSelection(element, model, style, mode) {
+      const isMulti = mode === "multi";
+      element.setAttribute("cx", String(model.geometry.cx));
+      element.setAttribute("cy", String(model.geometry.cy));
+      element.setAttribute("r", String(selectionRadiusFor(model)));
+      element.setAttribute("stroke-width", isMulti ? String(MULTI_SELECTION_STROKE_WIDTH) : "0");
+      if (isMulti) {
+        element.removeAttribute("stroke");
+        element.removeAttribute("fill");
+      } else {
+        element.setAttribute("stroke", "none");
+        element.setAttribute("fill", mode === "edit" ? "rgba(34, 197, 94, .5)" : "rgba(239, 68, 68, .5)");
+      }
+      element.removeAttribute("transform");
+      element.classList.toggle("is-edit", mode === "edit");
+      element.classList.toggle("is-preselect", mode === "preselect");
+    },
+
+    effectiveLabel() {
+      return {};
+    }
+  };
+
+  registry.register("vehicle", adapter);
+  Kroki.VehicleRenderer = {
+    renderPreviewSvg,
+    metricsForModel: baseMetrics
+  };
+})();

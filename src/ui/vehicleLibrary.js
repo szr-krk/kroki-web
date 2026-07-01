@@ -1,0 +1,153 @@
+(() => {
+  const Kroki = window.Kroki = window.Kroki || {};
+  const catalog = Kroki.VehicleCatalog;
+  const renderer = Kroki.VehicleRenderer;
+  const manager = Kroki.EditorObjectManager;
+  const selection = Kroki.SelectionManager;
+  if (!catalog || !renderer || !manager || !selection) return;
+
+  const typeList = document.querySelector("#vehicleTypeList");
+  const grid = document.querySelector("#vehicleVariantGrid");
+  const selectedLabel = document.querySelector("#vehicleSelectedLabel");
+  const addButton = document.querySelector("#btnVehicleAdd");
+  const panel = document.querySelector("#railMenuArac");
+
+  let activeTypeId = "";
+  let selectedKey = "";
+
+  function selectedVariant() {
+    return selectedKey ? catalog.findVariant(selectedKey) : null;
+  }
+
+  function setSelected(variant) {
+    selectedKey = variant?.key || "";
+    if (selectedLabel) {
+      selectedLabel.textContent = "Secilen arac: " + (variant ? `${variant.typeTitle} - ${variant.name}` : "Yok");
+    }
+    addButton?.classList.toggle("gizli", !selectedKey);
+    syncTileSelection();
+  }
+
+  function syncTileSelection() {
+    grid?.querySelectorAll(".vehicle-variant-tile").forEach((tile) => {
+      const selected = tile.dataset.vehicleVariantKey === selectedKey;
+      tile.classList.toggle("is-selected", selected);
+      tile.setAttribute("aria-pressed", String(selected));
+    });
+  }
+
+  function setActiveType(typeId) {
+    const nextTypeId = String(typeId || "");
+    if (activeTypeId && activeTypeId !== nextTypeId) setSelected(null);
+    activeTypeId = nextTypeId;
+    typeList?.querySelectorAll(".vehicle-type-button").forEach((button) => {
+      const selected = button.dataset.vehicleTypeId === activeTypeId;
+      button.classList.toggle("is-selected", selected);
+      button.setAttribute("aria-pressed", String(selected));
+    });
+    renderVariants();
+  }
+
+  function renderTypes() {
+    if (!typeList) return;
+    const types = catalog.typeList();
+    typeList.replaceChildren();
+    types.forEach((type) => {
+      const button = document.createElement("button");
+      button.className = "vehicle-type-button";
+      button.type = "button";
+      button.dataset.vehicleTypeId = type.id;
+      button.setAttribute("aria-pressed", "false");
+
+      const title = document.createElement("span");
+      title.textContent = type.title;
+      const count = document.createElement("strong");
+      count.textContent = String(type.variants.length);
+      button.append(title, count);
+      button.addEventListener("click", () => setActiveType(type.id));
+      typeList.append(button);
+    });
+    if (!activeTypeId && types[0]) activeTypeId = types[0].id;
+    setActiveType(activeTypeId);
+  }
+
+  function renderVariants() {
+    if (!grid) return;
+    const variants = catalog.variantsForType(activeTypeId);
+    grid.replaceChildren();
+    if (!variants.length) {
+      const empty = document.createElement("div");
+      empty.className = "vehicle-empty";
+      empty.textContent = "Bu tur icin arac bulunamadi.";
+      grid.append(empty);
+      setSelected(null);
+      return;
+    }
+
+    variants.forEach((variant) => {
+      const tile = document.createElement("button");
+      tile.className = "vehicle-variant-tile";
+      tile.type = "button";
+      tile.dataset.vehicleVariantKey = variant.key;
+      tile.title = `${variant.typeTitle} - ${variant.name}`;
+      tile.setAttribute("aria-label", tile.title);
+      tile.setAttribute("aria-pressed", "false");
+
+      const preview = document.createElement("div");
+      preview.className = "vehicle-variant-preview";
+      preview.append(renderer.renderPreviewSvg(variant, { view: "side" }));
+
+      const name = document.createElement("span");
+      name.textContent = variant.name;
+      tile.append(preview, name);
+      tile.addEventListener("click", () => setSelected(variant));
+      grid.append(tile);
+    });
+    syncTileSelection();
+  }
+
+  function canvasCenter() {
+    const viewBox = manager.canvas?.getAttribute("viewBox") || "0 0 1200 800";
+    const parts = viewBox.trim().split(/\s+/).map(Number);
+    if (parts.length === 4 && parts.every(Number.isFinite)) {
+      return { x: parts[0] + parts[2] / 2, y: parts[1] + parts[3] / 2 };
+    }
+    return { x: 600, y: 400 };
+  }
+
+  function closePanel() {
+    const ownerButton = document.querySelector("[data-rail-menu-target='railMenuArac']");
+    window.krokiEditorRail?.closeRailMenus?.();
+    panel?.classList.add("gizli");
+    ownerButton?.classList.remove("is-menu-open");
+    ownerButton?.setAttribute("aria-expanded", "false");
+  }
+
+  function addSelectedVehicle(event) {
+    event?.preventDefault();
+    event?.stopPropagation();
+    const variant = selectedVariant();
+    if (!variant) return;
+    const model = manager.create("vehicle", {
+      variant,
+      center: canvasCenter()
+    }, { label: "Arac ekle" });
+    if (!model) return;
+    setSelected(null);
+    closePanel();
+    selection.edit(model.id);
+  }
+
+  function ensureRendered() {
+    renderTypes();
+  }
+
+  addButton?.addEventListener("click", addSelectedVehicle);
+  panel?.addEventListener("kroki:rail-menu-open", ensureRendered);
+  ensureRendered();
+
+  Kroki.VehicleLibrary = {
+    render: ensureRendered,
+    getSelectedVariant: selectedVariant
+  };
+})();

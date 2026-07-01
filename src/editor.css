@@ -589,7 +589,8 @@
   font-weight: 800;
 }
 
-.traffic-sign-library {
+.traffic-sign-library,
+.catalog-library {
   display: grid;
   grid-template-columns: 230px minmax(0, 1fr);
   gap: 16px;
@@ -597,7 +598,8 @@
   overflow: hidden;
 }
 
-.traffic-sign-category-list {
+.traffic-sign-category-list,
+.catalog-category-list {
   min-width: 0;
   overflow: auto;
   display: grid;
@@ -606,7 +608,8 @@
   padding-right: 4px;
 }
 
-.traffic-sign-category {
+.traffic-sign-category,
+.catalog-category {
   min-height: 50px;
   padding: 0 12px;
   border: 2px solid #cbd5e1;
@@ -622,14 +625,16 @@
   font-weight: 900;
 }
 
-.traffic-sign-category span {
+.traffic-sign-category span,
+.catalog-category span {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.traffic-sign-category strong {
+.traffic-sign-category strong,
+.catalog-category strong {
   min-width: 32px;
   padding: 3px 7px;
   border-radius: 999px;
@@ -639,26 +644,30 @@
   font-size: 12px;
 }
 
-.traffic-sign-category.is-selected {
+.traffic-sign-category.is-selected,
+.catalog-category.is-selected {
   border-color: #2563eb;
   background: #dbeafe;
   color: #1e3a8a;
 }
 
-.traffic-sign-browser {
+.traffic-sign-browser,
+.catalog-browser {
   min-width: 0;
   overflow: auto;
   padding: 2px;
 }
 
-.traffic-sign-grid {
+.traffic-sign-grid,
+.catalog-grid {
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
   gap: 10px;
 }
 
-.traffic-sign-tile {
+.traffic-sign-tile,
+.catalog-tile {
   width: 100px;
   height: 100px;
   padding: 7px;
@@ -671,23 +680,27 @@
   box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .16);
 }
 
-.traffic-sign-tile svg {
+.traffic-sign-tile svg,
+.catalog-tile svg {
   width: 86px;
   height: 86px;
   display: block;
 }
 
-.traffic-sign-tile.is-selected {
+.traffic-sign-tile.is-selected,
+.catalog-tile.is-selected {
   border-color: #f59e0b;
   background: #fffbeb;
   box-shadow: inset 0 0 0 3px rgba(245, 158, 11, .24), 0 8px 20px rgba(15, 23, 42, .16);
 }
 
-.traffic-sign-tile:active {
+.traffic-sign-tile:active,
+.catalog-tile:active {
   transform: translateY(1px) scale(.98);
 }
 
-.traffic-sign-empty {
+.traffic-sign-empty,
+.catalog-empty {
   padding: 16px;
   border: 2px dashed #cbd5e1;
   border-radius: 8px;
@@ -698,6 +711,129 @@
 .traffic-sign-ip-stack {
   display: grid;
   gap: 8px;
+}
+
+.vehicle-library {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: 16px;
+  padding: 14px;
+  overflow: hidden;
+}
+
+.vehicle-type-list {
+  min-width: 0;
+  overflow: auto;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.vehicle-type-button {
+  min-height: 50px;
+  padding: 0 12px;
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: #f8fafc;
+  color: #0f172a;
+  cursor: pointer;
+  text-align: left;
+  font-weight: 900;
+}
+
+.vehicle-type-button span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vehicle-type-button strong {
+  min-width: 32px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #334155;
+  text-align: center;
+  font-size: 12px;
+}
+
+.vehicle-type-button.is-selected {
+  border-color: #2563eb;
+  background: #dbeafe;
+  color: #1e3a8a;
+}
+
+.vehicle-variant-browser {
+  min-width: 0;
+  overflow: auto;
+  padding: 2px;
+}
+
+.vehicle-variant-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 10px;
+}
+
+.vehicle-variant-tile {
+  width: 150px;
+  min-height: 134px;
+  padding: 8px;
+  border: 2px solid #cbd5e1;
+  border-radius: 10px;
+  display: grid;
+  grid-template-rows: 82px auto;
+  gap: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  cursor: pointer;
+  font-weight: 900;
+  text-align: center;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .16);
+}
+
+.vehicle-variant-preview {
+  min-width: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: #f8fafc;
+}
+
+.vehicle-variant-preview svg {
+  width: 130px;
+  height: 72px;
+  display: block;
+}
+
+.vehicle-variant-tile > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.vehicle-variant-tile.is-selected {
+  border-color: #f59e0b;
+  background: #fffbeb;
+  box-shadow: inset 0 0 0 3px rgba(245, 158, 11, .24), 0 8px 20px rgba(15, 23, 42, .16);
+}
+
+.vehicle-empty {
+  padding: 16px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #475569;
 }
 
 .editor-library-footer {
@@ -1139,13 +1275,17 @@
     padding: 10px;
   }
 
-  .traffic-sign-library {
+  .traffic-sign-library,
+  .catalog-library,
+  .vehicle-library {
     grid-template-columns: 1fr;
     grid-template-rows: auto minmax(0, 1fr);
     gap: 10px;
   }
 
-  .traffic-sign-category-list {
+  .traffic-sign-category-list,
+  .catalog-category-list,
+  .vehicle-type-list {
     display: flex;
     gap: 8px;
     overflow-x: auto;
@@ -1153,17 +1293,27 @@
     padding: 0 0 4px;
   }
 
-  .traffic-sign-category {
+  .traffic-sign-category,
+  .catalog-category,
+  .vehicle-type-button {
     flex: 0 0 190px;
   }
 
-  .traffic-sign-grid {
+  .traffic-sign-grid,
+  .catalog-grid,
+  .vehicle-variant-grid {
     gap: 8px;
   }
 
-  .traffic-sign-tile {
+  .traffic-sign-tile,
+  .catalog-tile {
     width: 100px;
     height: 100px;
+  }
+
+  .vehicle-variant-tile {
+    width: 138px;
+    min-height: 126px;
   }
 
   .editor-library-footer {

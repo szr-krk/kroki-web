@@ -45,7 +45,7 @@ Adapter'ların fiilî ortak yüzeyi:
 
 Çizgi benzeri adapter'lar ayrıca `pointAt`, `offsetPathData`, `midpointTangentAngle`; yol adapter'ı çok sayıda yol/kesit yardımcı metodu açar.
 
-`capabilities`, sağ rayın davranışını belirler: `arrows`, `fill`, `curvedLabel`, `ownsLabel`, `textObject`, `textFormatting`, `noText`, `pointEdit`, `roadObject`, `trafficSign`.
+`capabilities`, sağ rayın davranışını belirler: `arrows`, `fill`, `curvedLabel`, `ownsLabel`, `textObject`, `textFormatting`, `noText`, `pointEdit`, `roadObject`, `trafficSign`, `otherSymbol`, `catalogObject`.
 
 ## Manager davranışları
 
@@ -96,11 +96,11 @@ Normalize edilen stil alanları:
 
 Label alanları: `text`, `size`, `color`, `opacity`, `position`, `bold`, `italic`, `underline`.
 
-- Trafik levhası dışındaki metinler Türkçe locale ile büyük harfe normalize edilir.
+- Trafik levhası ve diğer sembol dışındaki metinler Türkçe locale ile büyük harfe normalize edilir.
 - Line/arc/bezier label'ı çizgi üstü/üstünde/altında ve başlangıç/orta/son konum alır. Eğri label'lar gizli path üzerinde `textPath` kullanır.
 - Circle/ellipse/rectangle label'ları şekil içine satır kırarak, clip path ile taşmayı keserek yerleştirilir.
 - Circle label'ı şekille dönebilir veya yatay kalabilir.
-- `text`, `callout`, `trafficSign` kendi label render'ını adapter içinde yapar (`textObject` veya `ownsLabel`).
+- `text`, `callout`, `trafficSign` ve `otherSymbol` kendi label render'ını adapter içinde yapar (`textObject` veya `ownsLabel`).
 - `road` ve `closedShape` `noText` nedeniyle ortak label üretmez.
 
 ## Tip davranışları
@@ -149,6 +149,10 @@ Kendi config/kesit ve kontrol davranışına sahiptir. [[Yol Sistemi]], [[Şerit
 
 Katalog SVG art'ını kendi `<g>` öğesi içinde render eder; `cx/cy/scale/rotation` geometrisidir. [[Trafik Levhası Sistemi]].
 
+### Diğer sembol
+
+İnsan, hayvan ve çevre elemanları katalog art'ını kendi `<g>` öğesi içinde render eder; `cx/cy/scale/rotation` geometrisidir. Teknik tipi `otherSymbol` olarak ayrıdır, ancak sağ panelde levha ile aynı katalog ölçek/dönüş kontrollerini paylaşır.
+
 ## Grup sistemi
 
 `GroupManager` grup kayıtlarını ayrı `Map` içinde tutar:
@@ -171,4 +175,3 @@ Grup etkileşimi: [[Seçim Sistemi#Gruplar]].
 
 - Text bounding box font metriklerini yaklaşıklar; `Arial Narrow` dosyası depoda olsa da text adapter `Roboto, Arial, sans-serif` kullanır. Font dosyasının mevcut rolü koddan görünmüyor.
 - Manager `syncFromDom()` legacy SVG öğelerini modele alabilir; bunun kullanıcıya açık SVG import özelliğiyle nasıl bağlanacağı henüz tanımlı değildir.
-

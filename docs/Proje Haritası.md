@@ -22,6 +22,7 @@ Bu vault, Kroki Pro'nun mevcut kaynak kodundan çıkarılan geliştirici haritas
 - **Kavşaklar:** `src/core/roadIntersectionEngine.js` → [[Kavşak Sistemi]].
 - **Belge ve geçmiş:** `src/core/documentSerializer.js`, `src/core/historyManager.js` → [[Serializer]], [[Undo Redo]].
 - **Trafik levhaları:** üretilmiş kataloglar, `trafficSignCatalog`, kitaplık UI'si ve adapter → [[Trafik Levhası Sistemi]].
+- **Diğer semboller:** üretilmiş katalog, `otherSymbolCatalog`, kitaplık UI'si ve `otherSymbol` adapter'ı; sağ panel davranışında levha ile ortak katalog kontrol hattını kullanır.
 
 ## Ekran akışı
 
@@ -53,7 +54,7 @@ Her kayıt aşağıdaki ana alanlara normalize edilir:
 }
 ```
 
-`type`, `ShapeRegistry` içindeki bir adapter'a karşılık gelir. Mevcut tipler: `line`, `arc`, `bezier`, `circle`, `ellipse`, `rectangle`, `closedShape`, `callout`, `road`, `text`, `trafficSign`. Ayrıntı: [[Nesne Sistemi#Adapter sözleşmesi]].
+`type`, `ShapeRegistry` içindeki bir adapter'a karşılık gelir. Mevcut tipler: `line`, `arc`, `bezier`, `circle`, `ellipse`, `rectangle`, `closedShape`, `callout`, `road`, `text`, `trafficSign`, `otherSymbol`, `vehicle`. Ayrıntı: [[Nesne Sistemi#Adapter sözleşmesi]].
 
 ## Temel veri akışı
 
@@ -81,4 +82,3 @@ Her kayıt aşağıdaki ana alanlara normalize edilir:
 
 - Depoda `package.json`, test koşucusu veya build tanımı yoktur. Uygulamanın hedef dağıtım ortamı kaynak koddan anlaşılmıyor; mevcut yapı doğrudan tarayıcıda çalışmaya yöneliktir.
 - Home'daki “son krokiler”, şablonlar ve kaydetme menüsü için amaçlanan kalıcı depolama türü tanımlanmamıştır.
-

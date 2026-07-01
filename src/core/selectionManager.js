@@ -112,7 +112,7 @@
     drag = {
       type,
       pointerId: event.pointerId,
-      captureTarget: event.currentTarget || manager.canvas,
+      captureTarget: extra.captureTarget || event.currentTarget || manager.canvas,
       lastPoint: point,
       startClientX: event.clientX,
       startClientY: event.clientY,
@@ -135,7 +135,7 @@
     if (!activeId) return;
     if (window.krokiEditorCamera?.isGestureActive?.() || window.krokiEditorCamera?.isPanRequested?.()) return;
     promoteToEdit();
-    beginDrag("control", event, { cpId });
+    beginDrag("control", event, { cpId, captureTarget: manager.canvas });
     event.stopImmediatePropagation?.();
     event.stopPropagation();
     event.preventDefault();
@@ -147,6 +147,16 @@
     event.stopImmediatePropagation?.();
     event.stopPropagation();
     event.preventDefault();
+  }
+
+  function handleVehicleControlPointPointerDown(event) {
+    if (event.button !== 0 && event.pointerType === "mouse") return;
+    if (window.krokiEditorCamera?.isGestureActive?.() || window.krokiEditorCamera?.isPanRequested?.()) return;
+    const handle = event.target?.closest?.(".editor-object-cp:not(.editor-group-cp)");
+    const cpId = handle?.dataset?.point || "";
+    if (!cpId) return;
+    if (getActiveModel()?.type !== "vehicle") return;
+    startControlPointDrag(event, cpId);
   }
 
   function handlePointerDown(event) {
@@ -242,7 +252,7 @@
           lastPoint: drag.lastPoint,
           metrics: controlPoints.metrics()
         });
-      }, { skipHistory: true, styleControls: Boolean(adapter.capabilities?.trafficSign) });
+      }, { skipHistory: true, styleControls: Boolean(adapter.capabilities?.trafficSign || adapter.capabilities?.otherSymbol || adapter.capabilities?.catalogObject || adapter.capabilities?.vehicleObject) });
       drag.lastPoint = point;
       event.preventDefault();
     }
@@ -392,6 +402,7 @@
   }
 
   manager.canvas.addEventListener("pointerdown", handlePointerDown);
+  manager.canvas.addEventListener("pointerdown", handleVehicleControlPointPointerDown, true);
   manager.canvas.addEventListener("pointermove", handlePointerMove);
   manager.canvas.addEventListener("pointerup", (event) => {
     if (!Kroki.MultiSelectManager?.stopDrag?.(event)) stopDrag(event);

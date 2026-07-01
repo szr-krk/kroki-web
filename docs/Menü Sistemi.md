@@ -53,8 +53,8 @@ Araçlar: çizgi, arc, quadratic Bezier, cubic Bezier, daire, elips, dikdörtgen
 
 - **Yol Ekle:** çalışan `RoadBuilder` formu; profil, yön, normal/bölünmüş tür, banket, bariyer ve şerit sayısı sunar. [[Yol Sistemi#Road Builder]].
 - **Levha Ekle:** çalışan kategori ve levha grid'i. [[Trafik Levhası Sistemi]].
-- **Araç Ekle:** boş yer tutucu.
-- **Diğer Sembol Ekle:** boş yer tutucu.
+- **Araç Ekle:** araç katalog grid'i; seçilen araç canvas merkezine eklenir.
+- **Diğer Sembol Ekle:** insan, hayvan ve çevre elemanları katalog grid'i; seçilen sembol `otherSymbol` nesnesi olarak eklenir ve levha ile aynı seçim/düzenleme kontrollerini kullanır.
 
 ## Üst araç çubuğu
 
@@ -81,7 +81,7 @@ Araçlar: çizgi, arc, quadratic Bezier, cubic Bezier, daire, elips, dikdörtgen
 - Metin destekleyen tip: metin paneli ve hizalama/biçim kontrolleri.
 - Kapalı şekil: nokta düzenleme modu.
 - Yol: Road Inspector kontrolleri; genel, kesit ve bariyer modları birbirini dışlar.
-- Trafik levhası: yüzde ölçek ve derece dönüş; varsa levha içi metin alanı.
+- Trafik levhası ve diğer sembol: yüzde ölçek ve derece dönüş; varsa katalog art'ı içindeki metin alanı.
 
 Grup veya grup birimleri seçildiğinde sağ ray `is-empty` olur ve stil panelleri kapatılır. Saf çoklu nesne seçiminde ortak uygulanabilir stil, adapter yeteneklerine göre filtrelenerek uygulanabilir.
 
@@ -93,4 +93,3 @@ Sol üstte yalnız Undo ve Redo vardır. Düğmeler `HistoryManager.onChange` il
 
 - Ana menüdeki bağlı olmayan komutların hedef dosya formatı ve çıkış davranışı tanımlı değildir.
 - “Araç Ekle” ve “Diğer Sembol Ekle” kataloglarının veri kaynağı belli değildir.
-

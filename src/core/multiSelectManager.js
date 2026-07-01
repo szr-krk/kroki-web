@@ -920,11 +920,20 @@
       return draft;
     }
 
-    if (source.type === "trafficSign") {
+    if (source.type === "trafficSign" || source.type === "otherSymbol") {
       const center = transformPoint({ x: geometry.cx, y: geometry.cy }, mapper);
       geometry.cx = center.x;
       geometry.cy = center.y;
       geometry.scale = Math.min(4, Math.max(0.005, Number(geometry.scale || 0.08) * scale));
+      applyRotation();
+      return draft;
+    }
+
+    if (source.type === "vehicle") {
+      const center = transformPoint({ x: geometry.cx, y: geometry.cy }, mapper);
+      geometry.cx = center.x;
+      geometry.cy = center.y;
+      geometry.scale = Math.min(4, Math.max(0.05, Number(geometry.scale || 1) * scale));
       applyRotation();
       return draft;
     }

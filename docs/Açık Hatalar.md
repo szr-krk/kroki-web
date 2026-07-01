@@ -19,7 +19,7 @@ Bağlantılar: [[Home]], [[Menü Sistemi]], [[Serializer]], [[Kavşak Sistemi]],
 
 ### Home hızlı başlangıç içerikleri boş
 
-Şablonlarım, Hazır Kavşaklar, Hazır Yollar, Araç Ekle ve Diğer Sembol Ekle alanları açıkça boş yer tutucu metin taşır. Kılavuz ve SVG yükleme yalnız alert verir. Son Krokiler'i dolduran kod yoktur.
+Şablonlarım, Hazır Kavşaklar ve Hazır Yollar alanları açıkça boş yer tutucu metin taşır. Kılavuz ve SVG yükleme yalnız alert verir. Son Krokiler'i dolduran kod yoktur.
 
 ### Serializer UI veya dosya katmanına bağlı değil
 
@@ -77,7 +77,6 @@ Depoda test dosyası, test koşucusu veya package/build tanımı bulunmuyor. Öz
 
 - Yukarıdaki “Olası riskler” tarayıcı etkileşim testi yapılmadan kesin hata sayılmamalıdır.
 - Kodda issue numarası veya resmi hata takip sistemi referansı yoktur.
-
 
 
 

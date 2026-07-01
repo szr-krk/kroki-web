@@ -17,6 +17,9 @@
   const ROAD_LINE_COLOR = "#000000";
   const MIN_S_CURVE_CONTROLS = 2;
   const MAX_S_CURVE_CONTROLS = 5;
+  const S_CURVE_ENDPOINT_AXIS_BLEND = 0.55;
+  const S_CURVE_KNOT_ALPHA = 0.5;
+  const S_CURVE_TANGENT_STEP = 1 / (SAMPLE_COUNT * 8);
   const DEFAULT_ISLAND_INNER_DIAMETER = 160;
   const DEFAULT_ISLAND_LANE_COUNT = 1;
   const DEFAULT_ISLAND_LANE_WIDTH = 50;
@@ -98,6 +101,10 @@
       x: a.x + (b.x - a.x) * t,
       y: a.y + (b.y - a.y) * t
     };
+  }
+
+  function distanceBetween(a, b) {
+    return Math.hypot(b.x - a.x, b.y - a.y);
   }
 
   function formatPoint(item) {
@@ -386,23 +393,6 @@
     return { index: Math.max(0, lengths.length - 1), u: 1, total, lengths };
   }
 
-  function catmullRomPoint(p0, p1, p2, p3, u) {
-    const u2 = u * u;
-    const u3 = u2 * u;
-    return {
-      x: 0.5 * ((2 * p1.x) + (-p0.x + p2.x) * u + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * u2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * u3),
-      y: 0.5 * ((2 * p1.y) + (-p0.y + p2.y) * u + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * u2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * u3)
-    };
-  }
-
-  function catmullRomTangent(p0, p1, p2, p3, u) {
-    const u2 = u * u;
-    return {
-      x: 0.5 * ((-p0.x + p2.x) + 2 * (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * u + 3 * (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * u2),
-      y: 0.5 * ((-p0.y + p2.y) + 2 * (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * u + 3 * (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * u2)
-    };
-  }
-
   function extrapolateBefore(a, b) {
     return { x: a.x + (a.x - b.x), y: a.y + (a.y - b.y) };
   }
@@ -411,31 +401,82 @@
     return { x: b.x + (b.x - a.x), y: b.y + (b.y - a.y) };
   }
 
-  function sCurvePointAt(geometry, t) {
-    const points = sCurveThroughPoints(geometry);
+  function sCurveKnot(previous, current, previousKnot) {
+    return previousKnot + Math.pow(Math.max(distanceBetween(previous, current), 0.001), S_CURVE_KNOT_ALPHA);
+  }
+
+  function interpolateKnot(a, b, knotA, knotB, knot) {
+    const span = knotB - knotA;
+    if (Math.abs(span) < 0.0001) return point(a);
+    return lerp(a, b, (knot - knotA) / span);
+  }
+
+  function centripetalCatmullRomPoint(p0, p1, p2, p3, u) {
+    const knot0 = 0;
+    const knot1 = sCurveKnot(p0, p1, knot0);
+    const knot2 = sCurveKnot(p1, p2, knot1);
+    const knot3 = sCurveKnot(p2, p3, knot2);
+    const knot = knot1 + (knot2 - knot1) * clamp(u, 0, 1);
+    const a1 = interpolateKnot(p0, p1, knot0, knot1, knot);
+    const a2 = interpolateKnot(p1, p2, knot1, knot2, knot);
+    const a3 = interpolateKnot(p2, p3, knot2, knot3, knot);
+    const b1 = interpolateKnot(a1, a2, knot0, knot2, knot);
+    const b2 = interpolateKnot(a2, a3, knot1, knot3, knot);
+    return interpolateKnot(b1, b2, knot1, knot2, knot);
+  }
+
+  function sCurveEndpointGhost(points, atStart) {
+    const lastIndex = points.length - 1;
+    const endpoint = atStart ? points[0] : points[lastIndex];
+    const neighbor = atStart ? points[1] : points[lastIndex - 1];
+    const axis = direction(points[0], points[lastIndex]);
+    const segment = atStart
+      ? { x: neighbor.x - endpoint.x, y: neighbor.y - endpoint.y }
+      : { x: endpoint.x - neighbor.x, y: endpoint.y - neighbor.y };
+    const segmentLength = distanceBetween(endpoint, neighbor);
+    const tangent = {
+      x: segment.x * (1 - S_CURVE_ENDPOINT_AXIS_BLEND) + axis.x * segmentLength * S_CURVE_ENDPOINT_AXIS_BLEND,
+      y: segment.y * (1 - S_CURVE_ENDPOINT_AXIS_BLEND) + axis.y * segmentLength * S_CURVE_ENDPOINT_AXIS_BLEND
+    };
+    return {
+      x: endpoint.x + tangent.x * (atStart ? -1 : 1),
+      y: endpoint.y + tangent.y * (atStart ? -1 : 1)
+    };
+  }
+
+  function sCurvePointAtPoints(points, t) {
     if (points.length < 2) return points[0] || { x: 0, y: 0 };
     if (points.length === 2) return lerp(points[0], points[1], t);
     const info = sCurveSegmentInfo(points, t);
     const i = info.index;
     const p1 = points[i];
     const p2 = points[i + 1] || p1;
-    const p0 = points[i - 1] || extrapolateBefore(p1, p2);
-    const p3 = points[i + 2] || extrapolateAfter(p1, p2);
-    return catmullRomPoint(p0, p1, p2, p3, info.u);
+    const p0 = i === 0 ? sCurveEndpointGhost(points, true) : (points[i - 1] || extrapolateBefore(p1, p2));
+    const p3 = i >= points.length - 2 ? sCurveEndpointGhost(points, false) : (points[i + 2] || extrapolateAfter(p1, p2));
+    return centripetalCatmullRomPoint(p0, p1, p2, p3, info.u);
+  }
+
+  function sCurvePointAt(geometry, t) {
+    return sCurvePointAtPoints(sCurveThroughPoints(geometry), t);
   }
 
   function sCurveTangentAt(geometry, t) {
     const points = sCurveThroughPoints(geometry);
     if (points.length < 2) return { x: 1, y: 0 };
     if (points.length === 2) return { x: points[1].x - points[0].x, y: points[1].y - points[0].y };
-    const info = sCurveSegmentInfo(points, t);
-    const i = info.index;
-    const p1 = points[i];
-    const p2 = points[i + 1] || p1;
-    const p0 = points[i - 1] || extrapolateBefore(p1, p2);
-    const p3 = points[i + 2] || extrapolateAfter(p1, p2);
-    const tangent = catmullRomTangent(p0, p1, p2, p3, info.u);
+    const beforeT = clamp(t - S_CURVE_TANGENT_STEP, 0, 1);
+    const afterT = clamp(t + S_CURVE_TANGENT_STEP, 0, 1);
+    const before = sCurvePointAtPoints(points, beforeT);
+    const after = sCurvePointAtPoints(points, afterT);
+    const span = Math.max(afterT - beforeT, 0.0001);
+    const tangent = {
+      x: (after.x - before.x) / span,
+      y: (after.y - before.y) / span
+    };
     if (Math.hypot(tangent.x, tangent.y) < 0.001) {
+      const info = sCurveSegmentInfo(points, t);
+      const p1 = points[info.index];
+      const p2 = points[info.index + 1] || p1;
       return { x: p2.x - p1.x, y: p2.y - p1.y };
     }
     return tangent;

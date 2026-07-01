@@ -55,6 +55,12 @@
     { id: "shape", title: "Metin sekille doner" },
     { id: "flat", title: "Metin yatay kalir" }
   ];
+  const VEHICLE_LABEL_POSITIONS = [
+    { id: "top", title: "Etiket ustte", x: 24, y: 10, anchor: "middle" },
+    { id: "right", title: "Etiket sagda", x: 39, y: 25, anchor: "middle" },
+    { id: "bottom", title: "Etiket altta", x: 24, y: 40, anchor: "middle" },
+    { id: "left", title: "Etiket solda", x: 9, y: 25, anchor: "middle" }
+  ];
   const PAVER_LAYOUT_PATH = "M 0 0 L 2 0 L 3 1 L 7 1 L 8 0 L 10 0 L 10 6 L 8 6 L 7 5 L 3 5 L 2 6 L 0 6 Z M -5 5 L -3 5 L -2 6 L 2 6 L 3 5 L 5 5 L 5 11 L 3 11 L 2 10 L -2 10 L -3 11 L -5 11 Z M 5 5 L 7 5 L 8 6 L 12 6 L 13 5 L 15 5 L 15 11 L 13 11 L 12 10 L 8 10 L 7 11 L 5 11 Z M 10 0 L 12 0 L 13 1 L 17 1 L 18 0 L 20 0 L 20 6 L 18 6 L 17 5 L 13 5 L 12 6 L 10 6 Z M 15 5 L 17 5 L 18 6 L 22 6 L 23 5 L 25 5 L 25 11 L 23 11 L 22 10 L 18 10 L 17 11 L 15 11 Z";
 
   const FILL_PATTERNS = [
@@ -372,6 +378,7 @@
   let controls = null;
   let bound = false;
   let textInputTransaction = null;
+  let vehicleLabelInputTransaction = null;
 
   function normalizeArrowType(value) {
     if (value === "open") return "triangle";
@@ -391,8 +398,20 @@
       .replace(/\r/g, "\n");
   }
 
+  function isCatalogObjectAdapter(adapter) {
+    return Boolean(adapter?.capabilities?.catalogObject || adapter?.capabilities?.trafficSign || adapter?.capabilities?.otherSymbol);
+  }
+
+  function catalogObjectBaseScale(model) {
+    return Math.max(0.0001, numberOr(model?.metadata?.symbolBaseScale ?? model?.metadata?.signBaseScale, 0.08));
+  }
+
+  function catalogObjectHistoryPrefix(entry) {
+    return entry?.adapter?.capabilities?.otherSymbol ? "Sembol" : "Levha";
+  }
+
   function normalizeLabelTextForType(value, type) {
-    return type === "trafficSign" ? normalizeTrafficSignLabelText(value) : normalizeLabelText(value);
+    return type === "trafficSign" || type === "otherSymbol" ? normalizeTrafficSignLabelText(value) : normalizeLabelText(value);
   }
 
   function normalizeLabelSize(value) {
@@ -1082,18 +1101,21 @@
   function hidePanels(options = {}) {
     document.querySelector("#lineStylePanel")?.classList.add("gizli");
     document.querySelector("#lineTextPanel")?.classList.add("gizli");
+    document.querySelector("#vehicleLabelPanel")?.classList.add("gizli");
     document.querySelector("#strokeColorPanel")?.classList.add("gizli");
     document.querySelector("#fillColorPanel")?.classList.add("gizli");
     document.querySelector("#fillPatternPanel")?.classList.add("gizli");
     document.querySelector("#textColorPanel")?.classList.add("gizli");
     controls?.styleButton?.setAttribute("aria-expanded", "false");
     controls?.textButton?.setAttribute("aria-expanded", "false");
+    controls?.vehicleLabelToggle?.setAttribute("aria-expanded", "false");
     controls?.colorButton?.setAttribute("aria-expanded", "false");
     controls?.fillButton?.setAttribute("aria-expanded", "false");
     controls?.fillPatternButton?.setAttribute("aria-expanded", "false");
     controls?.textColorButton?.setAttribute("aria-expanded", "false");
     controls?.closedShapeEdit?.classList.remove("is-active");
     controls?.closedShapeEdit?.setAttribute("aria-pressed", "false");
+    commitVehicleLabelInputHistory();
     if (!options.keepTextComposer) Kroki.FreeTextComposer?.hideEdit?.();
   }
 
@@ -1113,14 +1135,16 @@
     const isCallout = adapter?.type === "callout";
     const isRoadObject = Boolean(adapter?.capabilities?.roadObject);
     const isTrafficSign = Boolean(adapter?.capabilities?.trafficSign);
-    const trafficSignHasText = isTrafficSign && (adapter?.hasEditableText?.(model) ?? true);
-    const noText = Boolean(adapter?.capabilities?.noText) || (isTrafficSign && !trafficSignHasText);
+    const isCatalogObject = isCatalogObjectAdapter(adapter);
+    const isVehicleObject = Boolean(adapter?.capabilities?.vehicleObject);
+    const catalogObjectHasText = isCatalogObject && (adapter?.hasEditableText?.(model) ?? true);
+    const noText = Boolean(adapter?.capabilities?.noText) || (isCatalogObject && !catalogObjectHasText);
     const hasPointEdit = Boolean(adapter?.capabilities?.pointEdit);
     const supportsTextFormatting = isTextObject || Boolean(adapter?.capabilities?.textFormatting);
     const hasFill = Boolean(adapter?.capabilities?.fill);
     const hasFillPattern = supportsFillPatternTarget(adapter, model);
     const hasArrows = Boolean(adapter?.capabilities?.arrows);
-    const trafficSignTextOnly = isTrafficSign && !noText;
+    const catalogObjectTextOnly = isCatalogObject && !noText;
     const textSizeControl = controls?.textSizeValue?.closest?.(".line-text-size-picker");
     document.querySelectorAll(".shape-only-control").forEach((control) => control.classList.toggle("gizli", !hasFill));
     document.querySelectorAll(".fill-pattern-control").forEach((control) => control.classList.toggle("gizli", !hasFillPattern));
@@ -1128,15 +1152,20 @@
     document.querySelectorAll(".text-object-control").forEach((control) => control.classList.toggle("gizli", !supportsTextFormatting));
     document.querySelectorAll(".closed-shape-control").forEach((control) => control.classList.toggle("gizli", !hasPointEdit));
     document.querySelectorAll(".road-only-control").forEach((control) => control.classList.toggle("gizli", !isRoadObject));
-    document.querySelectorAll(".traffic-sign-only-control").forEach((control) => control.classList.toggle("gizli", !isTrafficSign));
-    controls?.colorButton?.classList.toggle("gizli", isRoadObject || isTrafficSign);
+    document.querySelectorAll(".traffic-sign-only-control").forEach((control) => control.classList.toggle("gizli", !isCatalogObject));
+    document.querySelectorAll(".vehicle-only-control").forEach((control) => control.classList.toggle("gizli", !isVehicleObject));
+    controls?.colorButton?.classList.toggle("gizli", isRoadObject || isCatalogObject || isVehicleObject);
     controls?.textButton?.classList.toggle("gizli", noText);
-    textSizeControl?.classList.toggle("gizli", trafficSignTextOnly);
-    controls?.textAlign?.classList.toggle("gizli", trafficSignTextOnly);
-    controls?.textColorButton?.classList.toggle("gizli", trafficSignTextOnly);
-    if (isRoadObject) {
+    textSizeControl?.classList.toggle("gizli", catalogObjectTextOnly);
+    controls?.textAlign?.classList.toggle("gizli", catalogObjectTextOnly);
+    controls?.textColorButton?.classList.toggle("gizli", catalogObjectTextOnly);
+    if (isRoadObject || isVehicleObject) {
       document.querySelector("#strokeColorPanel")?.classList.add("gizli");
       controls?.colorButton?.setAttribute("aria-expanded", "false");
+    }
+    if (!isVehicleObject) {
+      document.querySelector("#vehicleLabelPanel")?.classList.add("gizli");
+      controls?.vehicleLabelToggle?.setAttribute("aria-expanded", "false");
     }
     if (noText) {
       document.querySelector("#lineTextPanel")?.classList.add("gizli");
@@ -1144,7 +1173,7 @@
       controls?.textButton?.setAttribute("aria-expanded", "false");
       controls?.textColorButton?.setAttribute("aria-expanded", "false");
     }
-    if (trafficSignTextOnly) {
+    if (catalogObjectTextOnly) {
       document.querySelector("#textColorPanel")?.classList.add("gizli");
       controls?.textColorButton?.setAttribute("aria-expanded", "false");
     }
@@ -1152,14 +1181,14 @@
       document.querySelector("#fillPatternPanel")?.classList.add("gizli");
       controls?.fillPatternButton?.setAttribute("aria-expanded", "false");
     }
-    if (isTrafficSign) {
+    if (isCatalogObject) {
       document.querySelector("#strokeColorPanel")?.classList.add("gizli");
       controls?.colorButton?.setAttribute("aria-expanded", "false");
     }
-    controls?.strokeStepper?.classList.toggle("gizli", isCallout || isRoadObject || isTrafficSign);
-    controls?.styleButton?.classList.toggle("gizli", isTextObject || isRoadObject || isTrafficSign);
-    controls?.lineCapButton?.classList.toggle("gizli", isTextObject || isCallout || isRoadObject || isTrafficSign);
-    controls?.textSide?.classList.toggle("gizli", noText || isTrafficSign || adapter?.type === "ellipse" || adapter?.type === "rectangle" || supportsTextFormatting);
+    controls?.strokeStepper?.classList.toggle("gizli", isCallout || isRoadObject || isCatalogObject || isVehicleObject);
+    controls?.styleButton?.classList.toggle("gizli", isTextObject || isRoadObject || isCatalogObject || isVehicleObject);
+    controls?.lineCapButton?.classList.toggle("gizli", isTextObject || isCallout || isRoadObject || isCatalogObject || isVehicleObject);
+    controls?.textSide?.classList.toggle("gizli", noText || isCatalogObject || adapter?.type === "ellipse" || adapter?.type === "rectangle" || supportsTextFormatting);
   }
 
   function updateStyle(patch) {
@@ -1184,7 +1213,8 @@
     const entry = activeEntry();
     if (!entry) return;
     selection.promoteToEdit();
-    if (entry.adapter?.capabilities?.trafficSign && Object.prototype.hasOwnProperty.call(patch || {}, "text")) {
+    if (isCatalogObjectAdapter(entry.adapter) && Object.prototype.hasOwnProperty.call(patch || {}, "text")) {
+      const initializedKey = entry.adapter?.capabilities?.otherSymbol ? "symbolTextInitialized" : "signTextInitialized";
       manager.updateModel(entry.model.id, (model) => ({
         ...model,
         label: normalizeLabel({
@@ -1194,7 +1224,7 @@
         }, model.type),
         metadata: {
           ...(model.metadata || {}),
-          signTextInitialized: true
+          [initializedKey]: true
         }
       }), { label: "Metin guncelle", ...options });
       return;
@@ -1223,63 +1253,239 @@
     updateStyle({ strokeWidth: normalizeStrokeWidth(entry.model.style.strokeWidth + delta) });
   }
 
-  function activeTrafficSignEntry() {
+  function activeCatalogObjectEntry() {
     const entry = activeEntry();
-    return entry?.adapter?.capabilities?.trafficSign ? entry : null;
+    return isCatalogObjectAdapter(entry?.adapter) ? entry : null;
   }
 
-  function updateTrafficSignScale(deltaPercent) {
-    const entry = activeTrafficSignEntry();
+  function updateCatalogObjectScale(deltaPercent) {
+    const entry = activeCatalogObjectEntry();
     if (!entry || entry.multi) return;
     selection.promoteToEdit();
     manager.updateGeometry(entry.model.id, (draft) => {
-      const baseScale = Math.max(0.0001, numberOr(draft.metadata?.signBaseScale, 0.08));
+      const baseScale = catalogObjectBaseScale(draft);
       const current = numberOr(draft.geometry?.scale, baseScale);
       const currentPercent = Math.round(current / baseScale * 100);
       const nextPercent = Math.max(1, currentPercent + deltaPercent);
       draft.geometry.scale = Math.min(4, Math.max(0.005, baseScale * nextPercent / 100));
-    }, { label: "Levha olcegi guncelle", styleControls: true });
+    }, { label: `${catalogObjectHistoryPrefix(entry)} olcegi guncelle`, styleControls: true });
   }
 
-  function updateTrafficSignScaleInput(value) {
-    const entry = activeTrafficSignEntry();
+  function updateCatalogObjectScaleInput(value) {
+    const entry = activeCatalogObjectEntry();
     if (!entry || entry.multi) return;
     const percent = Math.max(1, Math.round(numberOr(value, NaN)));
     if (!Number.isFinite(percent)) return;
     selection.promoteToEdit();
     manager.updateGeometry(entry.model.id, (draft) => {
-      const baseScale = Math.max(0.0001, numberOr(draft.metadata?.signBaseScale, 0.08));
+      const baseScale = catalogObjectBaseScale(draft);
       draft.geometry.scale = Math.min(4, Math.max(0.005, baseScale * percent / 100));
-    }, { label: "Levha olcegi guncelle", styleControls: true });
+    }, { label: `${catalogObjectHistoryPrefix(entry)} olcegi guncelle`, styleControls: true });
   }
 
-  function updateTrafficSignRotation(delta) {
-    const entry = activeTrafficSignEntry();
+  function updateCatalogObjectRotation(delta) {
+    const entry = activeCatalogObjectEntry();
     if (!entry || entry.multi) return;
     selection.promoteToEdit();
     manager.updateGeometry(entry.model.id, (draft) => {
       draft.geometry.rotation = utils.normalizeRotation(numberOr(draft.geometry?.rotation, 0) + delta);
-    }, { label: "Levha acisi guncelle", styleControls: true });
+    }, { label: `${catalogObjectHistoryPrefix(entry)} acisi guncelle`, styleControls: true });
   }
 
-  function updateTrafficSignRotationInput(value) {
-    const entry = activeTrafficSignEntry();
+  function updateCatalogObjectRotationInput(value) {
+    const entry = activeCatalogObjectEntry();
     if (!entry || entry.multi) return;
     const rotation = numberOr(value, NaN);
     if (!Number.isFinite(rotation)) return;
     selection.promoteToEdit();
     manager.updateGeometry(entry.model.id, (draft) => {
       draft.geometry.rotation = utils.normalizeRotation(rotation);
-    }, { label: "Levha acisi guncelle", styleControls: true });
+    }, { label: `${catalogObjectHistoryPrefix(entry)} acisi guncelle`, styleControls: true });
   }
 
-  function syncTrafficSignControls(model) {
-    const baseScale = Math.max(0.0001, numberOr(model.metadata?.signBaseScale, 0.08));
+  function syncCatalogObjectControls(model) {
+    const baseScale = catalogObjectBaseScale(model);
     const scale = numberOr(model.geometry?.scale, baseScale);
     const percent = Math.round(scale / baseScale * 100);
     const rotation = Math.round(utils.normalizeRotation(model.geometry?.rotation || 0));
     if (controls?.trafficSignScaleInput && controls.trafficSignScaleInput.value !== String(percent)) controls.trafficSignScaleInput.value = String(percent);
     if (controls?.trafficSignRotateInput && controls.trafficSignRotateInput.value !== String(rotation)) controls.trafficSignRotateInput.value = String(rotation);
+  }
+
+  function activeVehicleEntry() {
+    const entry = activeEntry();
+    return entry?.adapter?.capabilities?.vehicleObject ? entry : null;
+  }
+
+  function vehicleCatalog() {
+    return Kroki.VehicleCatalog || null;
+  }
+
+  function vehicleVariant(model) {
+    const catalog = vehicleCatalog();
+    const variants = catalog?.allVariants?.() || [];
+    return catalog?.findVariant?.(model?.metadata?.vehicleVariantKey)
+      || catalog?.findVariant?.(model?.metadata?.vehicleTypeId, model?.metadata?.vehicleVariantId)
+      || variants[0]
+      || null;
+  }
+
+  function clampVehicleScale(scale) {
+    return Math.min(4, Math.max(0.05, numberOr(scale, 1)));
+  }
+
+  function vehicleScalePercent(scale) {
+    return Math.round(clampVehicleScale(scale) * 100);
+  }
+
+  function normalizeVehicleLabelText(value) {
+    return String(value || "").replace(/[\r\n]+/g, " ").slice(0, 24);
+  }
+
+  function normalizeVehicleLabelPosition(value) {
+    return choiceOr(value, VEHICLE_LABEL_POSITIONS, "top");
+  }
+
+  function updateVehicleScale(deltaPercent) {
+    const entry = activeVehicleEntry();
+    if (!entry || entry.multi) return;
+    selection.promoteToEdit();
+    manager.updateGeometry(entry.model.id, (draft) => {
+      const currentPercent = vehicleScalePercent(draft.geometry?.scale);
+      draft.geometry.scale = clampVehicleScale((currentPercent + deltaPercent) / 100);
+    }, { label: "Arac olcegi guncelle", styleControls: true });
+  }
+
+  function updateVehicleScaleInput(value) {
+    const entry = activeVehicleEntry();
+    if (!entry || entry.multi) return;
+    const percent = Math.round(numberOr(value, NaN));
+    if (!Number.isFinite(percent)) return;
+    selection.promoteToEdit();
+    manager.updateGeometry(entry.model.id, (draft) => {
+      draft.geometry.scale = clampVehicleScale(percent / 100);
+    }, { label: "Arac olcegi guncelle", styleControls: true });
+  }
+
+  function updateVehicleRotation(delta) {
+    const entry = activeVehicleEntry();
+    if (!entry || entry.multi) return;
+    selection.promoteToEdit();
+    manager.updateGeometry(entry.model.id, (draft) => {
+      draft.geometry.rotation = utils.normalizeRotation(numberOr(draft.geometry?.rotation, 0) + delta);
+    }, { label: "Arac acisi guncelle", styleControls: true });
+  }
+
+  function updateVehicleRotationInput(value) {
+    const entry = activeVehicleEntry();
+    if (!entry || entry.multi) return;
+    const rotation = numberOr(value, NaN);
+    if (!Number.isFinite(rotation)) return;
+    selection.promoteToEdit();
+    manager.updateGeometry(entry.model.id, (draft) => {
+      draft.geometry.rotation = utils.normalizeRotation(rotation);
+    }, { label: "Arac acisi guncelle", styleControls: true });
+  }
+
+  function updateVehicleMetadata(factory, label, options = {}) {
+    const entry = activeVehicleEntry();
+    if (!entry || entry.multi) return;
+    selection.promoteToEdit();
+    manager.updateModel(entry.model.id, (draft) => {
+      const metadata = { ...(draft.metadata || {}) };
+      Object.assign(metadata, factory(metadata, draft) || {});
+      draft.metadata = metadata;
+      return draft;
+    }, { label: label || "Arac guncelle", ...options });
+  }
+
+  function cycleVehicleView() {
+    updateVehicleMetadata((metadata, draft) => {
+      const catalog = vehicleCatalog();
+      const variant = vehicleVariant(draft);
+      return { vehicleView: catalog?.nextView?.(variant, metadata.vehicleView || "top") || "top" };
+    }, "Arac gorunumu");
+  }
+
+  function viewTitle(view) {
+    if (view === "side") return "Yan";
+    if (view === "upsideDown") return "Ters";
+    return "Ust";
+  }
+
+  function updateVehicleLabelText(value, options = {}) {
+    updateVehicleMetadata(() => ({
+      vehicleLabelText: normalizeVehicleLabelText(value)
+    }), "Arac etiketi", options);
+  }
+
+  function updateVehicleLabelPosition(position) {
+    updateVehicleMetadata(() => ({
+      vehicleLabelPosition: normalizeVehicleLabelPosition(position)
+    }), "Arac etiketi konumu");
+  }
+
+  function beginVehicleLabelInputHistory() {
+    if (vehicleLabelInputTransaction || Kroki.HistoryManager?.isSuspended?.()) return;
+    vehicleLabelInputTransaction = Kroki.HistoryManager?.begin?.("Arac etiketi") || null;
+  }
+
+  function commitVehicleLabelInputHistory() {
+    if (!vehicleLabelInputTransaction) return;
+    Kroki.HistoryManager?.commit?.(vehicleLabelInputTransaction, "Arac etiketi");
+    vehicleLabelInputTransaction = null;
+  }
+
+  function toggleVehicleLabelPanel(panel) {
+    if (panel && !panel.classList.contains("gizli")) {
+      hidePanels();
+      return;
+    }
+    if (!panel) return;
+    selection.promoteToEdit();
+    const entry = activeVehicleEntry();
+    if (!entry || entry.multi) return;
+    hidePanels();
+    syncControls();
+    panel.classList.remove("gizli");
+    controls?.vehicleLabelToggle?.setAttribute("aria-expanded", "true");
+    window.krokiObjectEditCore?.positionPanelNearButton?.(panel, controls.vehicleLabelToggle);
+    controls?.vehicleLabelInput?.focus();
+    controls?.vehicleLabelInput?.select();
+  }
+
+  function syncVehicleControls(model) {
+    const catalog = vehicleCatalog();
+    const metadata = model.metadata || {};
+    const variant = vehicleVariant(model);
+    const view = catalog?.normalizeView?.(variant, metadata.vehicleView || "top") || "top";
+    const percent = vehicleScalePercent(model.geometry?.scale);
+    const rotation = Math.round(utils.normalizeRotation(model.geometry?.rotation || 0));
+    const color = metadata.vehicleColor || variant?.color || "#dc2626";
+    const labelText = normalizeVehicleLabelText(metadata.vehicleLabelText);
+    const labelPosition = normalizeVehicleLabelPosition(metadata.vehicleLabelPosition);
+    const labelPanelOpen = Boolean(controls?.vehicleLabelPanel && !controls.vehicleLabelPanel.classList.contains("gizli"));
+    if (controls?.vehicleViewLabel) controls.vehicleViewLabel.textContent = viewTitle(view);
+    controls?.vehicleView?.setAttribute("title", "Gorunum: " + viewTitle(view));
+    controls?.vehicleView?.setAttribute("aria-label", "Gorunum: " + viewTitle(view));
+    controls?.vehicleIpStack?.style.setProperty("--vehicle-color", color);
+    setToggleButton(controls?.vehicleGhost, metadata.vehicleGhost);
+    setToggleButton(controls?.vehicleFlipX, metadata.vehicleFlipX);
+    setToggleButton(controls?.vehicleFlipY, metadata.vehicleFlipY);
+    if (controls?.vehicleColorInput && controls.vehicleColorInput.value !== color) controls.vehicleColorInput.value = color;
+    controls?.vehicleColorSwatch?.style.setProperty("--vehicle-color", color);
+    controls?.vehicleLabelToggle?.classList.toggle("is-active", Boolean(labelText) || labelPanelOpen);
+    controls?.vehicleLabelToggle?.setAttribute("aria-expanded", String(labelPanelOpen));
+    controls?.vehicleLabelToggle?.setAttribute("title", labelText ? "Etiket: " + labelText : "Arac etiketi");
+    controls?.vehicleLabelToggle?.setAttribute("aria-label", labelText ? "Etiket: " + labelText : "Arac etiketi");
+    if (controls?.vehicleLabelInput && controls.vehicleLabelInput.value !== labelText) controls.vehicleLabelInput.value = labelText;
+    controls?.vehicleLabelPositionChoices?.forEach((button) => {
+      const selected = button.dataset.vehicleLabelPosition === labelPosition;
+      button.classList.toggle("is-selected", selected);
+      button.setAttribute("aria-pressed", String(selected));
+    });
+    if (controls?.vehicleScaleInput && controls.vehicleScaleInput.value !== String(percent)) controls.vehicleScaleInput.value = String(percent);
+    if (controls?.vehicleRotateInput && controls.vehicleRotateInput.value !== String(rotation)) controls.vehicleRotateInput.value = String(rotation);
   }
 
   function updatePrimaryColor(color) {
@@ -1320,7 +1526,7 @@
 
   function normalizeTextInputValue(value) {
     const entry = activeEntry();
-    return entry?.adapter?.capabilities?.trafficSign
+    return isCatalogObjectAdapter(entry?.adapter)
       ? normalizeTrafficSignLabelText(value)
       : normalizeLabelText(value);
   }
@@ -1336,6 +1542,9 @@
     const { model, adapter } = entry;
     const isTextObject = isTextObjectEntry(entry);
     const isTrafficSign = Boolean(adapter?.capabilities?.trafficSign);
+    const isOtherSymbol = Boolean(adapter?.capabilities?.otherSymbol);
+    const isCatalogObject = isCatalogObjectAdapter(adapter);
+    const isVehicleObject = Boolean(adapter?.capabilities?.vehicleObject);
     const supportsTextFormatting = isTextObject || Boolean(adapter?.capabilities?.textFormatting);
     const selectedPocketIsland = pocketIslandInfo(adapter, model);
     const style = normalizeStyle(selectedPocketIsland?.style || model.style, selectedPocketIsland ? "closedShape" : model.type);
@@ -1350,8 +1559,12 @@
 
     setControlVisibility(adapter, model);
     Kroki.RoadInspector?.sync?.(entry);
-    if (isTrafficSign) {
-      syncTrafficSignControls(model);
+    if (isCatalogObject) {
+      syncCatalogObjectControls(model);
+    }
+    if (isVehicleObject) {
+      syncVehicleControls(model);
+      return;
     }
     controls.colorButton?.style.setProperty("--side-ip-stroke-color", isTextObject ? label.color : style.stroke);
     controls.fillButton?.style.setProperty("--side-ip-fill-color", style.fill);
@@ -1368,13 +1581,14 @@
     controls.fillPatternButton?.classList.toggle("is-active", fillPattern.id !== "none");
     controls.fillPatternButton?.setAttribute("title", fillPatternLabel);
     controls.fillPatternButton?.setAttribute("aria-label", fillPatternLabel);
-    const textButtonLabel = isTextObject ? "Metni duzenle" : isTrafficSign ? "Levha metni" : "Cizgi metni";
+    const textButtonLabel = isTextObject ? "Metni duzenle" : isTrafficSign ? "Levha metni" : isOtherSymbol ? "Sembol metni" : "Cizgi metni";
     controls.textButton?.setAttribute("title", textButtonLabel);
     controls.textButton?.setAttribute("aria-label", textButtonLabel);
     controls.textButton?.setAttribute("aria-controls", isTextObject ? "freeTextComposer" : "lineTextPanel");
     if (controls.colorInput) controls.colorInput.value = isTextObject ? label.color : style.stroke;
     if (controls.fillInput) controls.fillInput.value = style.fill === "none" ? "#ffffff" : style.fill;
     controls.strokeOpacityControl?.classList.remove("gizli");
+    controls.strokeOpacityControl?.classList.toggle("gizli", isVehicleObject);
     controls.strokeOpacityControl?.setAttribute("aria-label", isTextObject ? "Metin opakligi" : "Cizgi opakligi");
     controls.strokeOpacityInput?.setAttribute("aria-label", isTextObject ? "Metin opakligi" : "Cizgi opakligi");
     if (controls.strokeOpacityInput && controls.strokeOpacityInput.value !== String(primaryOpacityValue)) controls.strokeOpacityInput.value = String(primaryOpacityValue);
@@ -1487,6 +1701,9 @@
     if (panel.id === "lineTextPanel") {
       controls?.textInput?.focus();
       controls?.textInput?.select();
+    } else if (panel.id === "vehicleLabelPanel") {
+      controls?.vehicleLabelInput?.focus();
+      controls?.vehicleLabelInput?.select();
     }
   }
 
@@ -1560,6 +1777,24 @@
       trafficSignRotateMinus: document.querySelector("#btnTrafficSignRotateMinus"),
       trafficSignRotatePlus: document.querySelector("#btnTrafficSignRotatePlus"),
       trafficSignRotateInput: document.querySelector("#trafficSignRotateInput"),
+      vehicleIpStack: document.querySelector("#vehicleIpStack"),
+      vehicleColorInput: document.querySelector("#vehicleColorInput"),
+      vehicleColorSwatch: document.querySelector("#vehicleColorSwatch"),
+      vehicleView: document.querySelector("#btnVehicleViewIp"),
+      vehicleViewLabel: document.querySelector("#lblVehicleViewIp"),
+      vehicleGhost: document.querySelector("#btnVehicleGhostIp"),
+      vehicleLabelToggle: document.querySelector("#btnVehicleLabelToggleIp"),
+      vehicleLabelPanel: document.querySelector("#vehicleLabelPanel"),
+      vehicleLabelInput: document.querySelector("#vehicleLabelInput"),
+      vehicleLabelPositionChoices: Array.from(document.querySelectorAll("[data-vehicle-label-position]")),
+      vehicleFlipX: document.querySelector("#btnVehicleFlipXIp"),
+      vehicleFlipY: document.querySelector("#btnVehicleFlipYIp"),
+      vehicleScaleMinus: document.querySelector("#btnVehicleScaleMinus"),
+      vehicleScalePlus: document.querySelector("#btnVehicleScalePlus"),
+      vehicleScaleInput: document.querySelector("#vehicleScaleInput"),
+      vehicleRotateMinus: document.querySelector("#btnVehicleRotateMinus"),
+      vehicleRotatePlus: document.querySelector("#btnVehicleRotatePlus"),
+      vehicleRotateInput: document.querySelector("#vehicleRotateInput"),
       textColorPanel: document.querySelector("#textColorPanel"),
       textOpacityInput: document.querySelector("#textOpacityInput"),
       textOpacityValue: document.querySelector("#textOpacityValue"),
@@ -1608,10 +1843,13 @@
     const bindHoldAction = core?.bindHoldAction || (() => {});
     const stylePanel = document.querySelector("#lineStylePanel");
     const textPanel = document.querySelector("#lineTextPanel");
+    const vehicleLabelPanel = document.querySelector("#vehicleLabelPanel");
     const strokeColorPanel = document.querySelector("#strokeColorPanel");
     const fillColorPanel = document.querySelector("#fillColorPanel");
     const fillPatternPanel = document.querySelector("#fillPatternPanel");
     const textColorPanel = document.querySelector("#textColorPanel");
+    let vehicleLabelTogglePointerHandled = false;
+    let vehicleLabelTogglePointerTimer = 0;
 
     bindHoldAction(controls.strokeMinus, () => updatePrimarySize(-1));
     bindHoldAction(controls.strokePlus, () => updatePrimarySize(1));
@@ -1621,25 +1859,90 @@
     bindHoldAction(controls.dashGapPlus, () => updateStyle({ dashGap: normalizeDashGap(activeEntry()?.model.style.dashGap + 1, 1) }));
     bindHoldAction(controls.textSizeMinus, () => updateLabel({ size: normalizeLabelSize(activeEntry()?.model.label.size - 1) }));
     bindHoldAction(controls.textSizePlus, () => updateLabel({ size: normalizeLabelSize(activeEntry()?.model.label.size + 1) }));
-    bindHoldAction(controls.trafficSignScaleMinus, () => updateTrafficSignScale(-1));
-    bindHoldAction(controls.trafficSignScalePlus, () => updateTrafficSignScale(1));
-    bindHoldAction(controls.trafficSignRotateMinus, () => updateTrafficSignRotation(-1));
-    bindHoldAction(controls.trafficSignRotatePlus, () => updateTrafficSignRotation(1));
+    bindHoldAction(controls.trafficSignScaleMinus, () => updateCatalogObjectScale(-1));
+    bindHoldAction(controls.trafficSignScalePlus, () => updateCatalogObjectScale(1));
+    bindHoldAction(controls.trafficSignRotateMinus, () => updateCatalogObjectRotation(-1));
+    bindHoldAction(controls.trafficSignRotatePlus, () => updateCatalogObjectRotation(1));
+    bindHoldAction(controls.vehicleScaleMinus, () => updateVehicleScale(-1), { startDelay: 240, repeatDelay: 32 });
+    bindHoldAction(controls.vehicleScalePlus, () => updateVehicleScale(1), { startDelay: 240, repeatDelay: 32 });
+    bindHoldAction(controls.vehicleRotateMinus, () => updateVehicleRotation(-1), { startDelay: 240, repeatDelay: 32 });
+    bindHoldAction(controls.vehicleRotatePlus, () => updateVehicleRotation(1), { startDelay: 240, repeatDelay: 32 });
     controls.trafficSignScaleInput?.addEventListener("input", () => {
       if (controls.trafficSignScaleInput.value === "") return;
-      updateTrafficSignScaleInput(controls.trafficSignScaleInput.value);
+      updateCatalogObjectScaleInput(controls.trafficSignScaleInput.value);
     });
     controls.trafficSignScaleInput?.addEventListener("change", () => {
-      updateTrafficSignScaleInput(controls.trafficSignScaleInput.value);
+      updateCatalogObjectScaleInput(controls.trafficSignScaleInput.value);
       syncControls();
     });
     controls.trafficSignRotateInput?.addEventListener("input", () => {
       if (controls.trafficSignRotateInput.value === "" || controls.trafficSignRotateInput.value === "-") return;
-      updateTrafficSignRotationInput(controls.trafficSignRotateInput.value);
+      updateCatalogObjectRotationInput(controls.trafficSignRotateInput.value);
     });
     controls.trafficSignRotateInput?.addEventListener("change", () => {
-      updateTrafficSignRotationInput(controls.trafficSignRotateInput.value);
+      updateCatalogObjectRotationInput(controls.trafficSignRotateInput.value);
       syncControls();
+    });
+    controls.vehicleScaleInput?.addEventListener("input", () => {
+      if (controls.vehicleScaleInput.value === "") return;
+      updateVehicleScaleInput(controls.vehicleScaleInput.value);
+    });
+    controls.vehicleScaleInput?.addEventListener("change", () => {
+      updateVehicleScaleInput(controls.vehicleScaleInput.value);
+      syncControls();
+    });
+    controls.vehicleRotateInput?.addEventListener("input", () => {
+      if (controls.vehicleRotateInput.value === "" || controls.vehicleRotateInput.value === "-") return;
+      updateVehicleRotationInput(controls.vehicleRotateInput.value);
+    });
+    controls.vehicleRotateInput?.addEventListener("change", () => {
+      updateVehicleRotationInput(controls.vehicleRotateInput.value);
+      syncControls();
+    });
+    controls.vehicleView?.addEventListener("click", cycleVehicleView);
+    controls.vehicleGhost?.addEventListener("click", () => updateVehicleMetadata((metadata) => ({ vehicleGhost: !metadata.vehicleGhost }), "Arac temsili"));
+    controls.vehicleLabelToggle?.addEventListener("pointerdown", (event) => {
+      vehicleLabelTogglePointerHandled = true;
+      window.clearTimeout(vehicleLabelTogglePointerTimer);
+      vehicleLabelTogglePointerTimer = window.setTimeout(() => {
+        vehicleLabelTogglePointerHandled = false;
+      }, 500);
+      event.stopImmediatePropagation?.();
+      event.stopPropagation();
+      event.preventDefault();
+      toggleVehicleLabelPanel(vehicleLabelPanel);
+    });
+    controls.vehicleLabelToggle?.addEventListener("click", (event) => {
+      if (vehicleLabelTogglePointerHandled) {
+        vehicleLabelTogglePointerHandled = false;
+        return;
+      }
+      if (!vehicleLabelPanel) return;
+      event.stopPropagation();
+      event.preventDefault();
+      toggleVehicleLabelPanel(vehicleLabelPanel);
+    });
+    controls.vehicleLabelPositionChoices?.forEach((button) => {
+      button.addEventListener("click", () => updateVehicleLabelPosition(button.dataset.vehicleLabelPosition));
+    });
+    controls.vehicleLabelInput?.addEventListener("focus", beginVehicleLabelInputHistory);
+    controls.vehicleLabelInput?.addEventListener("input", () => {
+      beginVehicleLabelInputHistory();
+      const normalized = normalizeVehicleLabelText(controls.vehicleLabelInput.value);
+      if (controls.vehicleLabelInput.value !== normalized) {
+        const selectionStart = controls.vehicleLabelInput.selectionStart;
+        const selectionEnd = controls.vehicleLabelInput.selectionEnd;
+        controls.vehicleLabelInput.value = normalized;
+        controls.vehicleLabelInput.setSelectionRange(selectionStart, selectionEnd);
+      }
+      updateVehicleLabelText(normalized, { skipHistory: true });
+    });
+    controls.vehicleLabelInput?.addEventListener("change", commitVehicleLabelInputHistory);
+    controls.vehicleLabelInput?.addEventListener("blur", commitVehicleLabelInputHistory);
+    controls.vehicleFlipX?.addEventListener("click", () => updateVehicleMetadata((metadata) => ({ vehicleFlipX: !metadata.vehicleFlipX }), "Arac X ekseni simetri"));
+    controls.vehicleFlipY?.addEventListener("click", () => updateVehicleMetadata((metadata) => ({ vehicleFlipY: !metadata.vehicleFlipY }), "Arac Y ekseni simetri"));
+    controls.vehicleColorInput?.addEventListener("input", () => {
+      updateVehicleMetadata(() => ({ vehicleColor: controls.vehicleColorInput.value }), "Arac rengi");
     });
 
     controls.strokeInput?.addEventListener("input", () => {
@@ -1786,6 +2089,7 @@
     document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, fillPatternPanel, controls.fillPatternButton), true);
     document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, textColorPanel, controls.textColorButton), true);
     document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, textPanel, controls.textButton), true);
+    document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, vehicleLabelPanel, controls.vehicleLabelToggle), true);
     window.addEventListener("resize", () => {
       repositionPanel(stylePanel, controls.styleButton);
       repositionPanel(strokeColorPanel, controls.colorButton);
@@ -1793,6 +2097,7 @@
       repositionPanel(fillPatternPanel, controls.fillPatternButton);
       repositionPanel(textColorPanel, controls.textColorButton);
       repositionPanel(textPanel, controls.textButton);
+      repositionPanel(vehicleLabelPanel, controls.vehicleLabelToggle);
     });
   }
 

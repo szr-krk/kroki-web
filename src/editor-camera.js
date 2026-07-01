@@ -216,8 +216,11 @@
   }
 
   function canPanWithTouch(event) {
+    const activeModel = window.Kroki?.SelectionManager?.getActiveModel?.();
+    const selectionMode = window.Kroki?.SelectionManager?.getMode?.();
     return (
       isBlankCanvasTarget(event.target) &&
+      !(activeModel?.type === "vehicle" && selectionMode === "edit") &&
       !window.krokiObjectEditCore?.hasCanvasObjectAt?.(event) &&
       !window.krokiEditorState?.getActiveTool?.() &&
       !window.krokiEditorState?.getEditMode?.()

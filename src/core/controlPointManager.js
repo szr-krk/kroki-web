@@ -73,6 +73,9 @@
       visual
     );
     handle.addEventListener("pointerdown", (event) => {
+      event.stopImmediatePropagation?.();
+      event.stopPropagation();
+      event.preventDefault();
       if (typeof onControlPointDown === "function") onControlPointDown(event, cp.id);
     });
     resizeHandle(handle, sizes, cp);
