@@ -5,6 +5,12 @@
     return Array.isArray(window.KrokiOtherSymbolCatalog) ? window.KrokiOtherSymbolCatalog : [];
   }
 
+  let cachedSource = null;
+  let cachedLength = -1;
+  let cachedAll = null;
+  let cachedByKey = null;
+  let cachedCategories = null;
+
   function categoryKey(symbol) {
     return String(symbol?.categoryKey || symbol?.category || "diger-semboller");
   }
@@ -26,18 +32,34 @@
     };
   }
 
+  function ensureCache() {
+    const current = source();
+    if (cachedSource === current && cachedLength === current.length && cachedAll && cachedByKey) {
+      return;
+    }
+    cachedSource = current;
+    cachedLength = current.length;
+    cachedAll = current.map(normalizedSymbol).filter((symbol) => symbol.key && symbol.art);
+    cachedByKey = new Map(cachedAll.map((symbol) => [symbol.key, symbol]));
+    cachedCategories = null;
+  }
+
   function all() {
-    return source().map(normalizedSymbol).filter((symbol) => symbol.key && symbol.art);
+    ensureCache();
+    return cachedAll;
   }
 
   function find(key) {
     const target = String(key || "");
-    return all().find((symbol) => symbol.key === target) || null;
+    ensureCache();
+    return cachedByKey.get(target) || null;
   }
 
   function categories() {
+    ensureCache();
+    if (cachedCategories) return cachedCategories;
     const map = new Map();
-    all().forEach((symbol) => {
+    cachedAll.forEach((symbol) => {
       if (!map.has(symbol.categoryKey)) {
         map.set(symbol.categoryKey, {
           key: symbol.categoryKey,
@@ -47,7 +69,8 @@
       }
       map.get(symbol.categoryKey).symbols.push(symbol);
     });
-    return Array.from(map.values());
+    cachedCategories = Array.from(map.values());
+    return cachedCategories;
   }
 
   function parseViewBox(value, width, height) {

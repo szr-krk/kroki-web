@@ -14,6 +14,8 @@
 
   let activeCategoryKey = "";
   let selectedKey = "";
+  let rendered = false;
+  const artCache = new Map();
 
   function createSvgElement(tag, attrs = {}) {
     const element = document.createElementNS(SVG_NS, tag);
@@ -55,28 +57,32 @@
   }
 
   function renderSignArt(sign) {
+    const cacheKey = sign?.key || "";
+    const cached = cacheKey ? artCache.get(cacheKey) : null;
+    if (cached) return cached.cloneNode(true);
     const svg = createSvgElement("svg", {
       viewBox: sign.viewBox,
       preserveAspectRatio: "xMidYMid meet",
       "aria-hidden": "true"
     });
     svg.innerHTML = sign.art;
-    return svg;
+    if (cacheKey) artCache.set(cacheKey, svg);
+    return svg.cloneNode(true);
   }
 
   function renderGrid() {
     if (!grid) return;
     const category = activeCategory();
-    grid.replaceChildren();
     if (!category) {
       const empty = document.createElement("div");
       empty.className = "traffic-sign-empty";
       empty.textContent = "Levha katalogu bulunamadi.";
-      grid.append(empty);
+      grid.replaceChildren(empty);
       setSelected(null);
       return;
     }
 
+    const fragment = document.createDocumentFragment();
     category.signs.forEach((sign) => {
       const tile = document.createElement("button");
       tile.className = "traffic-sign-tile";
@@ -87,8 +93,9 @@
       tile.setAttribute("aria-pressed", "false");
       tile.append(renderSignArt(sign));
       tile.addEventListener("click", () => setSelected(sign));
-      grid.append(tile);
+      fragment.append(tile);
     });
+    grid.replaceChildren(fragment);
     syncTileSelection();
   }
 
@@ -107,7 +114,7 @@
   function renderCategories() {
     if (!categoryList) return;
     const allCategories = categories();
-    categoryList.replaceChildren();
+    const fragment = document.createDocumentFragment();
     allCategories.forEach((category) => {
       const button = document.createElement("button");
       button.className = "traffic-sign-category";
@@ -120,8 +127,9 @@
       count.textContent = String(category.signs.length);
       button.append(title, count);
       button.addEventListener("click", () => setActiveCategory(category.key));
-      categoryList.append(button);
+      fragment.append(button);
     });
+    categoryList.replaceChildren(fragment);
     if (!activeCategoryKey && allCategories[0]) activeCategoryKey = allCategories[0].key;
     setActiveCategory(activeCategoryKey);
   }
@@ -152,12 +160,17 @@
   }
 
   function ensureRendered() {
+    if (rendered) {
+      syncTileSelection();
+      return;
+    }
     renderCategories();
+    rendered = true;
   }
 
   addButton?.addEventListener("click", addSelectedSign);
   panel?.addEventListener("kroki:rail-menu-open", ensureRendered);
-  ensureRendered();
+  if (panel && !panel.classList.contains("gizli")) ensureRendered();
 
   Kroki.TrafficSignLibrary = {
     render: ensureRendered,

@@ -5,6 +5,12 @@
     return Array.isArray(window.KrokiTrafficSignCatalog) ? window.KrokiTrafficSignCatalog : [];
   }
 
+  let cachedSource = null;
+  let cachedLength = -1;
+  let cachedAll = null;
+  let cachedByKey = null;
+  let cachedCategories = null;
+
   function categoryKey(sign) {
     return String(sign?.categoryKey || sign?.category || "trafik-levhalari");
   }
@@ -26,18 +32,34 @@
     };
   }
 
+  function ensureCache() {
+    const current = source();
+    if (cachedSource === current && cachedLength === current.length && cachedAll && cachedByKey) {
+      return;
+    }
+    cachedSource = current;
+    cachedLength = current.length;
+    cachedAll = current.map(normalizedSign).filter((sign) => sign.key && sign.art);
+    cachedByKey = new Map(cachedAll.map((sign) => [sign.key, sign]));
+    cachedCategories = null;
+  }
+
   function all() {
-    return source().map(normalizedSign).filter((sign) => sign.key && sign.art);
+    ensureCache();
+    return cachedAll;
   }
 
   function find(key) {
     const target = String(key || "");
-    return all().find((sign) => sign.key === target) || null;
+    ensureCache();
+    return cachedByKey.get(target) || null;
   }
 
   function categories() {
+    ensureCache();
+    if (cachedCategories) return cachedCategories;
     const map = new Map();
-    all().forEach((sign) => {
+    cachedAll.forEach((sign) => {
       if (!map.has(sign.categoryKey)) {
         map.set(sign.categoryKey, {
           key: sign.categoryKey,
@@ -47,7 +69,8 @@
       }
       map.get(sign.categoryKey).signs.push(sign);
     });
-    return Array.from(map.values());
+    cachedCategories = Array.from(map.values());
+    return cachedCategories;
   }
 
   function parseViewBox(value, width, height) {

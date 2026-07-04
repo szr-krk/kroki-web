@@ -71,6 +71,156 @@
     return Array.from(objectLayer.querySelectorAll(`[data-label-for="${id}"]`));
   }
 
+  function isFiniteBounds(bounds) {
+    return Boolean(
+      bounds &&
+      Number.isFinite(bounds.x) &&
+      Number.isFinite(bounds.y) &&
+      Number.isFinite(bounds.width) &&
+      Number.isFinite(bounds.height) &&
+      bounds.width >= 0 &&
+      bounds.height >= 0
+    );
+  }
+
+  function unionBounds(first, second) {
+    if (!isFiniteBounds(first)) return isFiniteBounds(second) ? { ...second } : null;
+    if (!isFiniteBounds(second)) return { ...first };
+    const minX = Math.min(first.x, second.x);
+    const minY = Math.min(first.y, second.y);
+    const maxX = Math.max(first.x + first.width, second.x + second.width);
+    const maxY = Math.max(first.y + first.height, second.y + second.height);
+    return {
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY
+    };
+  }
+
+  function expandBounds(bounds, amount) {
+    if (!isFiniteBounds(bounds)) return null;
+    const pad = Math.max(0, Number(amount) || 0);
+    return {
+      x: bounds.x - pad,
+      y: bounds.y - pad,
+      width: bounds.width + pad * 2,
+      height: bounds.height + pad * 2
+    };
+  }
+
+  function boundsFromPoints(points) {
+    const usable = (Array.isArray(points) ? points : []).filter((point) => (
+      Number.isFinite(point?.x) && Number.isFinite(point?.y)
+    ));
+    if (!usable.length) return null;
+    const xs = usable.map((point) => point.x);
+    const ys = usable.map((point) => point.y);
+    const minX = Math.min(...xs);
+    const minY = Math.min(...ys);
+    return {
+      x: minX,
+      y: minY,
+      width: Math.max(...xs) - minX,
+      height: Math.max(...ys) - minY
+    };
+  }
+
+  function rotatePoint(point, center, rotation) {
+    const radians = (Number(rotation) || 0) * Math.PI / 180;
+    const cos = Math.cos(radians);
+    const sin = Math.sin(radians);
+    const dx = point.x - center.x;
+    const dy = point.y - center.y;
+    return {
+      x: center.x + dx * cos - dy * sin,
+      y: center.y + dx * sin + dy * cos
+    };
+  }
+
+  function rotatedBounds(bounds, center, rotation) {
+    const angle = Number(rotation) || 0;
+    if (!isFiniteBounds(bounds) || !Number.isFinite(center?.x) || !Number.isFinite(center?.y) || !angle) {
+      return bounds;
+    }
+    return boundsFromPoints([
+      rotatePoint({ x: bounds.x, y: bounds.y }, center, angle),
+      rotatePoint({ x: bounds.x + bounds.width, y: bounds.y }, center, angle),
+      rotatePoint({ x: bounds.x + bounds.width, y: bounds.y + bounds.height }, center, angle),
+      rotatePoint({ x: bounds.x, y: bounds.y + bounds.height }, center, angle)
+    ]) || bounds;
+  }
+
+  function transformedModelBounds(model, bounds) {
+    const geometry = model?.geometry || {};
+    const rotation = Number(geometry.rotation) || 0;
+    if (!rotation) return bounds;
+    if (model.type === "rectangle" || model.type === "ellipse") {
+      return rotatedBounds(bounds, { x: geometry.cx, y: geometry.cy }, rotation);
+    }
+    if (model.type === "text") {
+      return rotatedBounds(bounds, {
+        x: bounds.x + bounds.width / 2,
+        y: bounds.y + bounds.height / 2
+      }, rotation);
+    }
+    return bounds;
+  }
+
+  function hasArrow(value) {
+    return Boolean(value && value !== "none");
+  }
+
+  function visualStrokePad(model, adapter) {
+    const capabilities = adapter?.capabilities || {};
+    if (
+      capabilities.roadObject ||
+      capabilities.vehicleObject ||
+      capabilities.trafficSign ||
+      capabilities.otherSymbol
+    ) {
+      return 0;
+    }
+
+    const strokeWidth = Math.max(0, Number(model?.style?.strokeWidth) || 0);
+    let pad = strokeWidth / 2;
+    if (capabilities.arrows && (hasArrow(model?.style?.arrowStart) || hasArrow(model?.style?.arrowEnd))) {
+      const visualStroke = Math.max(3, strokeWidth);
+      pad = Math.max(pad, visualStroke * 2 + 10);
+    }
+    return pad;
+  }
+
+  function boundsFromElement(element) {
+    if (!element?.getBBox) return null;
+    try {
+      const box = element.getBBox();
+      return isFiniteBounds(box)
+        ? { x: box.x, y: box.y, width: box.width, height: box.height }
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function boundsForModel(model) {
+    const adapter = adapterFor(model);
+    const element = elementMap.get(model?.id);
+    const adapterBounds = typeof adapter?.getBounds === "function" ? adapter.getBounds(model) : null;
+    let bounds = isFiniteBounds(adapterBounds) ? adapterBounds : boundsFromElement(element);
+    if (!isFiniteBounds(bounds)) return null;
+    bounds = transformedModelBounds(model, bounds);
+    bounds = expandBounds(bounds, visualStrokePad(model, adapter));
+    labelNodesFor(model.id).forEach((label) => {
+      bounds = unionBounds(bounds, boundsFromElement(label));
+    });
+    return bounds;
+  }
+
+  function getContentBounds() {
+    return getObjectsInDomOrder().reduce((bounds, model) => unionBounds(bounds, boundsForModel(model)), null);
+  }
+
   function layerNodesFor(id) {
     const element = elementMap.get(id);
     return element ? [element, ...labelNodesFor(id)] : [];
@@ -459,7 +609,9 @@
     const adapter = adapterFor(model);
     if (!model || !element || !adapter) return null;
     adapter.render(model, element);
-    renderLabel(model);
+    if (!adapter.capabilities?.ownsLabel && !adapter.capabilities?.noText && !adapter.capabilities?.textObject) {
+      renderLabel(model);
+    }
     return element;
   }
 
@@ -733,6 +885,7 @@
     sendToBack,
     clear,
     getAll,
+    getContentBounds,
     get(id) {
       return objectMap.get(id) || null;
     },

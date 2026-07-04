@@ -1,6 +1,6 @@
 # Serializer
 
-`DocumentSerializer`, çalışma zamanı modellerini JSON uyumlu belgeye dönüştürür ve belgeyi yeniden manager/group/viewport/kavşak state'ine kurar. Çekirdek çalışır; dosya sistemi veya menü kaydet/yükle akışına bağlı değildir.
+`DocumentSerializer`, çalışma zamanı modellerini JSON uyumlu belgeye dönüştürür ve belgeyi yeniden manager/group/viewport/kavşak state'ine kurar. Çekirdek; `editor-main-menu-pro.js` üzerinden localStorage kayıtları, şablonlar, SVG metadata export/import ve history snapshot'ları tarafından kullanılır.
 
 ## İlgili kod dosyaları
 
@@ -81,11 +81,20 @@ Nesneler SVG DOM sırasıyla export edilir; bu sıra katman sırasıdır.
 
 ## UI ile bağlantı durumu
 
-Ana menüde Kaydet/SVG/Resim seçenekleri bulunur fakat `DocumentSerializer.toJson/fromJson` hiçbir menü düğmesine bağlanmamıştır. Browser download, File System Access API, localStorage veya sunucu çağrısı yoktur.
+`editor-main-menu-pro.js` serializer'ı şu işler için kullanır:
+
+- Son kroki kaydı: `localStorage` `krokiPro.recentDocuments.v1`
+- Şablon kaydı: `localStorage` `krokiPro.templates.v1`
+- Son snapshot: `krokiPro.lastDocument.v1`
+- SVG export metadata'sı
+- Kroki Pro imzalı SVG import
+- PNG export öncesi preview/kayıt snapshot'ı
+
+Genel JSON dosya import/export UI'si yoktur. Genel SVG import yoktur; yalnız Kroki Pro imzalı SVG içindeki document payload açılır.
 
 ## Bilinen tutarsızlıklar
 
-- `cleanMetadata()` `roadSelection` ve `roadBarrierEdit` alanlarını silerken `roadBoundaryEdit` alanını silmez. Bu alan da seçime bağlı geçici UI state'i gibi kullanılır; kayda sızabilir. [[Açık Hatalar]].
+- `cleanMetadata()` `roadSelection` ve `roadBarrierEdit` alanlarını silerken `roadBoundaryEdit`, `roadPocketEdit` ve `roadPocketIslandEdit` alanlarını silmez. Bu alanlar da seçime bağlı geçici UI state'i gibi kullanılır; kayda sızabilir. [[Açık Hatalar]].
 - Import `schemaVersion` veya `app` değerini doğrulamaz ve migration uygulamaz.
 - ViewBox doğrudan `setAttribute` ile değişir; `kroki:viewboxchange` olayı yayınlanmaz. Viewport'a bağlı label offset'lerinin ilk import renderından sonra hemen yeniden hesaplanması garanti değildir.
 
@@ -94,4 +103,3 @@ Ana menüde Kaydet/SVG/Resim seçenekleri bulunur fakat `DocumentSerializer.toJs
 - Belge timestamp'lerinin her kayıtta yenilenmesi mi, ilk `createdAt` değerinin korunması mı istendiği belli değildir.
 - Gelecek schema sürümleri için geriye uyumluluk/migration politikası tanımlı değildir.
 - JSON'un güvenilir yerel belge mi, kullanıcıdan veya ağdan gelen içerik mi olacağı belli değildir; levha SVG metadata'sı nedeniyle güven modeli önemlidir.
-

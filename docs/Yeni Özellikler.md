@@ -4,8 +4,8 @@ Bu sayfa mevcut UI'da açıkça yer tutucu olarak bulunan veya çekirdeği olup 
 
 ## İlgili kod dosyaları
 
-- `index.html`, `src/home.js`, `src/editor-rail.js`: görünür fakat bağlı olmayan girişler.
-- `src/core/documentSerializer.js`: kaydet/yükle için hazır çekirdek.
+- `index.html`, `src/home.js`, `src/editor-rail.js`, `src/editor-main-menu-pro.js`: görünür girişler, kayıt/export ve Home liste akışları.
+- `src/core/documentSerializer.js`: kaydet/yükle için kullanılan çekirdek.
 - `src/ui/roadBuilder.js`, `src/core/roadIntersectionEngine.js`: hazır yol/kavşak fikrinin temel modelleri.
 - `src/ui/trafficSignLibrary.js`: gelecekteki katalog panelleri için çalışan örnek.
 
@@ -13,21 +13,21 @@ Bağlantılar: [[Açık Hatalar]], [[Home]], [[Menü Sistemi]], [[Serializer]].
 
 ## Kodda açıkça bekleyen özellikler
 
-### Kalıcı belge kaydet/yükle
+### Kalıcı belge kaydet/yükle geliştirmeleri
 
-Ana menüde Kaydet/Kaydet ve Çık; Home'da Son Krokiler görünür. `DocumentSerializer` JSON API'si hazırdır. Eksik olanlar: kullanıcı depolama seçimi, dosya/yerel kayıt kimliği, hata UX'i, açma akışı ve Home listesinin beslenmesi.
+Ana menü ve Home localStorage üzerinden son kroki/şablon kaydı yapar. Eksik olanlar: dosya sistemi veya kullanıcı seçimli kayıt yeri, quota yönetimi, schema migration, doğrudan `.json` indir/yükle UI'si ve uzun vadeli kayıt kimliği politikasıdır.
 
 ### SVG içe/dışa aktarma
 
-Home'da SVG Yükle, editör ana menüsünde SVG Olarak Kaydet vardır. `EditorObjectManager.syncFromDom/readFromElement` bazı bilinen SVG öğelerini modele okuyabilir; buna rağmen genel SVG parser, adapter'a dönüşüm politikası, desteklenmeyen öğeler ve export uygulaması yoktur.
+Home'da SVG Yükle, editör ana menüsünde SVG Olarak Kaydet vardır. Mevcut import yalnız Kroki Pro imzalı SVG içindeki belge metadata'sını açar; genel SVG parser, adapter'a dönüşüm politikası ve desteklenmeyen öğe akışı yoktur.
 
-### Resim dışa aktarma
+### Resim dışa aktarma geliştirmeleri
 
-“Resim Olarak Kaydet” ve “Alanı Resim Kaydet” UI'si var; rasterizasyon, alan seçimi ve indirme bağlı değildir.
+“Resim Olarak Kaydet” ve “Alanı Resim Kaydet” bağlıdır. Geliştirilecek alanlar: çıktı kalite seçenekleri, büyük belgelerde RAM uyarısı, alan aracının mobil ergonomisi ve export sonrası kullanıcı geri bildirimi.
 
-### Şablonlarım
+### Şablonlarım geliştirmeleri
 
-Home modalı ve “Şablonlarıma Kaydet” komutu var. Şablon veri formatı, adlandırma, listeleme, kopya id eşleme ve depolama yoktur.
+Şablon kaydetme, adlandırma, listeleme, önizleme, silme ve düzenle açışı localStorage ile bağlıdır. Eksik olanlar: kategori/etiket, sıralama, dışa aktarma, cihazlar arası taşıma ve hazır şablon setidir.
 
 ### Hazır yollar ve hazır kavşaklar
 
@@ -39,7 +39,7 @@ Araç ve diğer sembol sağ ray panelleri katalog verisiyle çalışır. Diğer 
 
 ### Kılavuz
 
-Home Kılavuz düğmesi yalnız alert verir. İçerik/route/panel tanımlı değildir.
+Home Kılavuz düğmesi yalnız dialog mesajı verir. İçerik/route/panel tanımlı değildir.
 
 ## Çekirdekte olup UI'da görünmeyen seçenekler
 
@@ -65,5 +65,5 @@ Engine `setDebug` ve `resetQEndpointEdits` API'lerini açar. UI düğmesi yoktur
 
 ## Belirsiz
 
-- Öncelik, hedef platform, dosya API'si ve şablon depolama kararı kodda yoktur.
-- “Alanı Resim Kaydet” için alanın kullanıcı seçimi mi, mevcut viewBox mı, yoksa nesne bounds'u mu olacağı tanımlı değildir.
+- Öncelik, hedef platform, dosya API'si ve localStorage dışı depolama kararı kodda yoktur.
+- Hazır yol/kavşak içeriklerinin ürün formatı tanımlı değildir.

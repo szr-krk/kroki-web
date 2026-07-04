@@ -447,6 +447,10 @@
     return type === "circle" || type === "ellipse" || type === "rectangle" || type === "closedShape" || type === "callout";
   }
 
+  function isLineToolType(type) {
+    return type === "line" || type === "arc" || type === "bezier";
+  }
+
   function normalizeFillPattern(value) {
     return choiceOr(value, FILL_PATTERNS, "none");
   }
@@ -468,7 +472,7 @@
     return {
       stroke: type === "callout" ? "#d11f1f" : isShapeWithFill(type) ? "#000000" : "#111827",
       fill,
-      strokeWidth: 2,
+      strokeWidth: isLineToolType(type) ? 1 : 2,
       opacity: 1,
       strokeOpacity: 1,
       fillOpacity: 1,
@@ -680,8 +684,10 @@
     element.style.fillOpacity = "";
   }
 
-  function applyGeometryStrokeScaling(element, style) {
-    const vectorEffect = style.dash === "solid" ? "non-scaling-stroke" : "none";
+  function applyGeometryStrokeScaling(element, style, adapter) {
+    const vectorEffect = adapter?.capabilities?.arrows
+      ? "none"
+      : style.dash === "solid" ? "non-scaling-stroke" : "none";
     element.setAttribute("vector-effect", vectorEffect);
     element.style.setProperty("vector-effect", vectorEffect);
   }
@@ -905,7 +911,7 @@
 
     applyStroke(element, styleForStrokeHelpers(style));
     applyDash(element, styleForStrokeHelpers(style));
-    applyGeometryStrokeScaling(element, style);
+    applyGeometryStrokeScaling(element, style, adapter);
 
     if (adapter?.capabilities?.fill) {
       const pattern = supportsFillPattern(adapter) ? ensureFillPattern(canvas, model, style) : null;
@@ -1098,14 +1104,18 @@
     return isTextObjectEntry(activeEntry());
   }
 
+  function cachedControl(key, selector) {
+    return controls?.[key] || document.querySelector(selector);
+  }
+
   function hidePanels(options = {}) {
-    document.querySelector("#lineStylePanel")?.classList.add("gizli");
-    document.querySelector("#lineTextPanel")?.classList.add("gizli");
-    document.querySelector("#vehicleLabelPanel")?.classList.add("gizli");
-    document.querySelector("#strokeColorPanel")?.classList.add("gizli");
-    document.querySelector("#fillColorPanel")?.classList.add("gizli");
-    document.querySelector("#fillPatternPanel")?.classList.add("gizli");
-    document.querySelector("#textColorPanel")?.classList.add("gizli");
+    cachedControl("stylePanel", "#lineStylePanel")?.classList.add("gizli");
+    cachedControl("textPanel", "#lineTextPanel")?.classList.add("gizli");
+    cachedControl("vehicleLabelPanel", "#vehicleLabelPanel")?.classList.add("gizli");
+    cachedControl("strokeColorPanel", "#strokeColorPanel")?.classList.add("gizli");
+    cachedControl("fillColorPanel", "#fillColorPanel")?.classList.add("gizli");
+    cachedControl("fillPatternPanel", "#fillPatternPanel")?.classList.add("gizli");
+    cachedControl("textColorPanel", "#textColorPanel")?.classList.add("gizli");
     controls?.styleButton?.setAttribute("aria-expanded", "false");
     controls?.textButton?.setAttribute("aria-expanded", "false");
     controls?.vehicleLabelToggle?.setAttribute("aria-expanded", "false");
@@ -1120,10 +1130,10 @@
   }
 
   function hideColorPanels() {
-    document.querySelector("#strokeColorPanel")?.classList.add("gizli");
-    document.querySelector("#fillColorPanel")?.classList.add("gizli");
-    document.querySelector("#fillPatternPanel")?.classList.add("gizli");
-    document.querySelector("#textColorPanel")?.classList.add("gizli");
+    cachedControl("strokeColorPanel", "#strokeColorPanel")?.classList.add("gizli");
+    cachedControl("fillColorPanel", "#fillColorPanel")?.classList.add("gizli");
+    cachedControl("fillPatternPanel", "#fillPatternPanel")?.classList.add("gizli");
+    cachedControl("textColorPanel", "#textColorPanel")?.classList.add("gizli");
     controls?.colorButton?.setAttribute("aria-expanded", "false");
     controls?.fillButton?.setAttribute("aria-expanded", "false");
     controls?.fillPatternButton?.setAttribute("aria-expanded", "false");
@@ -1146,30 +1156,30 @@
     const hasArrows = Boolean(adapter?.capabilities?.arrows);
     const catalogObjectTextOnly = isCatalogObject && !noText;
     const textSizeControl = controls?.textSizeValue?.closest?.(".line-text-size-picker");
-    document.querySelectorAll(".shape-only-control").forEach((control) => control.classList.toggle("gizli", !hasFill));
-    document.querySelectorAll(".fill-pattern-control").forEach((control) => control.classList.toggle("gizli", !hasFillPattern));
-    document.querySelectorAll(".line-only-control").forEach((control) => control.classList.toggle("gizli", !hasArrows));
-    document.querySelectorAll(".text-object-control").forEach((control) => control.classList.toggle("gizli", !supportsTextFormatting));
-    document.querySelectorAll(".closed-shape-control").forEach((control) => control.classList.toggle("gizli", !hasPointEdit));
-    document.querySelectorAll(".road-only-control").forEach((control) => control.classList.toggle("gizli", !isRoadObject));
-    document.querySelectorAll(".traffic-sign-only-control").forEach((control) => control.classList.toggle("gizli", !isCatalogObject));
-    document.querySelectorAll(".vehicle-only-control").forEach((control) => control.classList.toggle("gizli", !isVehicleObject));
+    controls?.shapeOnlyControls?.forEach((control) => control.classList.toggle("gizli", !hasFill));
+    controls?.fillPatternControls?.forEach((control) => control.classList.toggle("gizli", !hasFillPattern));
+    controls?.lineOnlyControls?.forEach((control) => control.classList.toggle("gizli", !hasArrows));
+    controls?.textObjectControls?.forEach((control) => control.classList.toggle("gizli", !supportsTextFormatting));
+    controls?.closedShapeControls?.forEach((control) => control.classList.toggle("gizli", !hasPointEdit));
+    controls?.roadOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isRoadObject));
+    controls?.trafficSignOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isCatalogObject));
+    controls?.vehicleOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isVehicleObject));
     controls?.colorButton?.classList.toggle("gizli", isRoadObject || isCatalogObject || isVehicleObject);
     controls?.textButton?.classList.toggle("gizli", noText);
     textSizeControl?.classList.toggle("gizli", catalogObjectTextOnly);
     controls?.textAlign?.classList.toggle("gizli", catalogObjectTextOnly);
     controls?.textColorButton?.classList.toggle("gizli", catalogObjectTextOnly);
     if (isRoadObject || isVehicleObject) {
-      document.querySelector("#strokeColorPanel")?.classList.add("gizli");
+      cachedControl("strokeColorPanel", "#strokeColorPanel")?.classList.add("gizli");
       controls?.colorButton?.setAttribute("aria-expanded", "false");
     }
     if (!isVehicleObject) {
-      document.querySelector("#vehicleLabelPanel")?.classList.add("gizli");
+      cachedControl("vehicleLabelPanel", "#vehicleLabelPanel")?.classList.add("gizli");
       controls?.vehicleLabelToggle?.setAttribute("aria-expanded", "false");
     }
     if (noText) {
-      document.querySelector("#lineTextPanel")?.classList.add("gizli");
-      document.querySelector("#textColorPanel")?.classList.add("gizli");
+      cachedControl("textPanel", "#lineTextPanel")?.classList.add("gizli");
+      cachedControl("textColorPanel", "#textColorPanel")?.classList.add("gizli");
       controls?.textButton?.setAttribute("aria-expanded", "false");
       controls?.textColorButton?.setAttribute("aria-expanded", "false");
     }
@@ -1821,6 +1831,7 @@
       endArrow: document.querySelector("#btnLineEndArrow"),
       endArrowIcon: document.querySelector("#iconLineEndArrow"),
       textButton: document.querySelector("#btnLineText"),
+      textPanel: document.querySelector("#lineTextPanel"),
       textInput: document.querySelector("#lineTextInput"),
       textSizeMinus: document.querySelector("#btnLineTextSizeMinus"),
       textSizePlus: document.querySelector("#btnLineTextSizePlus"),
@@ -1836,18 +1847,27 @@
       textUnderline: document.querySelector("#btnLineTextUnderline"),
       sideTextBold: document.querySelector("#btnSideTextBold"),
       sideTextItalic: document.querySelector("#btnSideTextItalic"),
-      sideTextUnderline: document.querySelector("#btnSideTextUnderline")
+      sideTextUnderline: document.querySelector("#btnSideTextUnderline"),
+      stylePanel: document.querySelector("#lineStylePanel"),
+      shapeOnlyControls: Array.from(document.querySelectorAll(".shape-only-control")),
+      fillPatternControls: Array.from(document.querySelectorAll(".fill-pattern-control")),
+      lineOnlyControls: Array.from(document.querySelectorAll(".line-only-control")),
+      textObjectControls: Array.from(document.querySelectorAll(".text-object-control")),
+      closedShapeControls: Array.from(document.querySelectorAll(".closed-shape-control")),
+      roadOnlyControls: Array.from(document.querySelectorAll(".road-only-control")),
+      trafficSignOnlyControls: Array.from(document.querySelectorAll(".traffic-sign-only-control")),
+      vehicleOnlyControls: Array.from(document.querySelectorAll(".vehicle-only-control"))
     };
 
     const core = window.krokiObjectEditCore;
     const bindHoldAction = core?.bindHoldAction || (() => {});
-    const stylePanel = document.querySelector("#lineStylePanel");
-    const textPanel = document.querySelector("#lineTextPanel");
-    const vehicleLabelPanel = document.querySelector("#vehicleLabelPanel");
-    const strokeColorPanel = document.querySelector("#strokeColorPanel");
-    const fillColorPanel = document.querySelector("#fillColorPanel");
-    const fillPatternPanel = document.querySelector("#fillPatternPanel");
-    const textColorPanel = document.querySelector("#textColorPanel");
+    const stylePanel = controls.stylePanel;
+    const textPanel = controls.textPanel;
+    const vehicleLabelPanel = controls.vehicleLabelPanel;
+    const strokeColorPanel = controls.strokeColorPanel;
+    const fillColorPanel = controls.fillColorPanel;
+    const fillPatternPanel = controls.fillPatternPanel;
+    const textColorPanel = controls.textColorPanel;
     let vehicleLabelTogglePointerHandled = false;
     let vehicleLabelTogglePointerTimer = 0;
 

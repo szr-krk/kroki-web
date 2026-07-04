@@ -9,7 +9,20 @@
   let activeId = "";
   let mode = "";
   let drag = null;
+  let viewportSyncFrame = 0;
   const DRAG_START_THRESHOLD_PX = 3;
+
+  function screenMatrix() {
+    return manager.canvas.getScreenCTM?.()?.inverse?.() || null;
+  }
+
+  function pointFromEvent(event, matrix = null) {
+    if (!matrix) return utils.pointFromEvent(manager.canvas, event);
+    const point = manager.canvas.createSVGPoint();
+    point.x = event.clientX;
+    point.y = event.clientY;
+    return point.matrixTransform(matrix);
+  }
 
   function setEditorState() {
     if (!activeId) {
@@ -47,6 +60,17 @@
     Kroki.StyleManager?.syncControls?.();
     setEditorState();
     Kroki.MultiSelectManager?.syncControls?.();
+  }
+
+  function syncViewportNow() {
+    viewportSyncFrame = 0;
+    if (!activeId) return;
+    controlPoints.sync();
+  }
+
+  function syncViewport() {
+    if (!activeId || viewportSyncFrame) return;
+    viewportSyncFrame = window.requestAnimationFrame?.(syncViewportNow) || window.setTimeout(syncViewportNow, 16);
   }
 
   function resetPointEdit(id = activeId) {
@@ -104,15 +128,71 @@
     return activeId ? manager.get(activeId) : null;
   }
 
+  function liveTransformTargetsFor(id) {
+    const targets = [];
+    const seen = new Set();
+    const pushTarget = (node) => {
+      if (!node || seen.has(node)) return;
+      seen.add(node);
+      targets.push(node);
+    };
+    const element = manager.getElement?.(id);
+    pushTarget(element);
+    manager.canvas?.querySelectorAll?.("[data-label-for], [data-for-line], [data-for-shape], [data-for-ellipse]")
+      .forEach((node) => {
+        if (
+          node.dataset.labelFor === id ||
+          node.dataset.forLine === id ||
+          node.dataset.forShape === id ||
+          node.dataset.forEllipse === id
+        ) {
+          pushTarget(node);
+        }
+      });
+    manager.canvas?.querySelectorAll?.("#editorEditLayer [data-selection-type], #editorEditLayer .editor-object-cp:not(.editor-group-cp)")
+      .forEach(pushTarget);
+    return targets.map((node) => ({
+      node,
+      baseTransform: node.getAttribute("transform") || "",
+      lastTransform: node.getAttribute("transform") || ""
+    }));
+  }
+
+  function applyLiveTransform(dragState) {
+    if (!dragState?.liveTransformTargets?.length) return;
+    const translate = `translate(${dragState.totalDx || 0} ${dragState.totalDy || 0})`;
+    dragState.liveTransformTargets.forEach((target) => {
+      const value = target.baseTransform ? `${translate} ${target.baseTransform}` : translate;
+      if (target.lastTransform === value) return;
+      target.node.setAttribute("transform", value);
+      target.lastTransform = value;
+    });
+  }
+
+  function clearLiveTransform(dragState) {
+    if (!dragState?.liveTransformTargets?.length) return;
+    dragState.liveTransformTargets.forEach((target) => {
+      if (target.baseTransform) {
+        if (target.lastTransform !== target.baseTransform) target.node.setAttribute("transform", target.baseTransform);
+      } else if (target.node.hasAttribute("transform")) target.node.removeAttribute("transform");
+      target.lastTransform = target.baseTransform;
+    });
+  }
+
   function beginDrag(type, event, extra = {}) {
-    const point = utils.pointFromEvent(manager.canvas, event);
+    const matrix = screenMatrix();
+    const point = pointFromEvent(event, matrix);
     const model = getActiveModel();
     const adapter = manager.getAdapter(model);
-    if (model?.type === "road") Kroki.RoadIntersectionEngine?.setSuspended?.(true);
+    const metricSnapshot = type === "control" ? controlPoints.metrics() : null;
+    const liveTransform = type === "object" && typeof adapter?.move === "function";
+    if (model?.type === "road") Kroki.RoadIntersectionEngine?.setSuspended?.(true, liveTransform ? { clear: false } : undefined);
     drag = {
       type,
       pointerId: event.pointerId,
       captureTarget: extra.captureTarget || event.currentTarget || manager.canvas,
+      screenMatrix: matrix,
+      metrics: metricSnapshot,
       lastPoint: point,
       startClientX: event.clientX,
       startClientY: event.clientY,
@@ -120,14 +200,22 @@
       clearOnTap: Boolean(extra.clearOnTap),
       cpId: extra.cpId || "",
       editTapPoint: extra.editTapPoint || null,
-      startState: adapter?.beginControlPointMove?.(model, extra.cpId, point, controlPoints.metrics()) || null,
+      startState: type === "control" ? (adapter?.beginControlPointMove?.(model, extra.cpId, point, metricSnapshot) || null) : null,
+      liveTransform,
+      totalDx: 0,
+      totalDy: 0,
+      liveTransformTargets: liveTransform ? liveTransformTargetsFor(model.id) : [],
       transaction: Kroki.HistoryManager?.begin?.(type === "control" ? "Geometri duzenle" : "Nesne tasi")
     };
     try {
       drag.captureTarget?.setPointerCapture?.(event.pointerId);
     } catch {
-      manager.canvas.setPointerCapture?.(event.pointerId);
-      drag.captureTarget = manager.canvas;
+      try {
+        manager.canvas.setPointerCapture?.(event.pointerId);
+        drag.captureTarget = manager.canvas;
+      } catch {
+        drag.captureTarget = null;
+      }
     }
   }
 
@@ -169,7 +257,7 @@
       return;
     }
 
-    const point = utils.pointFromEvent(manager.canvas, event);
+    const point = pointFromEvent(event);
     const hit = hitTest.hitTest(point);
 
     if (Kroki.MultiSelectManager?.handlePointerDown?.(event, hit)) return;
@@ -220,7 +308,7 @@
       return;
     }
 
-    const point = utils.pointFromEvent(manager.canvas, event);
+    const point = pointFromEvent(event, drag.screenMatrix);
     const model = getActiveModel();
     const adapter = manager.getAdapter(model);
     if (!model || !adapter) return;
@@ -237,6 +325,14 @@
     if (drag.type === "object") {
       const dx = point.x - drag.lastPoint.x;
       const dy = point.y - drag.lastPoint.y;
+      if (drag.liveTransform) {
+        drag.totalDx += dx;
+        drag.totalDy += dy;
+        applyLiveTransform(drag);
+        drag.lastPoint = point;
+        event.preventDefault();
+        return;
+      }
       manager.updateGeometry(model.id, (draft) => {
         adapter.move(draft, dx, dy);
       }, { skipHistory: true });
@@ -250,7 +346,7 @@
         adapter.moveControlPoint(draft, drag.cpId, point, {
           startState: drag.startState,
           lastPoint: drag.lastPoint,
-          metrics: controlPoints.metrics()
+          metrics: drag.metrics || controlPoints.metrics()
         });
       }, { skipHistory: true, styleControls: Boolean(adapter.capabilities?.trafficSign || adapter.capabilities?.otherSymbol || adapter.capabilities?.catalogObject || adapter.capabilities?.vehicleObject) });
       drag.lastPoint = point;
@@ -273,6 +369,18 @@
       if (adapter?.handleEditTap?.(model, drag.editTapPoint)) sync();
     }
     const wasRoadDrag = getActiveModel()?.type === "road";
+    if (drag.liveTransform) {
+      const model = getActiveModel();
+      const adapter = manager.getAdapter(model);
+      const dx = drag.totalDx || 0;
+      const dy = drag.totalDy || 0;
+      clearLiveTransform(drag);
+      if (drag.moved && model && typeof adapter?.move === "function" && Math.hypot(dx, dy) > 0.001) {
+        manager.updateGeometry(model.id, (draft) => {
+          adapter.move(draft, dx, dy);
+        }, { skipHistory: true });
+      }
+    }
     if (drag.moved && drag.transaction) Kroki.HistoryManager?.commit?.(drag.transaction, drag.type === "control" ? "Geometri duzenle" : "Nesne tasi");
     drag = null;
     if (shouldClear) clear();
@@ -413,7 +521,7 @@
   window.addEventListener("kroki:camera-gesture-start", cancelDrag);
   window.addEventListener("blur", cancelDrag);
   window.addEventListener("resize", sync);
-  manager.canvas.addEventListener("kroki:viewboxchange", sync);
+  manager.canvas.addEventListener("kroki:viewboxchange", syncViewport);
   manager.canvas.addEventListener("lostpointercapture", (event) => {
     if (drag && drag.pointerId === event.pointerId) stopDrag(event);
   });

@@ -2,6 +2,12 @@
 
 Yol sistemi üç parçaya ayrılır: `RoadBuilder` yeni yolun başlangıç verisini kurar, `roadAdapter` yol modelini normalize/render/düzenler, `RoadInspector` seçili yolun bağlamsal UI'sini yönetir. Otomatik kavşak davranışı ayrı [[Kavşak Sistemi]] içindedir.
 
+## Devralma özeti
+
+Yol sistemini “çizilmiş path listesi” gibi düşünme. Kalıcı gerçek, tek bir merkez geometri ve `metadata.road` config'idir. Görülen sınır çizgileri, şerit çizgileri, banket çizgileri, cepler, bariyerler, seçim yüzeyi ve hit-test bu modelden her renderda türetilir.
+
+Güvenli değişiklik için ana kural şudur: merkez çizgisinin `pointAt/tangentAt` davranışı, `crossSection(config)` sırası ve kavşak motoruna verilen dış yüzey mantığı korunmalıdır. Görsel bir çizgiyi düzeltirken bile önce o çizginin boundary mi, segment mi, cep auxiliary contour'u mu, yoksa kavşak motorunun ortak dış contour'u mu olduğunu bul.
+
 ## İlgili kod dosyaları
 
 - `src/ui/roadBuilder.js`: yeni yol formu ve başlangıç geometrisi/config'i.
@@ -60,6 +66,20 @@ Geometri `start`, `end` ve `ratio` taşır. `ratio`, chord orta noktasına norma
 `roadAdapter` merkez çizgisini 64 eşit parametre parçasıyla örnekler. Her örnekte tangent ve normal hesaplanır. Yol çizgileri normal yönünde offset path olarak, kesitler iki offset arasındaki kapalı band olarak türetilir. Ada path'i dış ve ters yönlü iç çemberden oluşur.
 
 Normal render sırasında beyaz yol yüzeyi DOM'a eklenmez; `renderSurface()` bilinçli olarak `null` döner. Yüzey geometrisi hit-test, seçim ve kavşak hesaplarında yine üretilir. Görünen ana yol öğeleri sınır/şerit çizgileri, seçili kesit vurgusu ve bariyerlerdir.
+
+## Çekirdek algoritma sırası
+
+1. Geometri normalize edilir: düz/arc/S/ada profili tek `pointAt/tangentAt` sözleşmesine indirilir.
+2. Road config normalize edilir: lane, banket, bölünmüş yol, su kanalı, boundary style, cep ve bariyer değerleri clamp edilir.
+3. Merkez çizgisi örneklenir ve her örnekte tangent/normal hesaplanır.
+4. `crossSection(config)` sağdan sola kesitleri ve `b0..bN` boundary'leri üretir.
+5. Her boundary offset path'e dönüştürülür.
+6. Boundary style ve segmentler uygulanır.
+7. Kavşak motoru varsa görünür `t` aralıkları ile çizgiler kırpılır.
+8. Cep varsa dış edge adapter tarafından atlanır, cep için auxiliary contour üretilir.
+9. Bariyerler kendi edge/boundary offset'inden veya serbest Bezier yolundan çizilir.
+
+Bu sıralamada özellikle 4, 7 ve 8. adımlar birbirine bağlıdır. Cep veya kavşak düzeltirken yalnız path `d` üretimini değiştirmek kolayca karşı kenar taşması, T kavşakta yanlış ağız veya banket çizgisi kaybı oluşturabilir.
 
 ## Road Builder
 
@@ -145,4 +165,3 @@ Her bariyer şunları taşır:
 - `metadata.road.barrier` tekil legacy alanı normalize ediliyor, fakat güncel render `barriers` dizisini kullanıyor. Bu alanın gelecekteki amacı koddan kesinleşmiyor.
 - `segments` genel yol segment listesi normalize ediliyor; güncel boundary render esas olarak `boundaryStyles[boundaryId].segments` kullanıyor. Legacy/gelecek uyumluluk rolü belirsiz.
 - `bridge` ve `autoIntersection` config alanları destekleniyor, ancak mevcut Inspector/Builder bunları kullanıcıya açmıyor.
-

@@ -1,0 +1,36 @@
+﻿Backup: C:\Users\szrbl\OneDrive\Belgeler\krokim\.backups\hatasız adalı kavşak-20260703-212953.zip
+Created: 2026-07-03 21:30:09 +03:00
+Root: C:\Users\szrbl\OneDrive\Belgeler\krokim
+Excluded: .git, .backups
+
+ M index.html
+ M src/adapters/otherSymbolAdapter.js
+ M src/adapters/roadAdapter.js
+ M src/adapters/trafficSignAdapter.js
+ M src/adapters/vehicleAdapter.js
+ M src/core/editorObjectManager.js
+ M src/core/otherSymbolCatalog.js
+ M src/core/roadIntersectionEngine.js
+ M src/core/selectionManager.js
+ M src/core/styleManager.js
+ M src/core/trafficSignCatalog.js
+ M src/data/vehicle-catalog-data.js
+ M src/editor-camera.js
+ M src/editor-rail.js
+ M src/home.css
+ M src/home.js
+ M src/ui/otherSymbolLibrary.js
+ M src/ui/trafficSignLibrary.js
+ M src/ui/vehicleLibrary.js
+?? ".backups/hatas\304\261z adal\304\261 kav\305\237ak-20260703-212953.status.txt"
+?? ".backups/hatas\304\261z adal\304\261 kav\305\237ak-20260703-212953.zip"
+?? .backups/krokim-pre-ada-20260702-231232.status.txt
+?? .backups/krokim-pre-ada-20260702-231232.tracked.diff
+?? .backups/krokim-pre-ada-20260702-231232.zip
+?? .tmp/island-vehicle-move-benchmark.html
+?? .tmp/road-island-regression.html
+?? html_packer.py
+?? packed.html
+?? src/editor-main-menu-pro.js
+?? src/editor-main-menu.js
+?? src/kroki-dialog.js

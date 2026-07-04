@@ -10,6 +10,7 @@
   const MAX_SCALE = 4;
   const SELECTION_RADIUS_SCALE = 1.12;
   const MULTI_SELECTION_STROKE_WIDTH = 4;
+  const metricsCache = new WeakMap();
 
   function clampScale(value) {
     const scale = Number(value);
@@ -40,9 +41,7 @@
   }
 
   function radiusFor(model) {
-    const sign = signFromModel(model);
-    const viewBox = viewBoxFor(sign);
-    return Math.max(viewBox.width, viewBox.height) * clampScale(model.geometry?.scale) / 2;
+    return metricsFor(model).radius;
   }
 
   function selectionRadiusFor(model) {
@@ -142,14 +141,83 @@
     });
   }
 
-  function transformFor(model, sign) {
+  function metricsFor(model) {
+    const sign = signFromModel(model);
     const geometry = model.geometry || {};
-    const viewBox = viewBoxFor(sign);
     const scale = clampScale(geometry.scale);
+    const cacheKey = [
+      sign.key || "",
+      sign.viewBox || "",
+      sign.width || "",
+      sign.height || "",
+      scale
+    ].join("|");
+    const cached = metricsCache.get(model);
+    if (cached?.key === cacheKey) return cached.metrics;
+
+    const viewBox = viewBoxFor(sign);
+    const metrics = {
+      sign,
+      viewBox,
+      scale,
+      radius: Math.max(viewBox.width, viewBox.height) * scale / 2
+    };
+    metricsCache.set(model, { key: cacheKey, metrics });
+    return metrics;
+  }
+
+  function transformFor(model, metrics) {
+    const geometry = model.geometry || {};
+    const viewBox = metrics.viewBox;
     const rotation = utils.normalizeRotation(geometry.rotation);
     const centerX = viewBox.x + viewBox.width / 2;
     const centerY = viewBox.y + viewBox.height / 2;
-    return `translate(${geometry.cx} ${geometry.cy}) rotate(${rotation}) scale(${scale}) translate(${-centerX} ${-centerY})`;
+    return `translate(${geometry.cx} ${geometry.cy}) rotate(${rotation}) scale(${metrics.scale}) translate(${-centerX} ${-centerY})`;
+  }
+
+  function artFor(element) {
+    return Array.from(element.children || []).find((child) => child.classList?.contains("editor-traffic-sign-art")) || null;
+  }
+
+  function artKeyFor(sign) {
+    return [
+      sign.key || "",
+      sign.viewBox || "",
+      sign.width || "",
+      sign.height || "",
+      String(sign.art || "").length
+    ].join("|");
+  }
+
+  function textKeyFor(model) {
+    return [
+      model.label?.text || model.label?.labelText || "",
+      Boolean(model.metadata?.signTextInitialized) ? "initialized" : "fallback"
+    ].join("|");
+  }
+
+  function syncArt(element, model, sign) {
+    const artKey = artKeyFor(sign);
+    let art = artFor(element);
+    if (!art || art.dataset.signArtKey !== artKey) {
+      art = parseArt(sign);
+      art.classList.add("editor-traffic-sign-art");
+      art.dataset.signArtKey = artKey;
+      element.replaceChildren(art);
+      element.dataset.signTextKey = "";
+    }
+
+    const textKey = textKeyFor(model);
+    if (element.dataset.signTextKey !== textKey) {
+      applyEditableText(model, art);
+      element.dataset.signTextKey = textKey;
+    }
+    return art;
+  }
+
+  function writeDataset(element, name, value) {
+    const text = String(value);
+    if (element.dataset[name] !== text) element.dataset[name] = text;
   }
 
   function cpPoint(model, metrics) {
@@ -225,25 +293,24 @@
     },
 
     render(model, element) {
-      const sign = signFromModel(model);
+      const metrics = metricsFor(model);
+      const sign = metrics.sign;
       const geometry = model.geometry || {};
-      const art = parseArt(sign);
-      applyEditableText(model, art);
-      element.replaceChildren(art);
-      element.dataset.cx = String(geometry.cx);
-      element.dataset.cy = String(geometry.cy);
-      element.dataset.scale = String(clampScale(geometry.scale));
-      element.dataset.rotation = String(utils.normalizeRotation(geometry.rotation));
-      element.dataset.signKey = sign.key || "";
-      element.dataset.signCode = sign.code || "";
-      element.dataset.signName = sign.name || "";
-      element.dataset.signCategory = sign.category || "";
-      element.dataset.signCategoryKey = sign.categoryKey || "";
-      element.dataset.signViewBox = sign.viewBox || "";
-      element.dataset.signWidth = String(sign.width || "");
-      element.dataset.signHeight = String(sign.height || "");
-      element.dataset.signBaseScale = String(sign.baseScale || "");
-      element.setAttribute("transform", transformFor(model, sign));
+      syncArt(element, model, sign);
+      writeDataset(element, "cx", geometry.cx);
+      writeDataset(element, "cy", geometry.cy);
+      writeDataset(element, "scale", metrics.scale);
+      writeDataset(element, "rotation", utils.normalizeRotation(geometry.rotation));
+      writeDataset(element, "signKey", sign.key || "");
+      writeDataset(element, "signCode", sign.code || "");
+      writeDataset(element, "signName", sign.name || "");
+      writeDataset(element, "signCategory", sign.category || "");
+      writeDataset(element, "signCategoryKey", sign.categoryKey || "");
+      writeDataset(element, "signViewBox", sign.viewBox || "");
+      writeDataset(element, "signWidth", sign.width || "");
+      writeDataset(element, "signHeight", sign.height || "");
+      writeDataset(element, "signBaseScale", sign.baseScale || "");
+      element.setAttribute("transform", transformFor(model, metrics));
     },
 
     hitTest(model, point, tolerance) {

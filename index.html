@@ -5,7 +5,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Kroki Pro</title>
-  <link rel="stylesheet" href="src/home.css" />
+  <link rel="stylesheet" href="src/home.css?v=20260701-menu" />
   <link rel="stylesheet" href="src/editor.css" />
   <link rel="stylesheet" href="src/editor-line.css" />
 </head>
@@ -75,18 +75,6 @@
                 <span>Hazır Kavşaklar</span>
               </button>
 
-              <button id="btnHazirYollar" type="button" data-modal-target="modalHazirYollar">
-                <span class="mini-ikon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M5 19C7 13 10 11 12 5C14 11 17 13 19 19" stroke="currentColor" stroke-width="2.2"
-                      stroke-linecap="round" stroke-linejoin="round"></path>
-                    <path d="M12 8v2M12 13v2M12 18v1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
-                    </path>
-                  </svg>
-                </span>
-                <span>Hazır Yollar</span>
-              </button>
-
               <button id="btnSvgYukle" type="button">
                 <span class="mini-ikon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none">
@@ -148,24 +136,6 @@
         </div>
       </div>
 
-      <div id="modalHazirYollar" class="modal-panel gizli" role="dialog" aria-modal="true"
-        aria-labelledby="modalHazirYollarBaslik">
-        <div class="modal">
-          <div class="modal-ust">
-            <span id="modalHazirYollarBaslik">Hazır Yollar</span>
-            <div class="modal-ust-sag">
-              <button class="btn-ok btn-tamam gizli" type="button">
-                <span class="btn-ikon">✓</span> Tamam
-              </button>
-              <button class="btn-danger btn-kapat" type="button" data-modal-close>
-                <span class="btn-ikon">✕</span> Kapat
-              </button>
-            </div>
-          </div>
-          <div class="modal-icerik" id="hazirYollarListesi">(Boş) - Hazır yollar daha sonra doldurulacak.</div>
-          <div class="modal-alt">Seçilen yol yeni krokiye eklenecek.</div>
-        </div>
-      </div>
     </section>
 
     <section id="editor" class="ekran gizli" aria-label="Kroki editörü">
@@ -1028,15 +998,15 @@
         <div class="rail-menu-title">Ana Menü</div>
         <button id="btnEditorTamEkran" class="rail-menu-btn" type="button" aria-label="Tam ekran"
           title="Tam ekran" aria-pressed="false">Tam Ekran</button>
-        <button class="rail-menu-btn" type="button">Resim Olarak Kaydet</button>
-        <button class="rail-menu-btn" type="button">Alanı Resim Kaydet</button>
-        <button class="rail-menu-btn" type="button">Kaydet</button>
-        <button class="rail-menu-btn" type="button">Kaydet ve Çık</button>
-        <button class="rail-menu-btn" type="button">Kaydetmeden Çık</button>
-        <button class="rail-menu-btn" type="button">Şablonlarıma Kaydet</button>
-        <button class="rail-menu-btn" type="button">SVG Olarak Kaydet</button>
+        <button class="rail-menu-btn" type="button" data-menu-action="export-png">Resim Olarak Kaydet</button>
+        <button class="rail-menu-btn" type="button" data-menu-action="export-area-png">Alanı Resim Kaydet</button>
+        <button class="rail-menu-btn" type="button" data-menu-action="save">Kaydet</button>
+        <button class="rail-menu-btn" type="button" data-menu-action="save-exit">Kaydet ve Çık</button>
+        <button class="rail-menu-btn" type="button" data-menu-action="exit-nosave">Kaydetmeden Çık</button>
+        <button class="rail-menu-btn" type="button" data-menu-action="save-template">Şablonlarıma Kaydet</button>
+        <button class="rail-menu-btn" type="button" data-menu-action="export-svg">SVG Olarak Kaydet</button>
         <div class="rail-menu-separator" aria-hidden="true"></div>
-        <button class="rail-menu-btn" type="button">Yeni Kroki</button>
+        <button class="rail-menu-btn" type="button" data-menu-action="new-document">Yeni Kroki</button>
       </div>
 
       <div class="rail-menu-panel gizli" id="railMenuCizim" role="dialog" aria-label="Çizim araçları">
@@ -1261,6 +1231,7 @@
     </section>
   </div>
 
+  <script src="src/kroki-dialog.js?v=20260701-menu"></script>
   <script src="src/home.js"></script>
   <script src="src/editor-state.js"></script>
   <script src="src/editor-rail.js"></script>
@@ -1310,6 +1281,7 @@
   <script src="src/ui/vehicleLibrary.js"></script>
   <script src="src/ui/trafficSignLibrary.js"></script>
   <script src="src/ui/otherSymbolLibrary.js"></script>
+  <script src="src/editor-main-menu-pro.js?v=20260701-menu-final"></script>
 </body>
 
 </html>

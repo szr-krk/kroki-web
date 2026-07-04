@@ -4,10 +4,93 @@ const cizimToolButtons = Array.from(document.querySelectorAll("#gridCizimAraclar
 const cizimRailButton = document.querySelector("#btnCizimAraclari");
 const editorFloatingFitButton = document.querySelector("#btnEditorFitScreen");
 const editorFloatingFullscreenButton = document.querySelector("#btnEditorTamEkran");
-const editorFloatingScreen = document.querySelector("#editor");
+const editorCanvas = document.querySelector("#editorCanvas");
+const fitBaseViewBox = readFitViewBox(editorCanvas);
 const cizimRailDefaultNodes = Array.from(cizimRailButton?.childNodes || []).map((node) => node.cloneNode(true));
 const cizimRailDefaultLabel = cizimRailButton?.getAttribute("aria-label") || "";
 const cizimRailDefaultTitle = cizimRailButton?.getAttribute("title") || "";
+const FIT_PADDING_PX = 56;
+
+function readFitViewBox(svg = editorCanvas) {
+  const values = (svg?.getAttribute("viewBox") || "")
+    .trim()
+    .split(/[\s,]+/)
+    .map(Number);
+  if (values.length === 4 && values.every(Number.isFinite) && values[2] > 0 && values[3] > 0) {
+    return { x: values[0], y: values[1], width: values[2], height: values[3] };
+  }
+  return { x: 0, y: 0, width: 1200, height: 800 };
+}
+
+function isFiniteFitBounds(bounds) {
+  return Boolean(
+    bounds &&
+    Number.isFinite(bounds.x) &&
+    Number.isFinite(bounds.y) &&
+    Number.isFinite(bounds.width) &&
+    Number.isFinite(bounds.height) &&
+    bounds.width >= 0 &&
+    bounds.height >= 0
+  );
+}
+
+function resetFitViewBox() {
+  if (!editorCanvas) return fitBaseViewBox;
+  editorCanvas.setAttribute("viewBox", `${fitBaseViewBox.x} ${fitBaseViewBox.y} ${fitBaseViewBox.width} ${fitBaseViewBox.height}`);
+  editorCanvas.dispatchEvent(new CustomEvent("kroki:viewboxchange", { bubbles: true, detail: fitBaseViewBox }));
+  return fitBaseViewBox;
+}
+
+function writeFitViewBox(viewBox) {
+  if (!editorCanvas) return null;
+  const safeViewBox = {
+    x: Number.isFinite(viewBox.x) ? viewBox.x : fitBaseViewBox.x,
+    y: Number.isFinite(viewBox.y) ? viewBox.y : fitBaseViewBox.y,
+    width: Number.isFinite(viewBox.width) && viewBox.width > 0 ? viewBox.width : fitBaseViewBox.width,
+    height: Number.isFinite(viewBox.height) && viewBox.height > 0 ? viewBox.height : fitBaseViewBox.height
+  };
+  editorCanvas.setAttribute("viewBox", `${safeViewBox.x} ${safeViewBox.y} ${safeViewBox.width} ${safeViewBox.height}`);
+  editorCanvas.dispatchEvent(new CustomEvent("kroki:viewboxchange", { bubbles: true, detail: safeViewBox }));
+  return safeViewBox;
+}
+
+function fitViewBoxForBounds(bounds) {
+  const rect = editorCanvas?.getBoundingClientRect?.();
+  const rectWidth = Number.isFinite(rect?.width) && rect.width > 0 ? rect.width : fitBaseViewBox.width;
+  const rectHeight = Number.isFinite(rect?.height) && rect.height > 0 ? rect.height : fitBaseViewBox.height;
+  const maxPadding = Math.max(0, Math.min(rectWidth, rectHeight) / 2 - 1);
+  const paddingPx = Math.min(maxPadding, FIT_PADDING_PX);
+  const availableWidth = Math.max(1, rectWidth - paddingPx * 2);
+  const availableHeight = Math.max(1, rectHeight - paddingPx * 2);
+  const aspect = fitBaseViewBox.width / fitBaseViewBox.height;
+  const centerX = bounds.x + bounds.width / 2;
+  const centerY = bounds.y + bounds.height / 2;
+  let width = Math.max(1, bounds.width) * rectWidth / availableWidth;
+  let height = Math.max(1, bounds.height) * rectHeight / availableHeight;
+
+  if (width / height > aspect) height = width / aspect;
+  else width = height * aspect;
+
+  width = Math.max(fitBaseViewBox.width / 64, Math.min(fitBaseViewBox.width / 0.05, width));
+  height = width / aspect;
+
+  return {
+    x: centerX - width / 2,
+    y: centerY - height / 2,
+    width,
+    height
+  };
+}
+
+function fitBoundsDirect(bounds) {
+  if (!isFiniteFitBounds(bounds)) return resetFitViewBox();
+  return writeFitViewBox(fitViewBoxForBounds(bounds));
+}
+
+function contentBoundsForFit() {
+  const bounds = window.Kroki?.EditorObjectManager?.getContentBounds?.();
+  return isFiniteFitBounds(bounds) ? bounds : null;
+}
 
 function closeRailMenus() {
   railMenuButtons.forEach((button) => {
@@ -26,6 +109,7 @@ function openRailMenu(button) {
   button.classList.add("is-menu-open");
   button.setAttribute("aria-expanded", "true");
   panel.classList.remove("gizli");
+  panel.dispatchEvent(new CustomEvent("kroki:rail-menu-open", { bubbles: true, detail: { id: panel.id } }));
 }
 
 railMenuButtons.forEach((button) => {
@@ -36,7 +120,16 @@ function fitEditorToScreen(event) {
   event?.preventDefault();
   event?.stopPropagation();
   closeRailMenus();
-  window.krokiEditorCamera?.resetViewBox?.();
+  const camera = window.krokiEditorCamera;
+  const bounds = contentBoundsForFit();
+  if (bounds) {
+    if (camera?.fitBounds) camera.fitBounds(bounds);
+    else fitBoundsDirect(bounds);
+    return;
+  }
+  if (camera?.fitToContent) camera.fitToContent();
+  else if (camera?.resetViewBox) camera.resetViewBox();
+  else resetFitViewBox();
 }
 
 function syncEditorFullscreenButton() {
@@ -57,8 +150,7 @@ async function toggleEditorFullscreen(event) {
     if (document.fullscreenElement) {
       await document.exitFullscreen();
     } else {
-      const target = editorFloatingScreen && !editorFloatingScreen.classList.contains("gizli") ? editorFloatingScreen : document.documentElement;
-      await target.requestFullscreen?.();
+      await document.documentElement.requestFullscreen?.();
     }
   } catch {
     syncEditorFullscreenButton();

@@ -1,46 +1,48 @@
 # Home
 
-Home, uygulamanın başlangıç ekranıdır. Görevi editöre geçiş, tam ekran kontrolü ve gelecekte bağlanmak üzere yerleştirilmiş hızlı başlangıç girişlerini göstermektir.
+Home, uygulamanın başlangıç ekranıdır. Görevi editöre geçiş, tam ekran kontrolü, yerel son krokiler/şablonlar, Kroki imzalı SVG yükleme ve hızlı başlangıç girişlerini göstermektir.
 
 ## İlgili kod dosyaları
 
 - `index.html`: `#home` DOM'u, hızlı başlangıç düğmeleri ve üç modal.
-- `src/home.js`: modal açma/kapama, tam ekran ve “Yeni Kroki” geçişi.
+- `src/home.js`: modal açma/kapama, tam ekran ve Home düğmelerinin ilk bağları.
+- `src/editor-main-menu-pro.js`: yeni belge, son krokiler, şablonlar, localStorage kayıtları, SVG import/export ve Home liste renderı.
 - `src/home.css`: Home yerleşimi, kartlar ve modal görünümü.
 - Editöre geçişin devamı: [[Editör]].
 
 ## Mevcut davranışlar
 
-- “Yeni Kroki”, açık modalleri kapatır, `#home` öğesine `gizli` ekler ve `#editor` öğesinden `gizli` sınıfını kaldırır.
+- “Yeni Kroki” artık `editor-main-menu-pro.js` tarafından capture fazında devralınır; mevcut içerik varsa onay ister, belgeyi sıfırlar ve editörü gösterir.
 - Home tam ekran düğmesi `document.documentElement.requestFullscreen()` ve `document.exitFullscreen()` kullanır. `fullscreenchange` ile etiket ve `aria-pressed` senkronize edilir.
 - `data-modal-target` taşıyan düğmeler hedef paneli açar; yeni modal açılırken diğerleri kapanır.
 - `data-modal-close` düğmeleri ve `Escape` tüm Home modallarını kapatır.
-- “Kılavuz” ve “SVG Yükle” şu anda yalnız `alert` gösterir.
+- “Kılavuz” özel dialog ile “sonraki aşamada bağlanacak” mesajı verir.
+- “SVG Yükle”, `KrokiMainMenu.importSvgFile()` varsa dosya seçici açar; yalnız Kroki Pro imzalı SVG içindeki belge metadata'sını import eder.
 
 ## Hızlı başlangıç alanları
 
-- **Şablonlarım:** modal var, içerik boş yer tutucudur.
+- **Şablonlarım:** `localStorage` içindeki `krokiPro.templates.v1` listesinden kartlar render edilir.
 - **Hazır Kavşaklar:** modal var, içerik boş yer tutucudur.
 - **Hazır Yollar:** modal var, içerik boş yer tutucudur.
-- **SVG Yükle:** dosya seçimi veya parser bağlı değildir.
-- **Son Krokiler:** `#sonKrokilerListesi` yalnız “Henüz kayıt yok” metniyle başlar; kodda listeyi dolduran depolama/okuma akışı yoktur.
+- **SVG Yükle:** Kroki Pro export metadata'sı taşıyan SVG dosyasını belge olarak açar; genel SVG parser değildir.
+- **Son Krokiler:** `krokiPro.recentDocuments.v1` listesinden en fazla 12 kayıt gösterilir.
 
 Bu eksikler [[Açık Hatalar]] ve [[Yeni Özellikler]] içinde izlenir.
 
 ## Bağlı modüller
 
 - [[Editör]]: Home'un tek çalışan ana geçiş hedefi.
-- [[Menü Sistemi]]: editörde ayrıca “Yeni Kroki” ve kaydet/çık komutları görünür, ancak çoğu bağlı değildir.
-- [[Serializer]]: Home'daki son kayıtlar veya dosya yükleme için kullanılabilecek çekirdek API'yi sağlar; Home şu anda bu API'yi çağırmaz.
+- [[Menü Sistemi]]: editördeki kayıt, export, çıkış ve yeni belge komutları Home listeleriyle aynı localStorage akışına bağlıdır.
+- [[Serializer]]: localStorage kayıtları, şablonlar ve imzalı SVG import/export için belge formatını sağlar.
 
 ## Geliştirici notları
 
-- Yeni krokiye geçiş mevcut belgeyi temizlemez. İlk açılışta sorun yaratmaz; editörden Home'a dönüş/yeni belge akışı bağlandığında açıkça `EditorObjectManager.clear()` veya belge importu kararı verilmelidir.
+- Yeni krokiye geçiş `resetDocument()` ile manager, seçim, kavşak state'i, kamera ve history'yi temizler.
 - Home ve editör aynı sayfada yaşar; route veya ayrı HTML sayfası yoktur.
 - Fullscreen başarısızlığı yakalanır fakat kullanıcıya hata verilmez; yalnız düğme etiketi yeniden senkronize edilir.
+- Son kroki ve şablon preview'leri SVG string olarak localStorage'a yazılır; çok büyük belgelerde quota/performance riski vardır.
 
 ## Belirsiz
 
-- “Şablonlarım”, “Hazır Yol/Kavşak” ve “Son Krokiler” için veri formatı, saklama yeri ve ürün akışı kodda tanımlı değildir.
-- “SVG Yükle”nin düzenlenebilir Kroki nesnelerine mi yoksa tek bir SVG görseline mi dönüşeceği belli değildir.
-
+- “Hazır Yol/Kavşak” için veri formatı ve yerleştirme akışı hâlâ tanımlı değildir.
+- Genel SVG import yoktur; mevcut SVG yükleme yalnız Kroki Pro imzalı export'u belgeye geri çevirir.

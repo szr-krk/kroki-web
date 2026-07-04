@@ -4,17 +4,21 @@ Bu vault, Kroki Pro'nun mevcut kaynak kodundan çıkarılan geliştirici haritas
 
 ## İlk okuma sırası
 
-1. [[Proje Haritası]]
-2. [[Editör]]
-3. [[Nesne Sistemi]]
-4. [[Seçim Sistemi]] ve [[Kontrol Noktaları]]
-5. Yol işi yapılacaksa [[Yol Sistemi]], [[Şerit Sistemi]] ve [[Kavşak Sistemi]]
-6. Kalıcı veri veya geçmiş işi yapılacaksa [[Serializer]] ve [[Undo Redo]]
-7. Değişiklikten önce [[Mimari Kararlar]], [[Açık Hatalar]] ve [[Codex Talimatları]]
+1. [[AI Devralma Notu]]
+2. [[Proje Haritası]]
+3. [[Sistem Durumu]]
+4. [[Performans Kriterleri]]
+5. [[Editör]]
+6. [[Nesne Sistemi]]
+7. [[Seçim Sistemi]] ve [[Kontrol Noktaları]]
+8. Yol işi yapılacaksa [[Yol Sistemi]], [[Şerit Sistemi]] ve [[Kavşak Sistemi]]
+9. Kalıcı veri veya geçmiş işi yapılacaksa [[Home]], [[Menü Sistemi]], [[Serializer]] ve [[Undo Redo]]
+10. Katalog/asset işi yapılacaksa [[Trafik Levhası Sistemi]] ve [[Sembol ve Asset Sistemi]]
+11. Değişiklikten önce [[Mimari Kararlar]], [[Açık Hatalar]] ve [[Codex Talimatları]]
 
 ## Çalışma zamanı katmanları
 
-- **Ekran ve DOM iskeleti:** `index.html`, `src/home.js`, `src/editor-rail.js`, `src/editor-camera.js` → [[Home]], [[Editör]], [[Menü Sistemi]].
+- **Ekran ve DOM iskeleti:** `index.html`, `src/home.js`, `src/editor-rail.js`, `src/editor-camera.js`, `src/editor-main-menu-pro.js` → [[Home]], [[Editör]], [[Menü Sistemi]].
 - **Ortak nesne çekirdeği:** `src/core/shapeRegistry.js`, `src/core/editorObjectManager.js`, `src/core/styleManager.js` → [[Nesne Sistemi]].
 - **Etkileşim:** `src/core/hitTestManager.js`, `src/core/selectionManager.js`, `src/core/multiSelectManager.js`, `src/core/controlPointManager.js`, `src/core/groupManager.js` → [[Seçim Sistemi]], [[Kontrol Noktaları]].
 - **Adapter'lar:** `src/adapters/*.js` her nesne tipinin geometri, render, hit-test ve düzenleme sözleşmesini uygular → [[Nesne Sistemi]].
@@ -22,13 +26,13 @@ Bu vault, Kroki Pro'nun mevcut kaynak kodundan çıkarılan geliştirici haritas
 - **Kavşaklar:** `src/core/roadIntersectionEngine.js` → [[Kavşak Sistemi]].
 - **Belge ve geçmiş:** `src/core/documentSerializer.js`, `src/core/historyManager.js` → [[Serializer]], [[Undo Redo]].
 - **Trafik levhaları:** üretilmiş kataloglar, `trafficSignCatalog`, kitaplık UI'si ve adapter → [[Trafik Levhası Sistemi]].
-- **Diğer semboller:** üretilmiş katalog, `otherSymbolCatalog`, kitaplık UI'si ve `otherSymbol` adapter'ı; sağ panel davranışında levha ile ortak katalog kontrol hattını kullanır.
+- **Diğer semboller ve araçlar:** üretilmiş kataloglar, `otherSymbolCatalog`, `vehicleCatalog`, kitaplık UI'leri ve adapter'lar → [[Sembol ve Asset Sistemi]].
 
 ## Ekran akışı
 
 `index.html` iki ana `<section>` içerir:
 
-- `#home`: başlangıç ekranı. “Yeni Kroki” yalnızca Home'u gizleyip Editör'ü gösterir.
+- `#home`: başlangıç ekranı. “Yeni Kroki”, son kayıtlar, şablonlar ve Kroki imzalı SVG yükleme `editor-main-menu-pro.js` ile bağlıdır.
 - `#editor`: SVG çalışma alanı, geçmiş araç çubuğu, sağ ray, nesne araç çubukları ve açılır paneller.
 
 Editör SVG'sinin temel sırası:
@@ -71,14 +75,15 @@ Her kayıt aşağıdaki ana alanlara normalize edilir:
 
 ## Bağlantılı notlar
 
+- Devralma: [[AI Devralma Notu]], [[Sistem Durumu]], [[Performans Kriterleri]]
 - Ekranlar: [[Home]], [[Editör]], [[Menü Sistemi]]
 - Yol alanı: [[Yol Sistemi]], [[Kavşak Sistemi]], [[Şerit Sistemi]]
 - Nesneler ve etkileşim: [[Nesne Sistemi]], [[Seçim Sistemi]], [[Kontrol Noktaları]]
 - Kalıcılık: [[Serializer]], [[Undo Redo]]
-- Katalog: [[Trafik Levhası Sistemi]]
+- Katalog: [[Trafik Levhası Sistemi]], [[Sembol ve Asset Sistemi]]
 - Bakım: [[Mimari Kararlar]], [[Açık Hatalar]], [[Yeni Özellikler]], [[Codex Talimatları]]
 
 ## Belirsiz
 
 - Depoda `package.json`, test koşucusu veya build tanımı yoktur. Uygulamanın hedef dağıtım ortamı kaynak koddan anlaşılmıyor; mevcut yapı doğrudan tarayıcıda çalışmaya yöneliktir.
-- Home'daki “son krokiler”, şablonlar ve kaydetme menüsü için amaçlanan kalıcı depolama türü tanımlanmamıştır.
+- LocalStorage tabanlı son krokiler/şablonlar bağlıdır; uzun vadeli dosya sistemi, quota yönetimi ve migration politikası hâlâ ürün kararı gerektirir.

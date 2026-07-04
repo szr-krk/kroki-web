@@ -93,8 +93,19 @@ Levha metadata'sı `signArt` taşır. Bu, belgenin katalogdan bağımsız render
 
 İlgili: [[Trafik Levhası Sistemi]], [[Serializer#Güvenlik ve normalizasyon sınırları]].
 
+## 16. Offline ve düşük cihaz performansı önceliklidir
+
+Uygulama harici servis veya runtime network bağımlılığı olmadan çalışmalıdır. Performans hedefi düşük Android tabletlerdir; bu nedenle gereksiz DOM yazımı, görünmeyen SVG yüzeyleri, tekrar parse edilen katalog art'ı ve pointer move sırasında pahalı rebuild işlemleri mimari borç sayılır.
+
+İlgili: [[Performans Kriterleri]].
+
+## 17. Katalog asset'leri generated veriyle taşınır
+
+Trafik levhaları, diğer semboller ve araçlar runtime'da dış dosya fetch etmez. Generated JS katalogları, metadata ve SVG/path art bilgisini taşır; kütüphane panelleri bu veriden preview üretir, adapter'lar da canvas nesnesini merkez/ölçek/dönüş modeliyle render eder.
+
+İlgili: [[Sembol ve Asset Sistemi]], [[Trafik Levhası Sistemi]].
+
 ## Belirsiz
 
 - Bu kararlar için ayrı ADR/tarihçe bulunmadığından gerekçelerin bir kısmı kod davranışından çıkarımdır.
 - Global namespace ve manager method patching yaklaşımının uzun vadede korunacağına ilişkin açık bir hedef yoktur.
-

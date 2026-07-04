@@ -6,13 +6,14 @@ Trafik levhası sistemi üretilmiş SVG katalog verisini kategori grid'inde gös
 
 - `src/data/traffic-signs-tanzim-levhalari.generated.js`: 70 tanzim levhası.
 - `src/data/traffic-signs-uyari-levhalari.generated.js`: 63 uyarı levhası.
+- `src/data/traffic-signs-bilgi-levhalari.generated.js`: 65 bilgi levhası.
 - `src/core/trafficSignCatalog.js`: normalize, ara, kategorize ve metadata üret.
 - `src/ui/trafficSignLibrary.js`: kategori/list/grid/seçim/ekleme UI'si.
 - `src/adapters/trafficSignAdapter.js`: model, SVG art, hit-test, dönüş ve metin uyarlaması.
 - `src/core/styleManager.js`: levha ölçeği, dönüş açısı ve varsa metin UI'si.
 - `index.html`: levha kütüphanesi ve sağ ray kontrolleri.
 
-Bağlantılar: [[Menü Sistemi]], [[Nesne Sistemi]], [[Seçim Sistemi]], [[Serializer]].
+Bağlantılar: [[Menü Sistemi]], [[Nesne Sistemi]], [[Seçim Sistemi]], [[Serializer]], [[Sembol ve Asset Sistemi]].
 
 ## Katalog yükleme
 
@@ -31,7 +32,7 @@ Bağlantılar: [[Menü Sistemi]], [[Nesne Sistemi]], [[Seçim Sistemi]], [[Seria
 
 taşır. `art`, dış `<svg>` olmadan iç SVG grubu; `svg` tam kaynak string'idir. Çalışma zamanı katalog API'si yalnız `key` ve `art` olan kayıtları döndürür.
 
-Mevcut toplam 133 levha iki kategoriye ayrılır: tanzim ve uyarı levhaları.
+Mevcut toplam 198 levha üç kategoriye ayrılır: tanzim, uyarı ve bilgi levhaları.
 
 ## Kütüphane davranışı
 
@@ -93,4 +94,3 @@ Katalog art'ı metadata içinde bulunduğu için belge JSON'u büyük olabilir. 
 - Generated katalogların hangi script/iş akışıyla yeniden üretildiği depoda görünmüyor.
 - Levha içi `<text>` değiştirme, birden çok farklı semantik text alanı olan levhalarda bütün run'ları tek label metni olarak ele alır. Katalogdaki tüm levhalar için beklenen düzenleme davranışı doğrulanmamıştır.
 - Katalog SVG'sinin güvenilir build-time veri olduğu varsayılıyor. Dış belge importunda `signArt` güven modeli tanımlı değildir.
-

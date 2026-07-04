@@ -28,7 +28,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 document.querySelector("#btnKlavuz")?.addEventListener("click", () => {
-  alert("Kılavuz bölümü sonraki aşamada bağlanacak.");
+  window.KrokiDialog?.alert("Kılavuz bölümü sonraki aşamada bağlanacak.", "Kılavuz");
 });
 
 document.querySelector("#btnYeniKroki")?.addEventListener("click", () => {
@@ -38,7 +38,8 @@ document.querySelector("#btnYeniKroki")?.addEventListener("click", () => {
 });
 
 document.querySelector("#btnSvgYukle")?.addEventListener("click", () => {
-  alert("SVG yükleme sonraki aşamada bağlanacak.");
+  if (window.KrokiMainMenu?.importSvgFile) window.KrokiMainMenu.importSvgFile();
+  else window.KrokiDialog?.alert("SVG yükleme hazırlanıyor.", "SVG Yükle");
 });
 
 function syncFullscreenLabel() {

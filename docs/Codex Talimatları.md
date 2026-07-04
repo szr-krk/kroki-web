@@ -4,16 +4,19 @@ Bu proje üzerinde çalışacak Codex önce mevcut davranışı korumalı, sonra
 
 ## Zorunlu ilk okuma sırası
 
-1. [[Proje Haritası]] — dosya ve çalışma zamanı katmanları.
-2. [[Mimari Kararlar]] — fiilî tasarım sınırları.
-3. [[Açık Hatalar]] — bilinen eksik/tutarsız noktalar.
-4. Göreve göre ilgili alan notları:
+1. [[AI Devralma Notu]] — projenin devralma özeti ve kırmızı çizgileri.
+2. [[Proje Haritası]] — dosya ve çalışma zamanı katmanları.
+3. [[Sistem Durumu]] — çalışan ve düzeltilmesi gereken sistemler.
+4. [[Performans Kriterleri]] — düşük Android tablet hedefi.
+5. [[Mimari Kararlar]] — fiilî tasarım sınırları.
+6. [[Açık Hatalar]] — bilinen eksik/tutarsız noktalar.
+7. Göreve göre ilgili alan notları:
    - UI/Home: [[Home]], [[Editör]], [[Menü Sistemi]]
    - Generic nesne: [[Nesne Sistemi]], [[Seçim Sistemi]], [[Kontrol Noktaları]]
    - Yol: [[Yol Sistemi]], [[Şerit Sistemi]], [[Kavşak Sistemi]]
    - Veri/geçmiş: [[Serializer]], [[Undo Redo]]
-   - Levha: [[Trafik Levhası Sistemi]]
-5. Özellik talebinde [[Yeni Özellikler]].
+   - Levha/araç/sembol: [[Trafik Levhası Sistemi]], [[Sembol ve Asset Sistemi]]
+8. Özellik talebinde [[Yeni Özellikler]].
 
 ## Kod okumaya başlama noktaları
 
@@ -36,6 +39,9 @@ Bu proje üzerinde çalışacak Codex önce mevcut davranışı korumalı, sonra
 - Boundary stilini değiştirirken `bN` indeksinin lane/banket yapısına bağımlı olduğunu hesaba kat.
 - Kavşakta türetilmiş contour'u belgeye kopyalama; mevcut format yalnız Q edit farklarını saklar.
 - Import edilecek SVG/JSON için `signArt` ve `innerHTML` güvenini açıkça çözmeden dış içeriği kabul etme.
+- Performans için algoritma davranışını değiştirme; önce gereksiz DOM yazımı, cache, `requestAnimationFrame` ve render kapsamını daralt.
+- Düşük Android tablet hedefini varsay: kamera, sürükleme ve kavşak rebuild akışında pahalı işlemi pointer move dışına al.
+- Yeni sembol/asset eklerken generated katalog mimarisini izle; CDN, remote image veya runtime network fetch ekleme.
 
 ## Doğrulama kontrol listesi
 
@@ -50,6 +56,7 @@ Bu proje üzerinde çalışacak Codex önce mevcut davranışı korumalı, sonra
 - Trafik levhasında kategori, ekleme, ölçek, dönüş ve varsa iç metin.
 
 Depoda otomatik test altyapısı yoktur; test eklenmedikçe tarayıcı smoke/regresyon kontrolü gerekir.
+Performans işi yapıldıysa [[Performans Kriterleri#Kabul kontrol listesi]] maddelerini de uygula.
 
 ## Dokümantasyon güncelleme eşlemesi
 
@@ -63,6 +70,7 @@ Depoda otomatik test altyapısı yoktur; test eklenmedikçe tarayıcı smoke/reg
 - serializer schema → [[Serializer]] ve gerekirse [[Mimari Kararlar]]
 - history sınırları → [[Undo Redo]]
 - katalog/levha adapter → [[Trafik Levhası Sistemi]]
+- araç/diğer sembol/generator → [[Sembol ve Asset Sistemi]]
 - bağlı olmayan yeni UI/iş → [[Açık Hatalar]] veya [[Yeni Özellikler]]
 
 ## Çalışma ağacı uyarısı
@@ -73,4 +81,3 @@ Projede kullanıcıya ait commit edilmemiş değişiklikler bulunabilir. Görevl
 
 - Hedef tarayıcı/işletim sistemi ve resmi test matrisi kodda tanımlı değildir.
 - Dağıtım, versiyonlama ve generated katalog üretim komutları depoda belgelenmemiştir.
-

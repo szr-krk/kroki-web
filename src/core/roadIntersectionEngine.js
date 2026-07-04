@@ -236,12 +236,16 @@
   function samplePoint(model, adapter, t, offset = 0) {
     const center = adapter.pointAt?.(model, clamp(t, 0, 1));
     if (!center || !Number.isFinite(center.x) || !Number.isFinite(center.y)) return null;
-    const delta = 1 / SAMPLE_COUNT;
-    const t0 = clamp(t - delta, 0, 1);
-    const t1 = clamp(t + delta, 0, 1);
-    const p0 = adapter.pointAt?.(model, t0) || center;
-    const p1 = adapter.pointAt?.(model, t1) || center;
-    const tangent = normalizeVector({ x: p1.x - p0.x, y: p1.y - p0.y });
+    let tangent = adapter.tangentAt?.(model, clamp(t, 0, 1));
+    if (!tangent || !Number.isFinite(tangent.x) || !Number.isFinite(tangent.y) || Math.hypot(tangent.x, tangent.y) < EPS) {
+      const delta = 1 / SAMPLE_COUNT;
+      const t0 = clamp(t - delta, 0, 1);
+      const t1 = clamp(t + delta, 0, 1);
+      const p0 = adapter.pointAt?.(model, t0) || center;
+      const p1 = adapter.pointAt?.(model, t1) || center;
+      tangent = { x: p1.x - p0.x, y: p1.y - p0.y };
+    }
+    tangent = normalizeVector(tangent);
     const normal = { x: -tangent.y, y: tangent.x };
     return {
       x: center.x + normal.x * offset,
@@ -333,6 +337,7 @@
       left,
       right,
       leftCount: left.length,
+      isIsland,
       edgeStyles: {
         left: { boundaryId: leftBoundaryId, ...contourBoundaryStyle(config, leftBoundaryId) },
         right: { boundaryId: rightBoundaryId, ...contourBoundaryStyle(config, rightBoundaryId) }
@@ -382,6 +387,7 @@
   }
 
   function surfaceTerminalEndpoints(surface) {
+    if (surface?.isIsland) return [];
     const samples = surface?.samples || [];
     if (samples.length < 2) return [];
     const left = surface?.left || [];
@@ -1366,6 +1372,7 @@
     return surfaces.some((surface) => {
       if (surface.id === sourceId || !boundsOverlap(surface.bounds, { minX: point.x, maxX: point.x, minY: point.y, maxY: point.y }, 0.5)) return false;
       if (!pointInPolygon(point, surface.polygon)) return false;
+      if (surface.isIsland) return true;
       const attachments = sourceSurface ? surfaceTerminalAttachments(surface, sourceSurface) : [];
       if (attachments.length && !attachments.some((attachment) => isOnAttachmentOpenSide(attachment, point, INTERSECTION_PAD))) return false;
       return true;
@@ -1425,6 +1432,11 @@
     return null;
   }
 
+  function isIslandInnerBoundarySegment(surface, sourceMeta) {
+    if (!surface?.isIsland || !sourceMeta) return false;
+    return sourceMeta.boundaryId === (surface.edgeStyles?.right?.boundaryId || "b0");
+  }
+
   function unionBoundarySegments(surfaces) {
     const segments = [];
     surfaces.forEach((surface) => {
@@ -1441,13 +1453,14 @@
           const mid = interpolate(a, b, (fromT + toT) / 2);
           if (isTerminalClosedSideBoundary(surface, mid, surfaces)) continue;
           if (pointInsideOtherSurfaces(mid, surface.id, surfaces)) continue;
+          const sourceMeta = sourceMetaForSurfaceSegment(surface, i);
+          if (isIslandInnerBoundarySegment(surface, sourceMeta)) continue;
           const from = interpolate(a, b, fromT);
           const to = interpolate(a, b, toT);
           if (dist(from, to) >= MIN_POINT_DISTANCE) {
             const leftCount = Number(surface.leftCount) || 0;
             const isEndCap = leftCount > 0 && i === leftCount - 1;
             const isStartCap = i === poly.length - 1;
-            const sourceMeta = sourceMetaForSurfaceSegment(surface, i);
             const sourceT0 = sourceMeta ? sourceMeta.sourceFrom + (sourceMeta.sourceTo - sourceMeta.sourceFrom) * fromT : null;
             const sourceT1 = sourceMeta ? sourceMeta.sourceFrom + (sourceMeta.sourceTo - sourceMeta.sourceFrom) * toT : null;
             segments.push({
@@ -1646,8 +1659,38 @@
     });
   }
 
+  function roadSurfaceForId(id) {
+    return lastRoadSurfaces.find((surface) => surface.id === id) || null;
+  }
+
+  function isIslandRoadId(id) {
+    const surface = roadSurfaceForId(id);
+    if (surface?.isIsland) return true;
+    const model = manager.get?.(id);
+    const adapter = manager.getAdapter?.(model);
+    return Boolean(model?.geometry?.profile === "islandRing" || adapter?.isIsland?.(model));
+  }
+
+  function isIslandOuterEdgeBoundary(id, boundary = null) {
+    return Boolean(
+      isIslandRoadId(id) &&
+      boundary?.role === "edge" &&
+      numberOr(boundary?.offset, 0) > 0
+    );
+  }
+
+  function pointInsideOtherSurfacePolygon(point, sourceId) {
+    if (!point) return false;
+    return lastRoadSurfaces.some((surface) => {
+      if (surface.id === sourceId) return false;
+      if (!boundsOverlap(surface.bounds, { minX: point.x, maxX: point.x, minY: point.y, maxY: point.y }, 0.5)) return false;
+      return pointInPolygon(point, surface.polygon);
+    });
+  }
+
   function pointInsideRoadShapesForLine(id, point, boundary = null) {
     if (pointInsideTerminalHostSurfaceForLine(id, point)) return true;
+    if (isIslandOuterEdgeBoundary(id, boundary)) return pointInsideOtherSurfacePolygon(point, id);
     return roadShapesFor(id).some((shape) => {
       if (shouldPreserveBoundaryForShape(id, boundary, shape)) return false;
       return pointInPolygon(point, shape.points);
@@ -1712,6 +1755,17 @@
   }
 
   function visibleRangesForLine(id, offset = 0, from = 0, to = 1, boundary = null) {
+    if (isIslandOuterEdgeBoundary(id, boundary)) {
+      const ranges = lineRangesByIntersectionState(
+        id,
+        offset,
+        from,
+        to,
+        (point) => pointInsideOtherSurfacePolygon(point, id),
+        false
+      );
+      return visibleLineRangesOutsideQ(id, offset, ranges, boundary);
+    }
     return lineRangesByIntersectionState(
       id,
       offset,
@@ -1895,6 +1949,23 @@
       const piece = sliceBoundarySegment(segment, fromT, toT);
       if (piece && dist(piece.a, piece.b) >= MIN_POINT_DISTANCE) visible.push(piece);
     }
+    return visible;
+  }
+
+  function visibleLineRangesOutsideQ(id, offset, ranges, boundary = null) {
+    if (!Array.isArray(ranges) || !ranges.length) return [];
+    if (!isIslandOuterEdgeBoundary(id, boundary) || !lastQSegments.length) return ranges;
+    const visible = [];
+    ranges.forEach((range) => {
+      visible.push(...lineRangesByIntersectionState(
+        id,
+        offset,
+        range.from,
+        range.to,
+        (point) => isPointInQCutZone(point, lastQSegments),
+        false
+      ));
+    });
     return visible;
   }
 
@@ -2486,6 +2557,7 @@
     const intersectionQSegments = contours.flatMap((contour) => contour.qSegments || []);
 
     const affectedIds = new Set([...previousMemberIds, ...memberIds]);
+    lastQSegments = intersectionQSegments;
     rerenderRoads(affectedIds);
 
     const auxiliaryContours = buildAuxiliaryContours(collectAuxiliaryContourDefinitions());
@@ -2552,6 +2624,20 @@
     }, 16);
   }
 
+  function isRoadModel(model) {
+    return model?.type === "road";
+  }
+
+  function managerMutationTouchesRoad(name, args, result, beforeModel) {
+    if (name === "clear" || name === "replaceAll") return true;
+    if (name === "create") return args?.[0] === "road" || isRoadModel(result);
+    if (name === "add") return isRoadModel(args?.[0]) || isRoadModel(result);
+    if (name === "updateModel" || name === "updateGeometry" || name === "remove") {
+      return isRoadModel(beforeModel) || isRoadModel(result);
+    }
+    return true;
+  }
+
   function patchManager() {
     if (patchDone || !manager) return;
     patchDone = true;
@@ -2562,8 +2648,11 @@
       const original = manager[name];
       if (typeof original !== "function" || original.__roadIntersectionPatched) return;
       const wrapped = function roadIntersectionPatched(...args) {
+        const beforeModel = (name === "updateModel" || name === "updateGeometry" || name === "remove")
+          ? manager.get?.(args[0])
+          : null;
         const result = original.apply(this, args);
-        if (!renderingRoads) {
+        if (!renderingRoads && managerMutationTouchesRoad(name, args, result, beforeModel)) {
           if (name === "clear") clear();
           else scheduleRefresh();
         }

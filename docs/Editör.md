@@ -8,6 +8,7 @@ Editör, tek bir SVG canvas üzerinde çizim, seçim, kamera hareketi, nesne dü
 - `src/editor-state.js`: aktif çizim aracı, düzenlenen DOM nesnesi ve düzenleme modu.
 - `src/editor-camera.js`: pan, zoom, pinch ve viewBox dönüşümleri.
 - `src/editor-object-edit.js`: üst/yan araç çubuğu referansları ve ortak UI yardımcıları.
+- `src/editor-main-menu-pro.js`: kayıt, export, yeni belge, Home dönüşü ve alan export akışları.
 - `src/ui/editorBindings.js`: çizim araçlarını pointer taslağına ve nesne oluşturmaya bağlar.
 - `src/ui/editorTextComposer.js`: serbest metin oluşturma/düzenleme paneli.
 - `src/editor.css`, `src/editor-line.css`: yerleşim ve nesne/düzenleme stilleri.
@@ -30,7 +31,7 @@ Canvas başlangıç viewBox'ı `0 0 1200 800` değeridir.
 - Boş canvas üzerinde tek parmak pan; iki pointer pinch-zoom yapar.
 - Ölçek sınırı `0.05`–`64` arasındadır.
 - Kamera değişimi `kroki:viewboxchange` olayı üretir; kontrol noktaları, seçim ve viewport'a bağlı metin etiketleri bu olayla yeniden senkronize edilir.
-- Sağ raydaki ekrana sığdır düğmesi viewBox'ı ilk değere döndürür; nesne sınırlarına göre otomatik fit hesabı yapmaz.
+- Sağ raydaki ekrana sığdır düğmesi önce `EditorObjectManager.getContentBounds()` ile belge içeriğine fit eder; içerik yoksa başlangıç viewBox'ına döner.
 - Kamera hareketi başladığında aktif nesne çizim taslağı veya seçim sürüklemesi sonlandırılır.
 
 ## Çizim akışı
@@ -80,5 +81,4 @@ Modal, açık ray paneli veya serbest metin composer görünürken `krokiEditorS
 ## Belirsiz
 
 - Canvas ölçü biriminin gerçek dünya karşılığı yoktur; tüm genişlik ve mesafeler SVG birimi olarak ele alınır.
-- “Ekrana sığdır” adının belge nesnelerini kapsaması beklenebilir, fakat mevcut davranış yalnız başlangıç viewBox'ına sıfırlamadır.
-
+- Kamera davranışında eski `editor-rail.js` viewBox yazan yardımcılar da vardır; yeni değişikliklerde mümkün olduğunca `krokiEditorCamera.writeViewBox/fitToContent` hattı kullanılmalıdır.

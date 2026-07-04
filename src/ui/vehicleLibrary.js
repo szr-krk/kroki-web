@@ -14,6 +14,8 @@
 
   let activeTypeId = "";
   let selectedKey = "";
+  let rendered = false;
+  const previewCache = new Map();
 
   function selectedVariant() {
     return selectedKey ? catalog.findVariant(selectedKey) : null;
@@ -48,10 +50,19 @@
     renderVariants();
   }
 
+  function renderVariantPreview(variant) {
+    const cacheKey = variant?.key ? `${variant.key}:side` : "";
+    const cached = cacheKey ? previewCache.get(cacheKey) : null;
+    if (cached) return cached.cloneNode(true);
+    const svg = renderer.renderPreviewSvg(variant, { view: "side" });
+    if (cacheKey) previewCache.set(cacheKey, svg);
+    return svg.cloneNode(true);
+  }
+
   function renderTypes() {
     if (!typeList) return;
     const types = catalog.typeList();
-    typeList.replaceChildren();
+    const fragment = document.createDocumentFragment();
     types.forEach((type) => {
       const button = document.createElement("button");
       button.className = "vehicle-type-button";
@@ -65,8 +76,9 @@
       count.textContent = String(type.variants.length);
       button.append(title, count);
       button.addEventListener("click", () => setActiveType(type.id));
-      typeList.append(button);
+      fragment.append(button);
     });
+    typeList.replaceChildren(fragment);
     if (!activeTypeId && types[0]) activeTypeId = types[0].id;
     setActiveType(activeTypeId);
   }
@@ -74,16 +86,16 @@
   function renderVariants() {
     if (!grid) return;
     const variants = catalog.variantsForType(activeTypeId);
-    grid.replaceChildren();
     if (!variants.length) {
       const empty = document.createElement("div");
       empty.className = "vehicle-empty";
       empty.textContent = "Bu tur icin arac bulunamadi.";
-      grid.append(empty);
+      grid.replaceChildren(empty);
       setSelected(null);
       return;
     }
 
+    const fragment = document.createDocumentFragment();
     variants.forEach((variant) => {
       const tile = document.createElement("button");
       tile.className = "vehicle-variant-tile";
@@ -95,14 +107,15 @@
 
       const preview = document.createElement("div");
       preview.className = "vehicle-variant-preview";
-      preview.append(renderer.renderPreviewSvg(variant, { view: "side" }));
+      preview.append(renderVariantPreview(variant));
 
       const name = document.createElement("span");
       name.textContent = variant.name;
       tile.append(preview, name);
       tile.addEventListener("click", () => setSelected(variant));
-      grid.append(tile);
+      fragment.append(tile);
     });
+    grid.replaceChildren(fragment);
     syncTileSelection();
   }
 
@@ -139,12 +152,17 @@
   }
 
   function ensureRendered() {
+    if (rendered) {
+      syncTileSelection();
+      return;
+    }
     renderTypes();
+    rendered = true;
   }
 
   addButton?.addEventListener("click", addSelectedVehicle);
   panel?.addEventListener("kroki:rail-menu-open", ensureRendered);
-  ensureRendered();
+  if (panel && !panel.classList.contains("gizli")) ensureRendered();
 
   Kroki.VehicleLibrary = {
     render: ensureRendered,

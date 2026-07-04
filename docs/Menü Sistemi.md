@@ -6,6 +6,7 @@ Menü sistemi üç ayrı UI katmanından oluşur: normal durumda görünen sağ 
 
 - `index.html`: bütün düğme ve panel DOM'u.
 - `src/editor-rail.js`: sağ ray panel açma/kapama, çizim aracı seçimi, tam ekran ve viewBox sıfırlama.
+- `src/editor-main-menu-pro.js`: ana menü kayıt/export/import/yeni belge komutları, Home son kayıt/şablon listeleri ve alan export aracı.
 - `src/editor-object-edit.js`: üst ve yan bağlamsal araç çubuğu referansları.
 - `src/core/styleManager.js`: seçili adapter yeteneklerine göre sağ özellik kontrolleri.
 - `src/ui/roadInspector.js`: yol bağlamsal kontrolleri.
@@ -29,7 +30,7 @@ Bir panel açıldığında diğer ray panelleri kapanır. `Escape` bütün ray p
 
 ## Ana menü
 
-DOM'da şu komutlar vardır:
+DOM'da şu komutlar vardır ve `editor-main-menu-pro.js` tarafından bağlanır:
 
 - Tam Ekran
 - Resim Olarak Kaydet
@@ -41,7 +42,17 @@ DOM'da şu komutlar vardır:
 - SVG Olarak Kaydet
 - Yeni Kroki
 
-Yalnız **Tam Ekran** için gerçek işlem dinleyicisi vardır. Diğer düğmeler `editor-rail.js` tarafından yalnız paneli kapatacak şekilde dinlenir; kaydetme/çıkış/yeni belge davranışı bağlı değildir. Kalıcılık çekirdeği için [[Serializer]] bölümüne bakın.
+- **Tam Ekran:** document fullscreen API'si.
+- **Resim Olarak Kaydet:** belge varsa içeriğe fit eder, recent kaydı alır, PNG indirir ve Home'a döner.
+- **Alanı Resim Kaydet:** canvas üzerinde sürüklenebilir/resize edilebilir alan kutusu açar ve seçilen viewBox'ı PNG indirir.
+- **Kaydet:** belgeyi `localStorage` recent listesine yazar.
+- **Kaydet ve Çık:** recent kaydı alır, belgeyi sıfırlar ve Home'a döner.
+- **Kaydetmeden Çık:** onay alır, belgeyi sıfırlar ve Home'a döner.
+- **Şablonlarıma Kaydet:** ad ister, belgeyi template listesine yazar ve Home'a döner.
+- **SVG Olarak Kaydet:** content bounds'a göre SVG indirir; içine Kroki Pro belge metadata'sı gömer.
+- **Yeni Kroki:** onay alır, belgeyi sıfırlar ve editörde boş belge açar.
+
+Kalıcılık formatı için [[Serializer]], Home listeleri için [[Home]].
 
 ## Çizim araçları paneli
 
@@ -91,5 +102,5 @@ Sol üstte yalnız Undo ve Redo vardır. Düğmeler `HistoryManager.onChange` il
 
 ## Belirsiz
 
-- Ana menüdeki bağlı olmayan komutların hedef dosya formatı ve çıkış davranışı tanımlı değildir.
-- “Araç Ekle” ve “Diğer Sembol Ekle” kataloglarının veri kaynağı belli değildir.
+- PNG export büyük viewBox'larda RAM tüketebilir; çıktı boyutu `editor-main-menu-pro.js` içinde sınırlandırılır.
+- Hazır yol/kavşak Home modalları hâlâ ürün akışı olarak bağlı değildir.

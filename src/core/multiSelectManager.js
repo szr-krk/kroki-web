@@ -9,6 +9,7 @@
   let mode = "";
   let drag = null;
   let multiMode = false;
+  let viewportSyncFrame = 0;
   const selectionElements = new Map();
   const groupHandles = new Map();
   let groupFrameElement = null;
@@ -523,6 +524,29 @@
     syncControls();
     if (selectionHasGroupUnits()) Kroki.StyleManager?.hidePanels?.();
     else Kroki.StyleManager?.syncControls?.();
+  }
+
+  function syncViewportNow() {
+    viewportSyncFrame = 0;
+    if (!selectedIds.size) return;
+    if (activeGroupId) {
+      renderGroupSelection();
+      return;
+    }
+    selectedIds.forEach((id) => {
+      const model = manager.get(id);
+      const adapter = adapterFor(id);
+      const element = model && adapter ? ensureSelectionElement(id, model, adapter) : null;
+      if (!model || !adapter || !element) return;
+      adapter.renderSelection(element, model, model.style, "multi");
+      element.classList.add("editor-multi-selection");
+      element.classList.toggle("is-edit", mode === "edit");
+    });
+  }
+
+  function syncViewport() {
+    if (!selectedIds.size || viewportSyncFrame) return;
+    viewportSyncFrame = window.requestAnimationFrame?.(syncViewportNow) || window.setTimeout(syncViewportNow, 16);
   }
 
   function clear(options = {}) {
@@ -1271,7 +1295,7 @@
   });
 
   window.addEventListener("resize", sync);
-  manager.canvas?.addEventListener("kroki:viewboxchange", sync);
+  manager.canvas?.addEventListener("kroki:viewboxchange", syncViewport);
   window.addEventListener("blur", () => {
     if (drag) stopDrag({ pointerId: drag.pointerId });
   });

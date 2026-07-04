@@ -2,6 +2,16 @@
 
 Kavşak sistemi, ayrı bir “kavşak nesnesi” oluşturmaz. Uygun yol modellerinin örneklenmiş yüzeylerini karşılaştırır, çakışma bölgelerini ve birleşik dış sınırı türetir, yol çizgilerinin kavşak içinde görünmeyecek parçalarını keser. Sonuçlar `#roadIntersectionContourLayer` içinde çizilir.
 
+## Devralma özeti
+
+Kavşak motoru yol nesnelerini değiştirmez; yol yüzeylerinden türetilmiş geçici state üretir. Bu state her refresh'te yeniden hesaplanır. Kalıcı belgeye yalnız kullanıcının Q düzenleme farkları girer. Bu yüzden kavşak düzeltmesi yaparken “kavşak nesnesini düzenle” diye bir yer arama; doğru yer ya `roadAdapter`ın yol çizgisi/auxiliary contour üretimi ya da `roadIntersectionEngine`in surface/union/clip zinciridir.
+
+Engine'in ana görevi üç şeyi aynı anda dengede tutmaktır:
+
+- Yol dış edge'lerini kavşakta tek ortak kontura çevirmek.
+- Lane, banket ve shoulder çizgilerini sadece görünmesi gereken aralıklarda bırakmak.
+- T/Y terminal kavşaklarda yan kolun karşı tarafta sahte yol ağzı üretmesini engellemek.
+
 ## İlgili kod dosyaları
 
 - `src/core/roadIntersectionEngine.js`: bütün algılama, union contour, smoothing, Q düzenleme ve state.
@@ -44,6 +54,23 @@ Her yol çifti için:
 
 Algoritma pairwise çalışır. Üç veya daha fazla yolun ortak kavşağı birden çok pair shape ve bunlardan türetilen ortak dış boundary ile temsil edilir.
 
+## Ana refresh akışı
+
+1. `collectRoads()` DOM sırasındaki bütün uygun yol modellerini toplar.
+2. `buildSurface()` her yol için örneklenmiş polygon, left/right edge noktaları, terminal merkezleri ve dış edge stil bilgisini üretir.
+3. `findIntersectionShapes()` yol çiftlerini bounding box, polygon iç noktaları ve segment kesişimleriyle değerlendirir.
+4. Terminal bağlantı varsa hull host yolun açık tarafına kırpılır.
+5. Üye yollar `memberIds` olarak işaretlenir.
+6. `buildOuterContours()` üye yol yüzey segmentlerini diğer yüzeylerle bölüp içeride kalanları atar.
+7. Start/end cap parçaları dış konturdan çıkarılır; yol ağzı açık kalır.
+8. Boundary segmentleri yakın uçlardan path'lere toplanır.
+9. Q smoothing uygulanır ve kullanıcı Q edit farkları eşleştirilir.
+10. Üye yollar yeniden render edilir; dış edge'ler adapter tarafından atlanır.
+11. Cep gibi auxiliary contour'lar toplanır, smoothing ve Q etkileşimi eklenir.
+12. Kontur katmanı yol nesnelerinin üstünde, normal nesnelerin altında çizilir.
+
+Bu akışın davranışını değiştiren her çalışma T/Y kavşak, ada, cep, bölünmüş yol, banket ve Q edit senaryolarıyla test edilmelidir.
+
 ## Dış kontur üretimi
 
 - Üye yüzey polygonlarının bütün kenarları diğer yüzey polygonlarıyla kesişim noktalarında bölünür.
@@ -83,6 +110,8 @@ Her Q parçası `entry`, `control`, `exit`, travel track/cut bilgisi ve geometri
 `roadAdapter.addStyledLine()` her çizgi segmenti için `visibleRangesForLine()` çağırır. Engine yolu 120 örnek temelinde kavşak shape'lerinin içinde/dışında sınar; geçişleri binary refinement ile yaklaşıklar ve yalnız dışarıda kalan `t` aralıklarını döndürür.
 
 Kavşak üyesi yolun gerçek dış edge'leri adapter tarafından tamamen atlanır; ortak dış kontur engine tarafından çizilir. Banket ile taşıt yolu arasındaki iç `edge` çizgileri korunur.
+
+Cep gibi auxiliary contour'lar da kavşakla uyumlu kalmalıdır. Cep dış konturu ana yolun dış edge'ini kullanıyorsa, host edge parçası engine'in `visibleRangesForLine()` sonucuyla aynı görünür aralıklara uymalıdır; aksi halde cep eklenince kavşak içinde karşı yola taşan eski dış edge parçaları görülebilir.
 
 ## Yenileme ve manager entegrasyonu
 

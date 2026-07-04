@@ -11,7 +11,7 @@ Nesne sistemi bütün çizilebilir öğeleri ortak bir model ve adapter sözleş
 - `src/adapters/*.js`: tip davranışları.
 - `src/geometry/*.js`: line, circle, ellipse ve rectangle geometri yardımcıları.
 
-Bağlantılar: [[Seçim Sistemi]], [[Kontrol Noktaları]], [[Serializer]], [[Undo Redo]].
+Bağlantılar: [[Seçim Sistemi]], [[Kontrol Noktaları]], [[Serializer]], [[Undo Redo]], [[Sembol ve Asset Sistemi]].
 
 ## Ortak model
 
@@ -152,6 +152,8 @@ Katalog SVG art'ını kendi `<g>` öğesi içinde render eder; `cx/cy/scale/rota
 ### Diğer sembol
 
 İnsan, hayvan ve çevre elemanları katalog art'ını kendi `<g>` öğesi içinde render eder; `cx/cy/scale/rotation` geometrisidir. Teknik tipi `otherSymbol` olarak ayrıdır, ancak sağ panelde levha ile aynı katalog ölçek/dönüş kontrollerini paylaşır.
+
+Katalog asset sözleşmeleri ve yeni sembol ekleme kuralları: [[Sembol ve Asset Sistemi]].
 
 ## Grup sistemi
 

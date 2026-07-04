@@ -1,0 +1,359 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Kroki Performance Benchmark</title>
+<style>
+  html,
+  body {
+    margin: 0;
+    width: 1200px;
+    height: 800px;
+    overflow: hidden;
+  }
+
+  #editorCanvas {
+    display: block;
+    width: 1200px;
+    height: 800px;
+    touch-action: none;
+  }
+
+  #result {
+    position: fixed;
+    inset: 8px auto auto 8px;
+    max-width: 760px;
+    max-height: 780px;
+    overflow: auto;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.94);
+    font: 12px/1.4 Consolas, monospace;
+    white-space: pre-wrap;
+  }
+</style>
+<svg id="editorCanvas" viewBox="0 0 1200 800" aria-label="Benchmark canvas">
+  <g id="editorObjects"></g>
+  <g id="editorEditLayer"></g>
+</svg>
+<pre id="result">pending</pre>
+<div id="benchTopIp" hidden></div>
+<div id="benchSideIp" hidden></div>
+<script>
+  window.krokiEditorState = window.krokiEditorState || {
+    clearEditedObject() {},
+    setEditedObject() {},
+    getActiveTool() { return ""; },
+    getEditMode() { return ""; },
+    isBlockingOverlayOpen() { return false; }
+  };
+  window.krokiObjectEditCore = window.krokiObjectEditCore || {
+    topIp: document.querySelector("#benchTopIp"),
+    sideIp: document.querySelector("#benchSideIp"),
+    buttons: {},
+    hasCanvasObjectAt() { return false; },
+    registerCanvasObjectHitTest() {}
+  };
+</script>
+<script src="../src/editor-camera.js"></script>
+<script src="../src/editor-stroke-style.js"></script>
+<script src="../src/core/shapeRegistry.js"></script>
+<script src="../src/core/styleManager.js"></script>
+<script src="../src/core/editorObjectManager.js"></script>
+<script src="../src/core/groupManager.js"></script>
+<script src="../src/core/documentSerializer.js"></script>
+<script src="../src/core/historyManager.js"></script>
+<script src="../src/core/hitTestManager.js"></script>
+<script src="../src/core/controlPointManager.js"></script>
+<script src="../src/core/multiSelectManager.js"></script>
+<script src="../src/core/selectionManager.js"></script>
+<script src="../src/geometry/lineGeometry.js"></script>
+<script src="../src/geometry/circleGeometry.js"></script>
+<script src="../src/adapters/circleAdapter.js"></script>
+<script src="../src/adapters/roadAdapter.js"></script>
+<script src="../src/core/roadIntersectionEngine.js"></script>
+<script>
+(() => {
+  const output = document.querySelector("#result");
+  const pageErrors = [];
+  window.addEventListener("error", (event) => {
+    pageErrors.push(String(event.error?.stack || event.message || event.error || "error"));
+  });
+  window.addEventListener("unhandledrejection", (event) => {
+    pageErrors.push(String(event.reason?.stack || event.reason || "unhandledrejection"));
+  });
+  const canvas = document.querySelector("#editorCanvas");
+  const Kroki = window.Kroki || {};
+  const registry = Kroki.ShapeRegistry;
+  const manager = Kroki.EditorObjectManager;
+  const selection = Kroki.SelectionManager;
+  const controlPoints = Kroki.ControlPointManager;
+  const camera = window.krokiEditorCamera;
+  const roadAdapter = registry?.get?.("road");
+  const circleAdapter = registry?.get?.("circle");
+
+  const stats = new Map();
+  const wrappers = [];
+
+  function waitFrame() {
+    return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+  }
+
+  function record(name, ms) {
+    const item = stats.get(name) || { count: 0, totalMs: 0, maxMs: 0 };
+    item.count += 1;
+    item.totalMs += ms;
+    item.maxMs = Math.max(item.maxMs, ms);
+    stats.set(name, item);
+  }
+
+  function wrap(obj, method, label) {
+    const original = obj?.[method];
+    if (typeof original !== "function") return;
+    obj[method] = function wrappedMethod(...args) {
+      const start = performance.now();
+      try {
+        return original.apply(this, args);
+      } finally {
+        record(label, performance.now() - start);
+      }
+    };
+    wrappers.push(() => { obj[method] = original; });
+  }
+
+  function resetStats() {
+    stats.clear();
+  }
+
+  function snapshotStats() {
+    const result = {};
+    stats.forEach((value, key) => {
+      result[key] = {
+        count: value.count,
+        totalMs: Number(value.totalMs.toFixed(3)),
+        avgMs: Number((value.totalMs / Math.max(1, value.count)).toFixed(4)),
+        maxMs: Number(value.maxMs.toFixed(3))
+      };
+    });
+    return result;
+  }
+
+  function installInstrumentation() {
+    wrap(manager, "updateGeometry", "EditorObjectManager.updateGeometry");
+    wrap(manager, "renderGeometry", "EditorObjectManager.renderGeometry");
+    wrap(manager, "renderObject", "EditorObjectManager.renderObject");
+    wrap(Kroki.StyleManager, "syncControls", "StyleManager.syncControls");
+    wrap(controlPoints, "sync", "ControlPointManager.sync");
+    wrap(controlPoints, "show", "ControlPointManager.show");
+    wrap(selection, "select", "SelectionManager.select");
+    wrap(Kroki.RoadIntersectionEngine, "rebuild", "RoadIntersectionEngine.rebuild");
+    wrap(Kroki.RoadIntersectionEngine, "scheduleRefresh", "RoadIntersectionEngine.scheduleRefresh");
+    wrap(Kroki.RoadIntersectionEngine, "setSuspended", "RoadIntersectionEngine.setSuspended");
+    wrap(roadAdapter, "render", "adapter.road.render");
+    wrap(roadAdapter, "renderSelection", "adapter.road.renderSelection");
+    wrap(roadAdapter, "getControlPoints", "adapter.road.getControlPoints");
+    wrap(circleAdapter, "render", "adapter.circle.render");
+    wrap(circleAdapter, "renderSelection", "adapter.circle.renderSelection");
+    wrap(circleAdapter, "getControlPoints", "adapter.circle.getControlPoints");
+  }
+
+  function road(start, end, extraRoad = {}) {
+    return roadAdapter.create({
+      geometry: { profile: "straight", start, end },
+      road: {
+        autoIntersection: true,
+        laneCount: 2,
+        laneWidth: 32,
+        shoulderWidth: 8,
+        ...extraRoad
+      }
+    });
+  }
+
+  function island() {
+    return roadAdapter.create({
+      geometry: {
+        profile: "islandRing",
+        center: { x: 600, y: 400 },
+        innerDiameter: 110,
+        outerDiameter: 260
+      },
+      road: {
+        autoIntersection: true,
+        laneCount: 2,
+        laneWidth: 32,
+        shoulderWidth: 8
+      }
+    });
+  }
+
+  function circle() {
+    return circleAdapter.create({
+      geometry: { cx: 220, cy: 210, r: 54, rotation: 0 },
+      style: { fill: "#e5e7eb", stroke: "#111827", strokeWidth: 2 }
+    });
+  }
+
+  async function createScene() {
+    manager.clear({ skipHistory: true, controlPoints: false, styleControls: false });
+    camera.writeViewBox(canvas, { x: 0, y: 0, width: 1200, height: 800 });
+
+    const models = [
+      manager.add(island(), { skipHistory: true, controlPoints: false, styleControls: false }),
+      manager.add(road({ x: 600, y: 70 }, { x: 600, y: 270 }), { skipHistory: true, controlPoints: false, styleControls: false }),
+      manager.add(road({ x: 600, y: 530 }, { x: 600, y: 740 }), { skipHistory: true, controlPoints: false, styleControls: false }),
+      manager.add(road({ x: 70, y: 400 }, { x: 470, y: 400 }), { skipHistory: true, controlPoints: false, styleControls: false }),
+      manager.add(road({ x: 730, y: 400 }, { x: 1130, y: 400 }), { skipHistory: true, controlPoints: false, styleControls: false }),
+      manager.add(road({ x: 220, y: 140 }, { x: 508, y: 308 }), { skipHistory: true, controlPoints: false, styleControls: false }),
+      manager.add(road({ x: 982, y: 140 }, { x: 692, y: 308 }), { skipHistory: true, controlPoints: false, styleControls: false }),
+      manager.add(road({ x: 218, y: 660 }, { x: 508, y: 492 }), { skipHistory: true, controlPoints: false, styleControls: false }),
+      manager.add(road({ x: 982, y: 660 }, { x: 692, y: 492 }), { skipHistory: true, controlPoints: false, styleControls: false }),
+      manager.add(circle(), { skipHistory: true, controlPoints: false, styleControls: false })
+    ];
+
+    Kroki.RoadIntersectionEngine?.rebuild?.();
+    await waitFrame();
+    await waitFrame();
+
+    return {
+      islandId: models[0].id,
+      roadId: models[3].id,
+      circleId: models[9].id
+    };
+  }
+
+  async function runBench(name, fn) {
+    resetStats();
+    const start = performance.now();
+    const extra = await fn();
+    await waitFrame();
+    await waitFrame();
+    return {
+      name,
+      elapsedMs: Number((performance.now() - start).toFixed(3)),
+      ...extra,
+      stats: snapshotStats(),
+      nodeCounts: {
+        roadNodes: document.querySelectorAll(".editor-road *").length,
+        editNodes: document.querySelectorAll("#editorEditLayer *").length,
+        contourNodes: document.querySelectorAll("#roadIntersectionContourLayer *").length
+      }
+    };
+  }
+
+  function firePointer(type, x, y, pointerId = 41) {
+    const event = new PointerEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      pointerId,
+      pointerType: "mouse",
+      button: 0,
+      buttons: type === "pointerup" || type === "pointercancel" ? 0 : 1,
+      clientX: x,
+      clientY: y
+    });
+    canvas.dispatchEvent(event);
+  }
+
+  async function zoomSelectedRoad(scene) {
+    selection.select(scene.roadId, "edit");
+    await waitFrame();
+    resetStats();
+    for (let i = 0; i < 40; i += 1) {
+      camera.zoomAtScreen(canvas, 1.01, 600, 400);
+    }
+    return { iterations: 40 };
+  }
+
+  async function panSelectedRoad(scene) {
+    selection.select(scene.roadId, "edit");
+    await waitFrame();
+    resetStats();
+    for (let i = 0; i < 80; i += 1) {
+      camera.panByScreen(canvas, 2, 1);
+    }
+    return { iterations: 80 };
+  }
+
+  async function directMoveRoad(scene) {
+    selection.select(scene.roadId, "edit");
+    await waitFrame();
+    resetStats();
+    Kroki.RoadIntersectionEngine?.setSuspended?.(true);
+    for (let i = 0; i < 80; i += 1) {
+      manager.updateGeometry(scene.roadId, (draft) => {
+        roadAdapter.move(draft, 0.6, 0.2);
+      }, { skipHistory: true });
+    }
+    Kroki.RoadIntersectionEngine?.setSuspended?.(false);
+    return { iterations: 80 };
+  }
+
+  async function liveDragRoad(scene) {
+    selection.select(scene.roadId, "edit");
+    await waitFrame();
+    const before = JSON.parse(JSON.stringify(manager.get(scene.roadId)?.geometry || {}));
+    resetStats();
+    firePointer("pointerdown", 420, 400);
+    for (let i = 0; i < 80; i += 1) {
+      firePointer("pointermove", 420 + i * 0.6, 400 + i * 0.2);
+    }
+    firePointer("pointerup", 468, 416);
+    const after = manager.get(scene.roadId)?.geometry || {};
+    return {
+      iterations: 80,
+      geometryDelta: {
+        startDx: Number(((after.start?.x || 0) - (before.start?.x || 0)).toFixed(3)),
+        startDy: Number(((after.start?.y || 0) - (before.start?.y || 0)).toFixed(3)),
+        endDx: Number(((after.end?.x || 0) - (before.end?.x || 0)).toFixed(3)),
+        endDy: Number(((after.end?.y || 0) - (before.end?.y || 0)).toFixed(3))
+      },
+      objectTransform: manager.getElement(scene.roadId)?.getAttribute("transform") || ""
+    };
+  }
+
+  async function dragCircle(scene) {
+    selection.select(scene.circleId, "edit");
+    await waitFrame();
+    const before = JSON.parse(JSON.stringify(manager.get(scene.circleId)?.geometry || {}));
+    resetStats();
+    firePointer("pointerdown", 220, 210, 42);
+    for (let i = 0; i < 80; i += 1) {
+      firePointer("pointermove", 220 + i * 0.6, 210 + i * 0.2, 42);
+    }
+    firePointer("pointerup", 268, 226, 42);
+    const after = manager.get(scene.circleId)?.geometry || {};
+    return {
+      iterations: 80,
+      geometryDelta: {
+        cx: Number(((after.cx || 0) - (before.cx || 0)).toFixed(3)),
+        cy: Number(((after.cy || 0) - (before.cy || 0)).toFixed(3))
+      },
+      objectTransform: manager.getElement(scene.circleId)?.getAttribute("transform") || ""
+    };
+  }
+
+  async function main() {
+    try {
+      if (!registry || !manager || !selection || !controlPoints || !camera || !roadAdapter || !circleAdapter) {
+        throw new Error("Benchmark dependencies are missing");
+      }
+      installInstrumentation();
+      const scene = await createScene();
+      const results = [];
+      results.push(await runBench("zoomSelectedRoad40", () => zoomSelectedRoad(scene)));
+      results.push(await runBench("panSelectedRoad80", () => panSelectedRoad(scene)));
+      results.push(await runBench("directRoadGeometryMove80", () => directMoveRoad(scene)));
+      results.push(await runBench("liveRoadPointerDrag80", () => liveDragRoad(scene)));
+      results.push(await runBench("circlePointerDrag80", () => dragCircle(scene)));
+      wrappers.reverse().forEach((restore) => restore());
+      output.textContent = JSON.stringify({ ok: true, pageErrors, results }, null, 2);
+    } catch (error) {
+      output.textContent = JSON.stringify({
+        ok: false,
+        pageErrors,
+        error: String(error?.stack || error)
+      }, null, 2);
+    }
+  }
+
+  main();
+})();
+</script>

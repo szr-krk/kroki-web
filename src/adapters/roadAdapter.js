@@ -49,6 +49,7 @@
     { start: true, end: false },
     { start: true, end: true }
   ];
+  const sampleCache = new WeakMap();
 
   const DEFAULT_ROAD_CONFIG = {
     version: 1,
@@ -856,7 +857,28 @@
     };
   }
 
+  function sampleCacheKey(model) {
+    const geometry = model?.geometry || {};
+    if (geometry.profile === ISLAND) {
+      const center = point(geometry.center);
+      return [ISLAND, center.x, center.y, geometry.innerDiameter, geometry.outerDiameter].join("|");
+    }
+    const start = point(geometry.start);
+    const end = point(geometry.end);
+    const parts = [geometry.profile || STRAIGHT, start.x, start.y, end.x, end.y];
+    if (geometry.profile === ARC) parts.push(numberOr(geometry.ratio, DEFAULT_ARC_RATIO));
+    if (geometry.profile === S_CURVE) {
+      cleanSCurveControls(geometry).forEach((control) => {
+        parts.push(control.x, control.y);
+      });
+    }
+    return parts.join("|");
+  }
+
   function samplesFor(model) {
+    const key = sampleCacheKey(model);
+    const cached = model && typeof model === "object" ? sampleCache.get(model) : null;
+    if (cached?.key === key) return cached.samples;
     const samples = [];
     for (let index = 0; index <= SAMPLE_COUNT; index += 1) {
       const t = index / SAMPLE_COUNT;
@@ -870,6 +892,7 @@
         normal: { x: -tangent.y / length, y: tangent.x / length }
       });
     }
+    if (model && typeof model === "object") sampleCache.set(model, { key, samples });
     return samples;
   }
 
@@ -1219,6 +1242,36 @@
       .sort((a, b) => polylineLength(b) - polylineLength(a))[0] || [];
   }
 
+  function visibleHostEdgeRanges(model, geometry, hostOffset) {
+    const boundary = outerBoundaryForSide(roadConfig(model), geometry.side);
+    const engine = Kroki.RoadIntersectionEngine;
+    if (!engine || typeof engine.visibleRangesForLine !== "function") return [{ from: 0, to: 1 }];
+    const ranges = engine.visibleRangesForLine(model.id, hostOffset, 0, 1, boundary) || [];
+    return ranges
+      .map((range) => ({
+        from: clamp(numberOr(range.from, 0), 0, 1),
+        to: clamp(numberOr(range.to, 1), 0, 1)
+      }))
+      .filter((range) => range.to - range.from >= 0.0008)
+      .sort((a, b) => a.from - b.from);
+  }
+
+  function hostRangeBefore(ranges, t) {
+    const clipped = ranges
+      .map((range) => ({ from: Math.max(0, range.from), to: Math.min(t, range.to) }))
+      .filter((range) => range.to - range.from >= 0.0008)
+      .sort((a, b) => b.to - a.to)[0];
+    return clipped && clipped.to >= t - 0.001 ? clipped.from : t;
+  }
+
+  function hostRangeAfter(ranges, t) {
+    const clipped = ranges
+      .map((range) => ({ from: Math.max(t, range.from), to: Math.min(1, range.to) }))
+      .filter((range) => range.to - range.from >= 0.0008)
+      .sort((a, b) => a.from - b.from)[0];
+    return clipped && clipped.from <= t + 0.001 ? clipped.to : t;
+  }
+
   function pocketContourGeometry(model, geometry) {
     if (!geometry) return null;
     const boundaries = pocketBoundaryPoints(geometry);
@@ -1233,8 +1286,11 @@
     const outer = candidates[0].points;
     const inner = candidates[1].points;
     const hostOffset = geometry.sign * geometry.section.totalWidth / 2;
-    const hostStart = offsetPointAt(model, 0, hostOffset);
-    const hostEnd = offsetPointAt(model, 1, hostOffset);
+    const hostRanges = visibleHostEdgeRanges(model, geometry, hostOffset);
+    const outerStartT = parameterAtPoint(model, outer[0]);
+    const outerEndT = parameterAtPoint(model, outer[outer.length - 1]);
+    const hostStart = offsetPointAt(model, hostRangeBefore(hostRanges, outerStartT), hostOffset);
+    const hostEnd = offsetPointAt(model, hostRangeAfter(hostRanges, outerEndT), hostOffset);
     const islandPoints = compactPolyline([
       inner[0],
       inner[inner.length - 1],
@@ -1393,9 +1449,15 @@
     return engine.terminalHostDashedRangesForLine(model.id, lineOffset, from, to, boundary) || [];
   }
 
+  function isIslandProtectedBoundary(model, boundary) {
+    if (!isIslandGeometry(model?.geometry) || boundary?.role !== "edge") return false;
+    return numberOr(boundary.offset, 0) < 0;
+  }
+
   function shouldSkipRoadBoundary(model, boundary) {
     const engine = Kroki.RoadIntersectionEngine;
     const isOuterEdge = boundary?.role === "edge" && (!boundary.before || !boundary.after);
+    if (isIslandGeometry(model?.geometry) && boundary?.role === "edge") return false;
     // Kavşakta sadece yolun gerçek dış sınır edge'leri iptal edilir.
     // Banket/shoulder ile taşıt yolu arasındaki iç edge çizgileri banket çizgisi olarak kalmalıdır.
     const pocketOwnsBoundary = isOuterEdge && activePocketGeometries(model)
@@ -1407,7 +1469,9 @@
     if (shouldSkipRoadBoundary(model, boundary)) return;
     const segments = marking.segments?.length ? marking.segments : [{ from: 0, to: 1, style: marking.style, width: marking.width }];
     const drawSegment = (lineOffset, segment, dashed, derivedShoulderDash = false) => {
-      const intersectionRanges = derivedShoulderDash
+      const intersectionRanges = isIslandProtectedBoundary(model, boundary) && !derivedShoulderDash
+        ? [{ from: segment.from, to: segment.to }]
+        : derivedShoulderDash
         ? terminalHostDashedRanges(model, lineOffset, segment.from, segment.to, boundary)
         : intersectionVisibleRanges(model, lineOffset, segment.from, segment.to, boundary);
       const ranges = intersectRanges(

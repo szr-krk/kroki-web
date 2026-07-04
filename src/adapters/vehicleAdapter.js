@@ -11,6 +11,7 @@
   const MULTI_SELECTION_STROKE_WIDTH = 4;
   const VEHICLE_LABEL_POSITIONS = ["top", "right", "bottom", "left"];
   const VEHICLE_LABEL_MAX_LENGTH = 24;
+  const metricsCache = new WeakMap();
 
   function clampScale(value) {
     const scale = Number(value);
@@ -61,11 +62,23 @@
   }
 
   function baseMetrics(model) {
+    const metadata = model.metadata || {};
+    const geometry = model.geometry || {};
+    const scale = clampScale(geometry.scale);
+    const cacheKey = [
+      metadata.vehicleVariantKey || "",
+      metadata.vehicleTypeId || "",
+      metadata.vehicleVariantId || "",
+      metadata.vehicleView || "top",
+      scale
+    ].join("|");
+    const cached = metricsCache.get(model);
+    if (cached?.key === cacheKey) return cached.metrics;
+
     const variant = vehicleFromModel(model);
     const view = vehicleView(model, variant);
     const dimensions = catalog.dimensionsForView(variant, view);
-    const scale = clampScale(model.geometry?.scale);
-    return {
+    const metrics = {
       variant,
       view,
       kind: variant?.kind || "car",
@@ -75,6 +88,8 @@
       height: dimensions.height * scale,
       scale
     };
+    metricsCache.set(model, { key: cacheKey, metrics });
+    return metrics;
   }
 
   function selectionRadiusFor(model) {
@@ -341,6 +356,56 @@
     drawTopBody(group, w, h, metadata, kind);
   }
 
+  function vehicleBodyFor(element) {
+    return Array.from(element.children || []).find((child) => child.classList?.contains("editor-vehicle-body")) || null;
+  }
+
+  function vehicleLabelFor(element) {
+    return Array.from(element.children || []).find((child) => child.classList?.contains("editor-vehicle-label")) || null;
+  }
+
+  function vehicleBodyTransform(model, metrics, metadata) {
+    const geometry = model.geometry || {};
+    return [
+      `translate(${utils.numberOr(geometry.cx, 0)} ${utils.numberOr(geometry.cy, 0)})`,
+      `rotate(${utils.normalizeRotation(geometry.rotation)})`,
+      `scale(${metrics.scale})`,
+      `scale(${metadata.vehicleFlipX ? -1 : 1} ${metadata.vehicleFlipY ? -1 : 1})`
+    ].join(" ");
+  }
+
+  function vehicleArtKey(metrics, metadata) {
+    const variant = metrics.variant || {};
+    return [
+      variant.key || metadata.vehicleVariantKey || "",
+      metrics.view,
+      metrics.kind,
+      metrics.baseWidth,
+      metrics.baseHeight,
+      metadata.vehicleColor || "",
+      Boolean(metadata.vehicleGhost) ? "ghost" : "solid"
+    ].join("|");
+  }
+
+  function syncVehicleBody(element, model, metrics, metadata) {
+    const key = vehicleArtKey(metrics, metadata);
+    let group = vehicleBodyFor(element);
+    if (!group || group.dataset.vehicleArtKey !== key) {
+      group?.remove();
+      group = create("g", { class: "editor-vehicle-body" });
+      group.dataset.vehicleArtKey = key;
+      drawVehicleArt(group, metrics, metadata);
+      element.insertBefore(group, element.firstChild);
+    }
+    group.setAttribute("transform", vehicleBodyTransform(model, metrics, metadata));
+    return group;
+  }
+
+  function writeDataset(element, name, value) {
+    const text = String(value);
+    if (element.dataset[name] !== text) element.dataset[name] = text;
+  }
+
   function renderPreviewSvg(variant, options = {}) {
     const view = catalog.normalizeView(variant, options.view || "side");
     const dimensions = catalog.dimensionsForView(variant, view);
@@ -408,17 +473,23 @@
 
   function renderVehicleLabel(parent, model, metrics, metadata) {
     const text = normalizeVehicleLabelText(metadata.vehicleLabelText).trim();
-    if (!text) return;
+    let label = vehicleLabelFor(parent);
+    if (!text) {
+      label?.remove();
+      return;
+    }
     const point = vehicleLabelPoint(model, metrics, metadata.vehicleLabelPosition);
-    const label = create("text", {
-      class: "editor-vehicle-label",
-      x: point.x,
-      y: point.y,
-      "text-anchor": "middle",
-      "dominant-baseline": "middle"
-    });
-    label.textContent = text;
-    parent.append(label);
+    if (!label) {
+      label = create("text", {
+        class: "editor-vehicle-label",
+        "text-anchor": "middle",
+        "dominant-baseline": "middle"
+      });
+      parent.append(label);
+    }
+    label.setAttribute("x", String(point.x));
+    label.setAttribute("y", String(point.y));
+    if (label.textContent !== text) label.textContent = text;
   }
 
   const adapter = {
@@ -473,30 +544,20 @@
     render(model, element) {
       const metadata = normalizeVehicleMetadata(model.metadata || {});
       const metrics = baseMetrics(model);
-      const group = create("g", {
-        class: "editor-vehicle-body",
-        transform: [
-          `translate(${model.geometry.cx} ${model.geometry.cy})`,
-          `rotate(${utils.normalizeRotation(model.geometry.rotation)})`,
-          `scale(${metrics.scale})`,
-          `scale(${metadata.vehicleFlipX ? -1 : 1} ${metadata.vehicleFlipY ? -1 : 1})`
-        ].join(" ")
-      });
-      drawVehicleArt(group, metrics, metadata);
-      element.replaceChildren(group);
+      syncVehicleBody(element, model, metrics, metadata);
       renderVehicleLabel(element, model, metrics, metadata);
-      element.dataset.cx = String(model.geometry.cx);
-      element.dataset.cy = String(model.geometry.cy);
-      element.dataset.scale = String(metrics.scale);
-      element.dataset.rotation = String(utils.normalizeRotation(model.geometry.rotation));
-      element.dataset.vehicleVariantKey = metadata.vehicleVariantKey || "";
-      element.dataset.vehicleView = metrics.view;
-      element.dataset.vehicleColor = metadata.vehicleColor || "";
-      element.dataset.vehicleGhost = String(Boolean(metadata.vehicleGhost));
-      element.dataset.vehicleFlipX = String(Boolean(metadata.vehicleFlipX));
-      element.dataset.vehicleFlipY = String(Boolean(metadata.vehicleFlipY));
-      element.dataset.vehicleLabelText = metadata.vehicleLabelText || "";
-      element.dataset.vehicleLabelPosition = metadata.vehicleLabelPosition || "top";
+      writeDataset(element, "cx", model.geometry.cx);
+      writeDataset(element, "cy", model.geometry.cy);
+      writeDataset(element, "scale", metrics.scale);
+      writeDataset(element, "rotation", utils.normalizeRotation(model.geometry.rotation));
+      writeDataset(element, "vehicleVariantKey", metadata.vehicleVariantKey || "");
+      writeDataset(element, "vehicleView", metrics.view);
+      writeDataset(element, "vehicleColor", metadata.vehicleColor || "");
+      writeDataset(element, "vehicleGhost", Boolean(metadata.vehicleGhost));
+      writeDataset(element, "vehicleFlipX", Boolean(metadata.vehicleFlipX));
+      writeDataset(element, "vehicleFlipY", Boolean(metadata.vehicleFlipY));
+      writeDataset(element, "vehicleLabelText", metadata.vehicleLabelText || "");
+      writeDataset(element, "vehicleLabelPosition", metadata.vehicleLabelPosition || "top");
     },
 
     hitTest(model, point, tolerance) {
