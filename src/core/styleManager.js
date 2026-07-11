@@ -415,7 +415,7 @@
   }
 
   function normalizeLabelSize(value) {
-    return Math.max(1, Math.round(numberOr(value, 18)));
+    return Math.max(1, Math.round(numberOr(value, 12)));
   }
 
   function normalizeLabelFlag(value) {
@@ -506,7 +506,8 @@
       dashGap: normalizeDashGap(merged.dashGap, defaults.dashGap),
       lineCap: normalizeLineCap(merged.lineCap),
       arrowStart: normalizeArrowType(merged.arrowStart || merged.startArrow),
-      arrowEnd: normalizeArrowType(merged.arrowEnd || merged.endArrow)
+      arrowEnd: normalizeArrowType(merged.arrowEnd || merged.endArrow),
+      markerScale: Math.max(0.001, numberOr(merged.markerScale ?? merged.arrowScale, 1))
     };
     if (normalized.dash === "dot") normalized.lineCap = "round";
     return normalized;
@@ -542,6 +543,7 @@
       lineCap: element.dataset.lineCap || element.style.strokeLinecap || element.getAttribute("stroke-linecap"),
       arrowStart: element.dataset.startArrow,
       arrowEnd: element.dataset.endArrow,
+      markerScale: element.dataset.markerScale,
       dash: dashPattern,
       dashSize: normalizeDashSize(element.dataset.dashSize, dashDefault.dashSize),
       dashGap: normalizeDashGap(element.dataset.dashGap, dashDefault.dashGap)
@@ -577,6 +579,7 @@
     element.dataset.dashGap = String(style.dashGap);
     element.dataset.startArrow = style.arrowStart;
     element.dataset.endArrow = style.arrowEnd;
+    element.dataset.markerScale = String(style.markerScale);
     element.dataset.labelText = label.text;
     element.dataset.labelSize = String(label.size);
     element.dataset.labelColor = label.color;
@@ -692,26 +695,43 @@
     element.style.setProperty("vector-effect", vectorEffect);
   }
 
-  function markerStrokeUnitSize(strokeWidth) {
+  function markerStrokeUnitSizeForStroke(strokeWidth) {
     const visualStroke = Math.max(3, normalizeStrokeWidth(strokeWidth));
     const visibleSize = visualStroke * 2 + 10;
     return visibleSize / Math.max(1, normalizeStrokeWidth(strokeWidth));
   }
 
-  function markerId(type, strokeWidth, strokeOpacity) {
-    const visualStroke = Math.max(3, normalizeStrokeWidth(strokeWidth));
+  function markerScaleValue(value) {
+    return Math.max(0.001, numberOr(value, 1));
+  }
+
+  function markerStrokeUnitSize(strokeWidth, markerScale = 1) {
+    const scale = markerScaleValue(markerScale);
+    const baseStrokeWidth = normalizeStrokeWidth(strokeWidth) / scale;
+    return markerStrokeUnitSizeForStroke(baseStrokeWidth);
+  }
+
+  function markerMetricKey(value) {
+    return String(normalizeStrokeWidth(value)).replace(/[^0-9a-zA-Z_-]/g, "p");
+  }
+
+  function markerId(type, strokeWidth, strokeOpacity, markerScale = 1) {
+    const scale = markerScaleValue(markerScale);
+    const baseStrokeWidth = normalizeStrokeWidth(strokeWidth) / scale;
+    const visualStroke = Math.max(3, normalizeStrokeWidth(baseStrokeWidth));
     const visibleSize = visualStroke * 2 + 10;
     return [
       "editor-line-marker",
       type,
-      "sw" + normalizeStrokeWidth(strokeWidth),
+      "sw" + markerMetricKey(strokeWidth),
+      "ms" + markerMetricKey(scale),
       "so" + Math.round(normalizeOpacity(strokeOpacity) * 10000),
       "v" + Math.round(visibleSize * 100)
     ].join("-");
   }
 
-  function markerUrl(type, strokeWidth, strokeOpacity) {
-    return type === "none" ? "" : "url(#" + markerId(type, strokeWidth, strokeOpacity) + ")";
+  function markerUrl(type, strokeWidth, strokeOpacity, markerScale = 1) {
+    return type === "none" ? "" : "url(#" + markerId(type, strokeWidth, strokeOpacity, markerScale) + ")";
   }
 
   function ensureMarkerDefs(canvas) {
@@ -722,15 +742,15 @@
     return defs;
   }
 
-  function ensureMarker(canvas, type, strokeWidth, strokeOpacity) {
+  function ensureMarker(canvas, type, strokeWidth, strokeOpacity, markerScale = 1) {
     if (type === "none") return null;
     const config = MARKER_BASE[type];
     if (!config) return null;
     const defs = ensureMarkerDefs(canvas);
-    const id = markerId(type, strokeWidth, strokeOpacity);
+    const id = markerId(type, strokeWidth, strokeOpacity, markerScale);
     const existing = defs.querySelector("#" + id);
     if (existing) return existing;
-    const size = markerStrokeUnitSize(strokeWidth);
+    const size = markerStrokeUnitSize(strokeWidth, markerScale);
     const marker = utils.createSvgElement("marker", {
       id,
       viewBox: config.viewBox,
@@ -854,10 +874,10 @@
       return;
     }
 
-    ensureMarker(canvas, style.arrowStart, style.strokeWidth, style.strokeOpacity);
-    ensureMarker(canvas, style.arrowEnd, style.strokeWidth, style.strokeOpacity);
-    const startMarker = markerUrl(style.arrowStart, style.strokeWidth, style.strokeOpacity);
-    const endMarker = markerUrl(style.arrowEnd, style.strokeWidth, style.strokeOpacity);
+    ensureMarker(canvas, style.arrowStart, style.strokeWidth, style.strokeOpacity, style.markerScale);
+    ensureMarker(canvas, style.arrowEnd, style.strokeWidth, style.strokeOpacity, style.markerScale);
+    const startMarker = markerUrl(style.arrowStart, style.strokeWidth, style.strokeOpacity, style.markerScale);
+    const endMarker = markerUrl(style.arrowEnd, style.strokeWidth, style.strokeOpacity, style.markerScale);
     if (startMarker) element.setAttribute("marker-start", startMarker);
     else element.removeAttribute("marker-start");
     if (endMarker) element.setAttribute("marker-end", endMarker);
@@ -1119,6 +1139,7 @@
     controls?.styleButton?.setAttribute("aria-expanded", "false");
     controls?.textButton?.setAttribute("aria-expanded", "false");
     controls?.vehicleLabelToggle?.setAttribute("aria-expanded", "false");
+    controls?.vehicleLabelToggle?.classList.remove("is-active");
     controls?.colorButton?.setAttribute("aria-expanded", "false");
     controls?.fillButton?.setAttribute("aria-expanded", "false");
     controls?.fillPatternButton?.setAttribute("aria-expanded", "false");
@@ -1155,6 +1176,7 @@
     const hasFillPattern = supportsFillPatternTarget(adapter, model);
     const hasArrows = Boolean(adapter?.capabilities?.arrows);
     const catalogObjectTextOnly = isCatalogObject && !noText;
+    const trafficSignFieldText = isTrafficSign && trafficSignEditableFields({ adapter, model }).length > 0;
     const textSizeControl = controls?.textSizeValue?.closest?.(".line-text-size-picker");
     controls?.shapeOnlyControls?.forEach((control) => control.classList.toggle("gizli", !hasFill));
     controls?.fillPatternControls?.forEach((control) => control.classList.toggle("gizli", !hasFillPattern));
@@ -1164,8 +1186,12 @@
     controls?.roadOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isRoadObject));
     controls?.trafficSignOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isCatalogObject));
     controls?.vehicleOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isVehicleObject));
+    controls?.sideIp?.classList.toggle("is-traffic-sign-ip", isTrafficSign);
     controls?.colorButton?.classList.toggle("gizli", isRoadObject || isCatalogObject || isVehicleObject);
     controls?.textButton?.classList.toggle("gizli", noText);
+    controls?.trafficSignTextFields?.classList.toggle("gizli", !trafficSignFieldText);
+    controls?.textInput?.classList.toggle("gizli", trafficSignFieldText);
+    controls?.textActions?.classList.toggle("gizli", trafficSignFieldText || catalogObjectTextOnly);
     textSizeControl?.classList.toggle("gizli", catalogObjectTextOnly);
     controls?.textAlign?.classList.toggle("gizli", catalogObjectTextOnly);
     controls?.textColorButton?.classList.toggle("gizli", catalogObjectTextOnly);
@@ -1176,6 +1202,7 @@
     if (!isVehicleObject) {
       cachedControl("vehicleLabelPanel", "#vehicleLabelPanel")?.classList.add("gizli");
       controls?.vehicleLabelToggle?.setAttribute("aria-expanded", "false");
+      controls?.vehicleLabelToggle?.classList.remove("is-active");
     }
     if (noText) {
       cachedControl("textPanel", "#lineTextPanel")?.classList.add("gizli");
@@ -1459,6 +1486,7 @@
     syncControls();
     panel.classList.remove("gizli");
     controls?.vehicleLabelToggle?.setAttribute("aria-expanded", "true");
+    controls?.vehicleLabelToggle?.classList.add("is-active");
     window.krokiObjectEditCore?.positionPanelNearButton?.(panel, controls.vehicleLabelToggle);
     controls?.vehicleLabelInput?.focus();
     controls?.vehicleLabelInput?.select();
@@ -1471,7 +1499,7 @@
     const view = catalog?.normalizeView?.(variant, metadata.vehicleView || "top") || "top";
     const percent = vehicleScalePercent(model.geometry?.scale);
     const rotation = Math.round(utils.normalizeRotation(model.geometry?.rotation || 0));
-    const color = metadata.vehicleColor || variant?.color || "#dc2626";
+    const color = metadata.vehicleColor || variant?.color || "#000000";
     const labelText = normalizeVehicleLabelText(metadata.vehicleLabelText);
     const labelPosition = normalizeVehicleLabelPosition(metadata.vehicleLabelPosition);
     const labelPanelOpen = Boolean(controls?.vehicleLabelPanel && !controls.vehicleLabelPanel.classList.contains("gizli"));
@@ -1484,7 +1512,7 @@
     setToggleButton(controls?.vehicleFlipY, metadata.vehicleFlipY);
     if (controls?.vehicleColorInput && controls.vehicleColorInput.value !== color) controls.vehicleColorInput.value = color;
     controls?.vehicleColorSwatch?.style.setProperty("--vehicle-color", color);
-    controls?.vehicleLabelToggle?.classList.toggle("is-active", Boolean(labelText) || labelPanelOpen);
+    controls?.vehicleLabelToggle?.classList.toggle("is-active", labelPanelOpen);
     controls?.vehicleLabelToggle?.setAttribute("aria-expanded", String(labelPanelOpen));
     controls?.vehicleLabelToggle?.setAttribute("title", labelText ? "Etiket: " + labelText : "Arac etiketi");
     controls?.vehicleLabelToggle?.setAttribute("aria-label", labelText ? "Etiket: " + labelText : "Arac etiketi");
@@ -1541,10 +1569,103 @@
       : normalizeLabelText(value);
   }
 
+  function trafficSignEditableFields(entry) {
+    if (!entry?.adapter?.capabilities?.trafficSign) return [];
+    return entry.adapter.editableTextFields?.(entry.model) || [];
+  }
+
+  function normalizeTrafficSignFieldInput(value, field) {
+    let text = String(value || "").replace(/[\r\n\t]+/g, " ").trim();
+    if (field?.valueType === "number") {
+      text = text.replace(/[^\d]/g, "");
+    } else if (field?.valueType === "clock") {
+      text = text.replace(/[^\d,.:]/g, "").replace(/[.:]/g, ",");
+    }
+    const maxLength = Number(field?.maxLength);
+    if (Number.isFinite(maxLength) && maxLength > 0) text = text.slice(0, maxLength);
+    return text;
+  }
+
+  function updateTrafficSignTextField(fieldId, value, options = {}) {
+    const entry = activeEntry();
+    if (!entry?.adapter?.capabilities?.trafficSign || typeof entry.adapter.updateEditableTextField !== "function") return;
+    selection.promoteToEdit();
+    manager.updateModel(entry.model.id, (draft) => {
+      entry.adapter.updateEditableTextField(draft, fieldId, value);
+      return draft;
+    }, { label: "Levha metni guncelle", ...options });
+  }
+
+  function createTrafficSignFieldControl(field) {
+    const wrapper = document.createElement("label");
+    wrapper.className = "traffic-sign-text-field";
+    wrapper.dataset.trafficSignField = field.id;
+
+    const label = document.createElement("span");
+    label.className = "traffic-sign-text-label";
+    wrapper.append(label);
+
+    const input = document.createElement("input");
+    input.className = "traffic-sign-text-input";
+    input.type = "text";
+    input.autocomplete = "off";
+    input.spellcheck = false;
+    input.dataset.trafficSignFieldInput = field.id;
+    input.addEventListener("focus", beginTextInputHistory);
+    input.addEventListener("input", () => {
+      beginTextInputHistory();
+      const normalized = normalizeTrafficSignFieldInput(input.value, {
+        maxLength: input.maxLength > 0 ? input.maxLength : undefined,
+        valueType: input.dataset.valueType
+      });
+      if (input.value !== normalized) {
+        const selectionStart = Math.min(input.selectionStart ?? normalized.length, normalized.length);
+        const selectionEnd = Math.min(input.selectionEnd ?? normalized.length, normalized.length);
+        input.value = normalized;
+        input.setSelectionRange(selectionStart, selectionEnd);
+      }
+      updateTrafficSignTextField(input.dataset.trafficSignFieldInput, normalized, { skipHistory: true });
+    });
+    input.addEventListener("change", commitTextInputHistory);
+    input.addEventListener("blur", commitTextInputHistory);
+    wrapper.append(input);
+    return wrapper;
+  }
+
+  function syncTrafficSignTextFields(entry) {
+    const container = controls?.trafficSignTextFields;
+    if (!container) return;
+    const fields = trafficSignEditableFields(entry);
+    const activeInput = document.activeElement;
+    const fieldIds = new Set(fields.map((field) => field.id));
+    Array.from(container.children || []).forEach((child) => {
+      if (!fieldIds.has(child.dataset.trafficSignField)) child.remove();
+    });
+    fields.forEach((field) => {
+      let wrapper = Array.from(container.children || []).find((child) => child.dataset.trafficSignField === field.id);
+      if (!wrapper) {
+        wrapper = createTrafficSignFieldControl(field);
+        container.append(wrapper);
+      }
+      const label = wrapper.querySelector(".traffic-sign-text-label");
+      const input = wrapper.querySelector(".traffic-sign-text-input");
+      if (label) label.textContent = field.label || field.id;
+      if (!input) return;
+      input.dataset.valueType = field.valueType || "text";
+      input.inputMode = field.inputMode || "text";
+      if (field.maxLength) input.maxLength = field.maxLength;
+      else input.removeAttribute("maxlength");
+      if (activeInput !== input && input.value !== String(field.value || "")) {
+        input.value = String(field.value || "");
+      }
+    });
+  }
+
   function syncControls() {
     const entry = activeEntry();
     if (!entry || !controls) {
       hidePanels();
+      controls?.sideIp?.classList.remove("is-traffic-sign-ip");
       Kroki.RoadInspector?.sync?.(null);
       return;
     }
@@ -1568,6 +1689,7 @@
     const primaryOpacityValue = isTextObject ? opacityPercent(style.opacity) : strokeOpacityValue;
 
     setControlVisibility(adapter, model);
+    syncTrafficSignTextFields(entry);
     Kroki.RoadInspector?.sync?.(entry);
     if (isCatalogObject) {
       syncCatalogObjectControls(model);
@@ -1709,8 +1831,16 @@
     button?.setAttribute("aria-expanded", "true");
     window.krokiObjectEditCore?.positionPanelNearButton?.(panel, button);
     if (panel.id === "lineTextPanel") {
-      controls?.textInput?.focus();
-      controls?.textInput?.select();
+      const fieldInput = controls?.trafficSignTextFields?.classList.contains("gizli")
+        ? null
+        : controls?.trafficSignTextFields?.querySelector(".traffic-sign-text-input");
+      if (fieldInput) {
+        fieldInput.focus();
+        fieldInput.select();
+      } else {
+        controls?.textInput?.focus();
+        controls?.textInput?.select();
+      }
     } else if (panel.id === "vehicleLabelPanel") {
       controls?.vehicleLabelInput?.focus();
       controls?.vehicleLabelInput?.select();
@@ -1757,6 +1887,7 @@
     if (panel.contains(event.target) || button?.contains(event.target)) return;
     panel.classList.add("gizli");
     button?.setAttribute("aria-expanded", "false");
+    if (panel.id === "vehicleLabelPanel") button?.classList.remove("is-active");
   }
 
   function bindUi() {
@@ -1825,6 +1956,7 @@
       dashGapMinus: document.querySelector("#btnLineDashGapMinus"),
       dashGapPlus: document.querySelector("#btnLineDashGapPlus"),
       dashGapValue: document.querySelector("#valLineDashGap"),
+      sideIp: document.querySelector("#editorSideIp"),
       arrowStack: document.querySelector(".side-ip-arrow-stack"),
       startArrow: document.querySelector("#btnLineStartArrow"),
       startArrowIcon: document.querySelector("#iconLineStartArrow"),
@@ -1832,7 +1964,9 @@
       endArrowIcon: document.querySelector("#iconLineEndArrow"),
       textButton: document.querySelector("#btnLineText"),
       textPanel: document.querySelector("#lineTextPanel"),
+      trafficSignTextFields: document.querySelector("#trafficSignTextFields"),
       textInput: document.querySelector("#lineTextInput"),
+      textActions: document.querySelector("#lineTextPanel .line-text-actions"),
       textSizeMinus: document.querySelector("#btnLineTextSizeMinus"),
       textSizePlus: document.querySelector("#btnLineTextSizePlus"),
       textSizeValue: document.querySelector("#valLineTextSize"),

@@ -13,7 +13,7 @@
   --border: #98a6b3;
   --border-strong: #475569;
   --accent: #0f766e;
-  --yellow: #facc15;
+  --primary-accent: #0f766e;
   font-family: Roboto, Arial, sans-serif;
 }
 
@@ -67,7 +67,7 @@ select {
   flex-direction: column;
   overflow: hidden;
   color: var(--ink);
-  background-color: #f6f8ed;
+  background-color: #eef3f7;
   background-image:
     linear-gradient(90deg, rgba(15, 23, 42, .045) 1px, transparent 1px),
     linear-gradient(0deg, rgba(15, 23, 42, .045) 1px, transparent 1px);
@@ -79,7 +79,7 @@ select {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(255, 255, 255, .84), rgba(255, 255, 255, .58) 42%, rgba(255, 255, 255, .72));
+  background: linear-gradient(180deg, rgba(255, 255, 255, .76), rgba(255, 255, 255, .48) 42%, rgba(255, 255, 255, .62));
 }
 
 #home> :not(.modal-panel) {
@@ -94,8 +94,8 @@ select {
   justify-content: space-between;
   gap: 16px;
   padding: 18px 24px;
-  background: #fffdf2;
-  border-bottom: 4px solid var(--yellow);
+  background: #ffffff;
+  border-bottom: 4px solid var(--primary-accent);
   box-shadow: 0 2px 10px rgba(15, 23, 42, .10);
 }
 
@@ -264,15 +264,15 @@ select {
 .home-ana-buton {
   flex: 0 0 auto;
   min-height: 96px;
-  border-color: #8a6a08;
-  border-left: 6px solid var(--yellow);
-  background: #fffbeb;
+  border-color: #0f766e;
+  border-left: 6px solid var(--primary-accent);
+  background: #f8fafc;
   font-size: 20px;
 }
 
 .home-ana-buton:hover {
-  border-color: #654b05;
-  background: #fef3c7;
+  border-color: #0b5f59;
+  background: #eef6f6;
   box-shadow: 0 3px 10px rgba(15, 23, 42, .16);
 }
 
@@ -586,13 +586,15 @@ select {
 .kroki-preview-body {
   min-height: 0;
   padding: 14px;
-  overflow: auto;
+  display: grid;
+  overflow: hidden;
 }
 
 .kroki-preview-image {
+  min-width: 0;
+  min-height: 0;
   width: 100%;
-  min-height: 100%;
-  aspect-ratio: 4 / 3;
+  height: 100%;
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -604,6 +606,8 @@ select {
 .kroki-preview-image img {
   width: 100%;
   height: 100%;
+  min-width: 0;
+  min-height: 0;
   display: block;
   object-fit: contain;
 }

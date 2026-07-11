@@ -12,14 +12,18 @@
   const DEFAULT_ARC_RATIO = Math.tan((36 * Math.PI / 180) / 2);
   const panel = document.querySelector("#roadBuilderPanel");
   let lastDivided = false;
+  const bindHoldAction = window.krokiObjectEditCore?.bindHoldAction || ((button, action) => {
+    button?.addEventListener("click", action);
+    return () => {};
+  });
 
   const fields = {
     add: document.querySelector("#btnAddRoad"),
     profileButtons: Array.from(panel?.querySelectorAll("[data-road-profile]") || []),
     orientationButtons: Array.from(panel?.querySelectorAll("[data-road-orientation]") || []),
     kindButtons: Array.from(panel?.querySelectorAll("[data-road-kind]") || []),
-    orientationGroup: panel?.querySelector("[aria-label='Yol yerlesimi']"),
-    kindGroup: panel?.querySelector("[aria-label='Yol tipi']"),
+    orientationGroup: panel?.querySelector("[data-road-orientation]")?.closest(".road-builder-choice-group"),
+    kindGroup: panel?.querySelector("[data-road-kind]")?.closest(".road-builder-choice-group"),
     shoulderRow: panel?.querySelector(".road-builder-shoulder-row"),
     barrierRow: panel?.querySelector(".road-builder-barrier-row"),
     laneCount: panel?.querySelector("#roadLaneCountInput"),
@@ -294,8 +298,8 @@
       syncDividedControls();
     });
   });
-  fields.laneCountMinus?.addEventListener("click", () => stepLaneCount(-1));
-  fields.laneCountPlus?.addEventListener("click", () => stepLaneCount(1));
+  bindHoldAction(fields.laneCountMinus, () => stepLaneCount(-1));
+  bindHoldAction(fields.laneCountPlus, () => stepLaneCount(1));
   fields.laneCount?.addEventListener("change", () => {
     if (fields.laneCount) fields.laneCount.value = String(laneCountFromInputs());
   });

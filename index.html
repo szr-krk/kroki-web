@@ -5,8 +5,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Kroki Pro</title>
-  <link rel="stylesheet" href="src/home.css?v=20260701-menu" />
-  <link rel="stylesheet" href="src/editor.css" />
+  <link rel="stylesheet" href="src/home.css?v=20260711-preview-fit" />
+  <link rel="stylesheet" href="src/editor.css?v=20260711-text-ip-top" />
   <link rel="stylesheet" href="src/editor-line.css" />
 </head>
 
@@ -923,12 +923,13 @@
       </div>
 
       <div id="lineTextPanel" class="line-text-panel gizli" aria-label="Cizgi metni">
+        <div id="trafficSignTextFields" class="traffic-sign-text-fields gizli" aria-label="Levha metin alanlari"></div>
         <textarea id="lineTextInput" class="line-text-input" rows="3" maxlength="240" placeholder="Metin"></textarea>
         <div class="line-text-actions">
           <div class="line-text-size-picker" aria-label="Metin boyutu">
             <button id="btnLineTextSizeMinus" class="line-text-picker-btn" type="button"
               aria-label="Metin boyutunu azalt" title="Metin boyutunu azalt">-</button>
-            <span id="valLineTextSize" class="line-text-picker-value" aria-hidden="true">18</span>
+            <span id="valLineTextSize" class="line-text-picker-value" aria-hidden="true">12</span>
             <button id="btnLineTextSizePlus" class="line-text-picker-btn" type="button"
               aria-label="Metin boyutunu arttir" title="Metin boyutunu arttir">+</button>
           </div>
@@ -999,14 +1000,11 @@
         <button id="btnEditorTamEkran" class="rail-menu-btn" type="button" aria-label="Tam ekran"
           title="Tam ekran" aria-pressed="false">Tam Ekran</button>
         <button class="rail-menu-btn" type="button" data-menu-action="export-png">Resim Olarak Kaydet</button>
-        <button class="rail-menu-btn" type="button" data-menu-action="export-area-png">Alanı Resim Kaydet</button>
-        <button class="rail-menu-btn" type="button" data-menu-action="save">Kaydet</button>
-        <button class="rail-menu-btn" type="button" data-menu-action="save-exit">Kaydet ve Çık</button>
-        <button class="rail-menu-btn" type="button" data-menu-action="exit-nosave">Kaydetmeden Çık</button>
+        <button class="rail-menu-btn" type="button" data-menu-action="export-area-png">Seçerek Resim Kaydet</button>
         <button class="rail-menu-btn" type="button" data-menu-action="save-template">Şablonlarıma Kaydet</button>
         <button class="rail-menu-btn" type="button" data-menu-action="export-svg">SVG Olarak Kaydet</button>
         <div class="rail-menu-separator" aria-hidden="true"></div>
-        <button class="rail-menu-btn" type="button" data-menu-action="new-document">Yeni Kroki</button>
+        <button class="rail-menu-btn" type="button" data-menu-action="back-home">Ana Sayfaya Dön</button>
       </div>
 
       <div class="rail-menu-panel gizli" id="railMenuCizim" role="dialog" aria-label="Çizim araçları">
@@ -1115,7 +1113,7 @@
             <div class="road-builder-stack">
               <div class="road-builder-choice-group is-four" role="radiogroup" aria-label="Yol profili">
                 <button class="road-builder-choice is-active" type="button" role="radio" aria-checked="true"
-                  data-road-profile="straight">Duz</button>
+                  data-road-profile="straight">DÜZ</button>
                 <button class="road-builder-choice" type="button" role="radio" aria-checked="false"
                   data-road-profile="arc">Viraj</button>
                 <button class="road-builder-choice" type="button" role="radio" aria-checked="false"
@@ -1123,7 +1121,7 @@
                 <button class="road-builder-choice" type="button" role="radio" aria-checked="false"
                   data-road-profile="islandRing">Ada</button>
               </div>
-              <div class="road-builder-choice-group is-two" role="radiogroup" aria-label="Yol yerlesimi">
+              <div class="road-builder-choice-group is-two" role="radiogroup" aria-label="Yol yerleşimi">
                 <button class="road-builder-choice is-active" type="button" role="radio" aria-checked="true"
                   data-road-orientation="horizontal">Yatay</button>
                 <button class="road-builder-choice" type="button" role="radio" aria-checked="false"
@@ -1133,7 +1131,7 @@
                 <button class="road-builder-choice is-active" type="button" role="radio" aria-checked="true"
                   data-road-kind="normal">Normal</button>
                 <button class="road-builder-choice" type="button" role="radio" aria-checked="false"
-                  data-road-kind="divided">Bolunmus</button>
+                  data-road-kind="divided">Bölünmüş</button>
               </div>
               <div class="road-builder-check-row road-builder-shoulder-row">
                 <label class="road-builder-check">
@@ -1155,15 +1153,15 @@
                   <span>Sol bariyer</span>
                 </label>
               </div>
-              <div class="road-builder-picker" aria-label="Serit sayisi">
-                <span>Serit sayisi</span>
+              <div class="road-builder-picker" aria-label="Şerit sayısı">
+                <span>Şerit sayısı</span>
                 <div class="road-builder-stepper">
                   <button id="btnRoadBuilderLaneCountMinus" class="road-builder-stepper-btn" type="button"
-                    aria-label="Serit sayisini azalt">-</button>
+                    aria-label="Şerit sayısını azalt">-</button>
                   <input id="roadLaneCountInput" class="road-builder-stepper-number" type="number" min="1" max="5"
-                    step="1" value="2" inputmode="numeric" aria-label="Serit sayisi">
+                    step="1" value="2" inputmode="numeric" aria-label="Şerit sayısı">
                   <button id="btnRoadBuilderLaneCountPlus" class="road-builder-stepper-btn" type="button"
-                    aria-label="Serit sayisini arttir">+</button>
+                    aria-label="Şerit sayısını arttır">+</button>
                 </div>
               </div>
             </div>
@@ -1231,23 +1229,24 @@
     </section>
   </div>
 
-  <script src="src/kroki-dialog.js?v=20260701-menu"></script>
+  <script src="src/kroki-dialog.js?v=20260710-menu-choice"></script>
   <script src="src/home.js"></script>
   <script src="src/editor-state.js"></script>
   <script src="src/editor-rail.js"></script>
   <script src="src/editor-camera.js"></script>
-  <script src="src/editor-object-edit.js"></script>
+  <script src="src/editor-object-edit.js?v=20260710-numberpicker"></script>
   <script src="src/editor-stroke-style.js"></script>
   <script src="src/data/traffic-signs-tanzim-levhalari.generated.js"></script>
   <script src="src/data/traffic-signs-uyari-levhalari.generated.js"></script>
   <script src="src/data/traffic-signs-bilgi-levhalari.generated.js"></script>
+  <script src="src/data/traffic-signs-bilgi-levhalari-custom.js?v=20260710-kontrol-kesimi"></script>
   <script src="src/data/other-symbols.generated.js"></script>
   <script src="src/data/vehicle-catalog-data.js"></script>
   <script src="src/core/trafficSignCatalog.js"></script>
   <script src="src/core/otherSymbolCatalog.js"></script>
   <script src="src/core/vehicleCatalog.js"></script>
   <script src="src/core/shapeRegistry.js"></script>
-  <script src="src/core/styleManager.js"></script>
+  <script src="src/core/styleManager.js?v=20260711-vehicle-label-toggle"></script>
   <script src="src/core/editorObjectManager.js"></script>
   <script src="src/core/groupManager.js"></script>
   <script src="src/core/documentSerializer.js"></script>
@@ -1255,7 +1254,7 @@
   <script src="src/core/hitTestManager.js"></script>
   <script src="src/core/controlPointManager.js"></script>
   <script src="src/core/multiSelectManager.js"></script>
-  <script src="src/core/selectionManager.js"></script>
+  <script src="src/core/selectionManager.js?v=20260711-drag-raf"></script>
   <script src="src/geometry/lineGeometry.js"></script>
   <script src="src/geometry/circleGeometry.js"></script>
   <script src="src/geometry/ellipseGeometry.js"></script>
@@ -1273,15 +1272,15 @@
   <script src="src/adapters/textAdapter.js"></script>
   <script src="src/adapters/trafficSignAdapter.js"></script>
   <script src="src/adapters/otherSymbolAdapter.js"></script>
-  <script src="src/adapters/vehicleAdapter.js"></script>
-  <script src="src/ui/editorTextComposer.js"></script>
+  <script src="src/adapters/vehicleAdapter.js?v=20260710-vehicle-label-gap"></script>
+  <script src="src/ui/editorTextComposer.js?v=20260710-numberpicker"></script>
   <script src="src/ui/editorBindings.js"></script>
-  <script src="src/ui/roadBuilder.js"></script>
-  <script src="src/ui/roadInspector.js"></script>
+  <script src="src/ui/roadBuilder.js?v=20260710-numberpicker"></script>
+  <script src="src/ui/roadInspector.js?v=20260710-numberpicker"></script>
   <script src="src/ui/vehicleLibrary.js"></script>
   <script src="src/ui/trafficSignLibrary.js"></script>
   <script src="src/ui/otherSymbolLibrary.js"></script>
-  <script src="src/editor-main-menu-pro.js?v=20260701-menu-final"></script>
+  <script src="src/editor-main-menu.js?v=20260710-main-menu"></script>
 </body>
 
 </html>

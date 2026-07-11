@@ -18,7 +18,7 @@ Bu vault, Kroki Pro'nun mevcut kaynak kodundan çıkarılan geliştirici haritas
 
 ## Çalışma zamanı katmanları
 
-- **Ekran ve DOM iskeleti:** `index.html`, `src/home.js`, `src/editor-rail.js`, `src/editor-camera.js`, `src/editor-main-menu-pro.js` → [[Home]], [[Editör]], [[Menü Sistemi]].
+- **Ekran ve DOM iskeleti:** `index.html`, `src/home.js`, `src/editor-rail.js`, `src/editor-camera.js`, `src/editor-main-menu.js` → [[Home]], [[Editör]], [[Menü Sistemi]].
 - **Ortak nesne çekirdeği:** `src/core/shapeRegistry.js`, `src/core/editorObjectManager.js`, `src/core/styleManager.js` → [[Nesne Sistemi]].
 - **Etkileşim:** `src/core/hitTestManager.js`, `src/core/selectionManager.js`, `src/core/multiSelectManager.js`, `src/core/controlPointManager.js`, `src/core/groupManager.js` → [[Seçim Sistemi]], [[Kontrol Noktaları]].
 - **Adapter'lar:** `src/adapters/*.js` her nesne tipinin geometri, render, hit-test ve düzenleme sözleşmesini uygular → [[Nesne Sistemi]].
@@ -32,7 +32,7 @@ Bu vault, Kroki Pro'nun mevcut kaynak kodundan çıkarılan geliştirici haritas
 
 `index.html` iki ana `<section>` içerir:
 
-- `#home`: başlangıç ekranı. “Yeni Kroki”, son kayıtlar, şablonlar ve Kroki imzalı SVG yükleme `editor-main-menu-pro.js` ile bağlıdır.
+- `#home`: başlangıç ekranı. “Yeni Kroki”, son kayıtlar, şablonlar ve Kroki imzalı SVG yükleme `editor-main-menu.js` ile bağlıdır.
 - `#editor`: SVG çalışma alanı, geçmiş araç çubuğu, sağ ray, nesne araç çubukları ve açılır paneller.
 
 Editör SVG'sinin temel sırası:

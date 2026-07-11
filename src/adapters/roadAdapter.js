@@ -355,6 +355,10 @@
     return geometry;
   }
 
+  function isStraightGeometry(geometry) {
+    return normalizeProfile(geometry?.profile) === STRAIGHT;
+  }
+
   function sCurveThroughPoints(geometry) {
     const controls = cleanSCurveControls(geometry);
     return [geometry.start, ...controls, geometry.end].map((item) => point(item));
@@ -880,8 +884,9 @@
     const cached = model && typeof model === "object" ? sampleCache.get(model) : null;
     if (cached?.key === key) return cached.samples;
     const samples = [];
-    for (let index = 0; index <= SAMPLE_COUNT; index += 1) {
-      const t = index / SAMPLE_COUNT;
+    const count = isStraightGeometry(model?.geometry) ? 1 : SAMPLE_COUNT;
+    for (let index = 0; index <= count; index += 1) {
+      const t = index / count;
       const center = pointAt(model, t);
       const tangent = tangentAt(model, t);
       const length = Math.hypot(tangent.x, tangent.y) || 1;
@@ -929,6 +934,11 @@
     const start = clamp(numberOr(from, 0), 0, 1);
     const end = clamp(numberOr(to, 1), 0, 1);
     if (end <= start) return "";
+    if (isStraightGeometry(model?.geometry)) {
+      const points = [offsetPointAt(model, start, offset), offsetPointAt(model, end, offset)];
+      if (reverse) points.reverse();
+      return pathFromPoints(points, false);
+    }
     const count = Math.max(2, Math.ceil(SAMPLE_COUNT * (end - start)));
     const points = [];
     for (let index = 0; index <= count; index += 1) {

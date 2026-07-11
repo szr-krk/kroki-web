@@ -3,7 +3,7 @@
   const data = window.KrokiVehicleCatalogData || {};
 
   const VIEW_ORDER = ["top", "side", "upsideDown"];
-  const DEFAULT_COLOR = "#dc2626";
+  const DEFAULT_COLOR = "#000000";
 
   function typeList() {
     const unsupported = new Set(data.upsideDownUnsupported || []);

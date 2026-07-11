@@ -1,0 +1,4 @@
+.tmp/
+.backups/
+FETCH_HEAD
+packed.html

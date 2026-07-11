@@ -4,6 +4,9 @@ const objectEditLayer = document.querySelector("#editorEditLayer");
 const editorTopIp = document.querySelector("#editorTopIp");
 const editorSideIp = document.querySelector("#editorSideIp");
 const canvasObjectHitTests = [];
+const HOLD_REPEAT_SPEED_MULTIPLIER = 3;
+const TOUCH_NUMBER_PICKER_QUERY = "(hover: none) and (pointer: coarse)";
+const touchNumberPickerMedia = window.matchMedia?.(TOUCH_NUMBER_PICKER_QUERY) || null;
 
 function objectEditPoint(event) {
   const point = objectEditCanvas.createSVGPoint();
@@ -18,11 +21,21 @@ function createEditElement(tag, attrs = {}) {
   return element;
 }
 
+function isDisabledControl(control) {
+  return Boolean(control?.disabled || control?.getAttribute?.("aria-disabled") === "true");
+}
+
+function fastRepeatDelay(value) {
+  const delay = Number(value);
+  const clean = Number.isFinite(delay) && delay > 0 ? delay : 70;
+  return Math.max(16, Math.round(clean / HOLD_REPEAT_SPEED_MULTIPLIER));
+}
+
 function bindHoldAction(button, action, options = {}) {
   if (!button) return () => {};
 
   const startDelay = options.startDelay ?? 420;
-  const repeatDelay = options.repeatDelay ?? 70;
+  const repeatDelay = fastRepeatDelay(options.repeatDelay ?? 70);
   let startTimer = 0;
   let repeatTimer = 0;
   let suppressClick = false;
@@ -48,6 +61,7 @@ function bindHoldAction(button, action, options = {}) {
 
   function begin(event) {
     if (event.button != null && event.button !== 0) return;
+    if (isDisabledControl(button)) return;
     window.clearTimeout(suppressClickTimer);
     suppressClick = true;
     clearTimers();
@@ -68,6 +82,7 @@ function bindHoldAction(button, action, options = {}) {
   button.addEventListener("pointercancel", end);
   button.addEventListener("pointerleave", end);
   button.addEventListener("click", (event) => {
+    if (isDisabledControl(button)) return;
     if (suppressClick) {
       clearClickSuppression();
       event.preventDefault();
@@ -80,6 +95,74 @@ function bindHoldAction(button, action, options = {}) {
     clearTimers();
     clearClickSuppression();
   };
+}
+
+function isTouchNumberPickerMode() {
+  return Boolean(touchNumberPickerMedia?.matches);
+}
+
+function isNumberPickerInput(target) {
+  return target instanceof HTMLInputElement && target.type === "number";
+}
+
+function rememberNumberPickerState(input) {
+  if (!input.dataset.krokiOriginalInputMode) {
+    input.dataset.krokiOriginalInputMode = input.getAttribute("inputmode") ?? "";
+  }
+  if (!input.dataset.krokiOriginalReadonly) {
+    input.dataset.krokiOriginalReadonly = input.readOnly ? "true" : "false";
+  }
+}
+
+function syncNumberPickerInput(input) {
+  if (!isNumberPickerInput(input)) return;
+  rememberNumberPickerState(input);
+  if (isTouchNumberPickerMode()) {
+    input.readOnly = true;
+    input.setAttribute("inputmode", "none");
+    input.setAttribute("aria-readonly", "true");
+    input.classList.add("is-touch-locked-number-picker");
+    return;
+  }
+  input.readOnly = input.dataset.krokiOriginalReadonly === "true";
+  const originalInputMode = input.dataset.krokiOriginalInputMode || "";
+  if (originalInputMode) input.setAttribute("inputmode", originalInputMode);
+  else input.removeAttribute("inputmode");
+  if (input.readOnly) input.setAttribute("aria-readonly", "true");
+  else input.removeAttribute("aria-readonly");
+  input.classList.remove("is-touch-locked-number-picker");
+}
+
+function syncNumberPickerInputs(root = document) {
+  if (isNumberPickerInput(root)) syncNumberPickerInput(root);
+  root.querySelectorAll?.("input[type='number']").forEach(syncNumberPickerInput);
+}
+
+function guardTouchNumberPickerInput(event) {
+  if (!isTouchNumberPickerMode()) return;
+  if (!isNumberPickerInput(event.target)) return;
+  event.preventDefault();
+  event.target.blur?.();
+}
+
+function observeNumberPickers() {
+  syncNumberPickerInputs();
+  touchNumberPickerMedia?.addEventListener?.("change", () => syncNumberPickerInputs());
+  touchNumberPickerMedia?.addListener?.(() => syncNumberPickerInputs());
+  document.addEventListener("pointerdown", guardTouchNumberPickerInput, true);
+  document.addEventListener("beforeinput", guardTouchNumberPickerInput, true);
+  document.addEventListener("paste", guardTouchNumberPickerInput, true);
+  document.addEventListener("drop", guardTouchNumberPickerInput, true);
+  document.addEventListener("keydown", (event) => {
+    if (!isTouchNumberPickerMode() || !isNumberPickerInput(event.target)) return;
+    const allowed = ["Tab", "Shift", "Control", "Alt", "Meta", "Escape"];
+    if (!allowed.includes(event.key)) event.preventDefault();
+  }, true);
+  new MutationObserver((records) => {
+    records.forEach((record) => {
+      record.addedNodes.forEach((node) => syncNumberPickerInputs(node));
+    });
+  }).observe(document.body, { childList: true, subtree: true });
 }
 
 function registerCanvasObjectHitTest(hitTest) {
@@ -119,6 +202,8 @@ function positionOpenPanelNearButton(panel, button) {
   if (!isPanelOpen(panel)) return;
   positionPanelNearButton(panel, button);
 }
+
+observeNumberPickers();
 
 window.krokiObjectEditCore = {
   svgNs: OBJECT_EDIT_SVG_NS,

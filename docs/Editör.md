@@ -8,7 +8,7 @@ Editör, tek bir SVG canvas üzerinde çizim, seçim, kamera hareketi, nesne dü
 - `src/editor-state.js`: aktif çizim aracı, düzenlenen DOM nesnesi ve düzenleme modu.
 - `src/editor-camera.js`: pan, zoom, pinch ve viewBox dönüşümleri.
 - `src/editor-object-edit.js`: üst/yan araç çubuğu referansları ve ortak UI yardımcıları.
-- `src/editor-main-menu-pro.js`: kayıt, export, yeni belge, Home dönüşü ve alan export akışları.
+- `src/editor-main-menu.js`: kayıt, export, yeni belge, Home dönüşü ve alan export akışları.
 - `src/ui/editorBindings.js`: çizim araçlarını pointer taslağına ve nesne oluşturmaya bağlar.
 - `src/ui/editorTextComposer.js`: serbest metin oluşturma/düzenleme paneli.
 - `src/editor.css`, `src/editor-line.css`: yerleşim ve nesne/düzenleme stilleri.

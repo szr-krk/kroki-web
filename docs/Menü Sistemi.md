@@ -6,7 +6,7 @@ Menü sistemi üç ayrı UI katmanından oluşur: normal durumda görünen sağ 
 
 - `index.html`: bütün düğme ve panel DOM'u.
 - `src/editor-rail.js`: sağ ray panel açma/kapama, çizim aracı seçimi, tam ekran ve viewBox sıfırlama.
-- `src/editor-main-menu-pro.js`: ana menü kayıt/export/import/yeni belge komutları, Home son kayıt/şablon listeleri ve alan export aracı.
+- `src/editor-main-menu.js`: ana menü kayıt/export/import/yeni belge komutları, Home son kayıt/şablon listeleri ve alan export aracı.
 - `src/editor-object-edit.js`: üst ve yan bağlamsal araç çubuğu referansları.
 - `src/core/styleManager.js`: seçili adapter yeteneklerine göre sağ özellik kontrolleri.
 - `src/ui/roadInspector.js`: yol bağlamsal kontrolleri.
@@ -30,7 +30,7 @@ Bir panel açıldığında diğer ray panelleri kapanır. `Escape` bütün ray p
 
 ## Ana menü
 
-DOM'da şu komutlar vardır ve `editor-main-menu-pro.js` tarafından bağlanır:
+DOM'da şu komutlar vardır ve `editor-main-menu.js` tarafından bağlanır:
 
 - Tam Ekran
 - Resim Olarak Kaydet
@@ -102,5 +102,5 @@ Sol üstte yalnız Undo ve Redo vardır. Düğmeler `HistoryManager.onChange` il
 
 ## Belirsiz
 
-- PNG export büyük viewBox'larda RAM tüketebilir; çıktı boyutu `editor-main-menu-pro.js` içinde sınırlandırılır.
+- PNG export büyük viewBox'larda RAM tüketebilir; çıktı boyutu `editor-main-menu.js` içinde sınırlandırılır.
 - Hazır yol/kavşak Home modalları hâlâ ürün akışı olarak bağlı değildir.

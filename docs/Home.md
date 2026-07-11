@@ -6,13 +6,13 @@ Home, uygulamanın başlangıç ekranıdır. Görevi editöre geçiş, tam ekran
 
 - `index.html`: `#home` DOM'u, hızlı başlangıç düğmeleri ve üç modal.
 - `src/home.js`: modal açma/kapama, tam ekran ve Home düğmelerinin ilk bağları.
-- `src/editor-main-menu-pro.js`: yeni belge, son krokiler, şablonlar, localStorage kayıtları, SVG import/export ve Home liste renderı.
+- `src/editor-main-menu.js`: yeni belge, son krokiler, şablonlar, localStorage kayıtları, SVG import/export ve Home liste renderı.
 - `src/home.css`: Home yerleşimi, kartlar ve modal görünümü.
 - Editöre geçişin devamı: [[Editör]].
 
 ## Mevcut davranışlar
 
-- “Yeni Kroki” artık `editor-main-menu-pro.js` tarafından capture fazında devralınır; mevcut içerik varsa onay ister, belgeyi sıfırlar ve editörü gösterir.
+- “Yeni Kroki” artık `editor-main-menu.js` tarafından capture fazında devralınır; mevcut içerik varsa onay ister, belgeyi sıfırlar ve editörü gösterir.
 - Home tam ekran düğmesi `document.documentElement.requestFullscreen()` ve `document.exitFullscreen()` kullanır. `fullscreenchange` ile etiket ve `aria-pressed` senkronize edilir.
 - `data-modal-target` taşıyan düğmeler hedef paneli açar; yeni modal açılırken diğerleri kapanır.
 - `data-modal-close` düğmeleri ve `Escape` tüm Home modallarını kapatır.

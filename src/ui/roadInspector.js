@@ -744,25 +744,25 @@
     if (sectionMode && !pocketSectionMode) syncBoundaryPanel(config, section);
   }
 
-  controls.laneCountPlus?.addEventListener("click", () => {
+  bindHoldAction(controls.laneCountPlus, () => {
     const model = activeRoadModel();
     const config = normalizeConfig(model, model?.metadata?.road);
     updateLaneCountValue((config.laneCount || 1) + 1, isIslandRoad(model) ? "Ada serit sayisi" : "Yol serit sayisi");
   });
-  controls.laneCountMinus?.addEventListener("click", () => {
+  bindHoldAction(controls.laneCountMinus, () => {
     const model = activeRoadModel();
     const config = normalizeConfig(model, model?.metadata?.road);
     updateLaneCountValue((config.laneCount || 1) - 1, isIslandRoad(model) ? "Ada serit sayisi" : "Yol serit sayisi");
   });
   controls.laneCount?.addEventListener("change", () => updateLaneCountValue(controls.laneCount.value, isIslandRoad(activeRoadModel()) ? "Ada serit sayisi" : "Yol serit sayisi"));
-  controls.laneWidthPlus?.addEventListener("click", () => {
+  bindHoldAction(controls.laneWidthPlus, () => {
     const model = activeRoadModel();
     const config = normalizeConfig(model, model?.metadata?.road);
     const section = selectedSectionInfo(model);
     const current = pickerInt(section?.width || config.laneWidth, 50);
     updateLaneWidthValue(current + 5, isIslandRoad(model) ? "Ada serit genisligi" : "Yol kesit genisligi");
   });
-  controls.laneWidthMinus?.addEventListener("click", () => {
+  bindHoldAction(controls.laneWidthMinus, () => {
     const model = activeRoadModel();
     const config = normalizeConfig(model, model?.metadata?.road);
     const section = selectedSectionInfo(model);
@@ -784,12 +784,12 @@
   }, "Yol cebi"));
   controls.xAxisSymmetry?.addEventListener("click", () => reflectActiveRoad("reflectAcrossBoundsXAxis", "Yol X ekseni simetrisi"));
   controls.yAxisSymmetry?.addEventListener("click", () => reflectActiveRoad("reflectAcrossBoundsYAxis", "Yol Y ekseni simetrisi"));
-  controls.sCurveControlPlus?.addEventListener("click", () => updateActiveRoadModel((draft, adapter) => {
+  bindHoldAction(controls.sCurveControlPlus, () => updateActiveRoadModel((draft, adapter) => {
     if (draft.geometry?.profile !== "sCurve") return;
     const count = adapter?.sCurveControlCount?.(draft) || MIN_S_CURVE_CONTROLS;
     adapter?.setSCurveControlCount?.(draft, count + 1);
   }, "S viraj kontrol noktasi"));
-  controls.sCurveControlMinus?.addEventListener("click", () => updateActiveRoadModel((draft, adapter) => {
+  bindHoldAction(controls.sCurveControlMinus, () => updateActiveRoadModel((draft, adapter) => {
     if (draft.geometry?.profile !== "sCurve") return;
     const count = adapter?.sCurveControlCount?.(draft) || MIN_S_CURVE_CONTROLS;
     adapter?.setSCurveControlCount?.(draft, count - 1);

@@ -8,7 +8,7 @@ Bağlantılar: [[AI Devralma Notu]], [[Home]], [[Editör]], [[Menü Sistemi]], [
 
 ### Home ve geçiş
 
-Home ekranı editöre geçiş, fullscreen, modal aç/kapat, son krokiler ve şablon listesi için bağlıdır. `editor-main-menu-pro.js`, Home'daki `Yeni Kroki`, `Son Krokiler`, `Şablonlarım` ve `SVG Yükle` akışlarının önemli kısmını devralır.
+Home ekranı editöre geçiş, fullscreen, modal aç/kapat, son krokiler ve şablon listesi için bağlıdır. `editor-main-menu.js`, Home'daki `Yeni Kroki`, `Son Krokiler`, `Şablonlarım` ve `SVG Yükle` akışlarının önemli kısmını devralır.
 
 ### Ana menü ve yerel kayıt
 
@@ -99,4 +99,3 @@ Home'da hazır yollar ve hazır kavşaklar modalı vardır, fakat gerçek şablo
 3. Serializer geçici metadata temizliği ve import viewBox olayı.
 4. Kayıt/import güven modeli.
 5. Hazır yol/kavşak ve kılavuz gibi ürün akışı eksikleri.
-

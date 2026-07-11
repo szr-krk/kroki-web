@@ -4,7 +4,7 @@ Bu sayfa mevcut UI'da açıkça yer tutucu olarak bulunan veya çekirdeği olup 
 
 ## İlgili kod dosyaları
 
-- `index.html`, `src/home.js`, `src/editor-rail.js`, `src/editor-main-menu-pro.js`: görünür girişler, kayıt/export ve Home liste akışları.
+- `index.html`, `src/home.js`, `src/editor-rail.js`, `src/editor-main-menu.js`: görünür girişler, kayıt/export ve Home liste akışları.
 - `src/core/documentSerializer.js`: kaydet/yükle için kullanılan çekirdek.
 - `src/ui/roadBuilder.js`, `src/core/roadIntersectionEngine.js`: hazır yol/kavşak fikrinin temel modelleri.
 - `src/ui/trafficSignLibrary.js`: gelecekteki katalog panelleri için çalışan örnek.

@@ -338,9 +338,9 @@
 }
 
 .road-barrier-add-control {
-  border-color: #f59e0b;
-  background: #fffbeb;
-  color: #92400e;
+  border-color: #0f766e;
+  background: #eef6f6;
+  color: #0b5f59;
 }
 
 .road-barrier-add-control:disabled {
@@ -802,9 +802,9 @@
 }
 
 .side-ip-snap-btn.is-active {
-  border-color: #facc15;
-  background: #fffbeb;
-  box-shadow: inset 0 0 0 3px rgba(250, 204, 21, .30);
+  border-color: #1d4ed8;
+  background: #dbeafe;
+  box-shadow: inset 0 0 0 3px rgba(29, 78, 216, .18);
 }
 
 .side-ip-arrow-stack {
@@ -1183,6 +1183,49 @@
 }
 
 .line-text-input:focus {
+  border-color: #2563eb;
+}
+
+.traffic-sign-text-fields {
+  display: grid;
+  gap: 8px;
+}
+
+.traffic-sign-text-field {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.traffic-sign-text-label {
+  min-width: 0;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.traffic-sign-text-input {
+  width: 100%;
+  height: 38px;
+  min-width: 0;
+  padding: 6px 9px;
+  box-sizing: border-box;
+  border: 2px solid #cbd5e1;
+  border-radius: 7px;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+  outline: none;
+  text-align: center;
+}
+
+.traffic-sign-text-input:focus {
   border-color: #2563eb;
 }
 

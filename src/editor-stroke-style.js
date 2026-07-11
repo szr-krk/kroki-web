@@ -50,7 +50,7 @@
   }
 
   function normalizeStrokeWidth(value) {
-    return Math.max(1, Math.round(numberOr(value, 2)));
+    return Math.max(0.1, Math.round(numberOr(value, 2) * 1000) / 1000);
   }
 
   function normalizeOpacity(value) {
@@ -62,11 +62,11 @@
   }
 
   function normalizeDashSize(value, fallback) {
-    return Math.max(1, Math.round(numberOr(value, fallback)));
+    return Math.max(0.1, Math.round(numberOr(value, fallback) * 1000) / 1000);
   }
 
   function normalizeDashGap(value, fallback) {
-    return Math.max(1, Math.round(numberOr(value, fallback)));
+    return Math.max(0.1, Math.round(numberOr(value, fallback) * 1000) / 1000);
   }
 
   function dashDefaults(patternId, legacyScale = 1) {
@@ -95,13 +95,23 @@
     return patch;
   }
 
+  function setAttributeIfChanged(element, name, value) {
+    const text = String(value);
+    if (element.getAttribute(name) !== text) element.setAttribute(name, text);
+  }
+
+  function setStyleIfChanged(element, name, value) {
+    const text = String(value);
+    if (element.style[name] !== text) element.style[name] = text;
+  }
+
   function applyStroke(element, style) {
-    element.style.stroke = style.strokeColor;
-    element.style.strokeWidth = String(style.strokeWidth);
-    element.style.strokeLinecap = style.lineCap;
-    element.setAttribute("stroke", style.strokeColor);
-    element.setAttribute("stroke-width", String(style.strokeWidth));
-    element.setAttribute("stroke-linecap", style.lineCap);
+    setStyleIfChanged(element, "stroke", style.strokeColor);
+    setStyleIfChanged(element, "strokeWidth", style.strokeWidth);
+    setStyleIfChanged(element, "strokeLinecap", style.lineCap);
+    setAttributeIfChanged(element, "stroke", style.strokeColor);
+    setAttributeIfChanged(element, "stroke-width", style.strokeWidth);
+    setAttributeIfChanged(element, "stroke-linecap", style.lineCap);
   }
 
   function applyDash(element, style) {
@@ -115,14 +125,14 @@
     const dashArray = segments
       .map((segment) => String(Math.max(0.1, segment)))
       .join(" ");
-    element.setAttribute("stroke-dasharray", dashArray);
-    element.style.strokeDasharray = dashArray;
+    setAttributeIfChanged(element, "stroke-dasharray", dashArray);
+    setStyleIfChanged(element, "strokeDasharray", dashArray);
   }
 
   function applyOpacity(element, opacity) {
     const normalized = normalizeOpacity(opacity);
-    element.style.opacity = String(normalized);
-    element.setAttribute("opacity", String(normalized));
+    setStyleIfChanged(element, "opacity", normalized);
+    setAttributeIfChanged(element, "opacity", normalized);
   }
 
   function renderLineStyleIcon(svg) {

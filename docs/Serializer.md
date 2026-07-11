@@ -1,6 +1,6 @@
 # Serializer
 
-`DocumentSerializer`, çalışma zamanı modellerini JSON uyumlu belgeye dönüştürür ve belgeyi yeniden manager/group/viewport/kavşak state'ine kurar. Çekirdek; `editor-main-menu-pro.js` üzerinden localStorage kayıtları, şablonlar, SVG metadata export/import ve history snapshot'ları tarafından kullanılır.
+`DocumentSerializer`, çalışma zamanı modellerini JSON uyumlu belgeye dönüştürür ve belgeyi yeniden manager/group/viewport/kavşak state'ine kurar. Çekirdek; `editor-main-menu.js` üzerinden localStorage kayıtları, şablonlar, SVG metadata export/import ve history snapshot'ları tarafından kullanılır.
 
 ## İlgili kod dosyaları
 
@@ -81,7 +81,7 @@ Nesneler SVG DOM sırasıyla export edilir; bu sıra katman sırasıdır.
 
 ## UI ile bağlantı durumu
 
-`editor-main-menu-pro.js` serializer'ı şu işler için kullanır:
+`editor-main-menu.js` serializer'ı şu işler için kullanır:
 
 - Son kroki kaydı: `localStorage` `krokiPro.recentDocuments.v1`
 - Şablon kaydı: `localStorage` `krokiPro.templates.v1`

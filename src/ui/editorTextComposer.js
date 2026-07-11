@@ -41,6 +41,10 @@
   let state = { ...DEFAULT_STATE };
   let mode = "create";
   let editModelId = "";
+  const bindHoldAction = window.krokiObjectEditCore?.bindHoldAction || ((button, action) => {
+    button?.addEventListener("click", action);
+    return () => {};
+  });
 
   function normalizeSize(value) {
     return Math.max(6, Math.min(160, Math.round(Number(value) || DEFAULT_STATE.size)));
@@ -249,10 +253,10 @@
     hide();
     if (wasCreateMode) window.krokiEditorRail?.resetCizimAraci?.();
   });
-  controls.sizeMinus?.addEventListener("click", () => changeSize(-1));
-  controls.sizePlus?.addEventListener("click", () => changeSize(1));
-  controls.opacityMinus?.addEventListener("click", () => changeOpacity(-0.05));
-  controls.opacityPlus?.addEventListener("click", () => changeOpacity(0.05));
+  bindHoldAction(controls.sizeMinus, () => changeSize(-1));
+  bindHoldAction(controls.sizePlus, () => changeSize(1));
+  bindHoldAction(controls.opacityMinus, () => changeOpacity(-0.05));
+  bindHoldAction(controls.opacityPlus, () => changeOpacity(0.05));
   controls.align?.addEventListener("click", () => {
     nextAlign();
     sync();

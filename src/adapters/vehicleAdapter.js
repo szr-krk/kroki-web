@@ -11,6 +11,9 @@
   const MULTI_SELECTION_STROKE_WIDTH = 4;
   const VEHICLE_LABEL_POSITIONS = ["top", "right", "bottom", "left"];
   const VEHICLE_LABEL_MAX_LENGTH = 24;
+  const VEHICLE_LABEL_FONT_SIZE = 18;
+  const VEHICLE_LABEL_STROKE_WIDTH = 4;
+  const VEHICLE_LABEL_CLEARANCE = 2;
   const metricsCache = new WeakMap();
 
   function clampScale(value) {
@@ -100,7 +103,7 @@
   function bodyStyle(metadata = {}) {
     const ghost = Boolean(metadata.vehicleGhost);
     return {
-      fill: ghost ? "#ffffff" : (metadata.vehicleColor || "#dc2626"),
+      fill: ghost ? "#ffffff" : (metadata.vehicleColor || "#000000"),
       stroke: "#111827",
       strokeWidth: 2.2,
       dash: ghost ? "1 1" : null
@@ -135,7 +138,7 @@
 
   function pathStyleFor(role, metadata = {}, path = {}) {
     const style = bodyStyle(metadata);
-    const color = metadata?.vehicleColor || "#dc2626";
+    const color = metadata?.vehicleColor || "#000000";
     const cleanRole = role || "detail";
     const attrs = {
       fill: "none",
@@ -366,11 +369,13 @@
 
   function vehicleBodyTransform(model, metrics, metadata) {
     const geometry = model.geometry || {};
+    const mirrorXScale = metadata.vehicleFlipY ? -1 : 1;
+    const mirrorYScale = metadata.vehicleFlipX ? -1 : 1;
     return [
       `translate(${utils.numberOr(geometry.cx, 0)} ${utils.numberOr(geometry.cy, 0)})`,
       `rotate(${utils.normalizeRotation(geometry.rotation)})`,
       `scale(${metrics.scale})`,
-      `scale(${metadata.vehicleFlipX ? -1 : 1} ${metadata.vehicleFlipY ? -1 : 1})`
+      `scale(${mirrorXScale} ${mirrorYScale})`
     ].join(" ");
   }
 
@@ -423,7 +428,7 @@
       baseWidth: dimensions.width,
       baseHeight: dimensions.height
     }, {
-      vehicleColor: options.color || variant?.color || "#dc2626",
+      vehicleColor: options.color || variant?.color || "#000000",
       vehicleGhost: false
     });
     return svg;
@@ -454,8 +459,19 @@
     };
   }
 
-  function vehicleLabelPoint(model, metrics, position) {
-    const gap = 16;
+  function vehicleLabelGap(text, position) {
+    const strokePadding = VEHICLE_LABEL_STROKE_WIDTH / 2;
+    const normalizedPosition = normalizeVehicleLabelPosition(position);
+    if (normalizedPosition === "left" || normalizedPosition === "right") {
+      const charCount = Math.max(1, Array.from(normalizeVehicleLabelText(text).trim()).length);
+      const halfTextWidth = Math.max(VEHICLE_LABEL_FONT_SIZE * 0.34, charCount * VEHICLE_LABEL_FONT_SIZE * 0.28);
+      return Math.ceil(halfTextWidth + strokePadding + VEHICLE_LABEL_CLEARANCE);
+    }
+    return Math.ceil(VEHICLE_LABEL_FONT_SIZE / 2 + strokePadding + VEHICLE_LABEL_CLEARANCE);
+  }
+
+  function vehicleLabelPoint(model, metrics, position, text) {
+    const gap = vehicleLabelGap(text, position);
     const halfWidth = metrics.width / 2;
     const halfHeight = metrics.height / 2;
     const local = {
@@ -478,7 +494,7 @@
       label?.remove();
       return;
     }
-    const point = vehicleLabelPoint(model, metrics, metadata.vehicleLabelPosition);
+    const point = vehicleLabelPoint(model, metrics, metadata.vehicleLabelPosition, text);
     if (!label) {
       label = create("text", {
         class: "editor-vehicle-label",
@@ -531,7 +547,7 @@
         metadata: {
           vehicleVariantKey: element.dataset.vehicleVariantKey || "",
           vehicleView: element.dataset.vehicleView || "top",
-          vehicleColor: element.dataset.vehicleColor || "#dc2626",
+          vehicleColor: element.dataset.vehicleColor || "#000000",
           vehicleGhost: element.dataset.vehicleGhost === "true",
           vehicleFlipX: element.dataset.vehicleFlipX === "true",
           vehicleFlipY: element.dataset.vehicleFlipY === "true",

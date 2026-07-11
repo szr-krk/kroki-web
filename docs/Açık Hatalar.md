@@ -4,7 +4,7 @@ Bu liste yalnız kaynak kod incelemesinde görülen eksik bağlantıları ve som
 
 ## İlgili kod dosyaları
 
-- `index.html`, `src/home.js`, `src/editor-rail.js`, `src/editor-main-menu-pro.js`: bağlı veya yer tutucu UI girişleri.
+- `index.html`, `src/home.js`, `src/editor-rail.js`, `src/editor-main-menu.js`: bağlı veya yer tutucu UI girişleri.
 - `src/core/documentSerializer.js`: metadata ve import davranışı.
 - `src/core/roadIntersectionEngine.js`: geometriye bağlı Q state.
 - `src/core/historyManager.js`: platform shortcut sınırı.
@@ -77,7 +77,6 @@ Depoda test dosyası, test koşucusu veya package/build tanımı bulunmuyor. Öz
 
 - Yukarıdaki “Olası riskler” tarayıcı etkileşim testi yapılmadan kesin hata sayılmamalıdır.
 - Kodda issue numarası veya resmi hata takip sistemi referansı yoktur.
-
 
 
 

@@ -6,13 +6,12 @@
   if (!utils || !registry || !styleManager) return;
 
   const DEFAULT_TEXT = "METIN";
-  const DEFAULT_SIZE = 22;
+  const DEFAULT_SIZE = 12;
   const LINE_HEIGHT = 1.16;
   const WIDTH_FACTOR = 0.58;
   const PAD_X = 10;
   const PAD_Y = 8;
-  const MIN_BOX_W = 86;
-  const MIN_BOX_H = 38;
+  const MIN_BOX_SIZE_FACTOR = 1.4;
   const BOX_RADIUS = 8;
   const DEFAULT_STROKE = "#d11f1f";
   const DEFAULT_FILL = "#ffffff";
@@ -37,8 +36,9 @@
     const widthFactor = label.bold ? WIDTH_FACTOR * 1.08 : WIDTH_FACTOR;
     const textWidth = Math.max(...lines.map((line) => Math.max(1, line.length))) * label.size * widthFactor;
     const textHeight = Math.max(label.size, lines.length * label.size * LINE_HEIGHT);
-    const width = Math.max(MIN_BOX_W, textWidth + PAD_X * 2);
-    const height = Math.max(MIN_BOX_H, textHeight + PAD_Y * 2);
+    const minSize = label.size * MIN_BOX_SIZE_FACTOR;
+    const width = Math.max(minSize + PAD_X * 2, textWidth + PAD_X * 2);
+    const height = Math.max(minSize + PAD_Y * 2, textHeight + PAD_Y * 2);
     return {
       x: model.geometry.center.x - width / 2,
       y: model.geometry.center.y - height / 2,
@@ -132,8 +132,10 @@
   }
 
   function boxBoundsFromMeasurement(model, measured) {
-    const width = Math.max(MIN_BOX_W, measured.width + PAD_X * 2);
-    const height = Math.max(MIN_BOX_H, measured.height + PAD_Y * 2);
+    const label = labelFor(model);
+    const minSize = label.size * MIN_BOX_SIZE_FACTOR;
+    const width = Math.max(minSize + PAD_X * 2, measured.width + PAD_X * 2);
+    const height = Math.max(minSize + PAD_Y * 2, measured.height + PAD_Y * 2);
     return {
       x: model.geometry.center.x - width / 2,
       y: model.geometry.center.y - height / 2,

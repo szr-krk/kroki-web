@@ -28,6 +28,7 @@
   let lastOuterBoundarySegments = [];
   let lastMemberIds = new Set();
   let lastQSegments = [];
+  let visibleRangeCache = new Map();
   let selectedQKey = "";
   let qEndpointEdits = new Map();
   let qEndpointDrag = null;
@@ -111,6 +112,7 @@
     lastOuterBoundarySegments = [];
     lastMemberIds = new Set();
     lastQSegments = [];
+    visibleRangeCache = new Map();
     selectedQKey = "";
     qEndpointEdits = new Map();
   }
@@ -227,6 +229,11 @@
     return { x: v.x / length, y: v.y / length };
   }
 
+  function isStraightRoadGeometry(geometry) {
+    const profile = geometry?.profile || "straight";
+    return profile !== "arc" && profile !== "sCurve" && profile !== "islandRing";
+  }
+
   function addPointIfFar(points, point, tolerance = MIN_POINT_DISTANCE) {
     if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return;
     const last = points[points.length - 1];
@@ -255,12 +262,14 @@
 
   function sampleRoad(model, adapter) {
     const samples = [];
-    for (let index = 0; index <= SAMPLE_COUNT; index += 1) {
-      const t = index / SAMPLE_COUNT;
+    const count = isStraightRoadGeometry(model?.geometry) ? 1 : SAMPLE_COUNT;
+    for (let index = 0; index <= count; index += 1) {
+      const t = index / count;
       const center = adapter.pointAt?.(model, t);
       if (!center || !Number.isFinite(center.x) || !Number.isFinite(center.y)) continue;
-      const t0 = Math.max(0, t - 1 / SAMPLE_COUNT);
-      const t1 = Math.min(1, t + 1 / SAMPLE_COUNT);
+      const step = 1 / Math.max(1, count);
+      const t0 = Math.max(0, t - step);
+      const t1 = Math.min(1, t + step);
       const p0 = adapter.pointAt?.(model, t0) || center;
       const p1 = adapter.pointAt?.(model, t1) || center;
       const tangent = normalizeVector({ x: p1.x - p0.x, y: p1.y - p0.y });
@@ -1330,6 +1339,9 @@
   }
   function appendPath(parent, attrs) {
     const path = createSvgElement("path", attrs);
+    if (attrs?.["vector-effect"] != null) {
+      path.style.setProperty("vector-effect", String(attrs["vector-effect"]));
+    }
     parent.append(path);
     return path;
   }
@@ -1339,6 +1351,63 @@
       .filter((model) => model?.type === "road")
       .map((model) => buildSurface(model))
       .filter(Boolean);
+  }
+
+  function shapeBounds(shape) {
+    return boundsOfPoints(shape?.points || []);
+  }
+
+  function shapesShareRoad(a, b) {
+    const ids = new Set(a?.roadIds || []);
+    return (b?.roadIds || []).some((id) => ids.has(id));
+  }
+
+  function shapesBelongToSameJunction(a, b) {
+    const aBounds = shapeBounds(a);
+    const bBounds = shapeBounds(b);
+    if (!boundsOverlap(aBounds, bBounds, INTERSECTION_PAD)) {
+      return shapesShareRoad(a, b) && boundsOverlap(aBounds, bBounds, Math.max(8, SMOOTH_RADIUS * 1.4));
+    }
+    return true;
+  }
+
+  function mergeIntersectionShapeClusters(pairShapes) {
+    if (!Array.isArray(pairShapes) || pairShapes.length < 2) return pairShapes || [];
+    const seen = new Set();
+    const result = pairShapes.slice();
+
+    for (let start = 0; start < pairShapes.length; start += 1) {
+      if (seen.has(start)) continue;
+      const queue = [start];
+      const component = [];
+      seen.add(start);
+
+      while (queue.length) {
+        const index = queue.shift();
+        component.push(pairShapes[index]);
+        for (let next = 0; next < pairShapes.length; next += 1) {
+          if (seen.has(next)) continue;
+          if (!component.some((shape) => shapesBelongToSameJunction(shape, pairShapes[next]))) continue;
+          seen.add(next);
+          queue.push(next);
+        }
+      }
+
+      const roadIds = Array.from(new Set(component.flatMap((shape) => shape.roadIds || []))).sort();
+      if (component.length < 2 || roadIds.length < 3) continue;
+      const points = convexHull(component.flatMap((shape) => shape.points || []));
+      if (points.length < 3) continue;
+      const terminalRoadIds = Array.from(new Set(component.flatMap((shape) => shape.terminalRoadIds || []))).sort();
+      result.push({
+        roadIds,
+        terminalRoadIds,
+        points,
+        d: smoothClosedPath(points, Math.min(10, SMOOTH_RADIUS), points),
+        clustered: true
+      });
+    }
+
+    return result;
   }
 
   function findIntersectionShapes(surfaces) {
@@ -1364,7 +1433,7 @@
         memberIds.add(b.id);
       }
     }
-    return { shapes, memberIds };
+    return { shapes: mergeIntersectionShapeClusters(shapes), memberIds };
   }
 
   function pointInsideOtherSurfaces(point, sourceId, surfaces) {
@@ -1618,8 +1687,13 @@
     return lastIntersectionShapes.filter((shape) => shape.roadIds.includes(id));
   }
 
+  function roadClipShapesFor(id, boundary = null) {
+    const allowClusterForMarking = boundary?.role === "marking";
+    return roadShapesFor(id).filter((shape) => !shape.clustered || allowClusterForMarking);
+  }
+
   function pointInsideRoadShapes(id, point) {
-    return roadShapesFor(id).some((shape) => pointInPolygon(point, shape.points));
+    return roadClipShapesFor(id).some((shape) => pointInPolygon(point, shape.points));
   }
 
   function shouldPreserveBoundaryForShape(id, boundary, shape) {
@@ -1645,7 +1719,7 @@
   function pointInsideTerminalHostSurfaceForLine(id, point) {
     const roadSurface = lastRoadSurfaces.find((surface) => surface.id === id);
     if (!roadSurface) return false;
-    return roadShapesFor(id).some((shape) => {
+    return roadClipShapesFor(id).some((shape) => {
       const terminalIds = Array.isArray(shape?.terminalRoadIds) ? shape.terminalRoadIds : [];
       if (!terminalIds.includes(id)) return false;
       const hostIds = (shape.roadIds || []).filter((roadId) => roadId !== id && !terminalIds.includes(roadId));
@@ -1691,14 +1765,14 @@
   function pointInsideRoadShapesForLine(id, point, boundary = null) {
     if (pointInsideTerminalHostSurfaceForLine(id, point)) return true;
     if (isIslandOuterEdgeBoundary(id, boundary)) return pointInsideOtherSurfacePolygon(point, id);
-    return roadShapesFor(id).some((shape) => {
+    return roadClipShapesFor(id, boundary).some((shape) => {
       if (shouldPreserveBoundaryForShape(id, boundary, shape)) return false;
       return pointInPolygon(point, shape.points);
     });
   }
 
   function pointInsideTerminalHostShapesForLine(id, point, boundary = null) {
-    return roadShapesFor(id).some((shape) => (
+    return roadClipShapesFor(id).some((shape) => (
       shouldDashTerminalHostBoundaryForShape(id, boundary, shape) && pointInPolygon(point, shape.points)
     ));
   }
@@ -1754,38 +1828,74 @@
     return ranges;
   }
 
+  function cloneRanges(ranges) {
+    return (Array.isArray(ranges) ? ranges : []).map((range) => ({ from: range.from, to: range.to }));
+  }
+
+  function visibleRangeCacheKey(kind, id, offset, from, to, boundary) {
+    return [
+      kind,
+      String(id || ""),
+      Math.round(numberOr(offset, 0) * 1000) / 1000,
+      Math.round(clamp(numberOr(from, 0), 0, 1) * 1000000) / 1000000,
+      Math.round(clamp(numberOr(to, 1), 0, 1) * 1000000) / 1000000,
+      String(boundary?.id || ""),
+      String(boundary?.role || ""),
+      String(boundary?.before || ""),
+      String(boundary?.after || "")
+    ].join("|");
+  }
+
+  function cachedRanges(key, calculate) {
+    if (visibleRangeCache.has(key)) return cloneRanges(visibleRangeCache.get(key));
+    const ranges = cloneRanges(calculate());
+    visibleRangeCache.set(key, ranges);
+    return cloneRanges(ranges);
+  }
+
   function visibleRangesForLine(id, offset = 0, from = 0, to = 1, boundary = null) {
-    if (isIslandOuterEdgeBoundary(id, boundary)) {
-      const ranges = lineRangesByIntersectionState(
+    const start = clamp(numberOr(from, 0), 0, 1);
+    const end = clamp(numberOr(to, 1), 0, 1);
+    if (end <= start) return [];
+    if (!lastMemberIds.has(id) || !roadClipShapesFor(id, boundary).length) return [{ from: start, to: end }];
+    return cachedRanges(visibleRangeCacheKey("visible", id, offset, start, end, boundary), () => {
+      if (isIslandOuterEdgeBoundary(id, boundary)) {
+        const ranges = lineRangesByIntersectionState(
+          id,
+          offset,
+          start,
+          end,
+          (point) => pointInsideOtherSurfacePolygon(point, id),
+          false
+        );
+        return visibleLineRangesOutsideQ(id, offset, ranges, boundary);
+      }
+      return lineRangesByIntersectionState(
         id,
         offset,
-        from,
-        to,
-        (point) => pointInsideOtherSurfacePolygon(point, id),
+        start,
+        end,
+        (point) => pointInsideRoadShapesForLine(id, point, boundary),
         false
       );
-      return visibleLineRangesOutsideQ(id, offset, ranges, boundary);
-    }
-    return lineRangesByIntersectionState(
-      id,
-      offset,
-      from,
-      to,
-      (point) => pointInsideRoadShapesForLine(id, point, boundary),
-      false
-    );
+    });
   }
 
   function terminalHostDashedRangesForLine(id, offset = 0, from = 0, to = 1, boundary = null) {
     if (!isRoadShoulderBoundary(boundary)) return [];
-    return lineRangesByIntersectionState(
-      id,
-      offset,
-      from,
-      to,
-      (point) => pointInsideTerminalHostShapesForLine(id, point, boundary),
-      true
-    );
+    const start = clamp(numberOr(from, 0), 0, 1);
+    const end = clamp(numberOr(to, 1), 0, 1);
+    if (end <= start || !lastMemberIds.has(id) || !roadClipShapesFor(id).length) return [];
+    return cachedRanges(visibleRangeCacheKey("terminal", id, offset, start, end, boundary), () => (
+      lineRangesByIntersectionState(
+        id,
+        offset,
+        start,
+        end,
+        (point) => pointInsideTerminalHostShapesForLine(id, point, boundary),
+        true
+      )
+    ));
   }
 
   function rerenderRoads(ids) {
@@ -2541,6 +2651,7 @@
     lastOuterBoundarySegments = [];
     lastMemberIds = new Set();
     lastQSegments = [];
+    visibleRangeCache = new Map();
 
     const intersectionResult = surfaces.length >= 2
       ? findIntersectionShapes(surfaces)

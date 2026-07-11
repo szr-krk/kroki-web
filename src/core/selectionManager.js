@@ -73,6 +73,101 @@
     viewportSyncFrame = window.requestAnimationFrame?.(syncViewportNow) || window.setTimeout(syncViewportNow, 16);
   }
 
+  function cancelQueuedDragFrame(dragState = drag) {
+    if (!dragState?.pendingFrame) return;
+    if (dragState.pendingFrameIsTimeout) window.clearTimeout(dragState.pendingFrame);
+    else window.cancelAnimationFrame?.(dragState.pendingFrame);
+    dragState.pendingFrame = 0;
+    dragState.pendingFrameIsTimeout = false;
+  }
+
+  function applyDragPoint(dragState, point) {
+    if (!dragState || drag !== dragState || !point) return false;
+    const model = getActiveModel();
+    const adapter = manager.getAdapter(model);
+    if (!model || !adapter) return false;
+
+    if (dragState.type === "object") {
+      const dx = point.x - dragState.lastPoint.x;
+      const dy = point.y - dragState.lastPoint.y;
+      if (Math.hypot(dx, dy) <= 0.0001) return true;
+      if (dragState.liveRoadObjectPreview && dragState.previewModel) {
+        adapter.move(dragState.previewModel, dx, dy);
+        dragState.totalDx += dx;
+        dragState.totalDy += dy;
+        updateRoadControlPreview(dragState, dragState.previewModel, adapter);
+        dragState.lastPoint = point;
+        return true;
+      }
+      if (dragState.liveTransform) {
+        dragState.totalDx += dx;
+        dragState.totalDy += dy;
+        applyLiveTransform(dragState);
+        dragState.lastPoint = point;
+        return true;
+      }
+      manager.updateGeometry(model.id, (draft) => {
+        adapter.move(draft, dx, dy);
+      }, { skipHistory: true });
+      dragState.lastPoint = point;
+      return true;
+    }
+
+    if (dragState.type === "control") {
+      const moved = Math.hypot(point.x - dragState.lastPoint.x, point.y - dragState.lastPoint.y) > 0.0001;
+      if (!moved) return true;
+      if (dragState.liveRoadControlPreview && dragState.previewModel) {
+        adapter.moveControlPoint(dragState.previewModel, dragState.cpId, point, {
+          startState: dragState.startState,
+          lastPoint: dragState.lastPoint,
+          metrics: dragState.metrics || controlPoints.metrics()
+        });
+        updateRoadControlPreview(dragState, dragState.previewModel, adapter);
+        dragState.lastPoint = point;
+        return true;
+      }
+      manager.updateGeometry(model.id, (draft) => {
+        adapter.moveControlPoint(draft, dragState.cpId, point, {
+          startState: dragState.startState,
+          lastPoint: dragState.lastPoint,
+          metrics: dragState.metrics || controlPoints.metrics()
+        });
+      }, { skipHistory: true, styleControls: Boolean(adapter.capabilities?.trafficSign || adapter.capabilities?.otherSymbol || adapter.capabilities?.catalogObject || adapter.capabilities?.vehicleObject) });
+      dragState.lastPoint = point;
+      return true;
+    }
+
+    return false;
+  }
+
+  function flushQueuedDragPoint(dragState = drag) {
+    if (!dragState || drag !== dragState) return false;
+    cancelQueuedDragFrame(dragState);
+    const point = dragState.pendingPoint;
+    dragState.pendingPoint = null;
+    return applyDragPoint(dragState, point);
+  }
+
+  function queueDragPoint(point) {
+    if (!drag) return;
+    const dragState = drag;
+    dragState.pendingPoint = { x: point.x, y: point.y };
+    if (dragState.pendingFrame) return;
+    const run = () => {
+      if (drag !== dragState) return;
+      dragState.pendingFrame = 0;
+      dragState.pendingFrameIsTimeout = false;
+      flushQueuedDragPoint(dragState);
+    };
+    if (typeof window.requestAnimationFrame === "function") {
+      dragState.pendingFrame = window.requestAnimationFrame(run);
+      dragState.pendingFrameIsTimeout = false;
+    } else {
+      dragState.pendingFrame = window.setTimeout(run, 16);
+      dragState.pendingFrameIsTimeout = true;
+    }
+  }
+
   function resetPointEdit(id = activeId) {
     const model = manager.get(id);
     const adapter = manager.getAdapter(model);
@@ -110,6 +205,7 @@
     resetPointEdit();
     activeId = "";
     mode = "";
+    cancelQueuedDragFrame(drag);
     drag = null;
     if (options.silent) {
       setEditorState();
@@ -179,14 +275,87 @@
     });
   }
 
+  function roadPreviewPathData(model, adapter) {
+    if (!model || !adapter) return "";
+    const config = typeof adapter.roadConfig === "function"
+      ? adapter.roadConfig(model)
+      : (model.metadata?.road || {});
+    const section = typeof adapter.crossSection === "function" ? adapter.crossSection(config) : null;
+    if (typeof adapter.surfacePathData === "function" && Number.isFinite(section?.totalWidth)) {
+      return adapter.surfacePathData(model, section.totalWidth);
+    }
+    return typeof adapter.offsetPathData === "function" ? adapter.offsetPathData(model, 0) : "";
+  }
+
+  function ensureRoadControlPreview(dragState) {
+    if (dragState.roadControlPreviewElement) return dragState.roadControlPreviewElement;
+    const editLayer = manager.canvas.querySelector("#editorEditLayer");
+    if (!editLayer) return null;
+    const element = utils.createSvgElement("path", {
+      class: "editor-road-live-preview" + (dragState.type === "control" ? " editor-road-control-preview" : " editor-road-move-preview"),
+      fill: "rgba(14, 165, 233, 0.16)",
+      stroke: "#0284c7",
+      "stroke-width": String(Math.max(1, 2 * (dragState.metrics?.unit || utils.svgUnitsPerScreenPx(manager.canvas) || 1))),
+      "stroke-linejoin": "round",
+      "stroke-linecap": "round",
+      "pointer-events": "none",
+      "vector-effect": "none"
+    });
+    editLayer.insertBefore(element, editLayer.querySelector(".editor-object-cp:not(.editor-group-cp)") || null);
+    dragState.roadControlPreviewElement = element;
+    return element;
+  }
+
+  function previewControlHandles(dragState) {
+    if (!dragState) return [];
+    if (!dragState.previewControlHandles) {
+      dragState.previewControlHandles = Array.from(
+        manager.canvas.querySelectorAll("#editorEditLayer .editor-object-cp:not(.editor-group-cp)")
+      );
+    }
+    return dragState.previewControlHandles.filter((handle) => handle.isConnected);
+  }
+
+  function updatePreviewControlHandles(dragState, model, adapter, metricsValue) {
+    if (!model || !adapter?.getControlPoints) return;
+    const cps = adapter.getControlPoints(model, metricsValue || controlPoints.metrics(), "edit") || [];
+    const cpById = new Map(cps.map((cp) => [String(cp.id), cp]));
+    previewControlHandles(dragState).forEach((handle) => {
+      const cp = cpById.get(String(handle.dataset.point || ""));
+      if (!cp) return;
+      const rotation = Number.isFinite(cp.angle) ? ` rotate(${cp.angle})` : "";
+      handle.setAttribute("transform", `translate(${cp.x} ${cp.y})${rotation}`);
+      if (cp.cursor) handle.style.cursor = cp.cursor;
+    });
+  }
+
+  function updateRoadControlPreview(dragState, model, adapter) {
+    const element = ensureRoadControlPreview(dragState);
+    if (!element) return;
+    element.setAttribute("d", roadPreviewPathData(model, adapter));
+    if (model?.geometry?.profile === "islandRing" || adapter?.isIsland?.(model)) element.setAttribute("fill-rule", "evenodd");
+    else element.removeAttribute("fill-rule");
+    updatePreviewControlHandles(dragState, model, adapter, dragState.metrics);
+  }
+
+  function clearRoadControlPreview(dragState) {
+    dragState?.roadControlPreviewElement?.remove();
+    if (dragState) {
+      dragState.roadControlPreviewElement = null;
+      dragState.previewControlHandles = null;
+    }
+  }
+
   function beginDrag(type, event, extra = {}) {
     const matrix = screenMatrix();
     const point = pointFromEvent(event, matrix);
     const model = getActiveModel();
     const adapter = manager.getAdapter(model);
     const metricSnapshot = type === "control" ? controlPoints.metrics() : null;
-    const liveTransform = type === "object" && typeof adapter?.move === "function";
-    if (model?.type === "road") Kroki.RoadIntersectionEngine?.setSuspended?.(true, liveTransform ? { clear: false } : undefined);
+    const liveRoadObjectPreview = type === "object" && model?.type === "road" && typeof adapter?.move === "function";
+    const liveTransform = type === "object" && !liveRoadObjectPreview && typeof adapter?.move === "function";
+    const liveRoadControlPreview = type === "control" && model?.type === "road" && typeof adapter?.moveControlPoint === "function";
+    if (model?.type === "road") Kroki.RoadIntersectionEngine?.setSuspended?.(true, liveTransform || liveRoadControlPreview || liveRoadObjectPreview ? { clear: false } : undefined);
     drag = {
       type,
       pointerId: event.pointerId,
@@ -202,8 +371,16 @@
       editTapPoint: extra.editTapPoint || null,
       startState: type === "control" ? (adapter?.beginControlPointMove?.(model, extra.cpId, point, metricSnapshot) || null) : null,
       liveTransform,
+      liveRoadObjectPreview,
+      liveRoadControlPreview,
+      previewModel: liveRoadControlPreview || liveRoadObjectPreview ? utils.clonePlain(model) : null,
+      roadControlPreviewElement: null,
+      previewControlHandles: null,
       totalDx: 0,
       totalDy: 0,
+      pendingPoint: null,
+      pendingFrame: 0,
+      pendingFrameIsTimeout: false,
       liveTransformTargets: liveTransform ? liveTransformTargetsFor(model.id) : [],
       transaction: Kroki.HistoryManager?.begin?.(type === "control" ? "Geometri duzenle" : "Nesne tasi")
     };
@@ -322,36 +499,8 @@
       drag.moved = true;
     }
 
-    if (drag.type === "object") {
-      const dx = point.x - drag.lastPoint.x;
-      const dy = point.y - drag.lastPoint.y;
-      if (drag.liveTransform) {
-        drag.totalDx += dx;
-        drag.totalDy += dy;
-        applyLiveTransform(drag);
-        drag.lastPoint = point;
-        event.preventDefault();
-        return;
-      }
-      manager.updateGeometry(model.id, (draft) => {
-        adapter.move(draft, dx, dy);
-      }, { skipHistory: true });
-      drag.lastPoint = point;
-      event.preventDefault();
-      return;
-    }
-
-    if (drag.type === "control") {
-      manager.updateGeometry(model.id, (draft) => {
-        adapter.moveControlPoint(draft, drag.cpId, point, {
-          startState: drag.startState,
-          lastPoint: drag.lastPoint,
-          metrics: drag.metrics || controlPoints.metrics()
-        });
-      }, { skipHistory: true, styleControls: Boolean(adapter.capabilities?.trafficSign || adapter.capabilities?.otherSymbol || adapter.capabilities?.catalogObject || adapter.capabilities?.vehicleObject) });
-      drag.lastPoint = point;
-      event.preventDefault();
-    }
+    queueDragPoint(point);
+    event.preventDefault();
   }
 
   function stopDrag(event) {
@@ -363,12 +512,26 @@
     } else if (pointerId != null && manager.canvas.hasPointerCapture?.(pointerId)) {
       manager.canvas.releasePointerCapture(pointerId);
     }
+    if (drag.moved) {
+      if (Number.isFinite(event?.clientX) && Number.isFinite(event?.clientY)) {
+        drag.pendingPoint = pointFromEvent(event, drag.screenMatrix);
+      }
+      flushQueuedDragPoint(drag);
+    }
     if (!drag.moved && drag.editTapPoint) {
       const model = getActiveModel();
       const adapter = manager.getAdapter(model);
       if (adapter?.handleEditTap?.(model, drag.editTapPoint)) sync();
     }
     const wasRoadDrag = getActiveModel()?.type === "road";
+    if (drag.liveRoadControlPreview || drag.liveRoadObjectPreview) {
+      const model = getActiveModel();
+      const previewModel = drag.previewModel;
+      clearRoadControlPreview(drag);
+      if (drag.moved && model && previewModel) {
+        manager.updateModel(model.id, () => previewModel, { skipHistory: true });
+      }
+    }
     if (drag.liveTransform) {
       const model = getActiveModel();
       const adapter = manager.getAdapter(model);
@@ -382,6 +545,7 @@
       }
     }
     if (drag.moved && drag.transaction) Kroki.HistoryManager?.commit?.(drag.transaction, drag.type === "control" ? "Geometri duzenle" : "Nesne tasi");
+    cancelQueuedDragFrame(drag);
     drag = null;
     if (shouldClear) clear();
     if (wasRoadDrag) {

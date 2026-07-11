@@ -11,6 +11,9 @@
   const SELECTION_RADIUS_SCALE = 1.12;
   const MULTI_SELECTION_STROKE_WIDTH = 4;
   const metricsCache = new WeakMap();
+  const artTemplateCache = new Map();
+  const editableTextCache = new Map();
+  const editableTextPresenceCache = new Map();
 
   function clampScale(value) {
     const scale = Number(value);
@@ -48,14 +51,28 @@
     return radiusFor(model) * SELECTION_RADIUS_SCALE;
   }
 
-  function parseArt(symbol) {
-    const art = String(symbol?.art || "").trim();
-    if (!art) return utils.createSvgElement("g");
+  function artSourceFor(symbol) {
+    return String(symbol?.art || "").trim();
+  }
+
+  function artTemplateFor(symbol) {
+    const art = artSourceFor(symbol);
+    if (artTemplateCache.has(art)) return artTemplateCache.get(art);
+    let template = utils.createSvgElement("g");
+    if (!art) {
+      artTemplateCache.set(art, template);
+      return template;
+    }
     const documentText = `<svg xmlns="${utils.svgNs}">${art}</svg>`;
     const parsed = new DOMParser().parseFromString(documentText, "image/svg+xml");
     const group = parsed.documentElement?.querySelector("g");
-    if (!group) return utils.createSvgElement("g");
-    return document.importNode(group, true);
+    if (group) template = document.importNode(group, true);
+    artTemplateCache.set(art, template);
+    return template;
+  }
+
+  function parseArt(symbol) {
+    return artTemplateFor(symbol).cloneNode(true);
   }
 
   function textElementsIn(group) {
@@ -77,12 +94,20 @@
   }
 
   function editableTextForSymbol(symbol) {
-    return editableTextFromGroup(parseArt(symbol));
+    const art = artSourceFor(symbol);
+    if (editableTextCache.has(art)) return editableTextCache.get(art);
+    const text = editableTextFromGroup(artTemplateFor(symbol));
+    editableTextCache.set(art, text);
+    return text;
   }
 
   function hasEditableText(modelOrSymbol) {
     const symbol = modelOrSymbol?.type === "otherSymbol" ? symbolFromModel(modelOrSymbol) : modelOrSymbol;
-    return textElementsIn(parseArt(symbol)).length > 0;
+    const art = artSourceFor(symbol);
+    if (editableTextPresenceCache.has(art)) return editableTextPresenceCache.get(art);
+    const hasText = textElementsIn(artTemplateFor(symbol)).length > 0;
+    editableTextPresenceCache.set(art, hasText);
+    return hasText;
   }
 
   function defaultLabelForSymbol(symbol, label) {

@@ -134,6 +134,16 @@
         actions: [{ label: "Tamam", value: true, variant: "primary" }]
       });
     },
+    choice(options = {}) {
+      const actions = Array.isArray(options.actions) && options.actions.length
+        ? options.actions
+        : [{ label: "Tamam", value: true, variant: "primary" }];
+      return open({
+        title: options.title || "Kroki Pro",
+        message: options.message || "",
+        actions
+      });
+    },
     confirm(message, title = "Onay") {
       return open({
         title,

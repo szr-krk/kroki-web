@@ -860,17 +860,30 @@
     };
   }
 
+  function scaleStyle(style, scale) {
+    if (!style || !Number.isFinite(Number(scale)) || Math.abs(scale - 1) < 0.000001) return style;
+    const next = clonePlain(style);
+    ["strokeWidth", "dashSize", "dashGap"].forEach((key) => {
+      if (Number.isFinite(Number(next[key]))) next[key] = Number(next[key]) * scale;
+    });
+    next.markerScale = Number.isFinite(Number(next.markerScale))
+      ? Number(next.markerScale) * scale
+      : scale;
+    return next;
+  }
+
   function calloutBoxSignature(label) {
     return Kroki.ShapeRegistry?.get?.("callout")?.calloutBoxSignature?.(label) || "";
   }
 
   function transformModelFromStart(draft, source, mapper, options = {}) {
+    const scale = options.scale || 1;
     draft.geometry = clonePlain(source.geometry);
-    draft.label = scaleLabel(clonePlain(source.label), options.scale || 1);
+    draft.style = scaleStyle(clonePlain(source.style), scale);
+    draft.label = scaleLabel(clonePlain(source.label), scale);
     draft.metadata = clonePlain(source.metadata);
     const geometry = draft.geometry || {};
     const rotationDelta = options.rotationDelta || 0;
-    const scale = options.scale || 1;
 
     function applyRotation(field = "rotation") {
       if (Number.isFinite(Number(geometry[field]))) geometry[field] = normalizeRotation(Number(geometry[field]) + rotationDelta);
