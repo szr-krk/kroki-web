@@ -33,6 +33,10 @@
   let qEndpointEdits = new Map();
   let qEndpointDrag = null;
   let qMetricSyncFrame = 0;
+  let lastDiagnostics = null;
+  let dirtyRoadIds = new Set();
+  let fullRoadRerenderNeeded = true;
+  const roadSurfaceCache = new Map();
 
   function createSvgElement(tag, attrs = {}) {
     if (utils?.createSvgElement) return utils.createSvgElement(tag, attrs);
@@ -1349,7 +1353,13 @@
   function collectRoads() {
     return (manager.getObjectsInDomOrder?.() || [])
       .filter((model) => model?.type === "road")
-      .map((model) => buildSurface(model))
+      .map((model) => {
+        const cached = roadSurfaceCache.get(model.id);
+        if (!dirtyRoadIds.has(model.id) && cached?.model === model) return cached.surface;
+        const surface = buildSurface(model);
+        roadSurfaceCache.set(model.id, { model, surface });
+        return surface;
+      })
       .filter(Boolean);
   }
 
@@ -1410,30 +1420,52 @@
     return result;
   }
 
+  function candidateSurfacePairs(surfaces, pad = 2) {
+    const ordered = surfaces
+      .map((surface, index) => ({ surface, index }))
+      .sort((a, b) => a.surface.bounds.minX - b.surface.bounds.minX || a.index - b.index);
+    const active = [];
+    const pairs = [];
+    ordered.forEach((entry) => {
+      const minX = entry.surface.bounds.minX - pad;
+      for (let index = active.length - 1; index >= 0; index -= 1) {
+        if (active[index].surface.bounds.maxX + pad < minX) active.splice(index, 1);
+      }
+      active.forEach((other) => {
+        if (
+          other.surface.bounds.minY - pad > entry.surface.bounds.maxY ||
+          other.surface.bounds.maxY + pad < entry.surface.bounds.minY
+        ) return;
+        const first = other.index < entry.index ? other : entry;
+        const second = other.index < entry.index ? entry : other;
+        pairs.push([first.surface, second.surface, first.index, second.index]);
+      });
+      active.push(entry);
+    });
+    pairs.sort((a, b) => a[2] - b[2] || a[3] - b[3]);
+    return pairs;
+  }
+
   function findIntersectionShapes(surfaces) {
     const shapes = [];
     const memberIds = new Set();
-    for (let i = 0; i < surfaces.length; i += 1) {
-      for (let j = i + 1; j < surfaces.length; j += 1) {
-        const a = surfaces[i];
-        const b = surfaces[j];
-        if (!boundsOverlap(a.bounds, b.bounds, 2)) continue;
-        const hits = polygonIntersections(a.polygon, b.polygon);
-        if (hits.length < 3) continue;
-        const baseHull = convexHull(hits);
-        const hull = expandPolygon(clippedHullForTerminalAttachments(baseHull, a, b), INTERSECTION_PAD);
-        if (hull.length < 3) continue;
-        shapes.push({
-          roadIds: [a.id, b.id],
-          terminalRoadIds: terminalRoadIdsForPair(a, b),
-          points: hull,
-          d: smoothClosedPath(hull, Math.min(10, SMOOTH_RADIUS), hull)
-        });
-        memberIds.add(a.id);
-        memberIds.add(b.id);
-      }
-    }
-    return { shapes: mergeIntersectionShapeClusters(shapes), memberIds };
+    const candidates = candidateSurfacePairs(surfaces, 2);
+    candidates.forEach(([a, b]) => {
+      const hits = polygonIntersections(a.polygon, b.polygon);
+      if (hits.length < 3) return;
+      const baseHull = convexHull(hits);
+      const hull = expandPolygon(clippedHullForTerminalAttachments(baseHull, a, b), INTERSECTION_PAD);
+      if (hull.length < 3) return;
+      shapes.push({
+        roadIds: [a.id, b.id],
+        terminalRoadIds: terminalRoadIdsForPair(a, b),
+        points: hull,
+        d: smoothClosedPath(hull, Math.min(10, SMOOTH_RADIUS), hull)
+      });
+      memberIds.add(a.id);
+      memberIds.add(b.id);
+    });
+    return { shapes: mergeIntersectionShapeClusters(shapes), memberIds, candidatePairCount: candidates.length };
   }
 
   function pointInsideOtherSurfaces(point, sourceId, surfaces) {
@@ -1688,8 +1720,8 @@
   }
 
   function roadClipShapesFor(id, boundary = null) {
-    const allowClusterForMarking = boundary?.role === "marking";
-    return roadShapesFor(id).filter((shape) => !shape.clustered || allowClusterForMarking);
+    const allowCluster = boundary?.role === "marking" || isRoadShoulderBoundary(boundary);
+    return roadShapesFor(id).filter((shape) => !shape.clustered || allowCluster);
   }
 
   function pointInsideRoadShapes(id, point) {
@@ -2412,6 +2444,19 @@
     return lastQSegments.find((item) => item.key === key) || null;
   }
 
+  function canInteractWithQ() {
+    const activeModel = Kroki.SelectionManager?.getActiveModel?.();
+    if (activeModel) return activeModel.type === "road";
+    if (window.krokiEditorState?.getActiveTool?.()) return false;
+    return true;
+  }
+
+  function blockQEvent(event) {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    event?.stopImmediatePropagation?.();
+  }
+
   function selectQSegment(key) {
     selectedQKey = key || "";
     render();
@@ -2476,6 +2521,10 @@
   }
 
   function startQEndpointDrag(event, key, side) {
+    if (!canInteractWithQ()) {
+      blockQEvent(event);
+      return;
+    }
     const item = qSegmentByKey(key);
     if (!item) return;
     event.preventDefault();
@@ -2587,6 +2636,10 @@
         cursor: "pointer"
       });
       hit.addEventListener("pointerdown", (event) => {
+        if (!canInteractWithQ()) {
+          blockQEvent(event);
+          return;
+        }
         event.preventDefault();
         event.stopPropagation();
         // Q parçasına ilk dokunuş önseçim/edit başlatır; seçiliyken tekrar Q çizgisine
@@ -2635,15 +2688,24 @@
   }
 
   function render() {
+    const renderStartedAt = performance.now();
+    const timings = {};
+    const mark = (name, startedAt) => {
+      timings[name] = performance.now() - startedAt;
+      return performance.now();
+    };
     scheduled = 0;
     if (suspended) return;
+    let phaseStartedAt = performance.now();
     const layer = contourLayer();
     layer.replaceChildren();
 
     const previousMemberIds = new Set(lastMemberIds);
+    const previousIntersectionShapes = lastIntersectionShapes;
     clearClasses(previousMemberIds);
 
     const surfaces = collectRoads();
+    phaseStartedAt = mark("collectRoadsMs", phaseStartedAt);
     lastRoadSurfaces = surfaces;
     lastIntersectionShapes = [];
     lastOuterContours = [];
@@ -2656,22 +2718,45 @@
     const intersectionResult = surfaces.length >= 2
       ? findIntersectionShapes(surfaces)
       : { shapes: [], memberIds: new Set() };
-    const { shapes, memberIds } = intersectionResult;
+    phaseStartedAt = mark("findIntersectionsMs", phaseStartedAt);
+    const { shapes, memberIds, candidatePairCount = 0 } = intersectionResult;
     lastIntersectionShapes = shapes;
     lastMemberIds = memberIds;
     memberIds.forEach((id) => manager.getElement?.(id)?.classList.add("is-road-intersection-member"));
 
     const memberSurfaces = surfaces.filter((surface) => memberIds.has(surface.id));
     const contours = shapes.length ? buildOuterContours(memberSurfaces, shapes) : [];
+    phaseStartedAt = mark("buildOuterContoursMs", phaseStartedAt);
     lastOuterContours = contours;
     lastSmoothedContours = contours;
     const intersectionQSegments = contours.flatMap((contour) => contour.qSegments || []);
 
-    const affectedIds = new Set([...previousMemberIds, ...memberIds]);
+    const affectedIds = new Set();
+    if (fullRoadRerenderNeeded) {
+      previousMemberIds.forEach((id) => affectedIds.add(id));
+      memberIds.forEach((id) => affectedIds.add(id));
+    } else {
+      previousMemberIds.forEach((id) => {
+        if (!memberIds.has(id)) affectedIds.add(id);
+      });
+      memberIds.forEach((id) => {
+        if (!previousMemberIds.has(id)) affectedIds.add(id);
+      });
+      dirtyRoadIds.forEach((id) => affectedIds.add(id));
+      [...previousIntersectionShapes, ...shapes].forEach((shape) => {
+        if ((shape.roadIds || []).some((id) => dirtyRoadIds.has(id))) {
+          (shape.roadIds || []).forEach((id) => affectedIds.add(id));
+        }
+      });
+    }
     lastQSegments = intersectionQSegments;
     rerenderRoads(affectedIds);
+    phaseStartedAt = mark("rerenderRoadsMs", phaseStartedAt);
+    dirtyRoadIds = new Set();
+    fullRoadRerenderNeeded = false;
 
     const auxiliaryContours = buildAuxiliaryContours(collectAuxiliaryContourDefinitions());
+    phaseStartedAt = mark("buildAuxiliaryContoursMs", phaseStartedAt);
     const auxiliaryQSegments = auxiliaryContours.flatMap((contour) => contour.qSegments || []);
     lastQSegments = [...intersectionQSegments, ...auxiliaryQSegments];
     pruneMissingQEdits(lastQSegments);
@@ -2683,6 +2768,19 @@
     }
     renderAuxiliaryContours(auxiliaryContours, layer);
     renderQInteractivity(layer, lastQSegments);
+    mark("renderContoursAndQMs", phaseStartedAt);
+    lastDiagnostics = {
+      ...timings,
+      totalMs: performance.now() - renderStartedAt,
+      roadCount: surfaces.length,
+      pairCount: surfaces.length * Math.max(0, surfaces.length - 1) / 2,
+      candidatePairCount,
+      intersectionShapeCount: shapes.length,
+      memberRoadCount: memberIds.size,
+      contourCount: contours.length,
+      qSegmentCount: lastQSegments.length,
+      affectedRoadCount: affectedIds.size
+    };
   }
 
   function scheduleRefresh() {
@@ -2764,6 +2862,17 @@
           : null;
         const result = original.apply(this, args);
         if (!renderingRoads && managerMutationTouchesRoad(name, args, result, beforeModel)) {
+          if (name === "clear" || name === "replaceAll") {
+            fullRoadRerenderNeeded = true;
+            dirtyRoadIds = new Set();
+            roadSurfaceCache.clear();
+          } else {
+            const roadId = isRoadModel(result) ? result.id : (isRoadModel(beforeModel) ? beforeModel.id : "");
+            if (roadId) {
+              dirtyRoadIds.add(roadId);
+              if (name === "remove") roadSurfaceCache.delete(roadId);
+            }
+          }
           if (name === "clear") clear();
           else scheduleRefresh();
         }
@@ -2792,6 +2901,7 @@
     getLastIntersectionShapes() { return lastIntersectionShapes.map((item) => ({ roadIds: item.roadIds.slice(), points: item.points.slice(), d: item.d })); },
     getLastSmoothedContours() { return lastSmoothedContours.map((item) => ({ points: item.points.slice(), closed: Boolean(item.closed), d: item.d, strokeWidth: item.strokeWidth })); },
     getLastQSegments() { return lastQSegments.map((item) => ({ key: item.key, entry: item.entry, control: item.control, exit: item.exit, d: qSegmentPath(item) })); },
+    getDiagnostics() { return lastDiagnostics ? { ...lastDiagnostics } : null; },
     exportState,
     importState,
     resetQEndpointEdits,

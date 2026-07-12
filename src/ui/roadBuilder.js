@@ -12,6 +12,7 @@
   const DEFAULT_ARC_RATIO = Math.tan((36 * Math.PI / 180) / 2);
   const panel = document.querySelector("#roadBuilderPanel");
   let lastDivided = false;
+  let addRoadScheduled = false;
   const bindHoldAction = window.krokiObjectEditCore?.bindHoldAction || ((button, action) => {
     button?.addEventListener("click", action);
     return () => {};
@@ -267,19 +268,37 @@
     return Array.from(layer.children).find((node) => !(node.dataset?.krokiObject === "true" && node.dataset.shape === "road")) || null;
   }
 
+  function runAddRoad(geometry, roadConfig) {
+    try {
+      window.krokiEditorRail?.resetCizimAraci?.();
+      const model = manager.create("road", {
+        geometry,
+        metadata: { road: roadConfig }
+      }, { skipHistory: true, beforeNode: roadInsertBeforeNode() });
+      if (!model) return;
+      window.krokiEditorRail?.closeRailMenus?.();
+      selection.edit(model.id);
+      Kroki.HistoryManager?.pushObjectAdd?.(model, "Yol ekle");
+    } finally {
+      addRoadScheduled = false;
+      if (fields.add) fields.add.disabled = false;
+    }
+  }
+
+  function scheduleAfterPaint(callback) {
+    const raf = window.requestAnimationFrame || ((run) => window.setTimeout(run, 16));
+    raf(() => window.setTimeout(callback, 0));
+  }
+
   function addRoad(event) {
     event?.preventDefault();
     event?.stopPropagation();
-    window.krokiEditorRail?.resetCizimAraci?.();
-    const transaction = Kroki.HistoryManager?.begin?.("Yol ekle") || null;
-    const model = manager.create("road", {
-      geometry: geometryFromInputs(),
-      metadata: { road: roadConfigFromInputs() }
-    }, { skipHistory: true, beforeNode: roadInsertBeforeNode() });
-    if (!model) return;
-    window.krokiEditorRail?.closeRailMenus?.();
-    selection.edit(model.id);
-    if (transaction) Kroki.HistoryManager?.commit?.(transaction, "Yol ekle");
+    if (addRoadScheduled) return;
+    const geometry = geometryFromInputs();
+    const roadConfig = roadConfigFromInputs();
+    addRoadScheduled = true;
+    if (fields.add) fields.add.disabled = true;
+    scheduleAfterPaint(() => runAddRoad(geometry, roadConfig));
   }
 
   fields.add?.addEventListener("click", addRoad);

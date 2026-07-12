@@ -72,12 +72,26 @@
     });
   }
 
-  function push(command) {
-    if (suspended || !command?.before || !command?.after || sameSnapshot(command.before, command.after)) return false;
+  function push(command, options = {}) {
+    if (suspended || !command?.before || !command?.after) return false;
+    if (!options.assumeChanged && sameSnapshot(command.before, command.after)) return false;
     undoStack.push({
       label: command.label || "Islem",
-      before: clonePlain(command.before),
-      after: clonePlain(command.after)
+      before: options.ownSnapshots ? command.before : clonePlain(command.before),
+      after: options.ownSnapshots ? command.after : clonePlain(command.after)
+    });
+    trimUndoStack();
+    redoStack.length = 0;
+    notifyChange();
+    return true;
+  }
+
+  function pushDelta(command) {
+    if (suspended || typeof command?.undo !== "function" || typeof command?.redo !== "function") return false;
+    undoStack.push({
+      label: command.label || "Islem",
+      undo: command.undo,
+      redo: command.redo
     });
     trimUndoStack();
     redoStack.length = 0;
@@ -93,12 +107,81 @@
     };
   }
 
-  function commit(transaction, label) {
+  function commit(transaction, label, options = {}) {
     if (!transaction?.before || suspended) return false;
     return push({
       label: label || transaction.label,
       before: transaction.before,
       after: captureState()
+    }, options);
+  }
+
+  function beginObjectChange(id, label) {
+    const model = Kroki.EditorObjectManager?.get?.(id);
+    if (suspended || !model) return null;
+    return {
+      kind: "object-change",
+      id,
+      label: label || "Nesne guncelle",
+      before: clonePlain(model)
+    };
+  }
+
+  function restoreObjectSnapshot(model, selectionState) {
+    if (!model?.id) return;
+    Kroki.EditorObjectManager?.updateModel?.(model.id, () => clonePlain(model), {
+      skipHistory: true,
+      controlPoints: false,
+      styleControls: false
+    });
+    if (selectionState?.id) Kroki.SelectionManager?.restoreState?.(selectionState);
+    else {
+      Kroki.ControlPointManager?.sync?.();
+      Kroki.StyleManager?.syncControls?.();
+    }
+  }
+
+  function commitObjectChange(transaction, label, options = {}) {
+    if (suspended || transaction?.kind !== "object-change" || !transaction.id || !transaction.before) return false;
+    const afterModel = Kroki.EditorObjectManager?.get?.(transaction.id);
+    if (!afterModel) return false;
+    const after = clonePlain(afterModel);
+    if (!options.assumeChanged && sameSnapshot(transaction.before, after)) return false;
+    const selectionState = Kroki.SelectionManager?.getState?.() || null;
+    return pushDelta({
+      label: label || transaction.label,
+      undo() {
+        restoreObjectSnapshot(transaction.before, selectionState);
+      },
+      redo() {
+        restoreObjectSnapshot(after, selectionState);
+      }
+    });
+  }
+
+  function pushObjectAdd(model, label) {
+    if (suspended || !model?.id) return false;
+    const snapshot = clonePlain(model);
+    const selectionState = Kroki.SelectionManager?.getState?.() || null;
+    return pushDelta({
+      label: label || "Nesne ekle",
+      undo() {
+        Kroki.EditorObjectManager?.remove?.(snapshot.id, {
+          skipHistory: true,
+          controlPoints: false,
+          styleControls: false
+        });
+      },
+      redo() {
+        if (!Kroki.EditorObjectManager?.get?.(snapshot.id)) {
+          Kroki.EditorObjectManager?.add?.(snapshot, {
+            skipHistory: true,
+            controlPoints: false,
+            styleControls: false
+          });
+        }
+        if (selectionState?.id) Kroki.SelectionManager?.restoreState?.(selectionState);
+      }
     });
   }
 
@@ -122,7 +205,8 @@
     if (suspended || !undoStack.length) return false;
     const command = undoStack.pop();
     redoStack.push(command);
-    restoreState(command.before);
+    if (typeof command.undo === "function") suspend(command.undo);
+    else restoreState(command.before);
     notifyChange();
     return true;
   }
@@ -131,7 +215,8 @@
     if (suspended || !redoStack.length) return false;
     const command = redoStack.pop();
     undoStack.push(command);
-    restoreState(command.after);
+    if (typeof command.redo === "function") suspend(command.redo);
+    else restoreState(command.after);
     notifyChange();
     return true;
   }
@@ -189,8 +274,12 @@
   Kroki.HistoryManager = {
     begin,
     commit,
+    beginObjectChange,
+    commitObjectChange,
+    pushObjectAdd,
     record,
     push,
+    pushDelta,
     undo,
     redo,
     canUndo,

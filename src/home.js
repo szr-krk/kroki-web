@@ -3,6 +3,62 @@ const tamEkranLabel = document.querySelector("#lblHomeTamEkran");
 const homeScreen = document.querySelector("#home");
 const editorScreen = document.querySelector("#editor");
 const modalPanels = Array.from(document.querySelectorAll(".modal-panel"));
+const hazirKavsaklarListesi = document.querySelector("#hazirKavsaklarListesi");
+
+function svgDataUrl(svg) {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(String(svg || ""))}`;
+}
+
+function readyIntersections() {
+  return (window.Kroki?.ReadyDrawings || []).filter((item) => item?.type === "intersection");
+}
+
+function renderHazirKavsaklar() {
+  if (!hazirKavsaklarListesi) return;
+  const items = readyIntersections();
+  if (!items.length) {
+    hazirKavsaklarListesi.textContent = "(Boş) - Hazır kavşaklar daha sonra doldurulacak.";
+    return;
+  }
+
+  const grid = document.createElement("div");
+  grid.className = "stored-doc-list ready-drawing-list";
+  items.forEach((item) => {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "stored-doc-card ready-drawing-card";
+    card.dataset.readyDrawingId = item.id;
+
+    const thumb = document.createElement("div");
+    thumb.className = "stored-doc-thumb";
+    const img = document.createElement("img");
+    img.alt = item.title || "Hazır çizim";
+    img.src = svgDataUrl(item.svg);
+    thumb.append(img);
+
+    const meta = document.createElement("div");
+    meta.className = "stored-doc-meta";
+    const title = document.createElement("strong");
+    title.textContent = item.title || "Hazır çizim";
+    const category = document.createElement("small");
+    category.textContent = item.category || "Hazır çizim";
+    meta.append(title, category);
+
+    card.append(thumb, meta);
+    grid.append(card);
+  });
+  hazirKavsaklarListesi.replaceChildren(grid);
+}
+
+function openReadyDrawing(id) {
+  const item = readyIntersections().find((entry) => entry.id === id);
+  if (!item?.svg) return;
+  if (!window.KrokiMainMenu?.importKrokiSvgText) {
+    window.KrokiDialog?.alert("Hazır çizim açma altyapısı yüklenmedi.", "Hazır Kavşaklar");
+    return;
+  }
+  void window.KrokiMainMenu.importKrokiSvgText(item.svg);
+}
 
 function closeAllModals() {
   modalPanels.forEach((modal) => modal.classList.add("gizli"));
@@ -16,7 +72,10 @@ function openModal(id) {
 }
 
 document.querySelectorAll("[data-modal-target]").forEach((button) => {
-  button.addEventListener("click", () => openModal(button.dataset.modalTarget));
+  button.addEventListener("click", () => {
+    if (button.dataset.modalTarget === "modalHazirKavsaklar") renderHazirKavsaklar();
+    openModal(button.dataset.modalTarget);
+  });
 });
 
 document.querySelectorAll("[data-modal-close]").forEach((button) => {
@@ -42,6 +101,11 @@ document.querySelector("#btnSvgYukle")?.addEventListener("click", () => {
   else window.KrokiDialog?.alert("SVG yükleme hazırlanıyor.", "SVG Yükle");
 });
 
+hazirKavsaklarListesi?.addEventListener("click", (event) => {
+  const button = event.target?.closest?.("[data-ready-drawing-id]");
+  if (button) openReadyDrawing(button.dataset.readyDrawingId);
+});
+
 function syncFullscreenLabel() {
   const active = Boolean(document.fullscreenElement);
   tamEkranButton?.setAttribute("aria-pressed", active ? "true" : "false");
@@ -59,4 +123,5 @@ tamEkranButton?.addEventListener("click", async () => {
 });
 
 document.addEventListener("fullscreenchange", syncFullscreenLabel);
+renderHazirKavsaklar();
 syncFullscreenLabel();

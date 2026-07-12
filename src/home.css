@@ -419,6 +419,14 @@ select {
   font-weight: 900;
 }
 
+.ready-drawing-list {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.ready-drawing-card .stored-doc-thumb {
+  aspect-ratio: 16 / 10;
+}
+
 .stored-doc-empty {
   padding: 8px 0;
 }

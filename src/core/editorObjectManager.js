@@ -16,9 +16,19 @@
   const elementMap = new Map();
   let idSeed = 1;
   let viewportLabelFrame = 0;
+  let sceneVersion = 0;
+  let objectOrderCache = null;
 
   const canvas = document.querySelector("#editorCanvas");
   const objectLayer = document.querySelector("#editorObjects");
+
+  function markSceneChanged(options = {}) {
+    sceneVersion += 1;
+    if (options.models !== false) objectOrderCache = null;
+    if (options.order !== false) {
+      Kroki.HitTestManager?.scheduleWarmup?.();
+    }
+  }
 
   function generateId() {
     let id;
@@ -603,13 +613,13 @@
     return element;
   }
 
-  function renderGeometry(id) {
+  function renderGeometry(id, options = {}) {
     const model = objectMap.get(id);
     const element = elementMap.get(id);
     const adapter = adapterFor(model);
     if (!model || !element || !adapter) return null;
     adapter.render(model, element);
-    if (!adapter.capabilities?.ownsLabel && !adapter.capabilities?.noText && !adapter.capabilities?.textObject) {
+    if (options.labels !== false && !adapter.capabilities?.ownsLabel && !adapter.capabilities?.noText && !adapter.capabilities?.textObject) {
       renderLabel(model);
     }
     return element;
@@ -632,6 +642,7 @@
     }
     renderObject(model.id);
     keepRoadLayersAtBack();
+    markSceneChanged();
     return model;
   }
 
@@ -680,6 +691,7 @@
     const normalized = normalizeModel({ ...next, id: current.id, type: current.type });
     objectMap.set(id, normalized);
     renderObject(id);
+    markSceneChanged({ order: false });
     syncDependents(options);
     return normalized;
   }
@@ -692,7 +704,8 @@
     const model = objectMap.get(id);
     if (!model || typeof mutator !== "function") return null;
     mutator(model);
-    renderGeometry(id);
+    renderGeometry(id, options);
+    markSceneChanged({ order: false, models: false });
     syncDependents({ styleControls: false, ...options });
     return model;
   }
@@ -729,6 +742,7 @@
     styleManager.cleanupDefs?.(canvas);
     if (Kroki.SelectionManager?.getActiveId?.() === id) Kroki.SelectionManager.clear();
     if (Kroki.MultiSelectManager?.getSelectedIds?.().includes(id)) Kroki.MultiSelectManager.sync();
+    markSceneChanged();
     return Boolean(element);
   }
 
@@ -754,6 +768,7 @@
       layerNodesFor(id).forEach((node) => objectLayer.append(node));
       syncGroupLayers();
       keepRoadLayersAtBack();
+      markSceneChanged();
       syncDependents(options);
       return true;
     });
@@ -768,15 +783,18 @@
       nodes.slice(1).forEach((node) => objectLayer.insertBefore(node, nodes[0].nextSibling));
       syncGroupLayers();
       keepRoadLayersAtBack();
+      markSceneChanged();
       syncDependents(options);
       return true;
     });
   }
 
   function getObjectsInDomOrder() {
-    return Array.from(objectLayer.querySelectorAll("[data-kroki-object='true']"))
+    if (objectOrderCache) return objectOrderCache.slice();
+    objectOrderCache = Array.from(objectLayer.querySelectorAll("[data-kroki-object='true']"))
       .map((element) => objectMap.get(element.dataset.objectId))
       .filter(Boolean);
+    return objectOrderCache.slice();
   }
 
   function unwrapGroupElement(groupElement) {
@@ -830,6 +848,7 @@
       if (!seenUnits.has(group.id) && !objectLayer.querySelector(`[data-kroki-group-id="${group.id}"]`)) appendGroup(objectLayer, group.id);
     });
     keepRoadLayersAtBack();
+    markSceneChanged();
   }
 
   function getAll() {
@@ -845,6 +864,7 @@
       objectLayer.replaceChildren();
       Kroki.GroupManager?.clear?.();
       styleManager.cleanupDefs?.(canvas);
+      markSceneChanged();
       syncDependents(options);
       return true;
     });
@@ -897,6 +917,9 @@
     },
     getObjectsInDomOrder,
     normalizeModel,
-    removeLabelArtifacts
+    removeLabelArtifacts,
+    getSceneVersion() {
+      return sceneVersion;
+    }
   };
 })();

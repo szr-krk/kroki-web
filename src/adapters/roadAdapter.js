@@ -11,6 +11,8 @@
   const S_CURVE = "sCurve";
   const ISLAND = "islandRing";
   const SAMPLE_COUNT = 64;
+  const PREVIEW_S_CURVE_SAMPLE_COUNT = 22;
+  const PREVIEW_ISLAND_SAMPLE_COUNT = 28;
   const MIN_WIDTH = 2;
   const MAX_LANES = 5;
   const DEFAULT_ARC_RATIO = Math.tan((36 * Math.PI / 180) / 2);
@@ -861,15 +863,15 @@
     };
   }
 
-  function sampleCacheKey(model) {
+  function sampleCacheKey(model, sampleCount = SAMPLE_COUNT) {
     const geometry = model?.geometry || {};
     if (geometry.profile === ISLAND) {
       const center = point(geometry.center);
-      return [ISLAND, center.x, center.y, geometry.innerDiameter, geometry.outerDiameter].join("|");
+      return [ISLAND, sampleCount, center.x, center.y, geometry.innerDiameter, geometry.outerDiameter].join("|");
     }
     const start = point(geometry.start);
     const end = point(geometry.end);
-    const parts = [geometry.profile || STRAIGHT, start.x, start.y, end.x, end.y];
+    const parts = [geometry.profile || STRAIGHT, sampleCount, start.x, start.y, end.x, end.y];
     if (geometry.profile === ARC) parts.push(numberOr(geometry.ratio, DEFAULT_ARC_RATIO));
     if (geometry.profile === S_CURVE) {
       cleanSCurveControls(geometry).forEach((control) => {
@@ -879,12 +881,14 @@
     return parts.join("|");
   }
 
-  function samplesFor(model) {
-    const key = sampleCacheKey(model);
+  function samplesFor(model, sampleCount = SAMPLE_COUNT) {
+    const count = isStraightGeometry(model?.geometry)
+      ? 1
+      : clampInt(sampleCount, 4, SAMPLE_COUNT, SAMPLE_COUNT);
+    const key = sampleCacheKey(model, count);
     const cached = model && typeof model === "object" ? sampleCache.get(model) : null;
     if (cached?.key === key) return cached.samples;
     const samples = [];
-    const count = isStraightGeometry(model?.geometry) ? 1 : SAMPLE_COUNT;
     for (let index = 0; index <= count; index += 1) {
       const t = index / count;
       const center = pointAt(model, t);
@@ -913,8 +917,8 @@
     return points.map((item, index) => `${index === 0 ? "M" : "L"} ${formatPoint(item)}`).join(" ") + (close ? " Z" : "");
   }
 
-  function offsetPathData(model, offset = 0, reverse = false) {
-    const points = samplesFor(model).map((sample) => offsetSample(sample, offset));
+  function offsetPathData(model, offset = 0, reverse = false, sampleCount = SAMPLE_COUNT) {
+    const points = samplesFor(model, sampleCount).map((sample) => offsetSample(sample, offset));
     if (reverse) points.reverse();
     return pathFromPoints(points, isIslandGeometry(model?.geometry));
   }
@@ -960,30 +964,86 @@
     return total;
   }
 
-  function surfaceOutline(model, width) {
+  function surfaceOutline(model, width, sampleCount = SAMPLE_COUNT) {
     if (isIslandGeometry(model?.geometry)) {
       const center = point(model.geometry.center);
       const radii = islandRadii(model.geometry);
-      return circlePoints(center, radii.outerRadius, false, SAMPLE_COUNT);
+      return circlePoints(center, radii.outerRadius, false, sampleCount);
     }
-    const samples = samplesFor(model);
+    const samples = samplesFor(model, sampleCount);
     const half = width / 2;
     const left = samples.map((sample) => offsetSample(sample, half));
     const right = samples.slice().reverse().map((sample) => offsetSample(sample, -half));
     return [...left, ...right];
   }
 
-  function islandRingPathData(model) {
+  function islandRingPathData(model, sampleCount = SAMPLE_COUNT) {
     const center = point(model.geometry.center);
     const radii = islandRadii(model.geometry);
-    const outer = circlePoints(center, radii.outerRadius, false, SAMPLE_COUNT);
-    const inner = circlePoints(center, radii.innerRadius, true, SAMPLE_COUNT);
+    const outer = circlePoints(center, radii.outerRadius, false, sampleCount);
+    const inner = circlePoints(center, radii.innerRadius, true, sampleCount);
     return pathFromPoints(outer, true) + " " + pathFromPoints(inner, true);
   }
 
-  function surfacePathData(model, width) {
-    if (isIslandGeometry(model?.geometry)) return islandRingPathData(model);
-    return pathFromPoints(surfaceOutline(model, width), true);
+  function surfacePathData(model, width, options = {}) {
+    const sampleCount = clampInt(options.sampleCount, 4, SAMPLE_COUNT, SAMPLE_COUNT);
+    if (isIslandGeometry(model?.geometry)) return islandRingPathData(model, sampleCount);
+    return pathFromPoints(surfaceOutline(model, width, sampleCount), true);
+  }
+
+  function arcOffsetRadius(geometry, offset) {
+    const delta = geometry.sweepFlag
+      ? normalizeAngle(geometry.endAngle - geometry.startAngle)
+      : -normalizeAngle(geometry.startAngle - geometry.endAngle);
+    return geometry.radius + (delta >= 0 ? -offset : offset);
+  }
+
+  function arcOffsetPoint(geometry, angle, offset) {
+    const radius = arcOffsetRadius(geometry, offset);
+    return {
+      radius,
+      point: {
+        x: geometry.cx + Math.cos(angle) * radius,
+        y: geometry.cy + Math.sin(angle) * radius
+      }
+    };
+  }
+
+  function arcSegmentPath(start, end, radius, largeArcFlag, sweepFlag) {
+    return `M ${formatPoint(start)} A ${radius} ${radius} 0 ${largeArcFlag} ${sweepFlag} ${formatPoint(end)}`;
+  }
+
+  function arcSurfacePathData(model, width) {
+    if (model?.geometry?.profile !== ARC) return "";
+    const geometry = arcGeometry(model);
+    if (!geometry) return "";
+    const half = width / 2;
+    const leftStart = arcOffsetPoint(geometry, geometry.startAngle, half);
+    const leftEnd = arcOffsetPoint(geometry, geometry.endAngle, half);
+    const rightStart = arcOffsetPoint(geometry, geometry.startAngle, -half);
+    const rightEnd = arcOffsetPoint(geometry, geometry.endAngle, -half);
+    if ([leftStart, leftEnd, rightStart, rightEnd].some((item) => !Number.isFinite(item.radius) || item.radius <= 1)) return "";
+    const largeArcFlag = geometry.arcDelta > Math.PI ? 1 : 0;
+    const sweepFlag = geometry.sweepFlag ? 1 : 0;
+    const reverseSweepFlag = sweepFlag ? 0 : 1;
+    return [
+      arcSegmentPath(leftStart.point, leftEnd.point, leftStart.radius, largeArcFlag, sweepFlag),
+      `L ${formatPoint(rightEnd.point)}`,
+      `A ${rightEnd.radius} ${rightEnd.radius} 0 ${largeArcFlag} ${reverseSweepFlag} ${formatPoint(rightStart.point)}`,
+      "Z"
+    ].join(" ");
+  }
+
+  function previewSampleCount(model) {
+    const profile = model?.geometry?.profile;
+    if (profile === ISLAND) return PREVIEW_ISLAND_SAMPLE_COUNT;
+    if (profile === S_CURVE) return PREVIEW_S_CURVE_SAMPLE_COUNT;
+    return SAMPLE_COUNT;
+  }
+
+  function previewSurfacePathData(model, width) {
+    if (model?.geometry?.profile === ARC) return arcSurfacePathData(model, width) || surfacePathData(model, width, { sampleCount: SAMPLE_COUNT });
+    return surfacePathData(model, width, { sampleCount: previewSampleCount(model) });
   }
 
   function bandPathData(model, startOffset, endOffset) {
@@ -1529,7 +1589,6 @@
     };
     segments.forEach((segment) => {
       renderSegment(segment, false);
-      renderSegment(segment, true);
     });
   }
 
@@ -3099,6 +3158,7 @@
     normalizeRoadConfig,
     roadConfig,
     normalizeMarkingStyle,
+    previewSurfacePathData,
     pocketMode,
     setPocketMode,
     intersectionAuxiliaryContours,

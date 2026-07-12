@@ -13,8 +13,9 @@
   let selectionElement = null;
   let onControlPointDown = null;
   const handles = new Map();
+  let cachedMetrics = null;
 
-  function metrics() {
+  function computeMetrics() {
     const unit = utils.svgUnitsPerScreenPx(manager.canvas);
     return {
       unit,
@@ -24,6 +25,11 @@
       handleGap: CP_VISIBLE_DIAMETER_PX * unit,
       minGap: 2 * unit
     };
+  }
+
+  function metrics() {
+    if (!cachedMetrics) cachedMetrics = computeMetrics();
+    return cachedMetrics;
   }
 
   function removeOwnedElements() {
@@ -40,6 +46,7 @@
     activeId = "";
     mode = "";
     activeType = "";
+    cachedMetrics = null;
   }
 
   function resizeHandle(handle, sizes, cp = {}) {
@@ -83,15 +90,15 @@
     return handle;
   }
 
-  function updateHandle(handle, cp, sizes) {
-    resizeHandle(handle, sizes, cp);
+  function updateHandle(handle, cp, sizes, options = {}) {
+    if (options.resize !== false) resizeHandle(handle, sizes, cp);
     const rotation = Number.isFinite(cp.angle) ? ` rotate(${cp.angle})` : "";
     handle.setAttribute("transform", `translate(${cp.x} ${cp.y})${rotation}`);
     handle.classList.toggle("is-preselect", mode === "preselect");
     if (cp.cursor) handle.style.cursor = cp.cursor;
   }
 
-  function sync() {
+  function sync(options = {}) {
     if (!activeId) return;
     const model = manager.get(activeId);
     const adapter = manager.getAdapter(model);
@@ -101,7 +108,8 @@
       return;
     }
 
-    const sizes = metrics();
+    const sizes = options.reuseMetrics && cachedMetrics ? cachedMetrics : computeMetrics();
+    cachedMetrics = sizes;
     if (activeType !== model.type) {
       removeOwnedElements();
       activeType = model.type;
@@ -130,7 +138,7 @@
         handles.set(cp.id, handle);
         editLayer.append(handle);
       } else {
-        updateHandle(handle, cp, sizes);
+        updateHandle(handle, cp, sizes, options);
       }
     });
   }
@@ -146,4 +154,8 @@
       sync();
     }
   };
+
+  manager.canvas.addEventListener("kroki:viewboxchange", () => {
+    cachedMetrics = null;
+  });
 })();

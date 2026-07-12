@@ -92,6 +92,9 @@
 
   function exportDocument(options = {}) {
     const now = options.stableTimestamps ? "" : new Date().toISOString();
+    const sourceObjects = typeof manager.getObjectsInDomOrder === "function"
+      ? manager.getObjectsInDomOrder()
+      : manager.getAll();
     return {
       schemaVersion: SCHEMA_VERSION,
       app: APP_NAME,
@@ -100,7 +103,7 @@
       viewport: {
         viewBox: manager.canvas?.getAttribute("viewBox") || "0 0 1200 800"
       },
-      objects: manager.getAll().map((model) => ({
+      objects: sourceObjects.map((model) => ({
         id: model.id,
         type: model.type,
         geometry: clonePlain(model.geometry),
