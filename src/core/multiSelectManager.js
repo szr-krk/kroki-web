@@ -749,8 +749,10 @@
 
   function bringToFront(options = {}) {
     if (!selectedIds.size) return false;
+    const ids = selectedIdsInDomOrder().filter((id) => manager.get?.(id)?.type !== "road");
+    if (!ids.length) return false;
     const transaction = options.skipHistory ? null : Kroki.HistoryManager?.begin?.("Coklu one getir");
-    selectedIdsInDomOrder().forEach((id) => manager.bringToFront(id, { skipHistory: true, controlPoints: false, styleControls: false }));
+    ids.forEach((id) => manager.bringToFront(id, { skipHistory: true, controlPoints: false, styleControls: false }));
     sync();
     if (transaction) Kroki.HistoryManager?.commit?.(transaction, "Coklu one getir");
     return true;
@@ -758,8 +760,10 @@
 
   function sendToBack(options = {}) {
     if (!selectedIds.size) return false;
+    const ids = selectedIdsInDomOrder().filter((id) => manager.get?.(id)?.type !== "road");
+    if (!ids.length) return false;
     const transaction = options.skipHistory ? null : Kroki.HistoryManager?.begin?.("Coklu arkaya gonder");
-    selectedIdsInDomOrder().reverse().forEach((id) => manager.sendToBack(id, { skipHistory: true, controlPoints: false, styleControls: false }));
+    ids.reverse().forEach((id) => manager.sendToBack(id, { skipHistory: true, controlPoints: false, styleControls: false }));
     sync();
     if (transaction) Kroki.HistoryManager?.commit?.(transaction, "Coklu arkaya gonder");
     return true;

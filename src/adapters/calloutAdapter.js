@@ -9,10 +9,8 @@
   const DEFAULT_SIZE = 12;
   const LINE_HEIGHT = 1.16;
   const WIDTH_FACTOR = 0.58;
-  const PAD_X = 10;
-  const PAD_Y = 8;
-  const MIN_BOX_SIZE_FACTOR = 1.4;
-  const BOX_RADIUS = 8;
+  const BOX_PADDING = 1;
+  const BOX_FIT_VERSION = 4;
   const DEFAULT_STROKE = "#d11f1f";
   const DEFAULT_FILL = "#ffffff";
   const DEFAULT_TEXT_COLOR = "#000000";
@@ -30,15 +28,25 @@
     return lines.length ? lines : [DEFAULT_TEXT];
   }
 
-  function fallbackBoxBounds(model) {
+  function textVisualBounds(model) {
     const label = labelFor(model);
     const lines = linesFor(label.text);
     const widthFactor = label.bold ? WIDTH_FACTOR * 1.08 : WIDTH_FACTOR;
-    const textWidth = Math.max(...lines.map((line) => Math.max(1, line.length))) * label.size * widthFactor;
-    const textHeight = Math.max(label.size, lines.length * label.size * LINE_HEIGHT);
-    const minSize = label.size * MIN_BOX_SIZE_FACTOR;
-    const width = Math.max(minSize + PAD_X * 2, textWidth + PAD_X * 2);
-    const height = Math.max(minSize + PAD_Y * 2, textHeight + PAD_Y * 2);
+    const width = Math.max(label.size, Math.max(...lines.map((line) => Math.max(1, line.length))) * label.size * widthFactor);
+    const height = Math.max(label.size, lines.length * label.size * LINE_HEIGHT);
+    return { width, height };
+  }
+
+  function boxPadding() {
+    return { x: BOX_PADDING, y: BOX_PADDING };
+  }
+
+  function fittedBoxBounds(model) {
+    const label = labelFor(model);
+    const textBounds = textVisualBounds(model);
+    const padding = boxPadding();
+    const width = textBounds.width + padding.x * 2;
+    const height = textBounds.height + padding.y * 2;
     return {
       x: model.geometry.center.x - width / 2,
       y: model.geometry.center.y - height / 2,
@@ -60,15 +68,13 @@
   }
 
   function boxBounds(model) {
-    const box = model.metadata?.calloutBox;
-    const centered = boxAroundCenter(model, box);
-    if (centered) return centered;
-    return fallbackBoxBounds(model);
+    return signedBox(model, labelFor(model)) || fittedBoxBounds(model);
   }
 
   function calloutBoxSignature(labelInput) {
     const label = styleManager.normalizeLabel(labelInput, "callout");
     return JSON.stringify({
+      fit: BOX_FIT_VERSION,
       text: label.text,
       size: label.size,
       bold: Boolean(label.bold),
@@ -110,8 +116,10 @@
   }
 
   function measureText(element, label, lines, lineHeight, anchor) {
-    const probe = createTextElement(label, lines, 0, 0, anchor, lineHeight);
+    const probeStartY = -((lines.length - 1) * lineHeight) / 2;
+    const probe = createTextElement(label, lines, 0, probeStartY, anchor, lineHeight);
     probe.setAttribute("visibility", "hidden");
+    probe.setAttribute("pointer-events", "none");
     element.append(probe);
     try {
       const box = probe.getBBox();
@@ -120,7 +128,8 @@
           x: box.x,
           y: box.y,
           width: box.width,
-          height: box.height
+          height: box.height,
+          startY: probeStartY
         };
       }
     } catch {
@@ -132,26 +141,28 @@
   }
 
   function boxBoundsFromMeasurement(model, measured) {
-    const label = labelFor(model);
-    const minSize = label.size * MIN_BOX_SIZE_FACTOR;
-    const width = Math.max(minSize + PAD_X * 2, measured.width + PAD_X * 2);
-    const height = Math.max(minSize + PAD_Y * 2, measured.height + PAD_Y * 2);
+    const padding = boxPadding();
     return {
-      x: model.geometry.center.x - width / 2,
-      y: model.geometry.center.y - height / 2,
-      width,
-      height
+      x: model.geometry.center.x - measured.width / 2 - padding.x,
+      y: model.geometry.center.y - measured.height / 2 - padding.y,
+      width: measured.width + padding.x * 2,
+      height: measured.height + padding.y * 2
     };
   }
 
-  function centeredTextStartY(centerY, measured) {
-    if (!measured) return centerY;
-    return centerY - (measured.y + measured.height / 2);
+  function measuredTextPlacement(model, measured) {
+    return {
+      x: model.geometry.center.x - (measured.x + measured.width / 2),
+      y: measured.startY + model.geometry.center.y - (measured.y + measured.height / 2)
+    };
   }
 
-  function centeredTextX(centerX, measured) {
-    if (!measured) return centerX;
-    return centerX - (measured.x + measured.width / 2);
+  function fallbackTextPlacement(model, box, align, lineHeight, lineCount) {
+    const padding = boxPadding();
+    return {
+      x: align === "left" ? box.x + padding.x : align === "right" ? box.x + box.width - padding.x : model.geometry.center.x,
+      y: model.geometry.center.y - ((lineCount - 1) * lineHeight) / 2
+    };
   }
 
   function rememberBox(model, box, label) {
@@ -335,10 +346,11 @@
     const align = label.position.align;
     const anchor = align === "left" ? "start" : align === "right" ? "end" : "middle";
     const measured = measureText(element, label, lines, lineHeight, anchor);
-    const box = signedBox(model, label) || (measured ? boxBoundsFromMeasurement(model, measured) : fallbackBoxBounds(model));
+    const box = signedBox(model, label) || (measured ? boxBoundsFromMeasurement(model, measured) : fittedBoxBounds(model));
+    const textPlacement = measured
+      ? measuredTextPlacement(model, measured)
+      : fallbackTextPlacement(model, box, align, lineHeight, lines.length);
     rememberBox(model, box, label);
-    const startY = measured ? centeredTextStartY(center.y, measured) : center.y - ((lines.length - 1) * lineHeight) / 2;
-    const textX = align === "left" ? box.x + PAD_X : align === "right" ? box.x + box.width - PAD_X : centeredTextX(center.x, measured);
     const leaderAttrs = {
       class: "editor-callout-leader",
       x1: String(center.x),
@@ -370,19 +382,20 @@
       y: String(box.y),
       width: String(box.width),
       height: String(box.height),
-      rx: String(Math.min(BOX_RADIUS, box.width / 2, box.height / 2)),
-      ry: String(Math.min(BOX_RADIUS, box.width / 2, box.height / 2)),
+      rx: "0",
+      ry: "0",
       fill: style.fill,
       "fill-opacity": String(style.fillOpacity),
       stroke: style.stroke,
       "stroke-opacity": String(style.strokeOpacity),
       "stroke-width": String(style.strokeWidth)
     });
-    [leader, arrow, boxElement].forEach((item) => applyGeometryStrokeScaling(item, dashed));
+    [leader, arrow].forEach((item) => applyGeometryStrokeScaling(item, dashed));
+    applyGeometryStrokeScaling(boxElement, true);
 
     element.append(leader, arrow, boxElement);
 
-    element.append(createTextElement(label, lines, textX, startY, anchor, lineHeight));
+    element.append(createTextElement(label, lines, textPlacement.x, textPlacement.y, anchor, lineHeight));
   }
 
   const adapter = {
@@ -402,7 +415,7 @@
         style: {
           stroke: DEFAULT_STROKE,
           fill: DEFAULT_FILL,
-          strokeWidth: 2,
+          strokeWidth: 1,
           ...(initialData.style || {})
         },
         label: {

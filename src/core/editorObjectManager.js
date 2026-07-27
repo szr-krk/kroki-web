@@ -240,12 +240,27 @@
     return Boolean(node?.dataset?.krokiObject === "true" && node.dataset.shape === "road");
   }
 
+  function isRoadStackLayerNode(node) {
+    return Boolean(isRoadLayerNode(node) || node?.dataset?.roadIntersectionLayer === "true");
+  }
+
+  function isRoadObjectId(id) {
+    return objectMap.get(id)?.type === "road";
+  }
+
   function keepRoadLayersAtBack() {
     if (!objectLayer) return;
-    Array.from(objectLayer.children)
-      .filter(isRoadLayerNode)
+    const roadStackNodes = Array.from(objectLayer.children).filter(isRoadStackLayerNode);
+    if (!roadStackNodes.length) return;
+    roadStackNodes
       .reverse()
       .forEach((node) => objectLayer.insertBefore(node, objectLayer.firstChild));
+    objectOrderCache = null;
+  }
+
+  function firstMovableLayerNode(exclude = new Set()) {
+    return Array.from(objectLayer.children)
+      .find((node) => !exclude.has(node) && !isRoadStackLayerNode(node)) || null;
   }
 
   function removeLabelArtifacts(id) {
@@ -764,10 +779,14 @@
   }
 
   function bringToFront(id, options = {}) {
+    if (isRoadObjectId(id)) {
+      keepRoadLayersAtBack();
+      return false;
+    }
     return withHistory(options, "One getir", () => {
       layerNodesFor(id).forEach((node) => objectLayer.append(node));
+      objectOrderCache = null;
       syncGroupLayers();
-      keepRoadLayersAtBack();
       markSceneChanged();
       syncDependents(options);
       return true;
@@ -775,14 +794,19 @@
   }
 
   function sendToBack(id, options = {}) {
+    if (isRoadObjectId(id)) {
+      keepRoadLayersAtBack();
+      return false;
+    }
     return withHistory(options, "Arkaya gonder", () => {
       const nodes = layerNodesFor(id);
       if (!nodes.length) return false;
-      const first = objectLayer.firstChild;
-      objectLayer.insertBefore(nodes[0], first);
-      nodes.slice(1).forEach((node) => objectLayer.insertBefore(node, nodes[0].nextSibling));
+      const nodeSet = new Set(nodes);
+      const reference = firstMovableLayerNode(nodeSet);
+      if (reference) nodes.forEach((node) => objectLayer.insertBefore(node, reference));
+      else nodes.forEach((node) => objectLayer.append(node));
+      objectOrderCache = null;
       syncGroupLayers();
-      keepRoadLayersAtBack();
       markSceneChanged();
       syncDependents(options);
       return true;
@@ -809,6 +833,7 @@
 
   function syncGroupLayers() {
     if (!objectLayer) return;
+    objectOrderCache = null;
     const groups = Kroki.GroupManager?.getAll?.() || [];
     const groupMap = new Map(groups.map((group) => [group.id, group]));
     const rootUnits = [];

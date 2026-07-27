@@ -26,7 +26,7 @@
     { id: "double", title: "\u00c7ift cep" }
   ];
   const MIN_S_CURVE_CONTROLS = 2;
-  const MAX_S_CURVE_CONTROLS = 5;
+  const MAX_S_CURVE_CONTROLS = 2;
   const ROAD_LINE_COLOR = "#000000";
   let activeBoundaryKey = "";
 

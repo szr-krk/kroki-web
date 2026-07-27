@@ -41,6 +41,7 @@
   let state = { ...DEFAULT_STATE };
   let mode = "create";
   let editModelId = "";
+  let liveEditTransaction = null;
   const bindHoldAction = window.krokiObjectEditCore?.bindHoldAction || ((button, action) => {
     button?.addEventListener("click", action);
     return () => {};
@@ -124,7 +125,44 @@
     };
   }
 
+  function ensureLiveEditTransaction() {
+    if (mode !== "edit" || !editModelId || liveEditTransaction) return;
+    liveEditTransaction = Kroki.HistoryManager?.beginObjectChange?.(editModelId, "Metin guncelle") || null;
+  }
+
+  function commitLiveEditTransaction() {
+    if (!liveEditTransaction) return;
+    Kroki.HistoryManager?.commitObjectChange?.(liveEditTransaction, "Metin guncelle");
+    liveEditTransaction = null;
+  }
+
+  function applyLiveEdit(options = {}) {
+    if (mode !== "edit" || !editModelId) return;
+    const model = manager.get(editModelId);
+    if (!model || model.type !== "text") return;
+    const text = normalizeText(controls.input?.value || state.text);
+    if (!text.trim()) return;
+    state.text = text;
+    ensureLiveEditTransaction();
+    const label = styleManager.normalizeLabel(model.label, model.type);
+    manager.updateModel(model.id, (draft) => ({
+      ...draft,
+      style: styleManager.normalizeStyle({ ...draft.style, opacity: state.opacity }, draft.type),
+      label: styleManager.normalizeLabel({
+        ...draft.label,
+        text,
+        size: state.size,
+        color: state.color,
+        position: { ...label.position, align: state.align },
+        bold: state.bold,
+        italic: state.italic,
+        underline: state.underline
+      }, draft.type)
+    }), { skipHistory: true, label: "Metin guncelle", ...options });
+  }
+
   function showCreate() {
+    commitLiveEditTransaction();
     mode = "create";
     editModelId = "";
     selection.clear();
@@ -139,6 +177,7 @@
   }
 
   function showEdit(modelId) {
+    commitLiveEditTransaction();
     const model = manager.get(modelId);
     if (!model || model.type !== "text") return;
     mode = "edit";
@@ -154,6 +193,7 @@
   }
 
   function hide() {
+    if (mode === "edit") commitLiveEditTransaction();
     if (mode === "edit") document.querySelector("#btnLineText")?.setAttribute("aria-expanded", "false");
     panel.classList.add("gizli");
     mode = "create";
@@ -203,21 +243,8 @@
     const text = normalizeText(controls.input?.value || state.text);
     if (!text.trim()) return;
 
-    const label = styleManager.normalizeLabel(model.label, model.type);
-    manager.updateModel(model.id, (draft) => ({
-      ...draft,
-      style: styleManager.normalizeStyle({ ...draft.style, opacity: state.opacity }, draft.type),
-      label: styleManager.normalizeLabel({
-        ...draft.label,
-        text,
-        size: state.size,
-        color: state.color,
-        position: { ...label.position, align: state.align },
-        bold: state.bold,
-        italic: state.italic,
-        underline: state.underline
-      }, draft.type)
-    }));
+    state.text = text;
+    applyLiveEdit();
     selection.edit(model.id);
     hide();
   }
@@ -227,14 +254,22 @@
     else createText();
   }
 
+  function blurTextInput() {
+    if (document.activeElement === controls.input) controls.input.blur();
+  }
+
   function changeSize(delta) {
+    blurTextInput();
     state.size = normalizeSize(state.size + delta);
     sync();
+    applyLiveEdit();
   }
 
   function changeOpacity(delta) {
+    blurTextInput();
     state.opacity = normalizeOpacity(state.opacity + delta);
     sync();
+    applyLiveEdit();
   }
 
   controls.input?.addEventListener("input", () => {
@@ -246,6 +281,7 @@
       controls.input.setSelectionRange(start, end);
     }
     state.text = normalized;
+    applyLiveEdit({ controlPoints: false, styleControls: false });
   });
   controls.done?.addEventListener("click", submitText);
   controls.cancel?.addEventListener("click", () => {
@@ -258,25 +294,37 @@
   bindHoldAction(controls.opacityMinus, () => changeOpacity(-0.05));
   bindHoldAction(controls.opacityPlus, () => changeOpacity(0.05));
   controls.align?.addEventListener("click", () => {
+    blurTextInput();
     nextAlign();
     sync();
+    applyLiveEdit();
   });
   controls.bold?.addEventListener("click", () => {
+    blurTextInput();
     state.bold = !state.bold;
     sync();
+    applyLiveEdit();
   });
   controls.italic?.addEventListener("click", () => {
+    blurTextInput();
     state.italic = !state.italic;
     sync();
+    applyLiveEdit();
   });
   controls.underline?.addEventListener("click", () => {
+    blurTextInput();
     state.underline = !state.underline;
     sync();
+    applyLiveEdit();
   });
-  controls.color?.addEventListener("click", () => controls.colorInput?.click());
+  controls.color?.addEventListener("click", () => {
+    blurTextInput();
+    controls.colorInput?.click();
+  });
   controls.colorInput?.addEventListener("input", () => {
     state.color = controls.colorInput.value;
     sync();
+    applyLiveEdit();
   });
   controls.input?.addEventListener("keydown", (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {

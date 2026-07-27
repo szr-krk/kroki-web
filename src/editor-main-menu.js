@@ -35,13 +35,50 @@
   let lastSavedSnapshot = "";
   let previewLayer = null;
   let areaTool = null;
+  let busyLayer = null;
 
   function dialog() {
     return window.KrokiDialog || Kroki.Dialog;
   }
 
   function notify(message, title = "Kroki Pro") {
-    return dialog()?.alert?.(message, title) || Promise.resolve();
+    const api = dialog();
+    return api?.toast?.(message, title) || api?.alert?.(message, title) || Promise.resolve();
+  }
+
+  function nextPaint() {
+    return new Promise((resolve) => {
+      const raf = window.requestAnimationFrame || ((callback) => window.setTimeout(callback, 16));
+      raf(() => raf(resolve));
+    });
+  }
+
+  function hideBusy() {
+    busyLayer?.remove?.();
+    busyLayer = null;
+  }
+
+  function showBusy(message = "Resim hazırlanıyor...") {
+    hideBusy();
+    const layer = document.createElement("div");
+    layer.className = "kroki-busy-layer";
+    layer.setAttribute("role", "status");
+    layer.setAttribute("aria-live", "polite");
+
+    const card = document.createElement("div");
+    card.className = "kroki-busy-card";
+
+    const spinner = document.createElement("span");
+    spinner.className = "kroki-busy-spinner";
+    spinner.setAttribute("aria-hidden", "true");
+
+    const text = document.createElement("span");
+    text.textContent = message;
+
+    card.append(spinner, text);
+    layer.append(card);
+    (document.querySelector("#uygulama") || document.body || document.documentElement).append(layer);
+    busyLayer = layer;
   }
 
   function ask(message, title = "Onay") {
@@ -266,7 +303,7 @@
     });
     if (chunks.length) return chunks.join("\n");
     return [
-      ".editor-line-label,.editor-circle-label-text,.editor-ellipse-label-text,.editor-rectangle-label-text,.editor-vehicle-label{font-family:Roboto,Arial,sans-serif;font-weight:800;paint-order:stroke fill;stroke-linejoin:round;stroke-width:4px;}",
+      ".editor-line-label,.editor-circle-label-text,.editor-ellipse-label-text,.editor-rectangle-label-text,.editor-vehicle-label{font-family:Roboto,Arial,sans-serif;font-weight:800;paint-order:stroke fill;stroke-linejoin:round;stroke-width:.18em;}",
       ".editor-text,.editor-callout-text{font-family:Roboto,Arial,sans-serif;}",
       ".editor-road-edge,.editor-road-channel-line,.editor-road-marking,.road-intersection-outer-contour,.road-intersection-auxiliary-contour{vector-effect:none;}",
       ".editor-object-selection{vector-effect:non-scaling-stroke;}"
@@ -459,11 +496,52 @@
     return true;
   }
 
+  function currentFullscreenElement() {
+    return document.fullscreenElement
+      || document.webkitFullscreenElement
+      || document.mozFullScreenElement
+      || document.msFullscreenElement
+      || null;
+  }
+
+  function exitAppFullscreen() {
+    const exit = document.exitFullscreen
+      || document.webkitExitFullscreen
+      || document.mozCancelFullScreen
+      || document.msExitFullscreen;
+    if (!exit) return null;
+    return exit.call(document);
+  }
+
+  function pulseFullscreenSync(ms = 12000) {
+    [0, 80, 250, 500, 900, 1500, 2500, 4000, 7000, ms]
+      .filter((delay, index, items) => delay <= ms && items.indexOf(delay) === index)
+      .forEach((delay) => {
+        window.setTimeout(() => window.dispatchEvent(new CustomEvent("kroki:fullscreen-state-sync")), delay);
+      });
+  }
+
+  function prepareForNativeDownload() {
+    if (!currentFullscreenElement()) {
+      pulseFullscreenSync(3000);
+      return;
+    }
+    window.dispatchEvent(new CustomEvent("kroki:fullscreen-force-off", { detail: { ms: 15000 } }));
+    try {
+      const result = exitAppFullscreen();
+      if (result?.catch) result.catch(() => {});
+    } catch {
+      // Browser download prompts can break fullscreen asynchronously; UI sync handles the visible state.
+    }
+    pulseFullscreenSync(15000);
+  }
+
   function downloadBlob(blob, filename) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     link.download = filename;
+    prepareForNativeDownload();
     document.body.append(link);
     link.click();
     link.remove();
@@ -538,18 +616,24 @@
       await notify("Kaydedilecek kroki yok.");
       return;
     }
-    window.krokiEditorCamera?.fitToContent?.();
-    const entry = saveRecent();
-    if (!entry) return;
-    const viewBox = contentViewBox(EXPORT_PADDING);
-    if (!viewBox) {
-      await notify("Kaydedilecek alan yok.");
-      return;
+    showBusy("Resim hazırlanıyor...");
+    await nextPaint();
+    try {
+      window.krokiEditorCamera?.fitToContent?.();
+      const entry = saveRecent();
+      if (!entry) return;
+      const viewBox = contentViewBox(EXPORT_PADDING);
+      if (!viewBox) {
+        await notify("Kaydedilecek alan yok.");
+        return;
+      }
+      const ok = await exportPng(viewBox, `kroki_${nowStamp()}.png`);
+      if (!ok) return;
+      resetDocument();
+      showHome();
+    } finally {
+      hideBusy();
     }
-    const ok = await exportPng(viewBox, `kroki_${nowStamp()}.png`);
-    if (!ok) return;
-    resetDocument();
-    showHome();
   }
 
   function renderPreviewInto(target, entry) {
@@ -908,8 +992,14 @@
         await notify("Seçilen alan okunamadı.");
         return;
       }
-      const ok = await exportPng(viewBox, `kroki_alan_${nowStamp()}.png`, { outputPaddingPx: EXPORT_PADDING });
-      if (ok) stopAreaTool();
+      showBusy("Resim hazırlanıyor...");
+      await nextPaint();
+      try {
+        const ok = await exportPng(viewBox, `kroki_alan_${nowStamp()}.png`, { outputPaddingPx: EXPORT_PADDING });
+        if (ok) stopAreaTool();
+      } finally {
+        hideBusy();
+      }
     });
 
     areaTool = {

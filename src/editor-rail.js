@@ -10,6 +10,42 @@ const cizimRailDefaultNodes = Array.from(cizimRailButton?.childNodes || []).map(
 const cizimRailDefaultLabel = cizimRailButton?.getAttribute("aria-label") || "";
 const cizimRailDefaultTitle = cizimRailButton?.getAttribute("title") || "";
 const FIT_PADDING_PX = 56;
+let editorForcedFullscreenOffUntil = 0;
+
+function editorCurrentFullscreenElement() {
+  return document.fullscreenElement
+    || document.webkitFullscreenElement
+    || document.mozFullScreenElement
+    || document.msFullscreenElement
+    || null;
+}
+
+async function editorRequestAppFullscreen() {
+  const target = document.documentElement;
+  const request = target.requestFullscreen
+    || target.webkitRequestFullscreen
+    || target.mozRequestFullScreen
+    || target.msRequestFullscreen;
+  if (request) await request.call(target);
+}
+
+async function editorExitAppFullscreen() {
+  const exit = document.exitFullscreen
+    || document.webkitExitFullscreen
+    || document.mozCancelFullScreen
+    || document.msExitFullscreen;
+  if (exit) await exit.call(document);
+}
+
+function editorIsFullscreenForcedOff() {
+  return editorForcedFullscreenOffUntil > Date.now();
+}
+
+function editorForceFullscreenOff(event) {
+  const ms = Math.max(1000, Number(event?.detail?.ms) || 12000);
+  editorForcedFullscreenOffUntil = Date.now() + ms;
+  scheduleEditorFullscreenButtonSync();
+}
 
 function readFitViewBox(svg = editorCanvas) {
   const values = (svg?.getAttribute("viewBox") || "")
@@ -133,12 +169,19 @@ function fitEditorToScreen(event) {
 }
 
 function syncEditorFullscreenButton() {
-  const active = Boolean(document.fullscreenElement);
+  const active = Boolean(editorCurrentFullscreenElement()) && !editorIsFullscreenForcedOff();
   editorFloatingFullscreenButton?.classList.toggle("is-active", active);
   editorFloatingFullscreenButton?.setAttribute("aria-pressed", String(active));
   editorFloatingFullscreenButton?.setAttribute("aria-label", active ? "Tam ekrandan çık" : "Tam ekran");
   editorFloatingFullscreenButton?.setAttribute("title", active ? "Tam ekrandan çık" : "Tam ekran");
   if (editorFloatingFullscreenButton) editorFloatingFullscreenButton.textContent = active ? "Tam Ekrandan Çık" : "Tam Ekran";
+}
+
+function scheduleEditorFullscreenButtonSync() {
+  syncEditorFullscreenButton();
+  window.setTimeout(syncEditorFullscreenButton, 80);
+  window.setTimeout(syncEditorFullscreenButton, 350);
+  window.setTimeout(syncEditorFullscreenButton, 900);
 }
 
 async function toggleEditorFullscreen(event) {
@@ -147,20 +190,38 @@ async function toggleEditorFullscreen(event) {
   closeRailMenus();
 
   try {
-    if (document.fullscreenElement) {
-      await document.exitFullscreen();
+    const apiActive = Boolean(editorCurrentFullscreenElement());
+    const forcedOff = editorIsFullscreenForcedOff();
+    const uiActive = apiActive && !forcedOff;
+    editorForcedFullscreenOffUntil = 0;
+    if (uiActive) {
+      await editorExitAppFullscreen();
     } else {
-      await document.documentElement.requestFullscreen?.();
+      if (apiActive && forcedOff) {
+        try {
+          await editorExitAppFullscreen();
+        } catch {
+          // Request below is still attempted for the user's tap.
+        }
+      }
+      await editorRequestAppFullscreen();
     }
   } catch {
-    syncEditorFullscreenButton();
+    scheduleEditorFullscreenButtonSync();
   }
+  scheduleEditorFullscreenButtonSync();
 }
 
 editorFloatingFitButton?.addEventListener("click", fitEditorToScreen);
 editorFloatingFullscreenButton?.addEventListener("click", toggleEditorFullscreen);
-document.addEventListener("fullscreenchange", syncEditorFullscreenButton);
-syncEditorFullscreenButton();
+["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange", "visibilitychange"].forEach((eventName) => {
+  document.addEventListener(eventName, scheduleEditorFullscreenButtonSync);
+});
+["focus", "pageshow", "resize", "orientationchange", "kroki:fullscreen-state-sync"].forEach((eventName) => {
+  window.addEventListener(eventName, scheduleEditorFullscreenButtonSync);
+});
+window.addEventListener("kroki:fullscreen-force-off", editorForceFullscreenOff);
+scheduleEditorFullscreenButtonSync();
 
 function selectCizimAraci(button) {
   cizimToolButtons.forEach((toolButton) => {

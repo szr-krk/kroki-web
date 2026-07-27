@@ -434,6 +434,22 @@
     return false;
   }
 
+  function hostTerminalTouchesSurfaceNear(hostSurface, surface, endpoint, tolerance) {
+    if (!hostSurface || !surface || !endpoint?.point) return false;
+    const nearDistance = Math.max(12, Math.max(widthOr(surface.width, 0), widthOr(hostSurface.width, 0)) + tolerance * 2);
+    return surfaceTerminalEndpoints(hostSurface).some((hostEndpoint) => (
+      dist(hostEndpoint.point, endpoint.point) <= nearDistance &&
+      terminalCapTouchesHost(hostEndpoint, surface, tolerance)
+    ));
+  }
+
+  function isWiderMutualTerminalDuplicate(surface, hostSurface, endpoint, tolerance) {
+    const surfaceWidth = widthOr(surface?.width, 0);
+    const hostWidth = widthOr(hostSurface?.width, 0);
+    if (surfaceWidth <= hostWidth + INTERSECTION_PAD) return false;
+    return hostTerminalTouchesSurfaceNear(hostSurface, surface, endpoint, tolerance);
+  }
+
   function terminalOpenSign(surface, hostSurface, endpoint) {
     const farOffset = signedOffsetOnSurface(hostSurface, endpoint.farPoint);
     if (Math.abs(farOffset) > 1) return farOffset > 0 ? 1 : -1;
@@ -451,6 +467,7 @@
     const tolerance = Math.max(2, INTERSECTION_PAD * 2);
     return surfaceTerminalEndpoints(surface).map((endpoint) => {
       if (!terminalCapTouchesHost(endpoint, hostSurface, tolerance)) return null;
+      if (isWiderMutualTerminalDuplicate(surface, hostSurface, endpoint, tolerance)) return null;
       const openSign = terminalOpenSign(surface, hostSurface, endpoint);
       if (!openSign) return null;
       return {

@@ -6,7 +6,7 @@
   const styleManager = Kroki.StyleManager;
   if (!utils || !registry || !lineGeometry || !styleManager) return;
 
-  const DEFAULT_RATIO = Math.tan((36 * Math.PI / 180) / 2);
+  const DEFAULT_RATIO = 0.20;
 
   function formatPoint(point) {
     return `${Number(point.x) || 0} ${Number(point.y) || 0}`;

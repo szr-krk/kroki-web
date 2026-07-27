@@ -9,7 +9,7 @@
   const DEFAULT_SHOULDER_WIDTH = 20;
   const DEFAULT_BARRIER_SPACING = 42;
   const DIVIDED_LANE_COUNT = 2;
-  const DEFAULT_ARC_RATIO = Math.tan((36 * Math.PI / 180) / 2);
+  const DEFAULT_ARC_RATIO = 0.20;
   const panel = document.querySelector("#roadBuilderPanel");
   let lastDivided = false;
   let addRoadScheduled = false;

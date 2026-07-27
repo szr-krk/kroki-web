@@ -30,6 +30,10 @@
   vector-effect: non-scaling-stroke;
 }
 
+.editor-callout-box {
+  vector-effect: none;
+}
+
 .editor-callout-text {
   font-family: Roboto, Arial, sans-serif;
   pointer-events: none;
@@ -244,7 +248,7 @@
   pointer-events: none;
   stroke: #ffffff;
   stroke-linejoin: round;
-  stroke-width: 4px;
+  stroke-width: .18em;
   user-select: none;
 }
 

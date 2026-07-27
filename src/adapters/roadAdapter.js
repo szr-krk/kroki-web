@@ -15,13 +15,10 @@
   const PREVIEW_ISLAND_SAMPLE_COUNT = 28;
   const MIN_WIDTH = 2;
   const MAX_LANES = 5;
-  const DEFAULT_ARC_RATIO = Math.tan((36 * Math.PI / 180) / 2);
+  const DEFAULT_ARC_RATIO = 0.20;
   const ROAD_LINE_COLOR = "#000000";
   const MIN_S_CURVE_CONTROLS = 2;
-  const MAX_S_CURVE_CONTROLS = 5;
-  const S_CURVE_ENDPOINT_AXIS_BLEND = 0.55;
-  const S_CURVE_KNOT_ALPHA = 0.5;
-  const S_CURVE_TANGENT_STEP = 1 / (SAMPLE_COUNT * 8);
+  const MAX_S_CURVE_CONTROLS = 2;
   const DEFAULT_ISLAND_INNER_DIAMETER = 160;
   const DEFAULT_ISLAND_LANE_COUNT = 1;
   const DEFAULT_ISLAND_LANE_WIDTH = 50;
@@ -31,6 +28,7 @@
   const DEFAULT_BARRIER_SPACING = 42;
   const MIN_BARRIER_SPACING = 18;
   const MAX_BARRIER_SPACING = 180;
+  const MIN_BARRIER_RANGE = 0.001;
   const MAX_BARRIERS_PER_SIDE = 2;
   const BARRIER_DEPTH = 8;
   const BARRIER_TOP_WIDTH = 4;
@@ -43,6 +41,11 @@
     fill: "#dcfce7",
     fillOpacity: 1,
     fillPattern: "grass"
+  };
+  const DEFAULT_ISLAND_CENTER_STYLE = {
+    fill: "#dcfce7",
+    fillOpacity: 1,
+    fillPattern: "none"
   };
   const BARRIER_EDGE_ORDER = ["rightOuter", "rightInner", "leftInner", "leftOuter"];
   const BARRIER_END_CAP_STATES = [
@@ -104,10 +107,6 @@
       x: a.x + (b.x - a.x) * t,
       y: a.y + (b.y - a.y) * t
     };
-  }
-
-  function distanceBetween(a, b) {
-    return Math.hypot(b.x - a.x, b.y - a.y);
   }
 
   function formatPoint(item) {
@@ -339,9 +338,10 @@
   }
 
   function cleanSCurveControls(geometry, fallbackCount = MIN_S_CURVE_CONTROLS) {
-    const existing = Array.isArray(geometry?.controls)
+    const source = Array.isArray(geometry?.controls)
       ? geometry.controls
       : [geometry?.c1, geometry?.c2].filter(Boolean);
+    const existing = source.length > 2 ? [source[0], source[source.length - 1]] : source;
     const count = clampInt(existing.length || geometry?.controlCount || fallbackCount, MIN_S_CURVE_CONTROLS, MAX_S_CURVE_CONTROLS, MIN_S_CURVE_CONTROLS);
     const defaults = defaultSCurveControlPoints(geometry.start, geometry.end, count);
     return Array.from({ length: count }, (_, index) => point(existing[index], defaults[index]));
@@ -361,130 +361,31 @@
     return normalizeProfile(geometry?.profile) === STRAIGHT;
   }
 
-  function sCurveThroughPoints(geometry) {
-    const controls = cleanSCurveControls(geometry);
-    return [geometry.start, ...controls, geometry.end].map((item) => point(item));
-  }
-
-  function sCurveSegmentInfo(points, t) {
-    const safePoints = Array.isArray(points) ? points.filter(Boolean) : [];
-    if (safePoints.length < 2) {
-      return { index: 0, u: 0, total: 0, lengths: [] };
-    }
-    const lengths = [];
-    let total = 0;
-    for (let index = 0; index < safePoints.length - 1; index += 1) {
-      const a = safePoints[index];
-      const b = safePoints[index + 1];
-      const length = Math.hypot(b.x - a.x, b.y - a.y);
-      lengths.push(length);
-      total += length;
-    }
-    if (total < 0.001) {
-      return { index: 0, u: 0, total, lengths };
-    }
-    const target = clamp(t, 0, 1) * total;
-    let travelled = 0;
-    for (let index = 0; index < lengths.length; index += 1) {
-      const length = lengths[index];
-      if (target <= travelled + length || index === lengths.length - 1) {
-        return {
-          index,
-          u: length > 0.001 ? clamp((target - travelled) / length, 0, 1) : 0,
-          total,
-          lengths
-        };
-      }
-      travelled += length;
-    }
-    return { index: Math.max(0, lengths.length - 1), u: 1, total, lengths };
-  }
-
-  function extrapolateBefore(a, b) {
-    return { x: a.x + (a.x - b.x), y: a.y + (a.y - b.y) };
-  }
-
-  function extrapolateAfter(a, b) {
-    return { x: b.x + (b.x - a.x), y: b.y + (b.y - a.y) };
-  }
-
-  function sCurveKnot(previous, current, previousKnot) {
-    return previousKnot + Math.pow(Math.max(distanceBetween(previous, current), 0.001), S_CURVE_KNOT_ALPHA);
-  }
-
-  function interpolateKnot(a, b, knotA, knotB, knot) {
-    const span = knotB - knotA;
-    if (Math.abs(span) < 0.0001) return point(a);
-    return lerp(a, b, (knot - knotA) / span);
-  }
-
-  function centripetalCatmullRomPoint(p0, p1, p2, p3, u) {
-    const knot0 = 0;
-    const knot1 = sCurveKnot(p0, p1, knot0);
-    const knot2 = sCurveKnot(p1, p2, knot1);
-    const knot3 = sCurveKnot(p2, p3, knot2);
-    const knot = knot1 + (knot2 - knot1) * clamp(u, 0, 1);
-    const a1 = interpolateKnot(p0, p1, knot0, knot1, knot);
-    const a2 = interpolateKnot(p1, p2, knot1, knot2, knot);
-    const a3 = interpolateKnot(p2, p3, knot2, knot3, knot);
-    const b1 = interpolateKnot(a1, a2, knot0, knot2, knot);
-    const b2 = interpolateKnot(a2, a3, knot1, knot3, knot);
-    return interpolateKnot(b1, b2, knot1, knot2, knot);
-  }
-
-  function sCurveEndpointGhost(points, atStart) {
-    const lastIndex = points.length - 1;
-    const endpoint = atStart ? points[0] : points[lastIndex];
-    const neighbor = atStart ? points[1] : points[lastIndex - 1];
-    const axis = direction(points[0], points[lastIndex]);
-    const segment = atStart
-      ? { x: neighbor.x - endpoint.x, y: neighbor.y - endpoint.y }
-      : { x: endpoint.x - neighbor.x, y: endpoint.y - neighbor.y };
-    const segmentLength = distanceBetween(endpoint, neighbor);
-    const tangent = {
-      x: segment.x * (1 - S_CURVE_ENDPOINT_AXIS_BLEND) + axis.x * segmentLength * S_CURVE_ENDPOINT_AXIS_BLEND,
-      y: segment.y * (1 - S_CURVE_ENDPOINT_AXIS_BLEND) + axis.y * segmentLength * S_CURVE_ENDPOINT_AXIS_BLEND
-    };
-    return {
-      x: endpoint.x + tangent.x * (atStart ? -1 : 1),
-      y: endpoint.y + tangent.y * (atStart ? -1 : 1)
-    };
-  }
-
-  function sCurvePointAtPoints(points, t) {
-    if (points.length < 2) return points[0] || { x: 0, y: 0 };
-    if (points.length === 2) return lerp(points[0], points[1], t);
-    const info = sCurveSegmentInfo(points, t);
-    const i = info.index;
-    const p1 = points[i];
-    const p2 = points[i + 1] || p1;
-    const p0 = i === 0 ? sCurveEndpointGhost(points, true) : (points[i - 1] || extrapolateBefore(p1, p2));
-    const p3 = i >= points.length - 2 ? sCurveEndpointGhost(points, false) : (points[i + 2] || extrapolateAfter(p1, p2));
-    return centripetalCatmullRomPoint(p0, p1, p2, p3, info.u);
-  }
-
   function sCurvePointAt(geometry, t) {
-    return sCurvePointAtPoints(sCurveThroughPoints(geometry), t);
+    const controls = cleanSCurveControls(geometry);
+    const u = clamp(t, 0, 1);
+    const p01 = lerp(geometry.start, controls[0], u);
+    const p12 = lerp(controls[0], controls[1], u);
+    const p23 = lerp(controls[1], geometry.end, u);
+    return lerp(lerp(p01, p12, u), lerp(p12, p23, u), u);
   }
 
   function sCurveTangentAt(geometry, t) {
-    const points = sCurveThroughPoints(geometry);
-    if (points.length < 2) return { x: 1, y: 0 };
-    if (points.length === 2) return { x: points[1].x - points[0].x, y: points[1].y - points[0].y };
-    const beforeT = clamp(t - S_CURVE_TANGENT_STEP, 0, 1);
-    const afterT = clamp(t + S_CURVE_TANGENT_STEP, 0, 1);
-    const before = sCurvePointAtPoints(points, beforeT);
-    const after = sCurvePointAtPoints(points, afterT);
-    const span = Math.max(afterT - beforeT, 0.0001);
+    const controls = cleanSCurveControls(geometry);
+    const u = clamp(t, 0, 1);
     const tangent = {
-      x: (after.x - before.x) / span,
-      y: (after.y - before.y) / span
+      x: 3 * (1 - u) * (1 - u) * (controls[0].x - geometry.start.x)
+        + 6 * (1 - u) * u * (controls[1].x - controls[0].x)
+        + 3 * u * u * (geometry.end.x - controls[1].x),
+      y: 3 * (1 - u) * (1 - u) * (controls[0].y - geometry.start.y)
+        + 6 * (1 - u) * u * (controls[1].y - controls[0].y)
+        + 3 * u * u * (geometry.end.y - controls[1].y)
     };
     if (Math.hypot(tangent.x, tangent.y) < 0.001) {
-      const info = sCurveSegmentInfo(points, t);
-      const p1 = points[info.index];
-      const p2 = points[info.index + 1] || p1;
-      return { x: p2.x - p1.x, y: p2.y - p1.y };
+      return {
+        x: geometry.end.x - geometry.start.x,
+        y: geometry.end.y - geometry.start.y
+      };
     }
     return tangent;
   }
@@ -569,6 +470,10 @@
       left: normalizePocket(value.left, fallbackWidth),
       right: normalizePocket(value.right, fallbackWidth)
     };
+  }
+
+  function normalizeIslandCenterStyle(source) {
+    return styleManager.normalizeStyle(source || DEFAULT_ISLAND_CENTER_STYLE, "closedShape");
   }
 
   function normalizeWidthList(source, count, fallbackWidth) {
@@ -747,10 +652,12 @@
       const boundary = boundaryForBarrierEdge(config, edgeKey);
       if (!boundary) return null;
       const side = boundary.side;
-      const rawFrom = clamp(numberOr(item?.from, 0), 0, 0.98);
-      const rawTo = clamp(numberOr(item?.to, 1), 0.02, 1);
-      const from = Math.min(rawFrom, rawTo - 0.02);
-      const to = Math.max(rawTo, from + 0.02);
+      const endCaps = normalizeBarrierEndCaps(item?.endCaps);
+      const minRange = MIN_BARRIER_RANGE;
+      const rawFrom = clamp(numberOr(item?.from, 0), 0, 1 - minRange);
+      const rawTo = clamp(numberOr(item?.to, 1), minRange, 1);
+      const from = Math.min(rawFrom, rawTo - minRange);
+      const to = Math.max(rawTo, from + minRange);
       counters[edgeKey] += 1;
       return {
         id: barrierId(item?.id, `barrier_${edgeKey}_${index + 1}`),
@@ -759,11 +666,11 @@
         boundaryId: boundary.id,
         boundaryKey: boundary.key,
         sectionId: String(item?.sectionId || ""),
-        from: clamp(from, 0, 0.98),
-        to: clamp(to, 0.02, 1),
+        from: clamp(from, 0, 1 - minRange),
+        to: clamp(to, minRange, 1),
         attached: boolOr(item?.attached, true),
         spacing: barrierSpacing(item?.spacing),
-        endCaps: normalizeBarrierEndCaps(item?.endCaps),
+        endCaps,
         free: item?.attached === false ? normalizeBarrierFree(item.free) : null
       };
     }).filter(Boolean);
@@ -798,6 +705,7 @@
       },
       boundaryStyles: normalizeBoundaryStyles(source.boundaryStyles),
       pockets: normalizePockets(source.pockets, laneWidth),
+      islandCenterStyle: normalizeIslandCenterStyle(source.islandCenterStyle),
       barriers: [],
       autoIntersection: boolOr(source.autoIntersection, base.autoIntersection),
       bridge: boolOr(source.bridge, base.bridge),
@@ -918,6 +826,10 @@
   }
 
   function offsetPathData(model, offset = 0, reverse = false, sampleCount = SAMPLE_COUNT) {
+    if (model?.geometry?.profile === ARC) {
+      const arcPath = arcPathDataRange(model, offset, 0, 1, reverse);
+      if (arcPath) return arcPath;
+    }
     const points = samplesFor(model, sampleCount).map((sample) => offsetSample(sample, offset));
     if (reverse) points.reverse();
     return pathFromPoints(points, isIslandGeometry(model?.geometry));
@@ -942,6 +854,10 @@
       const points = [offsetPointAt(model, start, offset), offsetPointAt(model, end, offset)];
       if (reverse) points.reverse();
       return pathFromPoints(points, false);
+    }
+    if (model?.geometry?.profile === ARC) {
+      const arcPath = arcPathDataRange(model, offset, start, end, reverse);
+      if (arcPath) return arcPath;
     }
     const count = Math.max(2, Math.ceil(SAMPLE_COUNT * (end - start)));
     const points = [];
@@ -988,13 +904,18 @@
   function surfacePathData(model, width, options = {}) {
     const sampleCount = clampInt(options.sampleCount, 4, SAMPLE_COUNT, SAMPLE_COUNT);
     if (isIslandGeometry(model?.geometry)) return islandRingPathData(model, sampleCount);
+    if (model?.geometry?.profile === ARC) return arcSurfacePathData(model, width) || pathFromPoints(surfaceOutline(model, width, sampleCount), true);
     return pathFromPoints(surfaceOutline(model, width, sampleCount), true);
   }
 
-  function arcOffsetRadius(geometry, offset) {
-    const delta = geometry.sweepFlag
+  function arcDeltaForGeometry(geometry) {
+    return geometry.sweepFlag
       ? normalizeAngle(geometry.endAngle - geometry.startAngle)
       : -normalizeAngle(geometry.startAngle - geometry.endAngle);
+  }
+
+  function arcOffsetRadius(geometry, offset) {
+    const delta = arcDeltaForGeometry(geometry);
     return geometry.radius + (delta >= 0 ? -offset : offset);
   }
 
@@ -1013,25 +934,47 @@
     return `M ${formatPoint(start)} A ${radius} ${radius} 0 ${largeArcFlag} ${sweepFlag} ${formatPoint(end)}`;
   }
 
-  function arcSurfacePathData(model, width) {
+  function arcPathDataRange(model, offset = 0, from = 0, to = 1, reverse = false) {
     if (model?.geometry?.profile !== ARC) return "";
     const geometry = arcGeometry(model);
     if (!geometry) return "";
-    const half = width / 2;
-    const leftStart = arcOffsetPoint(geometry, geometry.startAngle, half);
-    const leftEnd = arcOffsetPoint(geometry, geometry.endAngle, half);
-    const rightStart = arcOffsetPoint(geometry, geometry.startAngle, -half);
-    const rightEnd = arcOffsetPoint(geometry, geometry.endAngle, -half);
-    if ([leftStart, leftEnd, rightStart, rightEnd].some((item) => !Number.isFinite(item.radius) || item.radius <= 1)) return "";
-    const largeArcFlag = geometry.arcDelta > Math.PI ? 1 : 0;
-    const sweepFlag = geometry.sweepFlag ? 1 : 0;
+    const start = clamp(numberOr(from, 0), 0, 1);
+    const end = clamp(numberOr(to, 1), 0, 1);
+    if (end <= start) return "";
+    const delta = arcDeltaForGeometry(geometry);
+    const angleStart = geometry.startAngle + delta * start;
+    const angleEnd = geometry.startAngle + delta * end;
+    const startItem = arcOffsetPoint(geometry, reverse ? angleEnd : angleStart, offset);
+    const endItem = arcOffsetPoint(geometry, reverse ? angleStart : angleEnd, offset);
+    if ([startItem, endItem].some((item) => !Number.isFinite(item.radius) || item.radius <= 1)) return "";
+    const largeArcFlag = Math.abs(delta * (end - start)) > Math.PI ? 1 : 0;
+    const sweepFlag = reverse ? (delta >= 0 ? 0 : 1) : (delta >= 0 ? 1 : 0);
+    return arcSegmentPath(startItem.point, endItem.point, startItem.radius, largeArcFlag, sweepFlag);
+  }
+
+  function arcBandPathData(model, startOffset, endOffset) {
+    if (model?.geometry?.profile !== ARC) return "";
+    const geometry = arcGeometry(model);
+    if (!geometry) return "";
+    const delta = arcDeltaForGeometry(geometry);
+    const outerStart = arcOffsetPoint(geometry, geometry.startAngle, endOffset);
+    const outerEnd = arcOffsetPoint(geometry, geometry.endAngle, endOffset);
+    const innerStart = arcOffsetPoint(geometry, geometry.startAngle, startOffset);
+    const innerEnd = arcOffsetPoint(geometry, geometry.endAngle, startOffset);
+    if ([outerStart, outerEnd, innerStart, innerEnd].some((item) => !Number.isFinite(item.radius) || item.radius <= 1)) return "";
+    const largeArcFlag = Math.abs(delta) > Math.PI ? 1 : 0;
+    const sweepFlag = delta >= 0 ? 1 : 0;
     const reverseSweepFlag = sweepFlag ? 0 : 1;
     return [
-      arcSegmentPath(leftStart.point, leftEnd.point, leftStart.radius, largeArcFlag, sweepFlag),
-      `L ${formatPoint(rightEnd.point)}`,
-      `A ${rightEnd.radius} ${rightEnd.radius} 0 ${largeArcFlag} ${reverseSweepFlag} ${formatPoint(rightStart.point)}`,
+      arcSegmentPath(outerStart.point, outerEnd.point, outerStart.radius, largeArcFlag, sweepFlag),
+      `L ${formatPoint(innerEnd.point)}`,
+      `A ${innerEnd.radius} ${innerEnd.radius} 0 ${largeArcFlag} ${reverseSweepFlag} ${formatPoint(innerStart.point)}`,
       "Z"
     ].join(" ");
+  }
+
+  function arcSurfacePathData(model, width) {
+    return arcBandPathData(model, -width / 2, width / 2);
   }
 
   function previewSampleCount(model) {
@@ -1047,6 +990,10 @@
   }
 
   function bandPathData(model, startOffset, endOffset) {
+    if (model?.geometry?.profile === ARC) {
+      const arcPath = arcBandPathData(model, startOffset, endOffset);
+      if (arcPath) return arcPath;
+    }
     const samples = samplesFor(model);
     const left = samples.map((sample) => offsetSample(sample, endOffset));
     const right = samples.slice().reverse().map((sample) => offsetSample(sample, startOffset));
@@ -1601,6 +1548,28 @@
     return null;
   }
 
+  function renderIslandCenterFill(model, element, config) {
+    if (!isIslandGeometry(model?.geometry)) return;
+    const style = normalizeIslandCenterStyle(config?.islandCenterStyle);
+    if (style.fillPattern === "none") return;
+    const center = point(model.geometry.center);
+    const radii = islandRadii(model.geometry);
+    if (!Number.isFinite(radii.innerRadius) || radii.innerRadius <= 0.5) return;
+    const canvas = element.ownerSVGElement;
+    const pattern = styleManager.ensureFillPattern?.(canvas, { id: `${model.id}-island-center` }, style);
+    const fill = pattern ? `url(#${pattern.id})` : style.fill;
+    element.append(utils.createSvgElement("circle", {
+      class: "editor-road-island-center-fill",
+      cx: String(center.x),
+      cy: String(center.y),
+      r: String(radii.innerRadius),
+      fill,
+      "fill-opacity": String(style.fillOpacity ?? 1),
+      stroke: "none",
+      "pointer-events": "none"
+    }));
+  }
+
   function selectedPocketSide(model) {
     const side = String(model?.metadata?.roadPocketEdit?.side || "");
     if (side !== "left" && side !== "right") return "";
@@ -1622,6 +1591,11 @@
     return pocket ? { side, style: styleManager.normalizeStyle(pocket.islandStyle, "closedShape") } : null;
   }
 
+  function selectedIslandCenterInfo(model) {
+    if (!isIslandGeometry(model?.geometry)) return null;
+    return { style: normalizeIslandCenterStyle(roadConfig(model).islandCenterStyle) };
+  }
+
   function updatePocketIslandStyle(model, patch) {
     const side = selectedPocketIslandSide(model);
     if (!side) return false;
@@ -1633,6 +1607,20 @@
       ...(model.metadata || {}),
       road: normalizeRoadConfig(config),
       roadPocketIslandEdit: { side }
+    };
+    return true;
+  }
+
+  function updateIslandCenterStyle(model, patch) {
+    if (!isIslandGeometry(model?.geometry)) return false;
+    const config = roadConfig(model);
+    config.islandCenterStyle = normalizeIslandCenterStyle({
+      ...(config.islandCenterStyle || DEFAULT_ISLAND_CENTER_STYLE),
+      ...(patch || {})
+    });
+    model.metadata = {
+      ...(model.metadata || {}),
+      road: normalizeRoadConfig(config)
     };
     return true;
   }
@@ -1943,8 +1931,6 @@
     if (!samples.length) return "";
     const caps = normalizeBarrierEndCaps(endCaps);
     if (posts.length > 4) {
-      const startRamp = posts[1];
-      const endRamp = posts[posts.length - 2];
       const firstRail = posts[2];
       const lastRail = posts[posts.length - 3];
       const railStart = caps.start ? firstRail : samples[0];
@@ -1953,11 +1939,11 @@
         .filter((sample) => sample.t > railStart.t && sample.t < railEnd.t)
         .map((sample) => sample.top);
       return pathFromPoints([
-        ...(caps.start ? [startRamp.base] : []),
+        ...(caps.start ? [samples[0].base] : []),
         railStart.top,
         ...rail,
         railEnd.top,
-        ...(caps.end ? [endRamp.base] : [])
+        ...(caps.end ? [samples[samples.length - 1].base] : [])
       ]);
     }
     return pathFromPoints([
@@ -2230,6 +2216,12 @@
     ];
   }
 
+  function selectedPocketPreviewPathData(model) {
+    const side = selectedPocketSide(model);
+    if (!side) return "";
+    return pocketBandPathData(pocketGeometry(model, side));
+  }
+
   function parsePocketControlId(cpId) {
     const match = /^pocket:(left|right):(outerFrom|innerFrom|offset|innerTo|outerTo)$/.exec(String(cpId || ""));
     return match ? { side: match[1], key: match[2] } : null;
@@ -2301,6 +2293,10 @@
     return match ? { id: match[1], key: match[2] } : null;
   }
 
+  function barrierControlGap(_barrier, _key, _unit, _pathLength) {
+    return MIN_BARRIER_RANGE;
+  }
+
   function moveBarrierControlPoint(model, cpId, worldPoint, modifiers = {}) {
     const parsed = parseBarrierControlId(cpId);
     if (!parsed) return false;
@@ -2310,11 +2306,11 @@
     if (barrier.attached) {
       const pathLength = Math.max(1, centerlineLength(model));
       const unit = modifiers.metrics?.unit || 1;
-      const minGap = clamp(unit * 24 / pathLength, 0.01, 0.08);
       const t = parameterAtPoint(model, worldPoint);
       updateBarrier(config, parsed.id, (draft) => {
-        if (parsed.key === "from") draft.from = clamp(t, 0, draft.to - minGap);
-        if (parsed.key === "to") draft.to = clamp(t, draft.from + minGap, 1);
+        const minGap = barrierControlGap(draft, parsed.key, unit, pathLength);
+        if (parsed.key === "from") draft.from = clamp(t, 0, Math.max(0, draft.to - minGap));
+        if (parsed.key === "to") draft.to = clamp(t, Math.min(1, draft.from + minGap), 1);
       });
     } else {
       updateBarrier(config, parsed.id, (draft) => {
@@ -2362,6 +2358,108 @@
     const match = /^segment:(b\d+):(\d+)$/.exec(String(cpId || ""));
     if (!match) return null;
     return { boundaryId: match[1], index: Number(match[2]) };
+  }
+
+  function roadControlPreview(model, cpId) {
+    const preview = model?.metadata?.roadControlPreview;
+    return preview?.cpId === String(cpId || "") ? preview : null;
+  }
+
+  function setRoadControlPreview(model, cpId, worldPoint, modifiers = {}) {
+    if (!parseBarrierControlId(cpId) && !parseSegmentControlId(cpId)) return false;
+    model.metadata = {
+      ...(model.metadata || {}),
+      roadControlPreview: {
+        cpId: String(cpId || ""),
+        point: { x: worldPoint.x, y: worldPoint.y },
+        metrics: { unit: modifiers.metrics?.unit || 1 }
+      }
+    };
+    return true;
+  }
+
+  function clearRoadControlPreview(model) {
+    if (!model?.metadata?.roadControlPreview) return;
+    const metadata = { ...(model.metadata || {}) };
+    delete metadata.roadControlPreview;
+    model.metadata = metadata;
+  }
+
+  function previewBarrierControlPoint(model, cpId) {
+    const parsed = parseBarrierControlId(cpId);
+    const preview = parsed ? roadControlPreview(model, cpId) : null;
+    if (!preview) return null;
+    const config = roadConfig(model);
+    const barrier = barrierById(config, parsed.id);
+    if (!barrier) return null;
+    const pointValue = point(preview.point);
+    if (!barrier.attached) {
+      return {
+        id: cpId,
+        ...pointValue,
+        role: parsed.key === "c1" || parsed.key === "c2" ? "road-barrier-free" : "road-barrier",
+        cursor: "grab"
+      };
+    }
+    const boundary = barrierBoundary(config, barrier);
+    if (!boundary) return null;
+    const pathLength = Math.max(1, centerlineLength(model));
+    const minGap = barrierControlGap(barrier, parsed.key, preview.metrics?.unit || 1, pathLength);
+    const t = parameterAtPoint(model, pointValue);
+    let from = barrier.from;
+    let to = barrier.to;
+    if (parsed.key === "from") from = clamp(t, 0, Math.max(0, to - minGap));
+    if (parsed.key === "to") to = clamp(t, Math.min(1, from + minGap), 1);
+    const sample = barrierAttachedSample(model, { ...barrier, from, to }, boundary, parsed.key === "from" ? from : to);
+    return { id: cpId, ...sample.base, role: "road-barrier", cursor: "grab" };
+  }
+
+  function boundaryInfoById(model, config, boundaryId) {
+    const section = crossSection(config);
+    const active = activeBoundaryInfo(model, section, config);
+    if (active?.id === boundaryId) return active;
+    const boundary = section.boundaries.find((item) => item.id === boundaryId);
+    return boundary ? { ...boundary, style: boundaryStyle(config, boundary, fallbackBoundaryStyle(config, boundary)) } : null;
+  }
+
+  function previewSegmentControlPoint(model, cpId) {
+    const parsed = parseSegmentControlId(cpId);
+    const preview = parsed ? roadControlPreview(model, cpId) : null;
+    if (!preview) return null;
+    const config = roadConfig(model);
+    const boundary = boundaryInfoById(model, config, parsed.boundaryId);
+    const segments = boundary?.style?.segments || [];
+    const before = segments[parsed.index];
+    const after = segments[parsed.index + 1];
+    if (!boundary || !before || !after) return null;
+    const pathLength = Math.max(1, centerlineLength(model));
+    const minGap = clamp((preview.metrics?.unit || 1) * 18 / pathLength, 0.012, 0.08);
+    const lower = before.from + minGap;
+    const upper = Math.max(lower, after.to - minGap);
+    const split = clamp(parameterAtPoint(model, point(preview.point)), lower, upper);
+    const tangent = tangentAt(model, split);
+    return {
+      id: cpId,
+      ...offsetPointAt(model, split, boundary.offset),
+      role: "road-segment-boundary",
+      shape: "segment",
+      cursor: "grab",
+      angle: Math.atan2(tangent.y, tangent.x) * 180 / Math.PI,
+      visualWidthScale: 0.62,
+      visualHeightScale: 1.38
+    };
+  }
+
+  function finalizeRoadControlPreview(model, cpId) {
+    const preview = roadControlPreview(model, cpId);
+    if (!preview) return false;
+    const pointValue = point(preview.point);
+    const modifiers = { metrics: preview.metrics || { unit: 1 } };
+    if (parseBarrierControlId(cpId)) moveBarrierControlPoint(model, cpId, pointValue, modifiers);
+    else if (parseSegmentControlId(cpId)) moveSegmentBoundaryPoint(model, cpId, pointValue, modifiers);
+    else return false;
+    clearRoadControlPreview(model);
+    return true;
   }
 
   function endpointHandlePoint(model, pointId, offset) {
@@ -2548,6 +2646,13 @@
       const boundaries = pocketBoundaryPoints(geometry);
       points.push(...boundaries.first, ...boundaries.second);
     });
+    (config.barriers || []).forEach((barrier) => {
+      const boundary = barrierBoundary(config, barrier);
+      if (!boundary) return;
+      barrierSamples(model, barrier, boundary, 48).forEach((sample) => {
+        points.push(sample.base, sample.top);
+      });
+    });
     return boundsFromPoints(points);
   }
 
@@ -2697,6 +2802,29 @@
     model.geometry.outerDiameter = clamp(numberOr(value, model.geometry.outerDiameter), inner + laneCount * MIN_ISLAND_LANE_WIDTH * 2, MAX_ISLAND_DIAMETER);
     model.geometry = normalizeGeometry(model.geometry);
     return syncIslandRoadMetadata(model);
+  }
+
+  function moveIslandControlPointPreview(model, cpId, worldPoint) {
+    if (!isIslandGeometry(model?.geometry) || (cpId !== "island-inner" && cpId !== "island-outer")) return false;
+    const center = point(model.geometry.center);
+    const laneCount = islandLaneCountFromConfig(model.metadata?.road || {});
+    const minGap = laneCount * MIN_ISLAND_LANE_WIDTH * 2;
+    const distance = Math.hypot(worldPoint.x - center.x, worldPoint.y - center.y);
+    const inner = numberOr(model.geometry.innerDiameter, DEFAULT_ISLAND_INNER_DIAMETER);
+    const outer = numberOr(model.geometry.outerDiameter, inner + DEFAULT_ISLAND_LANE_WIDTH * 2);
+    if (cpId === "island-inner") {
+      model.geometry.innerDiameter = clamp(distance * 2, MIN_ISLAND_INNER_DIAMETER, Math.max(MIN_ISLAND_INNER_DIAMETER, outer - minGap));
+    } else {
+      model.geometry.outerDiameter = clamp(distance * 2, inner + minGap, MAX_ISLAND_DIAMETER);
+    }
+    return true;
+  }
+
+  function finalizeIslandControlPointPreview(model, cpId) {
+    if (!isIslandGeometry(model?.geometry) || (cpId !== "island-inner" && cpId !== "island-outer")) return false;
+    if (cpId === "island-inner") setIslandInnerDiameter(model, model.geometry.innerDiameter);
+    else setIslandOuterDiameter(model, model.geometry.outerDiameter);
+    return true;
   }
 
   function setIslandSectionWidth(model, sectionId, width) {
@@ -3028,6 +3156,7 @@
       element.dataset.roadConfig = JSON.stringify(config);
       element.replaceChildren();
       renderSurface(model, element, section);
+      renderIslandCenterFill(model, element, config);
       renderSelectedSection(model, element, section);
       renderSelectedPocket(model, element, config);
       section.boundaries.forEach((boundary) => addBoundaryLine(element, model, boundary, config));
@@ -3079,8 +3208,87 @@
       return points;
     },
 
+    getPreviewControlPoints(model, metrics) {
+      const pocketPoints = selectedPocketControlPoints(model, metrics, "edit");
+      if (pocketPoints.length) return pocketPoints;
+      const barrierPoints = selectedBarrierControlPoints(model, metrics, "edit");
+      if (barrierPoints.length) return barrierPoints;
+      if (isIslandGeometry(model?.geometry)) {
+        const center = point(model.geometry.center);
+        const radii = islandRadii(model.geometry);
+        return [
+          { id: "island-inner", x: center.x - radii.innerRadius, y: center.y, role: "curve", cursor: "ew-resize" },
+          { id: "island-outer", x: center.x + radii.outerRadius, y: center.y, role: "curve", cursor: "ew-resize" }
+        ];
+      }
+      const points = [
+        { id: "start", ...endpointHandlePoint(model, "start", metrics.endpointOffset), role: "move", cursor: "grab" },
+        { id: "end", ...endpointHandlePoint(model, "end", metrics.endpointOffset), role: "move", cursor: "grab" }
+      ];
+      if (model.geometry.profile === ARC) points.push({ id: "arc", ...arcControlPoint(model), role: "curve", cursor: "grab" });
+      if (model.geometry.profile === S_CURVE) {
+        cleanSCurveControls(model.geometry).forEach((control, index) => {
+          points.push({ id: `sctrl-${index}`, ...control, role: "curve", cursor: "grab" });
+        });
+      }
+      points.push(...segmentBoundaryControlPoints(model, metrics, "edit"));
+      return points;
+    },
+
+    getPreviewControlPoint(model, metrics, cpId) {
+      const id = String(cpId || "");
+      const liveBarrierPoint = previewBarrierControlPoint(model, id);
+      if (liveBarrierPoint) return liveBarrierPoint;
+      const liveSegmentPoint = previewSegmentControlPoint(model, id);
+      if (liveSegmentPoint) return liveSegmentPoint;
+      const pocketPoints = selectedPocketControlPoints(model, metrics, "edit");
+      const pocketPoint = pocketPoints.find((item) => String(item.id) === id);
+      if (pocketPoint) return pocketPoint;
+      const barrierPoints = selectedBarrierControlPoints(model, metrics, "edit");
+      const barrierPoint = barrierPoints.find((item) => String(item.id) === id);
+      if (barrierPoint) return barrierPoint;
+      if (isIslandGeometry(model?.geometry)) {
+        const center = point(model.geometry.center);
+        const radii = islandRadii(model.geometry);
+        if (id === "island-inner") return { id, x: center.x - radii.innerRadius, y: center.y, role: "curve", cursor: "ew-resize" };
+        if (id === "island-outer") return { id, x: center.x + radii.outerRadius, y: center.y, role: "curve", cursor: "ew-resize" };
+        return null;
+      }
+      if (id === "start" || id === "end") {
+        return { id, ...endpointHandlePoint(model, id, metrics.endpointOffset), role: "move", cursor: "grab" };
+      }
+      if (id === "arc" && model.geometry.profile === ARC) return { id, ...arcControlPoint(model), role: "curve", cursor: "grab" };
+      const sControlMatch = id.match(/^sctrl-(\d+)$/);
+      if (sControlMatch && model.geometry.profile === S_CURVE) {
+        const control = cleanSCurveControls(model.geometry)[Number(sControlMatch[1])];
+        return control ? { id, ...control, role: "curve", cursor: "grab" } : null;
+      }
+      const segmentPoints = segmentBoundaryControlPoints(model, metrics, "edit");
+      const segmentPoint = segmentPoints.find((item) => String(item.id) === id);
+      if (segmentPoint) return segmentPoint;
+      return null;
+    },
+
+    controlPreviewPathData(model, cpId) {
+      return parsePocketControlId(cpId) ? selectedPocketPreviewPathData(model) : "";
+    },
+
+    controlPreviewPointOnly(_model, cpId) {
+      return Boolean(parseBarrierControlId(cpId) || parseSegmentControlId(cpId));
+    },
+
     beginControlPointMove(model, cpId, pointValue) {
       return { cpId, point: pointValue, geometry: utils.clonePlain(model.geometry), road: roadConfig(model) };
+    },
+
+    previewMoveControlPoint(model, cpId, worldPoint, modifiers = {}) {
+      if (moveIslandControlPointPreview(model, cpId, worldPoint)) return true;
+      return setRoadControlPreview(model, cpId, worldPoint, modifiers);
+    },
+
+    finalizePreviewControlPoint(model, cpId) {
+      if (finalizeIslandControlPointPreview(model, cpId)) return true;
+      return finalizeRoadControlPreview(model, cpId);
     },
 
     moveControlPoint(model, cpId, worldPoint, modifiers = {}) {
@@ -3164,6 +3372,8 @@
     intersectionAuxiliaryContours,
     selectedPocketIslandInfo,
     updatePocketIslandStyle,
+    selectedIslandCenterInfo,
+    updateIslandCenterStyle,
     selectedSectionInfo,
     selectedLaneInfo: selectedSectionInfo,
     selectedBarrierInfo,

@@ -439,7 +439,7 @@ select {
 }
 
 .kroki-dialog-layer {
-  z-index: 120;
+  z-index: 220;
   padding: 16px;
   display: grid;
   place-items: center;
@@ -543,6 +543,110 @@ select {
   border-color: #b91c1c;
   background: #fee2e2;
   color: #7f1d1d;
+}
+
+.kroki-toast-host {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  width: min(360px, calc(100vw - 28px));
+  display: grid;
+  gap: 8px;
+  z-index: 240;
+  pointer-events: none;
+}
+
+.kroki-toast {
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 10px;
+  align-items: center;
+  padding: 10px 10px 10px 12px;
+  border: 2px solid #0f766e;
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--ink);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, .22);
+  pointer-events: auto;
+  animation: krokiToastIn 140ms ease;
+}
+
+.kroki-toast.is-hiding {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.kroki-toast strong,
+.kroki-toast span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.kroki-toast strong {
+  grid-column: 1;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.kroki-toast span {
+  grid-column: 1;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.kroki-toast-close {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  width: 34px;
+  height: 34px;
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #0f172a;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.kroki-busy-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(15, 23, 42, .26);
+  pointer-events: all;
+}
+
+.kroki-busy-card {
+  min-width: min(320px, calc(100vw - 36px));
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border: 2px solid #0f766e;
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--ink);
+  box-shadow: 0 18px 44px rgba(15, 23, 42, .28);
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.kroki-busy-spinner {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  border: 3px solid #cbd5e1;
+  border-top-color: #0f766e;
+  border-radius: 50%;
+  animation: krokiBusySpin 700ms linear infinite;
 }
 
 .kroki-preview-layer {
@@ -741,6 +845,23 @@ select {
   0%, 100% { transform: translateX(0); }
   35% { transform: translateX(-5px); }
   70% { transform: translateX(5px); }
+}
+
+@keyframes krokiToastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes krokiBusySpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .modal-panel {

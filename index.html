@@ -5,9 +5,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Kroki Pro</title>
-  <link rel="stylesheet" href="src/home.css?v=20260711-preview-fit" />
+  <link rel="stylesheet" href="src/home.css?v=20260713-dialog-over-preview" />
   <link rel="stylesheet" href="src/editor.css?v=20260711-text-ip-top" />
-  <link rel="stylesheet" href="src/editor-line.css" />
+  <link rel="stylesheet" href="src/editor-line.css?v=20260713-callout-stroke-scale" />
 </head>
 
 <body>
@@ -615,6 +615,16 @@
             title="Italik" aria-pressed="false">I</button>
           <button id="btnSideTextUnderline" class="side-ip-text-format-btn is-underline" type="button"
             aria-label="Alti cizili" title="Alti cizili" aria-pressed="false">U</button>
+        </div>
+
+        <div id="calloutTextSizeStepper" class="side-ip-stepper-vertical side-ip-control callout-only-control gizli"
+          aria-label="Etiket metin boyutu">
+          <button id="btnCalloutTextSizePlus" class="side-ip-stepper-btn" type="button"
+            aria-label="Etiket metin boyutunu arttir">+</button>
+          <input id="calloutTextSizeInput" class="side-ip-stepper-number" type="number" min="1" step="1"
+            value="12" inputmode="numeric" aria-label="Etiket metin boyutu">
+          <button id="btnCalloutTextSizeMinus" class="side-ip-stepper-btn" type="button"
+            aria-label="Etiket metin boyutunu azalt">-</button>
         </div>
 
         <div id="lineStrokeWidthStepper" class="side-ip-stepper-vertical side-ip-control" aria-label="Cizgi kalinligi">
@@ -1229,11 +1239,11 @@
     </section>
   </div>
 
-  <script src="src/kroki-dialog.js?v=20260710-menu-choice"></script>
+  <script src="src/kroki-dialog.js?v=20260713-dialog-over-preview"></script>
   <script src="src/data/ready-drawings.js"></script>
-  <script src="src/home.js"></script>
+  <script src="src/home.js?v=20260713-guide-link"></script>
   <script src="src/editor-state.js"></script>
-  <script src="src/editor-rail.js"></script>
+  <script src="src/editor-rail.js?v=20260713-fullscreen-download"></script>
   <script src="src/editor-camera.js"></script>
   <script src="src/editor-object-edit.js?v=20260710-numberpicker"></script>
   <script src="src/editor-stroke-style.js"></script>
@@ -1247,7 +1257,7 @@
   <script src="src/core/otherSymbolCatalog.js"></script>
   <script src="src/core/vehicleCatalog.js"></script>
   <script src="src/core/shapeRegistry.js"></script>
-  <script src="src/core/styleManager.js?v=20260711-vehicle-label-toggle"></script>
+  <script src="src/core/styleManager.js?v=20260713-pattern-none-white"></script>
   <script src="src/core/editorObjectManager.js"></script>
   <script src="src/core/groupManager.js"></script>
   <script src="src/core/documentSerializer.js"></script>
@@ -1255,8 +1265,8 @@
   <script src="src/core/hitTestManager.js"></script>
   <script src="src/core/controlPointManager.js"></script>
   <script src="src/core/multiSelectManager.js"></script>
-  <script src="src/core/roadDragPreview.js?v=20260712-canvas-preview"></script>
-  <script src="src/core/selectionManager.js?v=20260712-canvas-preview"></script>
+  <script src="src/core/roadDragPreview.js?v=20260713-island-circle-preview"></script>
+  <script src="src/core/selectionManager.js?v=20260713-live-cp-preview"></script>
   <script src="src/geometry/lineGeometry.js"></script>
   <script src="src/geometry/circleGeometry.js"></script>
   <script src="src/geometry/ellipseGeometry.js"></script>
@@ -1268,21 +1278,21 @@
   <script src="src/adapters/ellipseAdapter.js"></script>
   <script src="src/adapters/rectangleAdapter.js"></script>
   <script src="src/adapters/closedShapeAdapter.js"></script>
-  <script src="src/adapters/calloutAdapter.js"></script>
-  <script src="src/adapters/roadAdapter.js"></script>
+  <script src="src/adapters/calloutAdapter.js?v=20260713-callout-stroke-scale"></script>
+  <script src="src/adapters/roadAdapter.js?v=20260713-barrier-free-bounds"></script>
   <script src="src/core/roadIntersectionEngine.js"></script>
   <script src="src/adapters/textAdapter.js"></script>
   <script src="src/adapters/trafficSignAdapter.js"></script>
   <script src="src/adapters/otherSymbolAdapter.js"></script>
   <script src="src/adapters/vehicleAdapter.js?v=20260710-vehicle-label-gap"></script>
-  <script src="src/ui/editorTextComposer.js?v=20260710-numberpicker"></script>
+  <script src="src/ui/editorTextComposer.js?v=20260713-live-text-edit"></script>
   <script src="src/ui/editorBindings.js"></script>
   <script src="src/ui/roadBuilder.js?v=20260710-numberpicker"></script>
   <script src="src/ui/roadInspector.js?v=20260710-numberpicker"></script>
   <script src="src/ui/vehicleLibrary.js"></script>
   <script src="src/ui/trafficSignLibrary.js"></script>
   <script src="src/ui/otherSymbolLibrary.js"></script>
-  <script src="src/editor-main-menu.js?v=20260710-main-menu"></script>
+  <script src="src/editor-main-menu.js?v=20260713-label-halo"></script>
 </body>
 
 </html>

@@ -463,8 +463,12 @@
     return adapter?.selectedPocketIslandInfo?.(model) || null;
   }
 
+  function islandCenterInfo(adapter, model) {
+    return adapter?.selectedIslandCenterInfo?.(model) || null;
+  }
+
   function supportsFillPatternTarget(adapter, model) {
-    return supportsFillPattern(adapter) || Boolean(pocketIslandInfo(adapter, model));
+    return supportsFillPattern(adapter) || Boolean(pocketIslandInfo(adapter, model)) || Boolean(islandCenterInfo(adapter, model));
   }
 
   function defaultStyleFor(type) {
@@ -472,7 +476,7 @@
     return {
       stroke: type === "callout" ? "#d11f1f" : isShapeWithFill(type) ? "#000000" : "#111827",
       fill,
-      strokeWidth: isLineToolType(type) ? 1 : 2,
+      strokeWidth: isLineToolType(type) || type === "callout" ? 1 : 2,
       opacity: 1,
       strokeOpacity: 1,
       fillOpacity: 1,
@@ -1186,6 +1190,7 @@
     controls?.roadOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isRoadObject));
     controls?.trafficSignOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isCatalogObject));
     controls?.vehicleOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isVehicleObject));
+    controls?.calloutOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isCallout));
     controls?.sideIp?.classList.toggle("is-traffic-sign-ip", isTrafficSign);
     controls?.colorButton?.classList.toggle("gizli", isRoadObject || isCatalogObject || isVehicleObject);
     controls?.textButton?.classList.toggle("gizli", noText);
@@ -1243,6 +1248,13 @@
       }, { label: "Cep kapali alan deseni" });
       return;
     }
+    if (islandCenterInfo(entry.adapter, entry.model) && typeof entry.adapter?.updateIslandCenterStyle === "function") {
+      manager.updateModel(entry.model.id, (draft) => {
+        entry.adapter.updateIslandCenterStyle(draft, patch);
+        return draft;
+      }, { label: "Ada merkez deseni" });
+      return;
+    }
     manager.updateStyle(entry.model.id, patch);
   }
 
@@ -1288,6 +1300,24 @@
       return;
     }
     updateStyle({ strokeWidth: normalizeStrokeWidth(entry.model.style.strokeWidth + delta) });
+  }
+
+  function activeCalloutEntry() {
+    const entry = activeEntry();
+    return entry?.adapter?.type === "callout" ? entry : null;
+  }
+
+  function updateCalloutTextSize(delta) {
+    const entry = activeCalloutEntry();
+    if (!entry || entry.multi) return;
+    const label = normalizeLabel(entry.model.label, entry.model.type);
+    updateLabel({ size: normalizeLabelSize(label.size + delta) });
+  }
+
+  function updateCalloutTextSizeInput(value) {
+    const entry = activeCalloutEntry();
+    if (!entry || entry.multi) return;
+    updateLabel({ size: normalizeLabelSize(value) });
   }
 
   function activeCatalogObjectEntry() {
@@ -1678,7 +1708,9 @@
     const isVehicleObject = Boolean(adapter?.capabilities?.vehicleObject);
     const supportsTextFormatting = isTextObject || Boolean(adapter?.capabilities?.textFormatting);
     const selectedPocketIsland = pocketIslandInfo(adapter, model);
-    const style = normalizeStyle(selectedPocketIsland?.style || model.style, selectedPocketIsland ? "closedShape" : model.type);
+    const selectedIslandCenter = islandCenterInfo(adapter, model);
+    const selectedFillTarget = selectedPocketIsland || selectedIslandCenter;
+    const style = normalizeStyle(selectedFillTarget?.style || model.style, selectedFillTarget ? "closedShape" : model.type);
     const label = adapter?.effectiveLabel?.(model) || normalizeLabel(model.label, model.type);
     const dashPattern = choiceById(DASH_PATTERNS, style.dash);
     const lineCap = choiceById(LINE_CAPS, style.lineCap);
@@ -1769,6 +1801,7 @@
     if (controls.textInput && controls.textInput.value !== label.text) controls.textInput.value = label.text;
     if (controls.textColorInput) controls.textColorInput.value = label.color;
     if (controls.textSizeValue) controls.textSizeValue.textContent = String(label.size);
+    if (controls.calloutTextSizeInput && controls.calloutTextSizeInput.value !== String(label.size)) controls.calloutTextSizeInput.value = String(label.size);
     controls.textColorButton?.style.setProperty("--side-ip-fill-color", label.color);
     setToggleButton(controls.textBold, label.bold);
     setToggleButton(controls.textItalic, label.italic);
@@ -1890,6 +1923,11 @@
     if (panel.id === "vehicleLabelPanel") button?.classList.remove("is-active");
   }
 
+  function blurActiveTextInput() {
+    const active = document.activeElement;
+    if (active === controls?.textInput || controls?.trafficSignTextFields?.contains(active)) active?.blur?.();
+  }
+
   function bindUi() {
     if (bound) return;
     bound = true;
@@ -1982,6 +2020,9 @@
       sideTextBold: document.querySelector("#btnSideTextBold"),
       sideTextItalic: document.querySelector("#btnSideTextItalic"),
       sideTextUnderline: document.querySelector("#btnSideTextUnderline"),
+      calloutTextSizeMinus: document.querySelector("#btnCalloutTextSizeMinus"),
+      calloutTextSizePlus: document.querySelector("#btnCalloutTextSizePlus"),
+      calloutTextSizeInput: document.querySelector("#calloutTextSizeInput"),
       stylePanel: document.querySelector("#lineStylePanel"),
       shapeOnlyControls: Array.from(document.querySelectorAll(".shape-only-control")),
       fillPatternControls: Array.from(document.querySelectorAll(".fill-pattern-control")),
@@ -1990,7 +2031,8 @@
       closedShapeControls: Array.from(document.querySelectorAll(".closed-shape-control")),
       roadOnlyControls: Array.from(document.querySelectorAll(".road-only-control")),
       trafficSignOnlyControls: Array.from(document.querySelectorAll(".traffic-sign-only-control")),
-      vehicleOnlyControls: Array.from(document.querySelectorAll(".vehicle-only-control"))
+      vehicleOnlyControls: Array.from(document.querySelectorAll(".vehicle-only-control")),
+      calloutOnlyControls: Array.from(document.querySelectorAll(".callout-only-control"))
     };
 
     const core = window.krokiObjectEditCore;
@@ -2011,8 +2053,16 @@
     bindHoldAction(controls.dashSizePlus, () => updateStyle({ dashSize: normalizeDashSize(activeEntry()?.model.style.dashSize + 1, 1) }));
     bindHoldAction(controls.dashGapMinus, () => updateStyle({ dashGap: normalizeDashGap(activeEntry()?.model.style.dashGap - 1, 1) }));
     bindHoldAction(controls.dashGapPlus, () => updateStyle({ dashGap: normalizeDashGap(activeEntry()?.model.style.dashGap + 1, 1) }));
-    bindHoldAction(controls.textSizeMinus, () => updateLabel({ size: normalizeLabelSize(activeEntry()?.model.label.size - 1) }));
-    bindHoldAction(controls.textSizePlus, () => updateLabel({ size: normalizeLabelSize(activeEntry()?.model.label.size + 1) }));
+    bindHoldAction(controls.textSizeMinus, () => {
+      blurActiveTextInput();
+      updateLabel({ size: normalizeLabelSize(activeEntry()?.model.label.size - 1) });
+    });
+    bindHoldAction(controls.textSizePlus, () => {
+      blurActiveTextInput();
+      updateLabel({ size: normalizeLabelSize(activeEntry()?.model.label.size + 1) });
+    });
+    bindHoldAction(controls.calloutTextSizeMinus, () => updateCalloutTextSize(-1));
+    bindHoldAction(controls.calloutTextSizePlus, () => updateCalloutTextSize(1));
     bindHoldAction(controls.trafficSignScaleMinus, () => updateCatalogObjectScale(-1));
     bindHoldAction(controls.trafficSignScalePlus, () => updateCatalogObjectScale(1));
     bindHoldAction(controls.trafficSignRotateMinus, () => updateCatalogObjectRotation(-1));
@@ -2108,6 +2158,14 @@
       if (activeIsTextObject()) updateLabel({ size: normalizeLabelSize(controls.strokeInput.value) });
       else updateStyle({ strokeWidth: normalizeStrokeWidth(controls.strokeInput.value) });
     });
+    controls.calloutTextSizeInput?.addEventListener("input", () => {
+      if (controls.calloutTextSizeInput.value === "") return;
+      updateCalloutTextSizeInput(controls.calloutTextSizeInput.value);
+    });
+    controls.calloutTextSizeInput?.addEventListener("change", () => {
+      updateCalloutTextSizeInput(controls.calloutTextSizeInput.value);
+      syncControls();
+    });
     controls.colorButton?.addEventListener("click", () => {
       if (!activeEntry()) return;
       selection.promoteToEdit();
@@ -2139,11 +2197,16 @@
         if (!entry || !supportsFillPatternTarget(entry.adapter, entry.model)) return;
         const pattern = normalizeFillPattern(button.dataset.fillPattern);
         const selectedPocketIsland = pocketIslandInfo(entry.adapter, entry.model);
-        const currentStyle = normalizeStyle(selectedPocketIsland?.style || entry.model.style, selectedPocketIsland ? "closedShape" : entry.model.type);
+        const selectedIslandCenter = islandCenterInfo(entry.adapter, entry.model);
+        const selectedFillTarget = selectedPocketIsland || selectedIslandCenter;
+        const currentStyle = normalizeStyle(selectedFillTarget?.style || entry.model.style, selectedFillTarget ? "closedShape" : entry.model.type);
         if (currentStyle.fillPattern === pattern) return;
         const patternChoice = choiceById(FILL_PATTERNS, pattern);
         const patch = { fillPattern: pattern };
-        if (pattern !== "none" && (selectedPocketIsland || currentStyle.fill === "none" || currentStyle.fill === "#ffffff")) {
+        if (pattern === "none" && selectedFillTarget) {
+          patch.fill = "#ffffff";
+        }
+        if (pattern !== "none" && (selectedFillTarget || currentStyle.fill === "none" || currentStyle.fill === "#ffffff")) {
           patch.fill = patternChoice.defaultFill || "#d1d5db";
         }
         updateStyle(patch);

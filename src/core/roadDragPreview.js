@@ -59,7 +59,58 @@
     return typeof adapter?.offsetPathData === "function" ? adapter.offsetPathData(model, 0) : "";
   }
 
+  function isIslandPreview(model, adapter) {
+    return Boolean(model?.geometry?.profile === "islandRing" || adapter?.isIsland?.(model));
+  }
+
+  function numberOr(value, fallback) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : fallback;
+  }
+
+  function islandPreviewGeometry(model) {
+    const geometry = model?.geometry || {};
+    const center = {
+      x: numberOr(geometry.center?.x, 0),
+      y: numberOr(geometry.center?.y, 0)
+    };
+    const innerRadius = Math.max(0, numberOr(geometry.innerDiameter, 0) / 2);
+    const outerRadius = Math.max(innerRadius + 1, numberOr(geometry.outerDiameter, 0) / 2);
+    if (![center.x, center.y, innerRadius, outerRadius].every(Number.isFinite)) return null;
+    return { center, innerRadius, outerRadius };
+  }
+
+  function updateIsland(svg, model) {
+    if (!ensureOverlay(svg)) return false;
+    const transform = canvasTransform(svg);
+    const geometry = islandPreviewGeometry(model);
+    if (!transform || !geometry) return false;
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.clearRect(0, 0, overlay.width, overlay.height);
+    context.setTransform(
+      transform.dpr * transform.scale,
+      0,
+      0,
+      transform.dpr * transform.scale,
+      transform.dpr * transform.x,
+      transform.dpr * transform.y
+    );
+    context.beginPath();
+    context.arc(geometry.center.x, geometry.center.y, geometry.outerRadius, 0, Math.PI * 2);
+    context.arc(geometry.center.x, geometry.center.y, geometry.innerRadius, 0, Math.PI * 2, true);
+    context.fillStyle = "rgba(14, 165, 233, 0.16)";
+    context.strokeStyle = "#0284c7";
+    context.lineWidth = 2 / Math.max(transform.scale, 0.0001);
+    context.lineJoin = "round";
+    context.lineCap = "round";
+    context.fill("evenodd");
+    context.stroke();
+    overlay.classList.add("is-active");
+    return true;
+  }
+
   function update(svg, model, adapter) {
+    if (isIslandPreview(model, adapter)) return updateIsland(svg, model);
     if (!ensureOverlay(svg)) return false;
     const transform = canvasTransform(svg);
     const data = pathData(model, adapter);

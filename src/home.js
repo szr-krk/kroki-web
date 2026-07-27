@@ -4,6 +4,42 @@ const homeScreen = document.querySelector("#home");
 const editorScreen = document.querySelector("#editor");
 const modalPanels = Array.from(document.querySelectorAll(".modal-panel"));
 const hazirKavsaklarListesi = document.querySelector("#hazirKavsaklarListesi");
+let homeForcedFullscreenOffUntil = 0;
+
+function homeCurrentFullscreenElement() {
+  return document.fullscreenElement
+    || document.webkitFullscreenElement
+    || document.mozFullScreenElement
+    || document.msFullscreenElement
+    || null;
+}
+
+async function homeRequestAppFullscreen() {
+  const target = document.documentElement;
+  const request = target.requestFullscreen
+    || target.webkitRequestFullscreen
+    || target.mozRequestFullScreen
+    || target.msRequestFullscreen;
+  if (request) await request.call(target);
+}
+
+async function homeExitAppFullscreen() {
+  const exit = document.exitFullscreen
+    || document.webkitExitFullscreen
+    || document.mozCancelFullScreen
+    || document.msExitFullscreen;
+  if (exit) await exit.call(document);
+}
+
+function homeIsFullscreenForcedOff() {
+  return homeForcedFullscreenOffUntil > Date.now();
+}
+
+function homeForceFullscreenOff(event) {
+  const ms = Math.max(1000, Number(event?.detail?.ms) || 12000);
+  homeForcedFullscreenOffUntil = Date.now() + ms;
+  scheduleFullscreenLabelSync();
+}
 
 function svgDataUrl(svg) {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(String(svg || ""))}`;
@@ -87,7 +123,18 @@ document.addEventListener("keydown", (event) => {
 });
 
 document.querySelector("#btnKlavuz")?.addEventListener("click", () => {
-  window.KrokiDialog?.alert("Kılavuz bölümü sonraki aşamada bağlanacak.", "Kılavuz");
+  const guideUrl = new URL("kilavuz.html", window.location.href).href;
+  const guideWindow = window.open(guideUrl, "_blank");
+  if (guideWindow) {
+    try {
+      guideWindow.opener = null;
+      guideWindow.focus?.();
+    } catch {
+      // The guide is already open; browser security may block access to the new window handle.
+    }
+  } else {
+    window.location.href = guideUrl;
+  }
 });
 
 document.querySelector("#btnYeniKroki")?.addEventListener("click", () => {
@@ -107,21 +154,48 @@ hazirKavsaklarListesi?.addEventListener("click", (event) => {
 });
 
 function syncFullscreenLabel() {
-  const active = Boolean(document.fullscreenElement);
+  const active = Boolean(homeCurrentFullscreenElement()) && !homeIsFullscreenForcedOff();
   tamEkranButton?.setAttribute("aria-pressed", active ? "true" : "false");
   tamEkranButton?.setAttribute("aria-label", active ? "Tam ekrandan çık" : "Tam ekran aç");
   if (tamEkranLabel) tamEkranLabel.textContent = active ? "Tam Ekrandan Çık" : "Tam Ekran Aç";
 }
 
+function scheduleFullscreenLabelSync() {
+  syncFullscreenLabel();
+  window.setTimeout(syncFullscreenLabel, 80);
+  window.setTimeout(syncFullscreenLabel, 350);
+  window.setTimeout(syncFullscreenLabel, 900);
+}
+
 tamEkranButton?.addEventListener("click", async () => {
   try {
-    if (document.fullscreenElement) await document.exitFullscreen();
-    else await document.documentElement.requestFullscreen();
+    const apiActive = Boolean(homeCurrentFullscreenElement());
+    const forcedOff = homeIsFullscreenForcedOff();
+    const uiActive = apiActive && !forcedOff;
+    homeForcedFullscreenOffUntil = 0;
+    if (uiActive) await homeExitAppFullscreen();
+    else {
+      if (apiActive && forcedOff) {
+        try {
+          await homeExitAppFullscreen();
+        } catch {
+          // Request below is still attempted for the user's tap.
+        }
+      }
+      await homeRequestAppFullscreen();
+    }
   } catch {
-    syncFullscreenLabel();
+    scheduleFullscreenLabelSync();
   }
+  scheduleFullscreenLabelSync();
 });
 
-document.addEventListener("fullscreenchange", syncFullscreenLabel);
+["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange", "visibilitychange"].forEach((eventName) => {
+  document.addEventListener(eventName, scheduleFullscreenLabelSync);
+});
+["focus", "pageshow", "resize", "orientationchange", "kroki:fullscreen-state-sync"].forEach((eventName) => {
+  window.addEventListener(eventName, scheduleFullscreenLabelSync);
+});
+window.addEventListener("kroki:fullscreen-force-off", homeForceFullscreenOff);
 renderHazirKavsaklar();
-syncFullscreenLabel();
+scheduleFullscreenLabelSync();

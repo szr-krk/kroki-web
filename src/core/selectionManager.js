@@ -102,7 +102,8 @@
       if (dragState.liveTransform) {
         dragState.totalDx += dx;
         dragState.totalDy += dy;
-        applyLiveTransform(dragState);
+        if (model?.type === "road") updateRoadTransformPreview(dragState, model, adapter);
+        else applyLiveTransform(dragState);
         dragState.lastPoint = point;
         return true;
       }
@@ -118,11 +119,20 @@
       const moved = Math.hypot(point.x - dragState.lastPoint.x, point.y - dragState.lastPoint.y) > 0.0001;
       if (!moved) return true;
       if (dragState.liveRoadControlPreview && dragState.previewModel) {
-        adapter.moveControlPoint(dragState.previewModel, dragState.cpId, point, {
+        const usedPreviewMove = adapter.previewMoveControlPoint?.(dragState.previewModel, dragState.cpId, point, {
           startState: dragState.startState,
           lastPoint: dragState.lastPoint,
           metrics: dragState.metrics || controlPoints.metrics()
-        });
+        }) === true;
+        if (!usedPreviewMove) {
+          adapter.moveControlPoint(dragState.previewModel, dragState.cpId, point, {
+            startState: dragState.startState,
+            lastPoint: dragState.lastPoint,
+            metrics: dragState.metrics || controlPoints.metrics()
+          });
+        } else {
+          dragState.previewNeedsFinalize = true;
+        }
         updateRoadControlPreview(dragState, dragState.previewModel, adapter);
         dragState.lastPoint = point;
         return true;
@@ -338,19 +348,105 @@
     updatePreviewControlHandles(dragState, model, adapter, dragState.metrics);
   }
 
-  function roadPreviewPathData(model, adapter) {
+  function roadPreviewInfo(model, adapter, dragState = null) {
     if (!model || !adapter) return "";
+    if (dragState?.liveRoadControlPreview && typeof adapter.controlPreviewPathData === "function") {
+      const data = adapter.controlPreviewPathData(model, dragState.cpId);
+      if (data) return { data, mode: "surface" };
+    }
     const config = typeof adapter.roadConfig === "function"
       ? adapter.roadConfig(model)
       : (model.metadata?.road || {});
     const section = typeof adapter.crossSection === "function" ? adapter.crossSection(config) : null;
+    const isIsland = model?.geometry?.profile === "islandRing" || adapter?.isIsland?.(model);
+    if (!isIsland && typeof adapter.offsetPathData === "function") {
+      const previewSamples = model?.geometry?.profile === "sCurve" ? 22 : 8;
+      const data = adapter.offsetPathData(model, 0, false, previewSamples);
+      if (data) return { data, mode: "stroke", width: Math.max(1, section?.totalWidth || 1) };
+    }
     if (typeof adapter.previewSurfacePathData === "function" && Number.isFinite(section?.totalWidth)) {
-      return adapter.previewSurfacePathData(model, section.totalWidth);
+      return { data: adapter.previewSurfacePathData(model, section.totalWidth), mode: "surface" };
     }
     if (typeof adapter.surfacePathData === "function" && Number.isFinite(section?.totalWidth)) {
-      return adapter.surfacePathData(model, section.totalWidth);
+      return { data: adapter.surfacePathData(model, section.totalWidth), mode: "surface" };
     }
-    return typeof adapter.offsetPathData === "function" ? adapter.offsetPathData(model, 0) : "";
+    const data = typeof adapter.offsetPathData === "function" ? adapter.offsetPathData(model, 0) : "";
+    return { data, mode: "stroke", width: Math.max(1, section?.totalWidth || 1) };
+  }
+
+  function isIslandRoad(model, adapter) {
+    return Boolean(model?.geometry?.profile === "islandRing" || adapter?.isIsland?.(model));
+  }
+
+  function numeric(value, fallback) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : fallback;
+  }
+
+  function islandPreviewGeometry(model) {
+    const geometry = model?.geometry || {};
+    const innerRadius = Math.max(0, numeric(geometry.innerDiameter, 0) / 2);
+    const outerRadius = Math.max(innerRadius + 1, numeric(geometry.outerDiameter, 0) / 2);
+    return {
+      center: {
+        x: numeric(geometry.center?.x, 0),
+        y: numeric(geometry.center?.y, 0)
+      },
+      innerRadius,
+      outerRadius,
+      centerRadius: (innerRadius + outerRadius) / 2,
+      width: Math.max(1, outerRadius - innerRadius)
+    };
+  }
+
+  function setAttrIfChanged(element, name, value) {
+    const next = String(value);
+    if (element.getAttribute(name) !== next) element.setAttribute(name, next);
+  }
+
+  function ensureIslandCirclePreview(dragState) {
+    if (dragState.roadControlPreviewElement?.classList?.contains("editor-road-island-preview")) {
+      return dragState.roadControlPreviewElement;
+    }
+    dragState.roadControlPreviewElement?.remove();
+    const editLayer = manager.canvas.querySelector("#editorEditLayer");
+    if (!editLayer) return null;
+    const group = utils.createSvgElement("g", {
+      class: "editor-road-live-preview editor-road-island-preview" + (dragState.type === "control" ? " editor-road-control-preview" : " editor-road-move-preview"),
+      "pointer-events": "none"
+    });
+    group.append(
+      utils.createSvgElement("circle", { class: "editor-road-island-preview-band", fill: "none", stroke: "rgba(14, 165, 233, 0.16)", "stroke-linecap": "round", "vector-effect": "none" }),
+      utils.createSvgElement("circle", { class: "editor-road-island-preview-outline", fill: "none", stroke: "#0284c7", "vector-effect": "none" }),
+      utils.createSvgElement("circle", { class: "editor-road-island-preview-outline", fill: "none", stroke: "#0284c7", "vector-effect": "none" })
+    );
+    editLayer.insertBefore(group, editLayer.querySelector(".editor-object-cp:not(.editor-group-cp)") || null);
+    dragState.roadControlPreviewElement = group;
+    return group;
+  }
+
+  function updateIslandCirclePreview(dragState, model, options = {}) {
+    const element = ensureIslandCirclePreview(dragState);
+    if (!element) return false;
+    const geometry = islandPreviewGeometry(model);
+    const [band, outer, inner] = Array.from(element.children);
+    const outlineWidth = Math.max(1, 2 * (dragState.metrics?.unit || utils.svgUnitsPerScreenPx(manager.canvas) || 1));
+    [band, outer, inner].forEach((circle) => {
+      setAttrIfChanged(circle, "cx", geometry.center.x);
+      setAttrIfChanged(circle, "cy", geometry.center.y);
+    });
+    setAttrIfChanged(band, "r", geometry.centerRadius);
+    setAttrIfChanged(band, "stroke-width", geometry.width);
+    setAttrIfChanged(outer, "r", geometry.outerRadius);
+    setAttrIfChanged(outer, "stroke-width", outlineWidth);
+    setAttrIfChanged(inner, "r", geometry.innerRadius);
+    setAttrIfChanged(inner, "stroke-width", outlineWidth);
+    const dx = numeric(options.dx, 0);
+    const dy = numeric(options.dy, 0);
+    const transform = Math.hypot(dx, dy) > 0.0001 ? `translate(${dx} ${dy})` : "";
+    if (transform) setAttrIfChanged(element, "transform", transform);
+    else element.removeAttribute("transform");
+    return true;
   }
 
   function ensureRoadControlPreview(dragState) {
@@ -372,6 +468,49 @@
     return element;
   }
 
+  function applyRoadPreviewPath(element, dragState, model, adapter) {
+    const info = roadPreviewInfo(model, adapter, dragState);
+    if (!info?.data) return false;
+    element.setAttribute("d", info.data);
+    if (info.mode === "stroke") {
+      element.setAttribute("fill", "none");
+      element.setAttribute("stroke", "rgba(14, 165, 233, 0.22)");
+      element.setAttribute("stroke-width", String(info.width || 1));
+      element.setAttribute("stroke-linecap", "butt");
+      element.removeAttribute("fill-rule");
+      return true;
+    }
+    element.setAttribute("fill", "rgba(14, 165, 233, 0.16)");
+    element.setAttribute("stroke", "#0284c7");
+    element.setAttribute("stroke-width", String(Math.max(1, 2 * (dragState.metrics?.unit || utils.svgUnitsPerScreenPx(manager.canvas) || 1))));
+    element.setAttribute("stroke-linecap", "round");
+    if (model?.geometry?.profile === "islandRing" || adapter?.isIsland?.(model)) element.setAttribute("fill-rule", "evenodd");
+    else element.removeAttribute("fill-rule");
+    return true;
+  }
+
+  function updateRoadTransformPreview(dragState, model, adapter) {
+    if (model?.type !== "road") return;
+    if (isIslandRoad(model, adapter) && updateIslandCirclePreview(dragState, model, { dx: dragState.totalDx || 0, dy: dragState.totalDy || 0 })) {
+      if (dragState.usingCanvasRoadPreview) Kroki.RoadDragPreview?.clear?.();
+      dragState.usingCanvasRoadPreview = false;
+      dragState.roadMovePreviewReady = true;
+      return;
+    }
+    if (dragState.usingCanvasRoadPreview) {
+      Kroki.RoadDragPreview?.clear?.();
+      dragState.usingCanvasRoadPreview = false;
+    }
+    const element = ensureRoadControlPreview(dragState);
+    if (!element) return;
+    if (!dragState.roadMovePreviewReady) {
+      if (!applyRoadPreviewPath(element, dragState, model, adapter)) return;
+      dragState.roadMovePreviewReady = true;
+    }
+    const transform = `translate(${dragState.totalDx || 0} ${dragState.totalDy || 0})`;
+    if (element.getAttribute("transform") !== transform) element.setAttribute("transform", transform);
+  }
+
   function previewControlHandles(dragState) {
     if (!dragState) return [];
     if (!dragState.previewControlHandles) {
@@ -383,8 +522,29 @@
   }
 
   function updatePreviewControlHandles(dragState, model, adapter, metricsValue) {
-    if (!model || !adapter?.getControlPoints) return;
-    const cps = adapter.getControlPoints(model, metricsValue || controlPoints.metrics(), "edit") || [];
+    if (!model || !adapter) return;
+    const metrics = metricsValue || controlPoints.metrics();
+    const activeCpId = String(dragState?.cpId || "");
+    if (dragState?.liveRoadControlPreview && activeCpId) {
+      const handles = previewControlHandles(dragState);
+      const handle = handles.find((item) => String(item.dataset.point || "") === activeCpId);
+      let cp = typeof adapter.getPreviewControlPoint === "function"
+        ? adapter.getPreviewControlPoint(model, metrics, activeCpId)
+        : null;
+      if (!cp && typeof adapter.getPreviewControlPoints === "function") {
+        cp = (adapter.getPreviewControlPoints(model, metrics) || []).find((item) => String(item.id) === activeCpId) || null;
+      }
+      if (handle && cp) {
+        const rotation = Number.isFinite(cp.angle) ? ` rotate(${cp.angle})` : "";
+        handle.setAttribute("transform", `translate(${cp.x} ${cp.y})${rotation}`);
+        if (cp.cursor) handle.style.cursor = cp.cursor;
+        return;
+      }
+    }
+    if (typeof adapter.getControlPoints !== "function") return;
+    const cps = (dragState?.liveRoadControlPreview && typeof adapter.getPreviewControlPoints === "function")
+      ? adapter.getPreviewControlPoints(model, metrics)
+      : adapter.getControlPoints(model, metrics, "edit");
     const cpById = new Map(cps.map((cp) => [String(cp.id), cp]));
     previewControlHandles(dragState).forEach((handle) => {
       const cp = cpById.get(String(handle.dataset.point || ""));
@@ -397,6 +557,31 @@
 
   function updateRoadControlPreview(dragState, model, adapter) {
     hideLiveRoadObjectSource(dragState);
+    if (dragState?.liveRoadControlPreview) {
+      if (isIslandRoad(model, adapter) && updateIslandCirclePreview(dragState, model)) {
+        if (dragState.usingCanvasRoadPreview) Kroki.RoadDragPreview?.clear?.();
+        dragState.usingCanvasRoadPreview = false;
+        updatePreviewControlHandles(dragState, model, adapter, dragState.metrics);
+        return;
+      }
+      if (adapter.controlPreviewPointOnly?.(model, dragState.cpId)) {
+        if (dragState.usingCanvasRoadPreview) Kroki.RoadDragPreview?.clear?.();
+        dragState.usingCanvasRoadPreview = false;
+        dragState.roadControlPreviewElement?.remove();
+        dragState.roadControlPreviewElement = null;
+        updatePreviewControlHandles(dragState, model, adapter, dragState.metrics);
+        return;
+      }
+      if (dragState.usingCanvasRoadPreview) {
+        Kroki.RoadDragPreview?.clear?.();
+        dragState.usingCanvasRoadPreview = false;
+      }
+      const element = ensureRoadControlPreview(dragState);
+      if (!element) return;
+      if (!applyRoadPreviewPath(element, dragState, model, adapter)) return;
+      updatePreviewControlHandles(dragState, model, adapter, dragState.metrics);
+      return;
+    }
     if (Kroki.RoadDragPreview?.update?.(manager.canvas, model, adapter)) {
       dragState.usingCanvasRoadPreview = true;
       dragState.roadControlPreviewElement?.remove();
@@ -410,9 +595,7 @@
     }
     const element = ensureRoadControlPreview(dragState);
     if (!element) return;
-    element.setAttribute("d", roadPreviewPathData(model, adapter));
-    if (model?.geometry?.profile === "islandRing" || adapter?.isIsland?.(model)) element.setAttribute("fill-rule", "evenodd");
-    else element.removeAttribute("fill-rule");
+    if (!applyRoadPreviewPath(element, dragState, model, adapter)) return;
     updatePreviewControlHandles(dragState, model, adapter, dragState.metrics);
   }
 
@@ -433,8 +616,8 @@
     const model = getActiveModel();
     const adapter = manager.getAdapter(model);
     const metricSnapshot = type === "control" ? controlPoints.metrics() : null;
-    const liveRoadObjectPreview = type === "object" && model?.type === "road" && typeof adapter?.move === "function";
-    const liveTransform = type === "object" && !liveRoadObjectPreview && typeof adapter?.move === "function";
+    const liveRoadObjectPreview = false;
+    const liveTransform = type === "object" && typeof adapter?.move === "function";
     const liveRoadControlPreview = type === "control" && model?.type === "road" && typeof adapter?.moveControlPoint === "function";
     const liveLineControlPreview = type === "control" && model?.type === "line" && typeof adapter?.moveControlPoint === "function";
     if (model?.type === "road") Kroki.RoadIntersectionEngine?.setSuspended?.(true, liveRoadObjectPreview ? undefined : (liveTransform || liveRoadControlPreview ? { clear: false } : undefined));
@@ -461,13 +644,15 @@
       lineSelectionElement: liveLineControlPreview ? manager.canvas.querySelector("#editorEditLayer [data-selection-type='line']") : null,
       roadControlPreviewElement: null,
       usingCanvasRoadPreview: false,
+      roadMovePreviewReady: false,
+      previewNeedsFinalize: false,
       previewControlHandles: null,
       totalDx: 0,
       totalDy: 0,
       pendingPoint: null,
       pendingFrame: 0,
       pendingFrameIsTimeout: false,
-      liveTransformTargets: liveTransform ? liveTransformTargetsFor(model.id) : [],
+      liveTransformTargets: liveTransform && model?.type !== "road" ? liveTransformTargetsFor(model.id) : [],
       hiddenRoadSource: null,
       modelId: model.id,
       historyLabel: type === "control" ? "Geometri duzenle" : "Nesne tasi",
@@ -630,6 +815,7 @@
       const restoreAfterUpdate = drag.liveRoadObjectPreview && drag.moved && model && previewModel;
       clearRoadControlPreview(drag, { restoreSource: !restoreAfterUpdate });
       if (drag.moved && model && previewModel) {
+        if (drag.previewNeedsFinalize) manager.getAdapter(model)?.finalizePreviewControlPoint?.(previewModel, drag.cpId);
         ensureDragTransaction(drag);
         try {
           manager.updateModel(model.id, () => previewModel, {
@@ -660,6 +846,9 @@
       const adapter = manager.getAdapter(model);
       const dx = drag.totalDx || 0;
       const dy = drag.totalDy || 0;
+      if (drag.roadControlPreviewElement || drag.usingCanvasRoadPreview) {
+        clearRoadControlPreview(drag, { restoreSource: false });
+      }
       clearLiveTransform(drag);
       if (drag.moved && model && typeof adapter?.move === "function" && Math.hypot(dx, dy) > 0.001) {
         ensureDragTransaction(drag);

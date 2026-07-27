@@ -2,6 +2,7 @@
   const Kroki = window.Kroki = window.Kroki || {};
   let activeResolve = null;
   let lastFocus = null;
+  let toastSeed = 0;
 
   const layer = document.createElement("div");
   layer.className = "kroki-dialog-layer gizli";
@@ -12,7 +13,51 @@
   panel.setAttribute("role", "dialog");
   panel.setAttribute("aria-modal", "true");
   layer.append(panel);
-  document.body.append(layer);
+
+  const toastHost = document.createElement("div");
+  toastHost.className = "kroki-toast-host";
+  toastHost.setAttribute("aria-live", "polite");
+  toastHost.setAttribute("aria-atomic", "false");
+  let lastSyncPulse = 0;
+
+  function currentFullscreenElement() {
+    return document.fullscreenElement
+      || document.webkitFullscreenElement
+      || document.mozFullScreenElement
+      || document.msFullscreenElement
+      || null;
+  }
+
+  function appHost() {
+    const fullscreen = currentFullscreenElement();
+    if (fullscreen && fullscreen !== document.documentElement) return fullscreen;
+    return document.body
+      || document.querySelector("#uygulama")
+      || document.documentElement;
+  }
+
+  function ensureOverlayHost() {
+    const host = appHost();
+    if (host && layer.parentNode !== host) host.append(layer);
+    if (host && toastHost.parentNode !== host) host.append(toastHost);
+  }
+
+  function scheduleFullscreenSync() {
+    const fire = () => window.dispatchEvent(new CustomEvent("kroki:fullscreen-state-sync"));
+    fire();
+    window.setTimeout(fire, 80);
+    window.setTimeout(fire, 350);
+    window.setTimeout(fire, 900);
+  }
+
+  function pulseFullscreenSync() {
+    const now = Date.now();
+    if (now - lastSyncPulse < 120) return;
+    lastSyncPulse = now;
+    scheduleFullscreenSync();
+  }
+
+  ensureOverlayHost();
 
   function syncViewportHeight() {
     const height = window.visualViewport?.height || window.innerHeight || document.documentElement.clientHeight || 720;
@@ -30,6 +75,7 @@
     layer.classList.add("gizli");
     panel.replaceChildren();
     resolve(result);
+    scheduleFullscreenSync();
     if (lastFocus?.focus) window.setTimeout(() => lastFocus.focus({ preventScroll: true }), 0);
   }
 
@@ -44,6 +90,8 @@
 
   function open(options = {}) {
     if (activeResolve) close(null);
+    ensureOverlayHost();
+    scheduleFullscreenSync();
     syncViewportHeight();
     lastFocus = document.activeElement;
 
@@ -110,6 +158,46 @@
     });
   }
 
+  function toast(message, title = "", options = {}) {
+    ensureOverlayHost();
+    scheduleFullscreenSync();
+    const text = String(message || "").trim();
+    if (!text) return Promise.resolve(false);
+
+    const item = document.createElement("div");
+    item.className = "kroki-toast";
+    item.dataset.toastId = String(++toastSeed);
+    item.setAttribute("role", "status");
+
+    if (title) {
+      const heading = document.createElement("strong");
+      heading.textContent = title;
+      item.append(heading);
+    }
+
+    const body = document.createElement("span");
+    body.textContent = text;
+    item.append(body);
+
+    const closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.className = "kroki-toast-close";
+    closeButton.setAttribute("aria-label", "Kapat");
+    closeButton.textContent = "x";
+    item.append(closeButton);
+
+    const remove = () => {
+      item.classList.add("is-hiding");
+      window.setTimeout(() => item.remove(), 160);
+    };
+    closeButton.addEventListener("click", remove);
+    toastHost.append(item);
+
+    const duration = Math.max(1400, Number(options.duration) || 2600);
+    window.setTimeout(remove, duration);
+    return Promise.resolve(true);
+  }
+
   layer.addEventListener("pointerdown", (event) => {
     if (event.target === layer) close(null);
   });
@@ -126,7 +214,21 @@
     }
   });
 
+  ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"].forEach((eventName) => {
+    document.addEventListener(eventName, () => {
+      ensureOverlayHost();
+      scheduleFullscreenSync();
+    });
+  });
+  ["pointerdown", "click"].forEach((eventName) => {
+    document.addEventListener(eventName, pulseFullscreenSync, true);
+  });
+  ["pageshow", "focus", "resize", "orientationchange", "kroki:fullscreen-state-sync"].forEach((eventName) => {
+    window.addEventListener(eventName, ensureOverlayHost);
+  });
+
   Kroki.Dialog = {
+    toast,
     alert(message, title = "Kroki Pro") {
       return open({
         title,
@@ -175,4 +277,7 @@
   };
 
   window.KrokiDialog = Kroki.Dialog;
+  window.alert = (message) => {
+    void Kroki.Dialog.alert(String(message || ""), "Kroki Pro");
+  };
 })();
