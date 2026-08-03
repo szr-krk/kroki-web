@@ -7,7 +7,7 @@
 
   const MIN_SCALE = 0.05;
   const MAX_SCALE = 4;
-  const SELECTION_RADIUS_SCALE = 1.12;
+  const SELECTION_FRAME_SCALE = 1.12;
   const MULTI_SELECTION_STROKE_WIDTH = 4;
   const VEHICLE_LABEL_POSITIONS = ["top", "right", "bottom", "left"];
   const VEHICLE_LABEL_MAX_LENGTH = 24;
@@ -93,11 +93,6 @@
     };
     metricsCache.set(model, { key: cacheKey, metrics });
     return metrics;
-  }
-
-  function selectionRadiusFor(model) {
-    const metrics = baseMetrics(model);
-    return Math.max(metrics.width, metrics.height) * SELECTION_RADIUS_SCALE / 2;
   }
 
   function bodyStyle(metadata = {}) {
@@ -434,14 +429,71 @@
     return svg;
   }
 
-  function pointDistance(model, point) {
+  function roundSvgNumber(value) {
+    return Math.round(value * 1000) / 1000;
+  }
+
+  function localPointFor(model, point) {
     const geometry = model.geometry || {};
-    return Math.hypot(point.x - geometry.cx, point.y - geometry.cy);
+    const angle = -utils.normalizeRotation(geometry.rotation || 0) * Math.PI / 180;
+    const dx = point.x - geometry.cx;
+    const dy = point.y - geometry.cy;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    return {
+      x: dx * cos - dy * sin,
+      y: dx * sin + dy * cos
+    };
+  }
+
+  function rectangleHitTest(model, point, tolerance, metrics) {
+    const local = localPointFor(model, point);
+    const outsideX = Math.max(Math.abs(local.x) - metrics.width / 2, 0);
+    const outsideY = Math.max(Math.abs(local.y) - metrics.height / 2, 0);
+    return Math.hypot(outsideX, outsideY) <= Math.max(0, tolerance || 0);
+  }
+
+  function localToWorld(model, x, y) {
+    const geometry = model.geometry || {};
+    const angle = utils.normalizeRotation(geometry.rotation || 0) * Math.PI / 180;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    return {
+      x: geometry.cx + x * cos - y * sin,
+      y: geometry.cy + x * sin + y * cos
+    };
+  }
+
+  function frameVertices(model, metrics, scale = 1) {
+    const halfWidth = metrics.width * scale / 2;
+    const halfHeight = metrics.height * scale / 2;
+    return [
+      localToWorld(model, -halfWidth, -halfHeight),
+      localToWorld(model, halfWidth, -halfHeight),
+      localToWorld(model, halfWidth, halfHeight),
+      localToWorld(model, -halfWidth, halfHeight)
+    ];
+  }
+
+  function polygonBounds(vertices) {
+    const xs = vertices.map((point) => point.x);
+    const ys = vertices.map((point) => point.y);
+    const minX = Math.min(...xs);
+    const minY = Math.min(...ys);
+    const maxX = Math.max(...xs);
+    const maxY = Math.max(...ys);
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  }
+
+  function selectionPath(model, metrics) {
+    const vertices = frameVertices(model, metrics, SELECTION_FRAME_SCALE);
+    return `${vertices.map((point, index) => (
+      `${index ? "L" : "M"} ${roundSvgNumber(point.x)} ${roundSvgNumber(point.y)}`
+    )).join(" ")} Z`;
   }
 
   function cpPoint(model, metrics) {
-    const radius = selectionRadiusFor(model);
-    const distance = radius + (metrics?.handleGap || 0);
+    const distance = baseMetrics(model).width * SELECTION_FRAME_SCALE / 2 + (metrics?.handleGap || 0);
     const radians = utils.normalizeRotation(model.geometry?.rotation || 0) * Math.PI / 180;
     return {
       x: model.geometry.cx + Math.cos(radians) * distance,
@@ -577,7 +629,7 @@
     },
 
     hitTest(model, point, tolerance) {
-      return pointDistance(model, point) <= selectionRadiusFor(model) + tolerance;
+      return rectangleHitTest(model, point, tolerance, baseMetrics(model));
     },
 
     getControlPoints(model, metrics) {
@@ -602,13 +654,7 @@
     },
 
     getBounds(model) {
-      const radius = selectionRadiusFor(model);
-      return {
-        x: model.geometry.cx - radius,
-        y: model.geometry.cy - radius,
-        width: radius * 2,
-        height: radius * 2
-      };
+      return polygonBounds(frameVertices(model, baseMetrics(model), SELECTION_FRAME_SCALE));
     },
 
     clone(model) {
@@ -616,14 +662,12 @@
     },
 
     createSelectionElement() {
-      return utils.createSvgElement("circle", { class: "editor-object-selection editor-traffic-sign-selection editor-vehicle-selection" });
+      return utils.createSvgElement("path", { class: "editor-object-selection editor-traffic-sign-selection editor-vehicle-selection" });
     },
 
     renderSelection(element, model, style, mode) {
       const isMulti = mode === "multi";
-      element.setAttribute("cx", String(model.geometry.cx));
-      element.setAttribute("cy", String(model.geometry.cy));
-      element.setAttribute("r", String(selectionRadiusFor(model)));
+      element.setAttribute("d", selectionPath(model, baseMetrics(model)));
       element.setAttribute("stroke-width", isMulti ? String(MULTI_SELECTION_STROKE_WIDTH) : "0");
       if (isMulti) {
         element.removeAttribute("stroke");

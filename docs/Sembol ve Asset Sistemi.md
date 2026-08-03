@@ -22,14 +22,19 @@ Katalog tabanlı nesneler canvas'a ham SVG olarak değil, ortak model olarak ekl
 
 Dosyalar:
 
-- `src/data/traffic-signs-tanzim-levhalari.generated.js`
-- `src/data/traffic-signs-uyari-levhalari.generated.js`
-- `src/data/traffic-signs-bilgi-levhalari.generated.js`
+- `src/data/traffic-signs-1-tanzim-levhalari.generated.js`
+- `src/data/traffic-signs-2-uyari-levhalari.generated.js`
+- `src/data/traffic-signs-3-bilgi-levhalari.generated.js`
+- `src/data/traffic-signs-4-durma-ve-parketme.generated.js`
+- `src/data/traffic-signs-5-yapim-bakim-ve-onarim.generated.js`
+- `src/data/traffic-signs-6-paneller.generated.js`
+- `src/data/traffic-signs-7-kaplama-isaretleri.generated.js`
+- `src/data/traffic-signs-kontrol-kesimi-custom.js`
 - `src/core/trafficSignCatalog.js`
 - `src/ui/trafficSignLibrary.js`
 - `src/adapters/trafficSignAdapter.js`
 
-Mevcut katalog toplam 198 kayıt taşır: 70 tanzim, 63 uyarı, 65 bilgi levhası.
+Mevcut katalog toplam 314 levha kaydı taşır.
 
 Her kayıt şu alanları taşımalıdır:
 
@@ -47,6 +52,8 @@ Her kayıt şu alanları taşımalıdır:
 `art`, dış `<svg>` yerine iç render grubudur. Adapter önce canlı katalogda `signKey` arar, bulamazsa metadata içindeki `signArt` ile render eder. Bu sayede kayıtlı belge, katalog dosyası değişse bile kendi art'ını taşıyabilir.
 
 ## Diğer semboller
+
+Kütüphanedeki seçim geribildirimi trafik levhalarıyla ortaktır: seçilen `.catalog-tile`, `is-selected` sınıfı ve `aria-pressed="true"` durumu ile açık zemin, ince vurgu halkası ve sağ alttaki onay rozeti kazanır. Bu durum JavaScript'te yeni bir seçim modeli oluşturulmadan, `src/editor.css` içindeki trafik levhası/sembol ortak kurallarıyla çizilir.
 
 Dosyalar:
 
@@ -131,4 +138,3 @@ Sınırlamalar:
 ## Offline paket kuralı
 
 Uygulama offline çalışmalıdır. Yeni asset veya ikon için CDN, remote image, web font, API veya runtime network fetch eklenmemelidir. Tüm görsel kaynaklar repo içinde ya generated JS'e gömülü ya da local dosya olarak paketlenmiş olmalıdır.
-

@@ -5,9 +5,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Kroki Pro</title>
-  <link rel="stylesheet" href="src/home.css?v=20260713-dialog-over-preview" />
-  <link rel="stylesheet" href="src/editor.css?v=20260711-text-ip-top" />
-  <link rel="stylesheet" href="src/editor-line.css?v=20260713-callout-stroke-scale" />
+  <link rel="stylesheet" href="src/home.css?v=20260803-proportional-responsive-v1" />
+  <link rel="stylesheet" href="src/editor.css?v=20260803-proportional-responsive-v1" />
+  <link rel="stylesheet" href="src/editor-line.css?v=20260803-proportional-responsive-v1" />
 </head>
 
 <body>
@@ -327,6 +327,13 @@
             aria-label="Cep yok" title="Cep yok">
             <span id="lblRoadPocketIp" class="side-ip-text-mark road-pocket-cycle-mark">Cep yok</span>
           </button>
+          <button id="btnRoadDepartureIp" class="side-ip-btn side-ip-tool road-ip-icon-btn road-global-control road-departure-btn" type="button"
+            aria-label="Ayrilan yol ekle" title="Ayrilan yol ekle" aria-expanded="false">
+            <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+              <path d="M 10 8 L 10 40 M 21 8 L 21 40 M 29 40 Q 29 15 39 7 M 27 10 L 39 7 L 39 18"
+                stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+          </button>
           <div id="roadSCurveControlIp" class="road-ip-stepper road-global-control gizli" aria-label="S viraj kontrol noktasi">
             <button id="btnRoadSCurveControlPlus" class="road-ip-stepper-btn" type="button" aria-label="S viraj kontrol noktasini arttir">+</button>
             <input id="roadSCurveControlCountIpInput" class="road-ip-stepper-number" type="number" min="2" max="5" step="1"
@@ -374,10 +381,10 @@
           </div>
           <button id="btnRoadAddBarrierIp" class="side-ip-btn side-ip-tool road-ip-icon-btn road-barrier-add-control gizli" type="button"
             aria-label="Bariyer ekle" title="Bariyer ekle">
-            <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
-              <path d="M10 17H38" stroke="currentColor" stroke-width="4" stroke-linecap="butt"></path>
-              <path d="M13 34L16 17M22 34V17M30 34V17M35 34L32 17" stroke="currentColor" stroke-width="3"
-                stroke-linecap="butt"></path>
+            <svg viewBox="8 15 34 17" aria-hidden="true">
+              <path d="M15 32 15 17M20 32 20 17M25 32 25 17M30 32 30 17M35 17 35 32"
+                stroke="currentColor" stroke-width="2" fill="none"></path>
+              <path d="M10 17 40 17" stroke="currentColor" fill="none" stroke-width="4"></path>
             </svg>
           </button>
           <div id="roadBarrierControlsIp" class="road-barrier-controls road-barrier-only-control gizli" aria-label="Bariyer ozellikleri">
@@ -433,6 +440,33 @@
             aria-label="Yol cizgi stili" title="Yol cizgi stili">
             <svg id="iconRoadMarkingStyle" viewBox="0 0 48 48" fill="none" aria-hidden="true"></svg>
           </button>
+        </div>
+
+        <div id="roadDeparturePanel" class="road-boundary-panel road-departure-panel gizli" aria-label="Ayrilan yol olustur">
+          <div class="road-boundary-panel-head">
+            <span>Ayrilan yol</span>
+            <button id="btnRoadDeparturePanelClose" class="road-boundary-panel-close" type="button"
+              aria-label="Paneli kapat" title="Kapat">x</button>
+          </div>
+          <div class="road-departure-option-row">
+            <span>Taraf</span>
+            <div class="road-departure-side-buttons" role="group" aria-label="Ayrilma tarafi">
+              <button id="btnRoadDepartureLeft" class="road-departure-choice" type="button"
+                aria-label="Soldan ayrilan yol" aria-pressed="false">Sol</button>
+              <button id="btnRoadDepartureRight" class="road-departure-choice is-active" type="button"
+                aria-label="Sagdan ayrilan yol" aria-pressed="true">Sağ</button>
+            </div>
+          </div>
+          <div class="road-departure-option-row">
+            <label for="roadDepartureLaneCountInput">Şerit</label>
+            <div class="road-departure-stepper">
+              <button id="btnRoadDepartureLaneMinus" type="button" aria-label="Ayrilan yol serit sayisini azalt">−</button>
+              <input id="roadDepartureLaneCountInput" type="number" min="1" max="2" step="1" value="2"
+                inputmode="numeric" aria-label="Ayrilan yol serit sayisi">
+              <button id="btnRoadDepartureLanePlus" type="button" aria-label="Ayrilan yol serit sayisini arttir">+</button>
+            </div>
+          </div>
+          <button id="btnRoadDepartureCreate" class="road-departure-create" type="button">Yolu oluştur</button>
         </div>
 
         <div id="roadBoundaryPanel" class="road-boundary-panel gizli" aria-label="Yol cizgi segmentleri">
@@ -630,8 +664,8 @@
         <div id="lineStrokeWidthStepper" class="side-ip-stepper-vertical side-ip-control" aria-label="Cizgi kalinligi">
           <button id="btnLineStrokeWidthPlus" class="side-ip-stepper-btn" type="button"
             aria-label="Cizgi kalinligini arttir">+</button>
-          <input id="lineStrokeWidthInput" class="side-ip-stepper-number" type="number" min="1" step="1"
-            value="2" inputmode="numeric" aria-label="Cizgi kalinligi">
+          <input id="lineStrokeWidthInput" class="side-ip-stepper-number" type="number" min="0.1" step="any"
+            value="2" inputmode="decimal" aria-label="Cizgi kalinligi">
           <button id="btnLineStrokeWidthMinus" class="side-ip-stepper-btn" type="button"
             aria-label="Cizgi kalinligini azalt">-</button>
         </div>
@@ -1239,34 +1273,40 @@
     </section>
   </div>
 
-  <script src="src/kroki-dialog.js?v=20260713-dialog-over-preview"></script>
+  <script src="src/responsive-scale.js?v=20260803-proportional-responsive-v1"></script>
+  <script src="src/kroki-dialog.js?v=20260803-proportional-responsive-v1"></script>
   <script src="src/data/ready-drawings.js"></script>
   <script src="src/home.js?v=20260713-guide-link"></script>
   <script src="src/editor-state.js"></script>
-  <script src="src/editor-rail.js?v=20260713-fullscreen-download"></script>
-  <script src="src/editor-camera.js"></script>
-  <script src="src/editor-object-edit.js?v=20260710-numberpicker"></script>
+  <script src="src/editor-framing.js"></script>
+  <script src="src/editor-rail.js?v=20260801-cp-fit-preselect-v1"></script>
+  <script src="src/editor-camera.js?v=20260730-road-departure-geometry-v4"></script>
+  <script src="src/editor-object-edit.js?v=20260803-proportional-responsive-v1"></script>
   <script src="src/editor-stroke-style.js"></script>
-  <script src="src/data/traffic-signs-tanzim-levhalari.generated.js"></script>
-  <script src="src/data/traffic-signs-uyari-levhalari.generated.js"></script>
-  <script src="src/data/traffic-signs-bilgi-levhalari.generated.js"></script>
-  <script src="src/data/traffic-signs-bilgi-levhalari-custom.js?v=20260710-kontrol-kesimi"></script>
+  <script src="src/data/traffic-signs-1-tanzim-levhalari.generated.js?v=20260727-314-signs"></script>
+  <script src="src/data/traffic-signs-2-uyari-levhalari.generated.js?v=20260727-314-signs"></script>
+  <script src="src/data/traffic-signs-3-bilgi-levhalari.generated.js?v=20260727-314-signs"></script>
+  <script src="src/data/traffic-signs-4-durma-ve-parketme.generated.js?v=20260727-314-signs"></script>
+  <script src="src/data/traffic-signs-5-yapim-bakim-ve-onarim.generated.js?v=20260727-314-signs"></script>
+  <script src="src/data/traffic-signs-6-paneller.generated.js?v=20260727-314-signs"></script>
+  <script src="src/data/traffic-signs-7-kaplama-isaretleri.generated.js?v=20260727-314-signs"></script>
+  <script src="src/data/traffic-signs-kontrol-kesimi-custom.js?v=20260727-panel-restore"></script>
   <script src="src/data/other-symbols.generated.js"></script>
   <script src="src/data/vehicle-catalog-data.js"></script>
-  <script src="src/core/trafficSignCatalog.js"></script>
+  <script src="src/core/trafficSignCatalog.js?v=20260727-sign-scale"></script>
   <script src="src/core/otherSymbolCatalog.js"></script>
   <script src="src/core/vehicleCatalog.js"></script>
   <script src="src/core/shapeRegistry.js"></script>
   <script src="src/core/styleManager.js?v=20260713-pattern-none-white"></script>
-  <script src="src/core/editorObjectManager.js"></script>
+  <script src="src/core/editorObjectManager.js?v=20260731-road-departure-lifecycle-v1"></script>
   <script src="src/core/groupManager.js"></script>
-  <script src="src/core/documentSerializer.js"></script>
+  <script src="src/core/documentSerializer.js?v=20260730-road-departure-geometry-v4"></script>
   <script src="src/core/historyManager.js"></script>
   <script src="src/core/hitTestManager.js"></script>
-  <script src="src/core/controlPointManager.js"></script>
+  <script src="src/core/controlPointManager.js?v=20260801-cp-fit-preselect-v1"></script>
   <script src="src/core/multiSelectManager.js"></script>
   <script src="src/core/roadDragPreview.js?v=20260713-island-circle-preview"></script>
-  <script src="src/core/selectionManager.js?v=20260713-live-cp-preview"></script>
+  <script src="src/core/selectionManager.js?v=20260803-delete-key"></script>
   <script src="src/geometry/lineGeometry.js"></script>
   <script src="src/geometry/circleGeometry.js"></script>
   <script src="src/geometry/ellipseGeometry.js"></script>
@@ -1279,20 +1319,20 @@
   <script src="src/adapters/rectangleAdapter.js"></script>
   <script src="src/adapters/closedShapeAdapter.js"></script>
   <script src="src/adapters/calloutAdapter.js?v=20260713-callout-stroke-scale"></script>
-  <script src="src/adapters/roadAdapter.js?v=20260713-barrier-free-bounds"></script>
-  <script src="src/core/roadIntersectionEngine.js"></script>
+  <script src="src/adapters/roadAdapter.js?v=20260731-departure-side-lock-v2"></script>
+  <script src="src/core/roadIntersectionEngine.js?v=20260730-road-departure-geometry-v4"></script>
   <script src="src/adapters/textAdapter.js"></script>
-  <script src="src/adapters/trafficSignAdapter.js"></script>
+  <script src="src/adapters/trafficSignAdapter.js?v=20260727-all-sign-text-v2"></script>
   <script src="src/adapters/otherSymbolAdapter.js"></script>
   <script src="src/adapters/vehicleAdapter.js?v=20260710-vehicle-label-gap"></script>
   <script src="src/ui/editorTextComposer.js?v=20260713-live-text-edit"></script>
   <script src="src/ui/editorBindings.js"></script>
   <script src="src/ui/roadBuilder.js?v=20260710-numberpicker"></script>
-  <script src="src/ui/roadInspector.js?v=20260710-numberpicker"></script>
+  <script src="src/ui/roadInspector.js?v=20260803-proportional-responsive-v1"></script>
   <script src="src/ui/vehicleLibrary.js"></script>
-  <script src="src/ui/trafficSignLibrary.js"></script>
+  <script src="src/ui/trafficSignLibrary.js?v=20260727-sign-library"></script>
   <script src="src/ui/otherSymbolLibrary.js"></script>
-  <script src="src/editor-main-menu.js?v=20260713-label-halo"></script>
+  <script src="src/editor-main-menu.js?v=20260803-proportional-responsive-v1"></script>
 </body>
 
 </html>

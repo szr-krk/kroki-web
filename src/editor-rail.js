@@ -9,7 +9,7 @@ const fitBaseViewBox = readFitViewBox(editorCanvas);
 const cizimRailDefaultNodes = Array.from(cizimRailButton?.childNodes || []).map((node) => node.cloneNode(true));
 const cizimRailDefaultLabel = cizimRailButton?.getAttribute("aria-label") || "";
 const cizimRailDefaultTitle = cizimRailButton?.getAttribute("title") || "";
-const FIT_PADDING_PX = 56;
+const FIT_PADDING_WORLD = window.krokiEditorFraming?.CONTENT_PADDING_WORLD ?? 25;
 let editorForcedFullscreenOffUntil = 0;
 
 function editorCurrentFullscreenElement() {
@@ -94,15 +94,17 @@ function fitViewBoxForBounds(bounds) {
   const rect = editorCanvas?.getBoundingClientRect?.();
   const rectWidth = Number.isFinite(rect?.width) && rect.width > 0 ? rect.width : fitBaseViewBox.width;
   const rectHeight = Number.isFinite(rect?.height) && rect.height > 0 ? rect.height : fitBaseViewBox.height;
-  const maxPadding = Math.max(0, Math.min(rectWidth, rectHeight) / 2 - 1);
-  const paddingPx = Math.min(maxPadding, FIT_PADDING_PX);
-  const availableWidth = Math.max(1, rectWidth - paddingPx * 2);
-  const availableHeight = Math.max(1, rectHeight - paddingPx * 2);
-  const aspect = fitBaseViewBox.width / fitBaseViewBox.height;
-  const centerX = bounds.x + bounds.width / 2;
-  const centerY = bounds.y + bounds.height / 2;
-  let width = Math.max(1, bounds.width) * rectWidth / availableWidth;
-  let height = Math.max(1, bounds.height) * rectHeight / availableHeight;
+  const framedBounds = window.krokiEditorFraming?.expandBounds?.(bounds, FIT_PADDING_WORLD) || {
+    x: bounds.x - FIT_PADDING_WORLD,
+    y: bounds.y - FIT_PADDING_WORLD,
+    width: bounds.width + FIT_PADDING_WORLD * 2,
+    height: bounds.height + FIT_PADDING_WORLD * 2
+  };
+  const aspect = rectWidth / rectHeight;
+  const centerX = framedBounds.x + framedBounds.width / 2;
+  const centerY = framedBounds.y + framedBounds.height / 2;
+  let width = Math.max(1, framedBounds.width);
+  let height = Math.max(1, framedBounds.height);
 
   if (width / height > aspect) height = width / aspect;
   else width = height * aspect;
@@ -158,14 +160,19 @@ function fitEditorToScreen(event) {
   closeRailMenus();
   const camera = window.krokiEditorCamera;
   const bounds = contentBoundsForFit();
+  const hasContent = Boolean(
+    bounds
+    || editorCanvas?.querySelector("#editorObjects [data-kroki-object='true']")
+  );
   if (bounds) {
     if (camera?.fitBounds) camera.fitBounds(bounds);
     else fitBoundsDirect(bounds);
-    return;
-  }
-  if (camera?.fitToContent) camera.fitToContent();
+  } else if (camera?.fitToContent) camera.fitToContent();
   else if (camera?.resetViewBox) camera.resetViewBox();
   else resetFitViewBox();
+  editorCanvas?.dispatchEvent(new CustomEvent("kroki:control-point-reveal-request", {
+    detail: { enabled: hasContent }
+  }));
 }
 
 function syncEditorFullscreenButton() {

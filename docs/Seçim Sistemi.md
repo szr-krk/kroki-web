@@ -16,7 +16,7 @@ Bağlantılar: [[Nesne Sistemi]], [[Kontrol Noktaları]], [[Undo Redo]], [[Yol S
 
 ## Hit-test
 
-`HitTestManager` nesneleri `#editorObjects` DOM sırasının tersinden dolaşır. Tolerans 24 ekran pikselidir ve mevcut SVG ölçeğine çevrilir. Her tip kendi adapter `hitTest` metodunu uygular.
+`HitTestManager` önce toleranssız doğrudan isabeti, ardından 4, 8, 12, 18 ve 24 ekran pikseli kademelerini değerlendirir; her kademe mevcut SVG ölçeğine çevrilir. Böylece geniş 24 px dokunma alanı korunurken doğrudan veya işaretçiye daha yakın olan öğe, yalnız geniş toleransla yakalanan üst katman öğesinden önce seçilir. Aynı yakınlık kademesindeki çakışmalarda `#editorObjects` DOM sırasının tersi, yani üst katman, son karar ölçütüdür. Yolların bilinçli arka-katman kuralı korunur: normal öğelerin tüm tolerans kademeleri yollardan önce değerlendirilir. Her tip kendi adapter `hitTest` metodunu uygular.
 
 Aktif çizim aracı varken kamera için “canvas üzerinde nesne var mı?” testi false döner; böylece araç akışı öncelik kazanır.
 

@@ -11,24 +11,84 @@
   let cachedByKey = null;
   let cachedCategories = null;
 
+  const CATEGORY_KEY_ALIASES = {
+    "tanzim-levhalari": "1-tanzim-levhalari",
+    "uyari-levhalari": "2-uyari-levhalari",
+    "bilgi-levhalari": "3-bilgi-levhalari"
+  };
+
+  const CATEGORY_MAX_INITIAL_SIZE = {
+    "4-durma-ve-parketme": 60,
+    "5-yapim-bakim-ve-onarim": 80,
+    "6-paneller": 60
+  };
+
+  const BASE_SCALE_OVERRIDES = new Map([
+    ["3-bilgi-levhalari/b-61f-elektronik-denetleme-sistemi", 0.12],
+    ["3-bilgi-levhalari/b-63a-karayolu-denetim-istasyonu-bilgi-levhalari", 0.04],
+    ["3-bilgi-levhalari/b-63b-karayolu-denetim-istasyonu-bilgi-levhalari", 0.04]
+  ]);
+
+  const FORCE_WHITE_TEXT_SIGN_KEYS = new Set([
+    "3-bilgi-levhalari/b-53b-u-donusu-levhalari",
+    "3-bilgi-levhalari/b-53c-u-donusu-levhalari",
+    "3-bilgi-levhalari/b-53d-u-donusu-alt-gecit",
+    "3-bilgi-levhalari/b-53e-u-donusu-alt-gecit",
+    "3-bilgi-levhalari/b-53f-u-donusu-alt-gecit",
+    "3-bilgi-levhalari/b-53g-u-donusu-ust-gecit",
+    "3-bilgi-levhalari/b-61b-elektronik-denetleme-sistemi"
+  ]);
+
   function categoryKey(sign) {
-    return String(sign?.categoryKey || sign?.category || "trafik-levhalari");
+    const key = String(sign?.categoryKey || sign?.category || "trafik-levhalari");
+    return CATEGORY_KEY_ALIASES[key] || key;
+  }
+
+  function categoryTitle(sign, key) {
+    const title = String(sign?.category || "Levhalar");
+    if (key === "1-tanzim-levhalari" && !/^1(?:\s|$)/.test(title)) return `1 ${title}`;
+    if (key === "2-uyari-levhalari" && !/^2(?:\s|$)/.test(title)) return `2 ${title}`;
+    if (key === "3-bilgi-levhalari" && !/^3(?:\s|$)/.test(title)) return `3 ${title}`;
+    return title;
+  }
+
+  function normalizedBaseScale(sign, key, viewBox) {
+    const scaleOverride = BASE_SCALE_OVERRIDES.get(String(sign?.key || ""));
+    const sourceScale = Number(scaleOverride) || Number(sign?.baseScale) || 0.08;
+    if (key === "7-kaplama-isaretleri") return 1;
+
+    const maxInitialSize = CATEGORY_MAX_INITIAL_SIZE[key];
+    if (!maxInitialSize) return sourceScale;
+    const dimensions = parseViewBox(viewBox, sign?.width, sign?.height);
+    const longestSide = Math.max(dimensions.width, dimensions.height);
+    if (!Number.isFinite(longestSide) || longestSide <= 0 || longestSide * sourceScale <= maxInitialSize) {
+      return sourceScale;
+    }
+    return Math.round((maxInitialSize / longestSide) * 1e6) / 1e6;
   }
 
   function normalizedSign(sign) {
+    const normalizedCategoryKey = categoryKey(sign);
+    const normalizedViewBox = String(sign?.viewBox || `0 0 ${Number(sign?.width) || 100} ${Number(sign?.height) || 100}`);
+    const normalizedKey = String(sign?.key || "");
+    const normalizeMarkup = (value) => {
+      const markup = String(value || "");
+      if (!FORCE_WHITE_TEXT_SIGN_KEYS.has(normalizedKey)) return markup;
+      return markup.replace(/(<text\b[^>]*?)fill="#000000"/g, '$1fill="#fff"');
+    };
     return {
-      key: String(sign?.key || ""),
+      key: normalizedKey,
       code: String(sign?.code || ""),
       name: String(sign?.name || ""),
-      category: String(sign?.category || "Levhalar"),
-      categoryKey: categoryKey(sign),
+      category: categoryTitle(sign, normalizedCategoryKey),
+      categoryKey: normalizedCategoryKey,
       file: String(sign?.file || ""),
       width: Number(sign?.width) || 0,
       height: Number(sign?.height) || 0,
-      viewBox: String(sign?.viewBox || `0 0 ${Number(sign?.width) || 100} ${Number(sign?.height) || 100}`),
-      baseScale: Number(sign?.baseScale) || 0.08,
-      art: String(sign?.art || ""),
-      svg: String(sign?.svg || "")
+      viewBox: normalizedViewBox,
+      baseScale: normalizedBaseScale(sign, normalizedCategoryKey, normalizedViewBox),
+      art: normalizeMarkup(sign?.art),
+      svg: normalizeMarkup(sign?.svg)
     };
   }
 

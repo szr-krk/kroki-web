@@ -59,7 +59,7 @@ Adapter'ların fiilî ortak yüzeyi:
 
 ## Katman sırası
 
-Belge sırası SVG DOM sırasıdır. Hit-test ters DOM sırasından başladığı için üstteki nesne önce yakalanır.
+Belge sırası SVG DOM sırasıdır. Hit-test önce normal öğe/yol arka-katman sınıfını, sonra ekran-pikseli cinsinden yakınlık kademesini, eşit kademede ise ters DOM sırasını kullanır. Böylece yollar arkada kalır; diğer üst nesneler yalnız aynı yakınlıktaki adaylar arasında önce yakalanır.
 
 - Tek nesne “Öne Getir” ana element ve manager'ın ürettiği label düğümlerini sona append eder.
 - “Arkaya Gönder” bunları katmanın başına koyar.

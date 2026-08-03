@@ -15,6 +15,8 @@
   const MAX_SMOOTH_ANGLE_DEG = 158;
   const SNAP_TOLERANCE = 1.15;
   const EPS = 1e-7;
+  const CONTOUR_MASK_DEFS_ID = "roadIntersectionMaskDefs";
+  const CONTOUR_MASK_ID = "roadIntersectionContourMask";
 
   let debug = false;
   let suspended = false;
@@ -36,6 +38,8 @@
   let lastDiagnostics = null;
   let dirtyRoadIds = new Set();
   let fullRoadRerenderNeeded = true;
+  let laneSplitTerminals = new Map();
+  let laneSplitSiblingRegions = new Map();
   const roadSurfaceCache = new Map();
 
   function createSvgElement(tag, attrs = {}) {
@@ -98,12 +102,79 @@
     return ensureLayer("roadIntersectionContourLayer");
   }
 
+  function ensureContourMaskDefs() {
+    let defs = manager.canvas.querySelector("#" + CONTOUR_MASK_DEFS_ID);
+    if (defs) return defs;
+    defs = createSvgElement("defs", { id: CONTOUR_MASK_DEFS_ID });
+    manager.canvas.insertBefore(defs, manager.canvas.firstChild);
+    return defs;
+  }
+
+  function clearContourMask(layer = contourLayer()) {
+    layer?.removeAttribute?.("mask");
+    const mask = manager.canvas.querySelector("#" + CONTOUR_MASK_ID);
+    const defs = mask?.parentNode;
+    mask?.remove();
+    if (defs?.id === CONTOUR_MASK_DEFS_ID && !defs.children.length) defs.remove();
+  }
+
+  function updateContourMask(layer, surfaces = []) {
+    const islandCenters = (surfaces || [])
+      .map((surface) => surface?.islandCenterMask)
+      .filter((item) => item && Number.isFinite(item.cx) && Number.isFinite(item.cy) && item.radius > 0.5);
+    if (!islandCenters.length) {
+      clearContourMask(layer);
+      return;
+    }
+
+    const surfacePoints = (surfaces || []).flatMap((surface) => surface?.polygon || []);
+    const surfaceBounds = boundsOfPoints(surfacePoints);
+    const viewBox = manager.canvas.viewBox?.baseVal;
+    const minX = Math.min(surfaceBounds?.minX ?? 0, Number(viewBox?.x) || 0);
+    const minY = Math.min(surfaceBounds?.minY ?? 0, Number(viewBox?.y) || 0);
+    const maxX = Math.max(surfaceBounds?.maxX ?? 1, (Number(viewBox?.x) || 0) + Math.max(1, Number(viewBox?.width) || 1));
+    const maxY = Math.max(surfaceBounds?.maxY ?? 1, (Number(viewBox?.y) || 0) + Math.max(1, Number(viewBox?.height) || 1));
+    const pad = Math.max(100, (maxX - minX) * 0.1, (maxY - minY) * 0.1);
+    const x = minX - pad;
+    const y = minY - pad;
+    const width = Math.max(1, maxX - minX + pad * 2);
+    const height = Math.max(1, maxY - minY + pad * 2);
+
+    const defs = ensureContourMaskDefs();
+    let mask = defs.querySelector("#" + CONTOUR_MASK_ID);
+    if (!mask) {
+      mask = createSvgElement("mask", {
+        id: CONTOUR_MASK_ID,
+        maskUnits: "userSpaceOnUse",
+        maskContentUnits: "userSpaceOnUse",
+        "mask-type": "luminance"
+      });
+      defs.append(mask);
+    }
+    mask.setAttribute("x", String(x));
+    mask.setAttribute("y", String(y));
+    mask.setAttribute("width", String(width));
+    mask.setAttribute("height", String(height));
+    mask.replaceChildren(
+      createSvgElement("rect", { x: String(x), y: String(y), width: String(width), height: String(height), fill: "#ffffff" }),
+      ...islandCenters.map((item) => createSvgElement("circle", {
+        cx: String(item.cx),
+        cy: String(item.cy),
+        r: String(item.radius),
+        fill: "#000000"
+      }))
+    );
+    layer.setAttribute("mask", `url(#${CONTOUR_MASK_ID})`);
+  }
+
   function clearClasses(ids = lastMemberIds) {
     ids.forEach((id) => manager.getElement?.(id)?.classList.remove("is-road-intersection-member"));
   }
 
   function clearLayer() {
-    contourLayer().replaceChildren();
+    const layer = contourLayer();
+    layer.replaceChildren();
+    clearContourMask(layer);
   }
 
   function clear(options = {}) {
@@ -119,6 +190,8 @@
     visibleRangeCache = new Map();
     selectedQKey = "";
     qEndpointEdits = new Map();
+    laneSplitTerminals = new Map();
+    laneSplitSiblingRegions = new Map();
   }
 
   function numberOr(value, fallback) {
@@ -322,13 +395,15 @@
     const left = [];
     const right = [];
     samples.forEach((sample) => {
+      const widthScale = clamp(numberOr(adapter.widthScaleAt?.(model, sample.t), 1), 0, 1);
+      const sampleHalf = half * widthScale;
       addPointIfFar(left, {
-        x: sample.center.x + sample.normal.x * half,
-        y: sample.center.y + sample.normal.y * half
+        x: sample.center.x + sample.normal.x * sampleHalf,
+        y: sample.center.y + sample.normal.y * sampleHalf
       });
       addPointIfFar(right, {
-        x: sample.center.x - sample.normal.x * half,
-        y: sample.center.y - sample.normal.y * half
+        x: sample.center.x - sample.normal.x * sampleHalf,
+        y: sample.center.y - sample.normal.y * sampleHalf
       });
     });
     const terminalCorners = [];
@@ -351,6 +426,11 @@
       right,
       leftCount: left.length,
       isIsland,
+      islandCenterMask: isIsland ? {
+        cx: numberOr(model.geometry?.center?.x, 0),
+        cy: numberOr(model.geometry?.center?.y, 0),
+        radius: Math.max(0, numberOr(model.geometry?.innerDiameter, 0) / 2)
+      } : null,
       edgeStyles: {
         left: { boundaryId: leftBoundaryId, ...contourBoundaryStyle(config, leftBoundaryId) },
         right: { boundaryId: rightBoundaryId, ...contourBoundaryStyle(config, rightBoundaryId) }
@@ -480,6 +560,171 @@
         openSign
       };
     }).filter(Boolean);
+  }
+
+  function surfacePairKey(aId, bId) {
+    return [String(aId || ""), String(bId || "")].sort().join("~");
+  }
+
+  function areLinkedDepartureSurfaces(first, second) {
+    const firstHostId = String(first?.model?.metadata?.roadDeparture?.hostId || "");
+    const secondHostId = String(second?.model?.metadata?.roadDeparture?.hostId || "");
+    return Boolean(
+      (firstHostId && firstHostId === second?.id) ||
+      (secondHostId && secondHostId === first?.id)
+    );
+  }
+
+  function surfaceLaneCount(surface) {
+    const widths = Array.isArray(surface?.config?.laneWidths) ? surface.config.laneWidths : [];
+    if (widths.length) return widths.length;
+    return Math.max(1, Math.round(numberOr(surface?.config?.laneCount, 1)));
+  }
+
+  function surfaceLaneWidth(surface) {
+    const widths = Array.isArray(surface?.config?.laneWidths) ? surface.config.laneWidths : [];
+    if (widths.length) return widths.reduce((sum, width) => sum + widthOr(width, surface?.config?.laneWidth || 50), 0);
+    return surfaceLaneCount(surface) * widthOr(surface?.config?.laneWidth, 50);
+  }
+
+  function directionFromTerminal(surface, endpointT) {
+    const samples = surface?.samples || [];
+    if (samples.length < 2) return { x: 0, y: 0 };
+    if (endpointT === 0) {
+      return normalizeVector({
+        x: samples[1].center.x - samples[0].center.x,
+        y: samples[1].center.y - samples[0].center.y
+      });
+    }
+    const last = samples.length - 1;
+    return normalizeVector({
+      x: samples[last - 1].center.x - samples[last].center.x,
+      y: samples[last - 1].center.y - samples[last].center.y
+    });
+  }
+
+  function hostTerminalInfo(hostSurface, point) {
+    const endpoints = surfaceTerminalEndpoints(hostSurface);
+    if (!endpoints.length || !point) return null;
+    return endpoints
+      .map((endpoint, index) => ({ endpoint, index, distance: dist(endpoint.point, point) }))
+      .sort((a, b) => a.distance - b.distance)[0] || null;
+  }
+
+  function hostOutwardDirection(hostSurface, terminalIndex) {
+    const samples = hostSurface?.samples || [];
+    if (samples.length < 2) return { x: 0, y: 0 };
+    if (terminalIndex === 0) {
+      return normalizeVector({
+        x: samples[0].center.x - samples[1].center.x,
+        y: samples[0].center.y - samples[1].center.y
+      });
+    }
+    const last = samples.length - 1;
+    return normalizeVector({
+      x: samples[last].center.x - samples[last - 1].center.x,
+      y: samples[last].center.y - samples[last - 1].center.y
+    });
+  }
+
+  function addLaneSplitTerminal(roadId, info) {
+    const list = laneSplitTerminals.get(roadId) || [];
+    if (!list.some((item) => item.hostId === info.hostId && item.siblingId === info.siblingId && item.endpointT === info.endpointT)) {
+      list.push(info);
+      laneSplitTerminals.set(roadId, list);
+    }
+  }
+
+  function buildLaneSplitMetadata(surfaces = []) {
+    laneSplitTerminals = new Map();
+    laneSplitSiblingRegions = new Map();
+    (surfaces || []).forEach((hostSurface) => {
+      if (hostSurface?.isIsland || hostSurface?.config?.divided || surfaceLaneCount(hostSurface) < 2) return;
+      const groups = new Map();
+      (surfaces || []).forEach((branchSurface) => {
+        if (!branchSurface || branchSurface.id === hostSurface.id || branchSurface.isIsland || branchSurface.config?.divided) return;
+        if (surfaceLaneCount(branchSurface) >= surfaceLaneCount(hostSurface)) return;
+        const proximity = Math.max(hostSurface.width, branchSurface.width) + 16;
+        if (!boundsOverlap(hostSurface.bounds, branchSurface.bounds, proximity)) return;
+        surfaceTerminalAttachments(branchSurface, hostSurface).forEach((attachment) => {
+          const terminal = hostTerminalInfo(hostSurface, attachment.point);
+          if (!terminal) return;
+          const nearLimit = Math.max(24, hostSurface.half + branchSurface.half + 12);
+          if (terminal.distance > nearLimit) return;
+          const branchDirection = directionFromTerminal(branchSurface, attachment.endpointT);
+          const hostDirection = hostOutwardDirection(hostSurface, terminal.index);
+          const alignment = branchDirection.x * hostDirection.x + branchDirection.y * hostDirection.y;
+          if (alignment < 0.45) return;
+          const key = `${hostSurface.id}:${terminal.index}`;
+          const group = groups.get(key) || { hostSurface, terminal, branches: [] };
+          if (!group.branches.some((item) => item.surface.id === branchSurface.id)) {
+            group.branches.push({ surface: branchSurface, attachment });
+          }
+          groups.set(key, group);
+        });
+      });
+
+      groups.forEach((group) => {
+        const branches = group.branches;
+        for (let firstIndex = 0; firstIndex < branches.length; firstIndex += 1) {
+          for (let secondIndex = firstIndex + 1; secondIndex < branches.length; secondIndex += 1) {
+            const first = branches[firstIndex];
+            const second = branches[secondIndex];
+            if (first.attachment.openSign * second.attachment.openSign >= 0) continue;
+            if (surfaceLaneCount(first.surface) + surfaceLaneCount(second.surface) !== surfaceLaneCount(hostSurface)) continue;
+            const hostLaneWidth = surfaceLaneWidth(hostSurface);
+            const branchLaneWidth = surfaceLaneWidth(first.surface) + surfaceLaneWidth(second.surface);
+            if (Math.abs(hostLaneWidth - branchLaneWidth) > Math.max(3, hostLaneWidth * 0.08)) continue;
+
+            const center = group.terminal.endpoint.point;
+            const radius = Math.max(80, hostSurface.width * 1.8);
+            const region = { hostId: hostSurface.id, center, radius };
+            const pairKey = surfacePairKey(first.surface.id, second.surface.id);
+            const regions = laneSplitSiblingRegions.get(pairKey) || [];
+            regions.push(region);
+            laneSplitSiblingRegions.set(pairKey, regions);
+            addLaneSplitTerminal(first.surface.id, {
+              hostId: hostSurface.id,
+              siblingId: second.surface.id,
+              endpointT: first.attachment.endpointT
+            });
+            addLaneSplitTerminal(second.surface.id, {
+              hostId: hostSurface.id,
+              siblingId: first.surface.id,
+              endpointT: second.attachment.endpointT
+            });
+          }
+        }
+      });
+    });
+  }
+
+  function areLaneSplitSiblingsAtPoint(firstSurface, secondSurface, point) {
+    if (!firstSurface || !secondSurface || !point) return false;
+    const regions = laneSplitSiblingRegions.get(surfacePairKey(firstSurface.id, secondSurface.id)) || [];
+    return regions.some((region) => dist(region.center, point) <= region.radius);
+  }
+
+  function isLaneSplitTerminalAtHostPoint(surface, hostSurface, point) {
+    if (!surface || !hostSurface || !point) return false;
+    const entries = laneSplitTerminals.get(surface.id) || [];
+    return entries.some((entry) => {
+      if (entry.hostId !== hostSurface.id) return false;
+      const regions = laneSplitSiblingRegions.get(surfacePairKey(surface.id, entry.siblingId)) || [];
+      return regions.some((region) => (
+        region.hostId === hostSurface.id && dist(region.center, point) <= region.radius
+      ));
+    });
+  }
+
+  function shouldPreserveLaneSplitShoulderForShape(id, boundary, shape) {
+    if (!isRoadShoulderBoundary(boundary)) return false;
+    const entries = laneSplitTerminals.get(id) || [];
+    const shapeRoadIds = new Set(shape?.roadIds || []);
+    return entries.some((entry) => (
+      shapeRoadIds.has(id) &&
+      (shapeRoadIds.has(entry.hostId) || shapeRoadIds.has(entry.siblingId))
+    ));
   }
 
   function attachmentSideValue(attachment, point) {
@@ -639,6 +884,23 @@
     return `M ${fmt(item.entry.x)} ${fmt(item.entry.y)} Q ${fmt(item.control.x)} ${fmt(item.control.y)} ${fmt(item.exit.x)} ${fmt(item.exit.y)}`;
   }
 
+  function qKeyTouchesIsland(key) {
+    const value = String(key || "");
+    if (!value.startsWith("intersection:")) return false;
+    const qMarkerIndex = value.lastIndexOf(":q:");
+    if (qMarkerIndex < 0) return false;
+    const identities = value.slice("intersection:".length, qMarkerIndex).split("~");
+    const roadIds = new Set(identities.map((identity) => {
+      const boundaryIndex = identity.lastIndexOf(":b");
+      return boundaryIndex > 0 ? identity.slice(0, boundaryIndex) : "";
+    }).filter(Boolean));
+    return lastRoadSurfaces.some((surface) => surface?.isIsland && roadIds.has(surface.id));
+  }
+
+  function isEditableQSegment(item) {
+    return Boolean(item?.key && !qKeyTouchesIsland(item.key));
+  }
+
   function qControlWithEdit(baseControl, edit) {
     return {
       x: baseControl.x + numberOr(edit?.controlDx, 0),
@@ -673,6 +935,12 @@
 
   function qEditForKey(key, aliases = []) {
     if (!key) return {};
+    const candidateKeys = [key, ...(aliases || [])].filter(Boolean);
+    if (candidateKeys.some(qKeyTouchesIsland)) {
+      candidateKeys.forEach((candidateKey) => qEndpointEdits.delete(candidateKey));
+      if (candidateKeys.includes(selectedQKey)) selectedQKey = "";
+      return {};
+    }
     const direct = qEndpointEdits.get(key);
     if (direct) return direct;
     for (const alias of aliases) {
@@ -689,6 +957,7 @@
   function cloneQEndpointEditsMap(source = qEndpointEdits) {
     const copy = new Map();
     source.forEach((value, key) => {
+      if (qKeyTouchesIsland(key)) return;
       const entryCut = Number(value?.entryCut);
       const exitCut = Number(value?.exitCut);
       const controlDx = Number(value?.controlDx);
@@ -1449,6 +1718,7 @@
         if (active[index].surface.bounds.maxX + pad < minX) active.splice(index, 1);
       }
       active.forEach((other) => {
+        if (areLinkedDepartureSurfaces(other.surface, entry.surface)) return;
         if (
           other.surface.bounds.minY - pad > entry.surface.bounds.maxY ||
           other.surface.bounds.maxY + pad < entry.surface.bounds.minY
@@ -1491,6 +1761,7 @@
       if (surface.id === sourceId || !boundsOverlap(surface.bounds, { minX: point.x, maxX: point.x, minY: point.y, maxY: point.y }, 0.5)) return false;
       if (!pointInPolygon(point, surface.polygon)) return false;
       if (surface.isIsland) return true;
+      if (sourceSurface && areLaneSplitSiblingsAtPoint(sourceSurface, surface, point)) return true;
       const attachments = sourceSurface ? surfaceTerminalAttachments(surface, sourceSurface) : [];
       if (attachments.length && !attachments.some((attachment) => isOnAttachmentOpenSide(attachment, point, INTERSECTION_PAD))) return false;
       return true;
@@ -1501,6 +1772,8 @@
     if (!surface || !point) return false;
     return (surfaces || []).some((hostSurface) => {
       if (hostSurface.id === surface.id) return false;
+      if (areLaneSplitSiblingsAtPoint(surface, hostSurface, point)) return false;
+      if (isLaneSplitTerminalAtHostPoint(surface, hostSurface, point)) return false;
       return surfaceTerminalAttachments(surface, hostSurface).some((attachment) => (
         !isOnAttachmentOpenSide(attachment, point, 0.75)
       ));
@@ -1765,10 +2038,11 @@
     return Array.isArray(shape?.roadIds) && shape.roadIds.includes(id);
   }
 
-  function pointInsideTerminalHostSurfaceForLine(id, point) {
+  function pointInsideTerminalHostSurfaceForLine(id, point, boundary = null) {
     const roadSurface = lastRoadSurfaces.find((surface) => surface.id === id);
     if (!roadSurface) return false;
     return roadClipShapesFor(id).some((shape) => {
+      if (shouldPreserveLaneSplitShoulderForShape(id, boundary, shape)) return false;
       const terminalIds = Array.isArray(shape?.terminalRoadIds) ? shape.terminalRoadIds : [];
       if (!terminalIds.includes(id)) return false;
       const hostIds = (shape.roadIds || []).filter((roadId) => roadId !== id && !terminalIds.includes(roadId));
@@ -1812,9 +2086,10 @@
   }
 
   function pointInsideRoadShapesForLine(id, point, boundary = null) {
-    if (pointInsideTerminalHostSurfaceForLine(id, point)) return true;
+    if (pointInsideTerminalHostSurfaceForLine(id, point, boundary)) return true;
     if (isIslandOuterEdgeBoundary(id, boundary)) return pointInsideOtherSurfacePolygon(point, id);
     return roadClipShapesFor(id, boundary).some((shape) => {
+      if (shouldPreserveLaneSplitShoulderForShape(id, boundary, shape)) return false;
       if (shouldPreserveBoundaryForShape(id, boundary, shape)) return false;
       return pointInPolygon(point, shape.points);
     });
@@ -2475,12 +2750,12 @@
   }
 
   function selectQSegment(key) {
-    selectedQKey = key || "";
+    selectedQKey = qKeyTouchesIsland(key) ? "" : (key || "");
     render();
   }
 
   function updateQEndpointEdit(item, side, point) {
-    if (!item || !side || !point) return false;
+    if (!isEditableQSegment(item) || !side || !point) return false;
     const current = { ...(qEndpointEdits.get(item.key) || {}) };
     const previous = side === "entry" ? current.entryCut : current.exitCut;
     const nextCut = qCutFromPoint(item, side === "entry" ? "entry" : "exit", point);
@@ -2492,7 +2767,7 @@
   }
 
   function updateQControlEdit(item, point) {
-    if (!item || !point) return false;
+    if (!isEditableQSegment(item) || !point) return false;
     const baseControl = item.baseControl || item.control;
     const nextDx = point.x - baseControl.x;
     const nextDy = point.y - baseControl.y;
@@ -2543,7 +2818,10 @@
       return;
     }
     const item = qSegmentByKey(key);
-    if (!item) return;
+    if (!isEditableQSegment(item)) {
+      blockQEvent(event);
+      return;
+    }
     event.preventDefault();
     event.stopPropagation();
     selectedQKey = key;
@@ -2635,7 +2913,9 @@
   }
 
   function renderQInteractivity(layer, segments) {
-    const items = Array.isArray(segments) ? segments : [];
+    // Ada bağlantılarındaki otomatik Q'lar düzgün ağız geometrisini korur; kullanıcı
+    // editi ise uçları çember boyunca taşıyıp dış kontur kalıntısı üretebildiği için kapalıdır.
+    const items = (Array.isArray(segments) ? segments : []).filter(isEditableQSegment);
     if (selectedQKey && !items.some((item) => item.key === selectedQKey)) selectedQKey = "";
     const sizes = qHandleSizes();
     items.forEach((item) => {
@@ -2700,7 +2980,7 @@
   function pruneMissingQEdits(segments) {
     const liveKeys = new Set((segments || []).map((item) => item.key).filter(Boolean));
     Array.from(qEndpointEdits.keys()).forEach((key) => {
-      if (!liveKeys.has(key)) qEndpointEdits.delete(key);
+      if (!liveKeys.has(key) || qKeyTouchesIsland(key)) qEndpointEdits.delete(key);
     });
   }
 
@@ -2724,6 +3004,8 @@
     const surfaces = collectRoads();
     phaseStartedAt = mark("collectRoadsMs", phaseStartedAt);
     lastRoadSurfaces = surfaces;
+    buildLaneSplitMetadata(surfaces);
+    updateContourMask(layer, surfaces);
     lastIntersectionShapes = [];
     lastOuterContours = [];
     lastSmoothedContours = [];

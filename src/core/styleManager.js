@@ -1292,6 +1292,20 @@
     textInputTransaction = null;
   }
 
+  function steppedStrokeWidth(value, direction) {
+    const current = normalizeStrokeWidth(value);
+    if (direction > 0) {
+      if (current < 1) {
+        return normalizeStrokeWidth(Math.min(1, Math.round((current + 0.1) * 10) / 10));
+      }
+      return normalizeStrokeWidth(Math.floor(current) + 1);
+    }
+    if (current <= 1) {
+      return normalizeStrokeWidth(Math.max(0.1, Math.round((current - 0.1) * 10) / 10));
+    }
+    return normalizeStrokeWidth(Math.max(1, Math.ceil(current) - 1));
+  }
+
   function updatePrimarySize(delta) {
     const entry = activeEntry();
     if (!entry) return;
@@ -1299,7 +1313,7 @@
       updateLabel({ size: normalizeLabelSize(entry.model.label.size + delta) });
       return;
     }
-    updateStyle({ strokeWidth: normalizeStrokeWidth(entry.model.style.strokeWidth + delta) });
+    updateStyle({ strokeWidth: steppedStrokeWidth(entry.model.style.strokeWidth, delta) });
   }
 
   function activeCalloutEntry() {
@@ -1605,14 +1619,21 @@
   }
 
   function normalizeTrafficSignFieldInput(value, field) {
-    let text = String(value || "").replace(/[\r\n\t]+/g, " ").trim();
+    let text = String(value ?? "").replace(/[\r\n\t]+/g, " ");
     if (field?.valueType === "number") {
-      text = text.replace(/[^\d]/g, "");
+      text = text.trim().replace(/[^\d]/g, "");
     } else if (field?.valueType === "clock") {
-      text = text.replace(/[^\d,.:]/g, "").replace(/[.:]/g, ",");
+      text = text.trim().replace(/[^\d,.:]/g, "").replace(/[.:]/g, ",");
     }
     const maxLength = Number(field?.maxLength);
     if (Number.isFinite(maxLength) && maxLength > 0) text = text.slice(0, maxLength);
+    if (field?.valueType === "number" && text) {
+      const number = Number(text);
+      const min = Number(field?.min);
+      const max = Number(field?.max);
+      if (Number.isFinite(min) && number < min) text = String(min);
+      if (Number.isFinite(max) && number > max) text = String(max);
+    }
     return text;
   }
 
@@ -1646,7 +1667,9 @@
       beginTextInputHistory();
       const normalized = normalizeTrafficSignFieldInput(input.value, {
         maxLength: input.maxLength > 0 ? input.maxLength : undefined,
-        valueType: input.dataset.valueType
+        valueType: input.dataset.valueType,
+        min: input.dataset.min,
+        max: input.dataset.max
       });
       if (input.value !== normalized) {
         const selectionStart = Math.min(input.selectionStart ?? normalized.length, normalized.length);
@@ -1682,6 +1705,10 @@
       if (label) label.textContent = field.label || field.id;
       if (!input) return;
       input.dataset.valueType = field.valueType || "text";
+      if (Number.isFinite(field.min)) input.dataset.min = String(field.min);
+      else delete input.dataset.min;
+      if (Number.isFinite(field.max)) input.dataset.max = String(field.max);
+      else delete input.dataset.max;
       input.inputMode = field.inputMode || "text";
       if (field.maxLength) input.maxLength = field.maxLength;
       else input.removeAttribute("maxlength");

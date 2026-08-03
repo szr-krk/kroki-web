@@ -7,6 +7,7 @@ const canvasObjectHitTests = [];
 const HOLD_REPEAT_SPEED_MULTIPLIER = 3;
 const TOUCH_NUMBER_PICKER_QUERY = "(hover: none) and (pointer: coarse)";
 const touchNumberPickerMedia = window.matchMedia?.(TOUCH_NUMBER_PICKER_QUERY) || null;
+const objectEditUiPx = window.Kroki?.uiPx || ((value) => Number(value) || 0);
 
 function objectEditPoint(event) {
   const point = objectEditCanvas.createSVGPoint();
@@ -193,8 +194,9 @@ function positionPanelNearButton(panel, button) {
   if (!panel || !button) return;
 
   const buttonRect = button.getBoundingClientRect();
-  const panelHeight = panel.offsetHeight || 94;
-  const top = Math.max(8, Math.min(buttonRect.top, window.innerHeight - panelHeight - 8));
+  const edgeGap = objectEditUiPx(8);
+  const panelHeight = panel.offsetHeight || objectEditUiPx(94);
+  const top = Math.max(edgeGap, Math.min(buttonRect.top, window.innerHeight - panelHeight - edgeGap));
   panel.style.top = Math.round(top) + "px";
 }
 

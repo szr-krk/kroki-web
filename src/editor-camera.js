@@ -5,7 +5,7 @@
   const MIN_SCALE = 0.05;
   const MAX_SCALE = 64;
   const WHEEL_ZOOM_SPEED = 0.0012;
-  const FIT_PADDING_PX = 56;
+  const FIT_PADDING_WORLD = window.krokiEditorFraming?.CONTENT_PADDING_WORLD ?? 25;
   const FIT_MIN_WORLD_SPAN = 1;
 
   const activePointers = new Map();
@@ -135,7 +135,13 @@
   function viewBoxForScale(scale, anchorViewBox = readViewBox(canvas)) {
     const safeScale = clampScale(scale);
     const width = baseViewBox.width / safeScale;
-    const height = baseViewBox.height / safeScale;
+    const anchorAspect = Number.isFinite(anchorViewBox?.width)
+      && Number.isFinite(anchorViewBox?.height)
+      && anchorViewBox.width > 0
+      && anchorViewBox.height > 0
+      ? anchorViewBox.width / anchorViewBox.height
+      : baseViewBox.width / baseViewBox.height;
+    const height = width / anchorAspect;
     return {
       x: anchorViewBox.x,
       y: anchorViewBox.y,
@@ -272,16 +278,23 @@
     const rect = svg.getBoundingClientRect();
     const rectWidth = Number.isFinite(rect.width) && rect.width > 0 ? rect.width : baseViewBox.width;
     const rectHeight = Number.isFinite(rect.height) && rect.height > 0 ? rect.height : baseViewBox.height;
-    const maxPadding = Math.max(0, Math.min(rectWidth, rectHeight) / 2 - 1);
-    const paddingPx = Math.min(maxPadding, Math.max(0, Number(options.paddingPx ?? FIT_PADDING_PX) || 0));
+    const maxPaddingPx = Math.max(0, Math.min(rectWidth, rectHeight) / 2 - 1);
+    const paddingPx = Math.min(
+      maxPaddingPx,
+      Math.max(0, Number(options.paddingPx) || 0)
+    );
     const availableWidth = Math.max(1, rectWidth - paddingPx * 2);
     const availableHeight = Math.max(1, rectHeight - paddingPx * 2);
+    const paddingWorld = Math.max(0, Number(options.paddingWorld ?? FIT_PADDING_WORLD) || 0);
+    const framedBounds = window.krokiEditorFraming?.expandBounds?.(bounds, paddingWorld)
+      || expandBounds(bounds, paddingWorld)
+      || bounds;
     const minSpan = Math.max(0.001, Number(options.minWorldSpan ?? FIT_MIN_WORLD_SPAN) || FIT_MIN_WORLD_SPAN);
-    const aspect = baseViewBox.width / baseViewBox.height;
-    const centerX = bounds.x + bounds.width / 2;
-    const centerY = bounds.y + bounds.height / 2;
-    let width = Math.max(minSpan, bounds.width) * rectWidth / availableWidth;
-    let height = Math.max(minSpan, bounds.height) * rectHeight / availableHeight;
+    const aspect = rectWidth / rectHeight;
+    const centerX = framedBounds.x + framedBounds.width / 2;
+    const centerY = framedBounds.y + framedBounds.height / 2;
+    let width = Math.max(minSpan, framedBounds.width) * rectWidth / availableWidth;
+    let height = Math.max(minSpan, framedBounds.height) * rectHeight / availableHeight;
 
     if (width / height > aspect) height = width / aspect;
     else width = height * aspect;

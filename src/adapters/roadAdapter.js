@@ -37,6 +37,16 @@
   const POCKET_MODES = ["none", "right", "left", "double"];
   const DEFAULT_POCKET_WIDTH = 50;
   const DEFAULT_POCKET_GAP = 20;
+  const DEFAULT_DEPARTURE_LANE_COUNT = 2;
+  const MAX_DEPARTURE_LANES = 2;
+  const MIN_DEPARTURE_T_GAP = 0.05;
+  const DEPARTURE_VERSION = 2;
+  const DEFAULT_DEPARTURE_FULL_T = 0.3;
+  const DEFAULT_DEPARTURE_PARALLEL_T = 0.58;
+  const DEFAULT_DEPARTURE_GORE_FRACTION = 0.46;
+  const DEPARTURE_GORE_HATCH_SPACING = 20;
+  const DEPARTURE_GORE_HATCH_WIDTH = 2;
+  const DEPARTURE_GORE_MIN_WIDTH = 5;
   const DEFAULT_POCKET_ISLAND_STYLE = {
     fill: "#dcfce7",
     fillOpacity: 1,
@@ -55,6 +65,7 @@
     { start: true, end: true }
   ];
   const sampleCache = new WeakMap();
+  const departureSplitCache = new WeakMap();
 
   const DEFAULT_ROAD_CONFIG = {
     version: 1,
@@ -439,6 +450,92 @@
     return Boolean(fallback);
   }
 
+  function isFinitePoint(value) {
+    return Number.isFinite(Number(value?.x)) && Number.isFinite(Number(value?.y));
+  }
+
+  function normalizeRoadDeparture(source) {
+    if (!source || typeof source !== "object" || !String(source.hostId || "")) return null;
+    const fullT = clamp(numberOr(source.fullT, DEFAULT_DEPARTURE_FULL_T), 0.05, 0.82);
+    const parallelT = clamp(numberOr(source.parallelT, DEFAULT_DEPARTURE_PARALLEL_T), fullT + MIN_DEPARTURE_T_GAP, 0.96);
+    const base = {
+      version: Number(source.version) >= DEPARTURE_VERSION ? DEPARTURE_VERSION : 1,
+      hostId: String(source.hostId),
+      side: source.side === "left" ? "left" : "right",
+      fullT,
+      parallelT
+    };
+    if (
+      base.version < DEPARTURE_VERSION ||
+      !isFinitePoint(source.fullPoint) ||
+      !isFinitePoint(source.parallelPoint) ||
+      !isFinitePoint(source.curveControl)
+    ) {
+      return { ...base, version: 1 };
+    }
+    const startHostT = clamp(numberOr(source.startHostT, 0.16), 0, 0.9);
+    const fullHostT = clamp(numberOr(source.fullHostT, 0.36), startHostT + 0.02, 0.94);
+    const parallelHostT = clamp(numberOr(source.parallelHostT, 0.62), fullHostT + 0.02, 0.98);
+    const hostDirectionLength = Math.hypot(
+      numberOr(source.hostDirection?.x, 0),
+      numberOr(source.hostDirection?.y, 0)
+    );
+    return {
+      ...base,
+      version: DEPARTURE_VERSION,
+      sideConvention: source.sideConvention === "visual" ? "visual" : "legacy",
+      curveMode: "arc",
+      ...(Number.isFinite(Number(source.curveRatio))
+        ? { curveRatio: clamp(Number(source.curveRatio), -3, 3) }
+        : {}),
+      fullPoint: point(source.fullPoint),
+      parallelPoint: point(source.parallelPoint),
+      curveControl: point(source.curveControl),
+      startHostT,
+      fullHostT,
+      parallelHostT,
+      ...(hostDirectionLength > 0.0001
+        ? {
+          hostDirection: {
+            x: numberOr(source.hostDirection.x, 0) / hostDirectionLength,
+            y: numberOr(source.hostDirection.y, 0) / hostDirectionLength
+          }
+        }
+        : {}),
+      goreFraction: clamp(numberOr(source.goreFraction, DEFAULT_DEPARTURE_GORE_FRACTION), 0.18, 0.82)
+    };
+  }
+
+  function departureInfo(model) {
+    return normalizeRoadDeparture(model?.metadata?.roadDeparture);
+  }
+
+  function isDepartureRoad(model) {
+    return Boolean(departureInfo(model));
+  }
+
+  function departureLaneScaleAt(model, t) {
+    const departure = departureInfo(model);
+    if (!departure) return 1;
+    const progress = clamp(numberOr(t, 0) / Math.max(0.001, departure.fullT), 0, 1);
+    return progress * progress * (3 - 2 * progress);
+  }
+
+  function departureLaneSpan(config) {
+    return (config?.laneWidths || []).reduce((sum, width) => sum + widthOr(width, config.laneWidth || DEFAULT_POCKET_WIDTH, 0, 180), 0);
+  }
+
+  function departureWidthScaleAt(model, t) {
+    const departure = departureInfo(model);
+    if (!departure) return 1;
+    const config = roadConfig(model);
+    const section = crossSection(config);
+    const laneSpan = departureLaneSpan(config);
+    const shoulderSpan = Math.max(0, section.totalWidth - laneSpan);
+    const scaledWidth = shoulderSpan + laneSpan * departureLaneScaleAt(model, t);
+    return clamp(scaledWidth / Math.max(MIN_WIDTH, section.totalWidth), 0, 1);
+  }
+
   function normalizeShoulder(source, fallback) {
     return {
       enabled: boolOr(source?.enabled, fallback.enabled),
@@ -748,7 +845,173 @@
     return config;
   }
 
+  function departureCubicPointAt(start, c1, c2, end, t) {
+    const u = clamp(t, 0, 1);
+    const p01 = lerp(start, c1, u);
+    const p12 = lerp(c1, c2, u);
+    const p23 = lerp(c2, end, u);
+    return lerp(lerp(p01, p12, u), lerp(p12, p23, u), u);
+  }
+
+  function departureCubicTangentAt(start, c1, c2, end, t) {
+    const u = clamp(t, 0, 1);
+    return {
+      x: 3 * (1 - u) * (1 - u) * (c1.x - start.x)
+        + 6 * (1 - u) * u * (c2.x - c1.x)
+        + 3 * u * u * (end.x - c2.x),
+      y: 3 * (1 - u) * (1 - u) * (c1.y - start.y)
+        + 6 * (1 - u) * u * (c2.y - c1.y)
+        + 3 * u * u * (end.y - c2.y)
+    };
+  }
+
+  function tangentArcRatio(start, end, tangent) {
+    const chord = direction(start, end);
+    const tangentLength = Math.hypot(tangent?.x, tangent?.y) || 1;
+    const tx = numberOr(tangent?.x, chord.x) / tangentLength;
+    const ty = numberOr(tangent?.y, chord.y) / tangentLength;
+    const angle = Math.atan2(tx * chord.y - ty * chord.x, tx * chord.x + ty * chord.y);
+    return clamp(-Math.tan(angle / 2), -3, 3);
+  }
+
+  function departureCurveRatio(model, departure) {
+    const basisValue = arcBasis(departure.parallelPoint, model.geometry.end);
+    if (!basisValue) return 0;
+    if (Number.isFinite(Number(departure.curveRatio))) {
+      return clamp(Number(departure.curveRatio), -3, 3);
+    }
+    return clamp(arcRatioFromPoint(basisValue, departure.curveControl), -3, 3);
+  }
+
+  function syncDepartureArcControl(model, departure) {
+    if (!model || !departure || departure.version < DEPARTURE_VERSION) return departure;
+    const basisValue = arcBasis(departure.parallelPoint, model.geometry.end);
+    if (!basisValue) return departure;
+    const curveRatio = departureCurveRatio(model, departure);
+    departure.curveMode = "arc";
+    departure.curveRatio = curveRatio;
+    departure.curveControl = arcControlFromRatio(basisValue, curveRatio);
+    return departure;
+  }
+
+  function departureArcPointAt(stations, t) {
+    const geometry = arcCircleGeometry(stations.parallel, stations.end, stations.curveControl);
+    if (!geometry) return lerp(stations.parallel, stations.end, t);
+    const delta = geometry.sweepFlag
+      ? normalizeAngle(geometry.endAngle - geometry.startAngle)
+      : -normalizeAngle(geometry.startAngle - geometry.endAngle);
+    const angle = geometry.startAngle + delta * clamp(t, 0, 1);
+    return {
+      x: geometry.cx + Math.cos(angle) * geometry.radius,
+      y: geometry.cy + Math.sin(angle) * geometry.radius
+    };
+  }
+
+  function departureArcTangentAt(stations, t) {
+    const geometry = arcCircleGeometry(stations.parallel, stations.end, stations.curveControl);
+    if (!geometry) {
+      return {
+        x: stations.end.x - stations.parallel.x,
+        y: stations.end.y - stations.parallel.y
+      };
+    }
+    const delta = geometry.sweepFlag
+      ? normalizeAngle(geometry.endAngle - geometry.startAngle)
+      : -normalizeAngle(geometry.startAngle - geometry.endAngle);
+    const angle = geometry.startAngle + delta * clamp(t, 0, 1);
+    return delta >= 0
+      ? { x: -Math.sin(angle), y: Math.cos(angle) }
+      : { x: Math.sin(angle), y: -Math.cos(angle) };
+  }
+
+  function departureStationGeometry(model) {
+    const departure = departureInfo(model);
+    if (!departure || departure.version < DEPARTURE_VERSION) return null;
+    const start = point(model.geometry.start);
+    const full = point(departure.fullPoint, start);
+    const parallel = point(departure.parallelPoint, full);
+    const end = point(model.geometry.end, parallel);
+    const curveBasis = arcBasis(parallel, end);
+    const curveRatio = departureCurveRatio(model, departure);
+    const curveControl = curveBasis
+      ? arcControlFromRatio(curveBasis, curveRatio)
+      : point(departure.curveControl, lerp(parallel, end, 0.5));
+    const parallelDirection = direction(full, parallel);
+    const wideningDirection = parallelDirection.length > 0.001
+      ? parallelDirection
+      : direction(start, full);
+    const wideningHandle = Math.max(1, Math.hypot(full.x - start.x, full.y - start.y) / 3);
+    return {
+      departure,
+      start,
+      full,
+      parallel,
+      end,
+      curveControl,
+      curveRatio,
+      wideningControl1: {
+        x: start.x + wideningDirection.x * wideningHandle,
+        y: start.y + wideningDirection.y * wideningHandle
+      },
+      wideningControl2: {
+        x: full.x - wideningDirection.x * wideningHandle,
+        y: full.y - wideningDirection.y * wideningHandle
+      }
+    };
+  }
+
+  function departurePointAt(model, t) {
+    const stations = departureStationGeometry(model);
+    if (!stations) return null;
+    const value = clamp(numberOr(t, 0), 0, 1);
+    if (value <= stations.departure.fullT) {
+      const localT = value / Math.max(0.001, stations.departure.fullT);
+      return departureCubicPointAt(
+        stations.start,
+        stations.wideningControl1,
+        stations.wideningControl2,
+        stations.full,
+        localT
+      );
+    }
+    if (value <= stations.departure.parallelT) {
+      const localT = (value - stations.departure.fullT)
+        / Math.max(0.001, stations.departure.parallelT - stations.departure.fullT);
+      return lerp(stations.full, stations.parallel, localT);
+    }
+    const localT = (value - stations.departure.parallelT)
+      / Math.max(0.001, 1 - stations.departure.parallelT);
+    return departureArcPointAt(stations, localT);
+  }
+
+  function departureTangentAt(model, t) {
+    const stations = departureStationGeometry(model);
+    if (!stations) return null;
+    const value = clamp(numberOr(t, 0), 0, 1);
+    if (value <= stations.departure.fullT) {
+      const localT = value / Math.max(0.001, stations.departure.fullT);
+      return departureCubicTangentAt(
+        stations.start,
+        stations.wideningControl1,
+        stations.wideningControl2,
+        stations.full,
+        localT
+      );
+    }
+    if (value <= stations.departure.parallelT) {
+      return {
+        x: stations.parallel.x - stations.full.x,
+        y: stations.parallel.y - stations.full.y
+      };
+    }
+    const localT = (value - stations.departure.parallelT)
+      / Math.max(0.001, 1 - stations.departure.parallelT);
+    return departureArcTangentAt(stations, localT);
+  }
+
   function pointAt(model, t) {
+    const departurePoint = departurePointAt(model, t);
+    if (departurePoint) return departurePoint;
     const geometry = model.geometry;
     if (geometry.profile === ISLAND) return islandPointAt(geometry, t);
     if (geometry.profile === ARC) return arcPointAt(model, t);
@@ -759,6 +1022,8 @@
   }
 
   function tangentAt(model, t) {
+    const departureTangent = departureTangentAt(model, t);
+    if (departureTangent) return departureTangent;
     const geometry = model.geometry;
     if (geometry.profile === ISLAND) return islandTangentAt(geometry, t);
     if (geometry.profile === ARC) return arcTangentAt(model, t);
@@ -785,6 +1050,30 @@
       cleanSCurveControls(geometry).forEach((control) => {
         parts.push(control.x, control.y);
       });
+    }
+    const departure = departureInfo(model);
+    if (departure) {
+      parts.push(
+        "departure",
+        departure.version,
+        departure.hostId,
+        departure.side,
+        departure.sideConvention || "legacy",
+        departure.fullT,
+        departure.parallelT
+      );
+      if (departure.version >= DEPARTURE_VERSION) {
+        parts.push(
+          departure.fullPoint.x,
+          departure.fullPoint.y,
+          departure.parallelPoint.x,
+          departure.parallelPoint.y,
+          departure.curveControl.x,
+          departure.curveControl.y,
+          departure.curveMode || "arc",
+          numberOr(departure.curveRatio, "")
+        );
+      }
     }
     return parts.join("|");
   }
@@ -813,10 +1102,34 @@
     return samples;
   }
 
-  function offsetSample(sample, offset) {
+  function departureScaledOffset(model, t, offset) {
+    const departure = departureInfo(model);
+    if (!departure) return offset;
+    const config = roadConfig(model);
+    const section = crossSection(config);
+    const lanes = section.sections.filter((item) => item.role === "lane");
+    if (!lanes.length) return offset * departureLaneScaleAt(model, t);
+    const laneStart = lanes[0].startOffset;
+    const laneEnd = lanes[lanes.length - 1].endOffset;
+    const laneCenter = (laneStart + laneEnd) / 2;
+    const relativeOffset = offset - laneCenter;
+    const relativeStart = laneStart - laneCenter;
+    const relativeEnd = laneEnd - laneCenter;
+    const scale = departureLaneScaleAt(model, t);
+    if (relativeOffset < relativeStart) {
+      return relativeStart * scale + (relativeOffset - relativeStart);
+    }
+    if (relativeOffset > relativeEnd) {
+      return relativeEnd * scale + (relativeOffset - relativeEnd);
+    }
+    return relativeOffset * scale;
+  }
+
+  function offsetSample(model, sample, offset) {
+    const scaledOffset = departureScaledOffset(model, sample?.t, offset);
     return {
-      x: sample.center.x + sample.normal.x * offset,
-      y: sample.center.y + sample.normal.y * offset
+      x: sample.center.x + sample.normal.x * scaledOffset,
+      y: sample.center.y + sample.normal.y * scaledOffset
     };
   }
 
@@ -826,11 +1139,11 @@
   }
 
   function offsetPathData(model, offset = 0, reverse = false, sampleCount = SAMPLE_COUNT) {
-    if (model?.geometry?.profile === ARC) {
+    if (model?.geometry?.profile === ARC && !isDepartureRoad(model)) {
       const arcPath = arcPathDataRange(model, offset, 0, 1, reverse);
       if (arcPath) return arcPath;
     }
-    const points = samplesFor(model, sampleCount).map((sample) => offsetSample(sample, offset));
+    const points = samplesFor(model, sampleCount).map((sample) => offsetSample(model, sample, offset));
     if (reverse) points.reverse();
     return pathFromPoints(points, isIslandGeometry(model?.geometry));
   }
@@ -840,9 +1153,10 @@
     const tangent = tangentAt(model, t);
     const length = Math.hypot(tangent.x, tangent.y) || 1;
     const normal = { x: -tangent.y / length, y: tangent.x / length };
+    const scaledOffset = departureScaledOffset(model, t, offset);
     return {
-      x: center.x + normal.x * offset,
-      y: center.y + normal.y * offset
+      x: center.x + normal.x * scaledOffset,
+      y: center.y + normal.y * scaledOffset
     };
   }
 
@@ -855,7 +1169,7 @@
       if (reverse) points.reverse();
       return pathFromPoints(points, false);
     }
-    if (model?.geometry?.profile === ARC) {
+    if (model?.geometry?.profile === ARC && !isDepartureRoad(model)) {
       const arcPath = arcPathDataRange(model, offset, start, end, reverse);
       if (arcPath) return arcPath;
     }
@@ -880,16 +1194,54 @@
     return total;
   }
 
+  function departureSurfaceOutline(model, sampleCount = SAMPLE_COUNT) {
+    const departure = departureInfo(model);
+    if (!departure || departure.version < DEPARTURE_VERSION) return null;
+    const split = departureEdgeSplitInfo(model, departure);
+    const host = departureHostModel(departure);
+    if (!split || !host) return null;
+    const branchOutward = departureSideSectionInfo(roadConfig(model), departure.side, departure);
+    const outwardOffset = numberOr(branchOutward.outerBoundary?.offset, 0);
+    const hostFacingOffset = numberOr(split.branchHostSide.outerBoundary?.offset, 0);
+    const hostOuterOffset = numberOr(split.hostSide.outerBoundary?.offset, 0);
+    const pointsForRange = (target, offset, from, to, count) => {
+      const points = [];
+      const steps = Math.max(2, count);
+      for (let index = 0; index <= steps; index += 1) {
+        points.push(offsetPointAt(target, from + (to - from) * index / steps, offset));
+      }
+      return points;
+    };
+    const outward = pointsForRange(model, outwardOffset, 0, 1, sampleCount);
+    const hostFacing = pointsForRange(
+      model,
+      hostFacingOffset,
+      1,
+      split.branchT,
+      Math.ceil(sampleCount * Math.max(0.12, 1 - split.branchT))
+    );
+    const hostReturn = pointsForRange(
+      host,
+      hostOuterOffset,
+      split.hostT,
+      departure.startHostT,
+      Math.ceil(sampleCount * Math.max(0.12, Math.abs(split.hostT - departure.startHostT)))
+    );
+    return [...outward, ...hostFacing, ...hostReturn];
+  }
+
   function surfaceOutline(model, width, sampleCount = SAMPLE_COUNT) {
     if (isIslandGeometry(model?.geometry)) {
       const center = point(model.geometry.center);
       const radii = islandRadii(model.geometry);
       return circlePoints(center, radii.outerRadius, false, sampleCount);
     }
+    const departureOutline = departureSurfaceOutline(model, sampleCount);
+    if (departureOutline) return departureOutline;
     const samples = samplesFor(model, sampleCount);
     const half = width / 2;
-    const left = samples.map((sample) => offsetSample(sample, half));
-    const right = samples.slice().reverse().map((sample) => offsetSample(sample, -half));
+    const left = samples.map((sample) => offsetSample(model, sample, half));
+    const right = samples.slice().reverse().map((sample) => offsetSample(model, sample, -half));
     return [...left, ...right];
   }
 
@@ -904,7 +1256,7 @@
   function surfacePathData(model, width, options = {}) {
     const sampleCount = clampInt(options.sampleCount, 4, SAMPLE_COUNT, SAMPLE_COUNT);
     if (isIslandGeometry(model?.geometry)) return islandRingPathData(model, sampleCount);
-    if (model?.geometry?.profile === ARC) return arcSurfacePathData(model, width) || pathFromPoints(surfaceOutline(model, width, sampleCount), true);
+    if (model?.geometry?.profile === ARC && !isDepartureRoad(model)) return arcSurfacePathData(model, width) || pathFromPoints(surfaceOutline(model, width, sampleCount), true);
     return pathFromPoints(surfaceOutline(model, width, sampleCount), true);
   }
 
@@ -985,18 +1337,18 @@
   }
 
   function previewSurfacePathData(model, width) {
-    if (model?.geometry?.profile === ARC) return arcSurfacePathData(model, width) || surfacePathData(model, width, { sampleCount: SAMPLE_COUNT });
+    if (model?.geometry?.profile === ARC && !isDepartureRoad(model)) return arcSurfacePathData(model, width) || surfacePathData(model, width, { sampleCount: SAMPLE_COUNT });
     return surfacePathData(model, width, { sampleCount: previewSampleCount(model) });
   }
 
   function bandPathData(model, startOffset, endOffset) {
-    if (model?.geometry?.profile === ARC) {
+    if (model?.geometry?.profile === ARC && !isDepartureRoad(model)) {
       const arcPath = arcBandPathData(model, startOffset, endOffset);
       if (arcPath) return arcPath;
     }
     const samples = samplesFor(model);
-    const left = samples.map((sample) => offsetSample(sample, endOffset));
-    const right = samples.slice().reverse().map((sample) => offsetSample(sample, startOffset));
+    const left = samples.map((sample) => offsetSample(model, sample, endOffset));
+    const right = samples.slice().reverse().map((sample) => offsetSample(model, sample, startOffset));
     return pathFromPoints([...left, ...right], true);
   }
 
@@ -1384,6 +1736,292 @@
     return ranges;
   }
 
+  function rangesWithoutHidden(from, to, hiddenRanges) {
+    let visible = [{ from, to }];
+    (hiddenRanges || [])
+      .map((range) => ({
+        from: clamp(numberOr(range?.from, from), from, to),
+        to: clamp(numberOr(range?.to, to), from, to)
+      }))
+      .filter((range) => range.to - range.from >= 0.0008)
+      .sort((a, b) => a.from - b.from)
+      .forEach((hidden) => {
+        visible = visible.flatMap((range) => {
+          if (hidden.to <= range.from || hidden.from >= range.to) return [range];
+          const pieces = [];
+          if (hidden.from - range.from >= 0.0008) pieces.push({ from: range.from, to: hidden.from });
+          if (range.to - hidden.to >= 0.0008) pieces.push({ from: hidden.to, to: range.to });
+          return pieces;
+        });
+      });
+    return visible;
+  }
+
+  function departureSideSectionInfo(config, side, departure = null) {
+    const section = crossSection(config);
+    const sign = departureSideSign(side, departure);
+    const positiveSide = sign > 0;
+    const outerBoundary = positiveSide
+      ? section.boundaries[section.boundaries.length - 1]
+      : section.boundaries[0];
+    const shoulder = section.sections.find(
+      (item) => item.role === "shoulder" && item.side === (positiveSide ? "left" : "right")
+    );
+    const shoulderBoundaryId = positiveSide ? shoulder?.startBoundaryId : shoulder?.endBoundaryId;
+    const banketBoundary = section.boundaries.find((item) => item.id === shoulderBoundaryId) || outerBoundary;
+    return {
+      section,
+      outerBoundary,
+      banketBoundary,
+      banketOffset: numberOr(banketBoundary?.offset, sign * section.totalWidth / 2),
+      shoulder,
+      shoulderEnabled: Boolean(shoulder),
+      shoulderWidth: Math.max(0, numberOr(shoulder?.width, 0))
+    };
+  }
+
+  function departureSideSign(side, departure = null) {
+    if (departure && departure.sideConvention !== "visual") return pocketSideSign(side);
+    return side === "left" ? -1 : 1;
+  }
+
+  function oppositeDepartureSide(side) {
+    return side === "left" ? "right" : "left";
+  }
+
+  function segmentIntersectionDetail(a, b, c, d) {
+    const r = { x: b.x - a.x, y: b.y - a.y };
+    const s = { x: d.x - c.x, y: d.y - c.y };
+    const denominator = r.x * s.y - r.y * s.x;
+    if (Math.abs(denominator) < 0.0000001) return null;
+    const q = { x: c.x - a.x, y: c.y - a.y };
+    const branchRatio = (q.x * s.y - q.y * s.x) / denominator;
+    const hostRatio = (q.x * r.y - q.y * r.x) / denominator;
+    const epsilon = 0.00001;
+    if (
+      branchRatio < -epsilon || branchRatio > 1 + epsilon
+      || hostRatio < -epsilon || hostRatio > 1 + epsilon
+    ) {
+      return null;
+    }
+    return {
+      branchRatio: clamp(branchRatio, 0, 1),
+      hostRatio: clamp(hostRatio, 0, 1),
+      point: {
+        x: a.x + r.x * branchRatio,
+        y: a.y + r.y * branchRatio
+      }
+    };
+  }
+
+  function offsetCurveSamples(model, offset, from = 0, to = 1, count = 144) {
+    return Array.from({ length: count + 1 }, (_, index) => {
+      const t = from + (to - from) * index / count;
+      return { t, point: offsetPointAt(model, t, offset) };
+    });
+  }
+
+  function departureEdgeSplitInfo(model, departure = departureInfo(model)) {
+    if (!model || !departure || departure.version < DEPARTURE_VERSION) return null;
+    const host = departureHostModel(departure);
+    if (!host) return null;
+    const sign = departureSideSign(departure.side, departure);
+    const hostSide = departureSideSectionInfo(roadConfig(host), departure.side, departure);
+    const branchHostSide = departureSideSectionInfo(
+      roadConfig(model),
+      oppositeDepartureSide(departure.side),
+      departure
+    );
+    const branchOuterOffset = numberOr(branchHostSide.outerBoundary?.offset, 0);
+    const hostOuterOffset = numberOr(hostSide.outerBoundary?.offset, 0);
+    const from = clamp(numberOr(departure.parallelT, DEFAULT_DEPARTURE_PARALLEL_T), 0, 1);
+    const cacheKey = [
+      sampleCacheKey(model),
+      sampleCacheKey(host),
+      branchOuterOffset,
+      branchHostSide.outerBoundary?.id,
+      branchHostSide.banketBoundary?.id,
+      hostOuterOffset,
+      hostSide.outerBoundary?.id,
+      hostSide.banketBoundary?.id,
+      hostSide.shoulderEnabled
+    ].join("|");
+    const cached = departureSplitCache.get(model);
+    if (cached?.key === cacheKey) return cached.value;
+    const finish = (value) => {
+      departureSplitCache.set(model, { key: cacheKey, value });
+      return value;
+    };
+    const branchSamples = offsetCurveSamples(model, branchOuterOffset, from, 1);
+    const hostSamples = offsetCurveSamples(host, hostOuterOffset, 0, 1);
+    for (let branchIndex = 0; branchIndex < branchSamples.length - 1; branchIndex += 1) {
+      const branchStart = branchSamples[branchIndex];
+      const branchEnd = branchSamples[branchIndex + 1];
+      for (let hostIndex = 0; hostIndex < hostSamples.length - 1; hostIndex += 1) {
+        const hostStart = hostSamples[hostIndex];
+        const hostEnd = hostSamples[hostIndex + 1];
+        const hit = segmentIntersectionDetail(
+          branchStart.point,
+          branchEnd.point,
+          hostStart.point,
+          hostEnd.point
+        );
+        if (!hit) continue;
+        const branchT = branchStart.t + (branchEnd.t - branchStart.t) * hit.branchRatio;
+        if (branchT < from - 0.0001) continue;
+        return finish({
+          branchT,
+          hostT: hostStart.t + (hostEnd.t - hostStart.t) * hit.hostRatio,
+          point: hit.point,
+          exact: true,
+          hostSide,
+          branchHostSide
+        });
+      }
+    }
+
+    const sample = (t) => {
+      const branchPoint = offsetPointAt(model, t, branchOuterOffset);
+      const projection = signedOffsetAtPoint(host, branchPoint);
+      if (!projection) return null;
+      return {
+        t,
+        hostT: projection.t,
+        delta: (projection.offset - hostOuterOffset) * sign
+      };
+    };
+    let previous = sample(from);
+    if (!previous) return null;
+    if (previous.delta >= -0.001) {
+      const branchPoint = offsetPointAt(model, from, branchOuterOffset);
+      const hostPoint = offsetPointAt(host, previous.hostT, hostOuterOffset);
+      return finish({
+        branchT: from,
+        hostT: previous.hostT,
+        point: lerp(branchPoint, hostPoint, 0.5),
+        exact: false,
+        hostSide,
+        branchHostSide
+      });
+    }
+    const steps = 72;
+    for (let index = 1; index <= steps; index += 1) {
+      const current = sample(from + (1 - from) * index / steps);
+      if (!current) continue;
+      if (current.delta >= 0) {
+        let low = previous;
+        let high = current;
+        for (let iteration = 0; iteration < 22; iteration += 1) {
+          const middle = sample((low.t + high.t) / 2);
+          if (!middle) break;
+          if (middle.delta >= 0) high = middle;
+          else low = middle;
+        }
+        return finish({
+          branchT: high.t,
+          hostT: high.hostT,
+          point: lerp(
+            offsetPointAt(model, high.t, branchOuterOffset),
+            offsetPointAt(host, high.hostT, hostOuterOffset),
+            0.5
+          ),
+          exact: false,
+          hostSide,
+          branchHostSide
+        });
+      }
+      previous = current;
+    }
+    const fallback = sample(from + (1 - from) * departure.goreFraction) || previous;
+    return finish({
+      branchT: fallback.t,
+      hostT: fallback.hostT,
+      point: lerp(
+        offsetPointAt(model, fallback.t, branchOuterOffset),
+        offsetPointAt(host, fallback.hostT, hostOuterOffset),
+        0.5
+      ),
+      exact: false,
+      hostSide,
+      branchHostSide
+    });
+  }
+
+  function linkedDepartureHostRanges(model) {
+    const ranges = [];
+    (Kroki.EditorObjectManager?.getAll?.() || []).forEach((branch) => {
+      if (branch?.type !== "road") return;
+      const departure = departureInfo(branch);
+      if (!departure || departure.hostId !== model.id) return;
+      const startProjection = signedOffsetAtPoint(model, pointAt(branch, 0));
+      const parallelProjection = signedOffsetAtPoint(model, pointAt(branch, departure.parallelT));
+      const edgeSplit = departureEdgeSplitInfo(branch, departure);
+      if (!startProjection || !parallelProjection || !edgeSplit) return;
+      ranges.push({
+        branch,
+        departure,
+        hostSide: edgeSplit.hostSide,
+        dashFrom: Math.min(startProjection.t, parallelProjection.t),
+        dashTo: Math.max(startProjection.t, parallelProjection.t),
+        edgeFrom: Math.min(startProjection.t, edgeSplit.hostT),
+        edgeTo: Math.max(startProjection.t, edgeSplit.hostT),
+        edgeSplit
+      });
+    });
+    return ranges;
+  }
+
+  function departureDashedRangesForBoundary(model, boundary, from = 0, to = 1) {
+    if (!model || boundary?.role !== "edge" || departureInfo(model)) return [];
+    const ranges = [];
+    linkedDepartureHostRanges(model).forEach((range) => {
+      if (range.hostSide.banketBoundary?.id !== boundary.id) return;
+      const start = Math.max(from, range.dashFrom);
+      const end = Math.min(to, range.dashTo);
+      if (end - start >= 0.0008) ranges.push({ from: start, to: end });
+    });
+    return ranges;
+  }
+
+  function departureHiddenRangesForBoundary(model, lineOffset, boundary) {
+    if (!model) return [];
+    const ownDeparture = departureInfo(model);
+    if (ownDeparture) {
+      if (boundary?.role === "marking") {
+        return [{ from: 0, to: ownDeparture.fullT }];
+      }
+      if (boundary?.role !== "edge") return [];
+      const split = departureEdgeSplitInfo(model, ownDeparture);
+      const hostFacing = split?.branchHostSide
+        || departureSideSectionInfo(
+          roadConfig(model),
+          oppositeDepartureSide(ownDeparture.side),
+          ownDeparture
+        );
+      if (hostFacing.outerBoundary?.id === boundary.id) {
+        return [{ from: 0, to: split?.branchT ?? ownDeparture.parallelT }];
+      }
+      if (hostFacing.banketBoundary?.id === boundary.id) {
+        return [{ from: 0, to: ownDeparture.parallelT }];
+      }
+      return [];
+    }
+
+    if (boundary?.role !== "edge") return [];
+    const hidden = [];
+    linkedDepartureHostRanges(model).forEach((range) => {
+      if (range.hostSide.outerBoundary?.id !== boundary.id) return;
+      hidden.push(range.hostSide.shoulderEnabled
+        ? { from: range.edgeFrom, to: range.edgeTo }
+        : { from: range.dashTo, to: range.edgeTo });
+    });
+    return hidden;
+  }
+
+  function departureVisibleRangesForBoundary(model, lineOffset, from, to, boundary) {
+    return rangesWithoutHidden(from, to, departureHiddenRangesForBoundary(model, lineOffset, boundary));
+  }
+
   function activePocketGeometries(model, config = roadConfig(model)) {
     if (model?.geometry?.profile !== STRAIGHT) return [];
     return ["right", "left"].map((side) => pocketGeometry(model, side, config)).filter(Boolean);
@@ -1467,19 +2105,25 @@
   }
 
   function isIslandProtectedBoundary(model, boundary) {
-    if (!isIslandGeometry(model?.geometry) || boundary?.role !== "edge") return false;
-    return numberOr(boundary.offset, 0) < 0;
+    if (!isIslandGeometry(model?.geometry)) return false;
+    // Ada şerit ayırıcısı tam halka olarak kalır; yalnız dış kenar bağlantı ağızlarında kırpılabilir.
+    if (boundary?.role === "marking") return true;
+    return boundary?.role === "edge" && numberOr(boundary.offset, 0) < 0;
+  }
+
+  function derivedContourOwnsRoadBoundary(model, boundary) {
+    const engine = Kroki.RoadIntersectionEngine;
+    const isOuterEdge = boundary?.role === "edge" && (!boundary.before || !boundary.after);
+    if (!isOuterEdge || isIslandGeometry(model?.geometry)) return false;
+    const pocketOwnsBoundary = isOuterEdge && activePocketGeometries(model)
+      .some((geometry) => boundary.offset * geometry.sign > 0);
+    return Boolean(pocketOwnsBoundary || engine?.isRoadMember?.(model.id));
   }
 
   function shouldSkipRoadBoundary(model, boundary) {
-    const engine = Kroki.RoadIntersectionEngine;
-    const isOuterEdge = boundary?.role === "edge" && (!boundary.before || !boundary.after);
-    if (isIslandGeometry(model?.geometry) && boundary?.role === "edge") return false;
-    // Kavşakta sadece yolun gerçek dış sınır edge'leri iptal edilir.
-    // Banket/shoulder ile taşıt yolu arasındaki iç edge çizgileri banket çizgisi olarak kalmalıdır.
-    const pocketOwnsBoundary = isOuterEdge && activePocketGeometries(model)
-      .some((geometry) => boundary.offset * geometry.sign > 0);
-    return Boolean(isOuterEdge && (pocketOwnsBoundary || engine?.isRoadMember?.(model.id)));
+    if (!derivedContourOwnsRoadBoundary(model, boundary)) return false;
+    // Ayrılan yolun banketsiz ana yolunda dış kenar, 1–3 arasında geçici banket/şerit çizgisidir.
+    return departureDashedRangesForBoundary(model, boundary, 0, 1).length === 0;
   }
 
   function addStyledLine(parent, model, offset, marking, className, boundary = null) {
@@ -1491,14 +2135,32 @@
         : derivedShoulderDash
         ? terminalHostDashedRanges(model, lineOffset, segment.from, segment.to, boundary)
         : intersectionVisibleRanges(model, lineOffset, segment.from, segment.to, boundary);
-      const ranges = intersectRanges(
+      const baseRanges = intersectRanges(
         intersectionRanges,
         pocketVisibleRangesForBoundary(model, lineOffset, segment.from, segment.to, boundary)
-      );
-      ranges.forEach((range) => {
+      ).flatMap((range) => departureVisibleRangesForBoundary(
+        model,
+        lineOffset,
+        range.from,
+        range.to,
+        boundary
+      ));
+      const departureDashRanges = derivedShoulderDash
+        ? []
+        : departureDashedRangesForBoundary(model, boundary, segment.from, segment.to);
+      const derivedContourOwnsRegularLine = departureDashRanges.length
+        && derivedContourOwnsRoadBoundary(model, boundary);
+      const regularRanges = derivedContourOwnsRegularLine
+        ? []
+        : departureDashRanges.length
+        ? baseRanges.flatMap((range) => rangesWithoutHidden(range.from, range.to, departureDashRanges))
+        : baseRanges;
+      const appendRange = (range, forceDash = false) => {
         if (!range || range.to <= range.from) return;
-        const effectiveDashed = derivedShoulderDash || dashed;
-        const derivedClassName = derivedShoulderDash
+        const effectiveDashed = forceDash || derivedShoulderDash || dashed;
+        const derivedClassName = forceDash
+          ? `${className} editor-road-departure-banket-dash`
+          : derivedShoulderDash
           ? `${className} editor-road-intersection-shoulder-dash`
           : className;
         const path = addPath(parent, derivedClassName, offsetPathDataRange(model, lineOffset, range.from, range.to));
@@ -1507,11 +2169,28 @@
           path.dataset.visibleFrom = String(range.from);
           path.dataset.visibleTo = String(range.to);
           if (boundary?.id) path.dataset.roadBoundaryId = String(boundary.id);
+          if (forceDash) path.dataset.roadDepartureBanketDash = "true";
           if (derivedShoulderDash) {
             path.dataset.intersectionShoulderDash = "true";
           }
         }
-      });
+      };
+      regularRanges.forEach((range) => appendRange(range, false));
+      if (departureDashRanges.length) {
+        const dashRanges = derivedContourOwnsRegularLine
+          ? intersectRanges(
+            departureDashRanges,
+            pocketVisibleRangesForBoundary(model, lineOffset, segment.from, segment.to, boundary)
+          ).flatMap((range) => departureVisibleRangesForBoundary(
+            model,
+            lineOffset,
+            range.from,
+            range.to,
+            boundary
+          ))
+          : intersectRanges(baseRanges, departureDashRanges);
+        dashRanges.forEach((range) => appendRange(range, true));
+      }
     };
     const renderSegment = (segment, derivedShoulderDash = false) => {
       if (segment.style === "none") return;
@@ -1539,6 +2218,183 @@
     });
   }
 
+  function departureHostFacingBanketOffset(model, departure) {
+    const sign = departureSideSign(departure.side, departure);
+    return -sign * departureLaneSpan(roadConfig(model)) / 2;
+  }
+
+  function departureGorePairAtDistance(pairs, distance) {
+    if (!pairs.length) return null;
+    const target = clamp(distance, 0, pairs[pairs.length - 1].distance);
+    for (let index = 0; index < pairs.length - 1; index += 1) {
+      const current = pairs[index];
+      const next = pairs[index + 1];
+      if (target > next.distance) continue;
+      const span = next.distance - current.distance;
+      const ratio = span > 0.0001 ? (target - current.distance) / span : 0;
+      const host = lerp(current.host, next.host, ratio);
+      const branch = lerp(current.branch, next.branch, ratio);
+      return {
+        t: current.t + (next.t - current.t) * ratio,
+        distance: target,
+        host,
+        branch,
+        middle: lerp(current.middle, next.middle, ratio)
+      };
+    }
+    const last = pairs[pairs.length - 1];
+    return {
+      t: last.t,
+      distance: last.distance,
+      host: { ...last.host },
+      branch: { ...last.branch },
+      middle: { ...last.middle }
+    };
+  }
+
+  function departureGoreHatch(pairs, distance, openingDirection) {
+    const spinePair = departureGorePairAtDistance(pairs, distance);
+    if (!spinePair) return null;
+    const width = Math.hypot(
+      spinePair.branch.x - spinePair.host.x,
+      spinePair.branch.y - spinePair.host.y
+    );
+    const boundaryDistance = clamp(
+      distance + openingDirection * width / 2,
+      0,
+      pairs[pairs.length - 1].distance
+    );
+    const boundaryPair = departureGorePairAtDistance(pairs, boundaryDistance);
+    if (!boundaryPair) return null;
+    return {
+      distance,
+      boundaryDistance,
+      width,
+      apex: { ...spinePair.middle },
+      host: boundaryPair.host,
+      branch: boundaryPair.branch
+    };
+  }
+
+  function departureGoreGeometry(model) {
+    const departure = departureInfo(model);
+    if (!departure || departure.version < DEPARTURE_VERSION) return null;
+    const host = departureHostModel(departure);
+    if (!host) return null;
+    const hostSide = departureSideSectionInfo(roadConfig(host), departure.side, departure);
+    const branchOffset = departureHostFacingBanketOffset(model, departure);
+    const from = departure.parallelT;
+    const edgeSplit = departureEdgeSplitInfo(model, departure);
+    if (!edgeSplit || edgeSplit.branchT <= from + 0.0001) return null;
+    const openingDirection = departure.side === "right" ? 1 : -1;
+    const splitT = clamp(edgeSplit.branchT, from, 1);
+    const sampleTo = openingDirection > 0
+      ? Math.min(1, splitT + Math.max(0.08, (1 - splitT) * 0.45))
+      : splitT;
+    const parameters = Array.from({ length: 97 }, (_, index) => (
+      from + (sampleTo - from) * index / 96
+    ));
+    parameters.push(splitT);
+    parameters.sort((first, second) => first - second);
+    const pairs = [];
+    const hostDirection = departure.parallelHostT >= departure.fullHostT ? 1 : -1;
+    let reachedHostEnd = false;
+    parameters.forEach((t, index) => {
+      if (index && Math.abs(t - parameters[index - 1]) < 0.0000001) return;
+      if (reachedHostEnd) return;
+      const branchPoint = offsetPointAt(model, t, branchOffset);
+      const projection = signedOffsetAtPoint(host, branchPoint);
+      if (!projection) return;
+      const hostPoint = offsetPointAt(host, projection.t, hostSide.banketOffset);
+      let middle = lerp(hostPoint, branchPoint, 0.5);
+      if (Math.abs(t - splitT) < 0.0000001 && isFinitePoint(edgeSplit.point)) {
+        middle = point(edgeSplit.point);
+      }
+      const previous = pairs[pairs.length - 1];
+      pairs.push({
+        t,
+        host: hostPoint,
+        branch: branchPoint,
+        middle,
+        distance: previous
+          ? previous.distance + Math.hypot(middle.x - previous.middle.x, middle.y - previous.middle.y)
+          : 0
+      });
+      const atHostEnd = hostDirection > 0
+        ? projection.t >= 1 - 0.0001
+        : projection.t <= 0.0001;
+      if (atHostEnd && t >= splitT) reachedHostEnd = true;
+    });
+    if (pairs.length < 2) return null;
+
+    const splitPairIndex = pairs.findIndex((pair) => Math.abs(pair.t - splitT) < 0.0000001);
+    if (splitPairIndex < 1) return null;
+    const spineEndDistance = pairs[splitPairIndex].distance;
+    const hatches = [];
+    for (
+      let distance = DEPARTURE_GORE_HATCH_SPACING;
+      distance < spineEndDistance;
+      distance += DEPARTURE_GORE_HATCH_SPACING
+    ) {
+      const hatch = departureGoreHatch(pairs, distance, openingDirection);
+      if (hatch?.width >= DEPARTURE_GORE_MIN_WIDTH) hatches.push(hatch);
+    }
+    const terminal = departureGoreHatch(pairs, spineEndDistance, openingDirection);
+    if (terminal?.width >= DEPARTURE_GORE_MIN_WIDTH) {
+      if (
+        hatches.length
+        && spineEndDistance - hatches[hatches.length - 1].distance < DEPARTURE_GORE_HATCH_SPACING * 0.35
+      ) {
+        hatches[hatches.length - 1] = terminal;
+      } else {
+        hatches.push(terminal);
+      }
+    }
+
+    const outlineEndDistance = terminal?.boundaryDistance ?? spineEndDistance;
+    const outlinePairs = pairs.filter((pair) => pair.distance < outlineEndDistance - 0.0001);
+    const outlineEndPair = departureGorePairAtDistance(pairs, outlineEndDistance);
+    if (outlineEndPair) outlinePairs.push(outlineEndPair);
+    const outline = [
+      ...outlinePairs.map((pair) => pair.host),
+      ...(terminal ? [terminal.apex] : []),
+      ...outlinePairs.slice().reverse().map((pair) => pair.branch)
+    ];
+    if (pocketIslandArea(outline) < 4) return null;
+    return {
+      outline,
+      hatches,
+      openingDirection,
+      spineStart: { ...pairs[0].middle },
+      spineEnd: { ...pairs[splitPairIndex].middle },
+      spinePoints: pairs.slice(0, splitPairIndex + 1).map((pair) => ({ ...pair.middle })),
+      edgeSplit
+    };
+  }
+
+  function renderDepartureGore(model, element) {
+    const geometry = departureGoreGeometry(model);
+    if (!geometry) return;
+    addPath(element, "editor-road-departure-gore", pathFromPoints(geometry.outline, true), {
+      fill: "#ffffff",
+      stroke: "none",
+      "pointer-events": "none",
+      "fill-rule": "nonzero"
+    });
+    const hatchPath = geometry.hatches.map((hatch) => (
+      `M ${formatPoint(hatch.host)} L ${formatPoint(hatch.apex)} L ${formatPoint(hatch.branch)}`
+    )).join(" ");
+    addPath(element, "editor-road-departure-gore-hatch", hatchPath, {
+      fill: "none",
+      stroke: ROAD_LINE_COLOR,
+      "stroke-width": String(DEPARTURE_GORE_HATCH_WIDTH),
+      "stroke-linecap": "butt",
+      "stroke-linejoin": "miter",
+      "pointer-events": "none",
+      "vector-effect": "none"
+    });
+  }
+
   function renderSurface(model, element, section) {
     // RoadIntersectionEngine artık kavşak içinde beyaz maske/örtme kullanmıyor;
     // yol hit-test'i de adapter.hitTest ile hesaplanıyor. Bu yüzden beyaz dolgulu,
@@ -1551,22 +2407,32 @@
   function renderIslandCenterFill(model, element, config) {
     if (!isIslandGeometry(model?.geometry)) return;
     const style = normalizeIslandCenterStyle(config?.islandCenterStyle);
-    if (style.fillPattern === "none") return;
     const center = point(model.geometry.center);
     const radii = islandRadii(model.geometry);
     if (!Number.isFinite(radii.innerRadius) || radii.innerRadius <= 0.5) return;
+    const circleGeometry = {
+      cx: String(center.x),
+      cy: String(center.y),
+      r: String(radii.innerRadius),
+      stroke: "none",
+      "pointer-events": "none"
+    };
+    // Doku saydam olsa bile alttaki yol/nesneler ada merkezinden görünmemelidir.
+    element.append(utils.createSvgElement("circle", {
+      ...circleGeometry,
+      class: "editor-road-island-center-base",
+      fill: "#ffffff",
+      "fill-opacity": "1"
+    }));
+    if (style.fillPattern === "none") return;
     const canvas = element.ownerSVGElement;
     const pattern = styleManager.ensureFillPattern?.(canvas, { id: `${model.id}-island-center` }, style);
     const fill = pattern ? `url(#${pattern.id})` : style.fill;
     element.append(utils.createSvgElement("circle", {
+      ...circleGeometry,
       class: "editor-road-island-center-fill",
-      cx: String(center.x),
-      cy: String(center.y),
-      r: String(radii.innerRadius),
       fill,
-      "fill-opacity": String(style.fillOpacity ?? 1),
-      stroke: "none",
-      "pointer-events": "none"
+      "fill-opacity": String(style.fillOpacity ?? 1)
     }));
   }
 
@@ -2222,6 +3088,203 @@
     return pocketBandPathData(pocketGeometry(model, side));
   }
 
+  function departureControlPoints(model, mode) {
+    const departure = departureInfo(model);
+    if (!departure || mode !== "edit") return [];
+    if (departure.version >= DEPARTURE_VERSION) {
+      const curveControl = departureStationGeometry(model)?.curveControl || departure.curveControl;
+      return [
+        {
+          id: "departure-full",
+          ...departure.fullPoint,
+          role: "road-departure-width",
+          cursor: "grab"
+        },
+        {
+          id: "departure-parallel",
+          ...departure.parallelPoint,
+          role: "road-departure-parallel",
+          cursor: "grab"
+        },
+        {
+          id: "departure-curve",
+          ...curveControl,
+          role: "curve",
+          cursor: "grab"
+        }
+      ];
+    }
+    const section = crossSection(roadConfig(model));
+    const sign = departureSideSign(departure.side, departure);
+    const outerOffset = sign * section.totalWidth / 2;
+    return [
+      {
+        id: "departure-full",
+        ...offsetPointAt(model, departure.fullT, outerOffset),
+        role: "road-departure-width",
+        cursor: "grab"
+      },
+      {
+        id: "departure-parallel",
+        ...offsetPointAt(model, departure.parallelT, outerOffset),
+        role: "road-departure-parallel",
+        cursor: "grab"
+      }
+    ];
+  }
+
+  function departureHostModel(departure) {
+    const host = Kroki.EditorObjectManager?.get?.(departure?.hostId);
+    return host?.type === "road" && !isIslandGeometry(host.geometry) ? host : null;
+  }
+
+  function departureCenterOffsetForHost(model, host, departure) {
+    const hostSide = departureSideSectionInfo(roadConfig(host), departure.side, departure);
+    return hostSide.banketOffset
+      + departureSideSign(departure.side, departure) * departureLaneSpan(roadConfig(model)) / 2;
+  }
+
+  function syncDepartureRoadConfig(model) {
+    const departure = departureInfo(model);
+    if (!departure || departure.version < DEPARTURE_VERSION) return model;
+    const host = departureHostModel(departure);
+    if (!host) return model;
+    const curveRatio = departureCurveRatio(model, departure);
+    const centerOffset = departureCenterOffsetForHost(model, host, departure);
+    const fullPoint = offsetPointAt(host, departure.fullHostT, centerOffset);
+    const parallelPoint = offsetPointAt(host, departure.parallelHostT, centerOffset);
+    departure.fullPoint = fullPoint;
+    departure.parallelPoint = parallelPoint;
+    departure.curveRatio = curveRatio;
+    syncDepartureArcControl(model, departure);
+    model.metadata = {
+      ...(model.metadata || {}),
+      roadDeparture: departure
+    };
+    return model;
+  }
+
+  function syncDepartureToHostGeometry(model, hostModel = null) {
+    const departure = departureInfo(model);
+    if (!departure || departure.version < DEPARTURE_VERSION) return model;
+    const host = hostModel?.type === "road" ? hostModel : departureHostModel(departure);
+    if (!host || host.id !== departure.hostId) return model;
+
+    const oldParallel = point(departure.parallelPoint);
+    const fallbackOldDirection = {
+      x: oldParallel.x - departure.fullPoint.x,
+      y: oldParallel.y - departure.fullPoint.y
+    };
+    const oldDirectionSource = isFinitePoint(departure.hostDirection)
+      ? departure.hostDirection
+      : fallbackOldDirection;
+    const oldDirectionLength = Math.hypot(oldDirectionSource.x, oldDirectionSource.y) || 1;
+    const oldDirection = {
+      x: oldDirectionSource.x / oldDirectionLength,
+      y: oldDirectionSource.y / oldDirectionLength
+    };
+    const oldNormal = { x: -oldDirection.y, y: oldDirection.x };
+    const endDelta = {
+      x: model.geometry.end.x - oldParallel.x,
+      y: model.geometry.end.y - oldParallel.y
+    };
+    const localForward = endDelta.x * oldDirection.x + endDelta.y * oldDirection.y;
+    const localOutward = endDelta.x * oldNormal.x + endDelta.y * oldNormal.y;
+
+    const hostSide = departureSideSectionInfo(roadConfig(host), departure.side, departure);
+    const centerOffset = departureCenterOffsetForHost(model, host, departure);
+    const fullPoint = offsetPointAt(host, departure.fullHostT, centerOffset);
+    const parallelPoint = offsetPointAt(host, departure.parallelHostT, centerOffset);
+    const nextTangent = tangentAt(host, departure.parallelHostT);
+    const nextTangentLength = Math.hypot(nextTangent.x, nextTangent.y) || 1;
+    const nextDirection = {
+      x: nextTangent.x / nextTangentLength,
+      y: nextTangent.y / nextTangentLength
+    };
+    const nextNormal = { x: -nextDirection.y, y: nextDirection.x };
+    const curveRatio = departureCurveRatio(model, departure);
+
+    model.geometry.start = offsetPointAt(host, departure.startHostT, hostSide.banketOffset);
+    model.geometry.end = {
+      x: parallelPoint.x + nextDirection.x * localForward + nextNormal.x * localOutward,
+      y: parallelPoint.y + nextDirection.y * localForward + nextNormal.y * localOutward
+    };
+    departure.fullPoint = fullPoint;
+    departure.parallelPoint = parallelPoint;
+    departure.hostDirection = nextDirection;
+    departure.curveRatio = curveRatio;
+    syncDepartureArcControl(model, departure);
+    model.geometry.controls = [point(fullPoint), point(departure.curveControl)];
+    model.geometry.c1 = model.geometry.controls[0];
+    model.geometry.c2 = model.geometry.controls[1];
+    model.metadata = {
+      ...(model.metadata || {}),
+      roadDeparture: departure
+    };
+    return model;
+  }
+
+  function moveDepartureControlPoint(model, cpId, worldPoint) {
+    if (cpId !== "departure-full" && cpId !== "departure-parallel" && cpId !== "departure-curve") return false;
+    const departure = departureInfo(model);
+    if (!departure) return true;
+    if (departure.version >= DEPARTURE_VERSION) {
+      if (cpId === "departure-curve") {
+        const basisValue = arcBasis(departure.parallelPoint, model.geometry.end);
+        if (basisValue) {
+          departure.curveRatio = clamp(arcRatioFromPoint(basisValue, worldPoint), -3, 3);
+          syncDepartureArcControl(model, departure);
+        }
+      } else {
+        const curveRatio = departureCurveRatio(model, departure);
+        const host = departureHostModel(departure);
+        const hostProjection = host ? signedOffsetAtPoint(host, worldPoint) : null;
+        if (host && hostProjection) {
+          const centerOffset = departureCenterOffsetForHost(model, host, departure);
+          if (cpId === "departure-full") {
+            const nextT = clamp(
+              hostProjection.t,
+              departure.startHostT + 0.02,
+              departure.parallelHostT - 0.02
+            );
+            departure.fullHostT = nextT;
+            departure.fullPoint = offsetPointAt(host, nextT, centerOffset);
+          } else {
+            const nextT = clamp(hostProjection.t, departure.fullHostT + 0.02, 0.98);
+            const nextPoint = offsetPointAt(host, nextT, centerOffset);
+            departure.parallelHostT = nextT;
+            departure.parallelPoint = nextPoint;
+            departure.curveRatio = curveRatio;
+            syncDepartureArcControl(model, departure);
+          }
+        } else if (cpId === "departure-full") {
+          departure.fullPoint = point(worldPoint, departure.fullPoint);
+        } else {
+          const nextPoint = point(worldPoint, departure.parallelPoint);
+          departure.parallelPoint = nextPoint;
+          departure.curveRatio = curveRatio;
+          syncDepartureArcControl(model, departure);
+        }
+      }
+      model.metadata = {
+        ...(model.metadata || {}),
+        roadDeparture: departure
+      };
+      return true;
+    }
+    const t = parameterAtPoint(model, worldPoint);
+    if (cpId === "departure-full") {
+      departure.fullT = clamp(t, 0.05, departure.parallelT - MIN_DEPARTURE_T_GAP);
+    } else {
+      departure.parallelT = clamp(t, departure.fullT + MIN_DEPARTURE_T_GAP, 0.96);
+    }
+    model.metadata = {
+      ...(model.metadata || {}),
+      roadDeparture: departure
+    };
+    return true;
+  }
+
   function parsePocketControlId(cpId) {
     const match = /^pocket:(left|right):(outerFrom|innerFrom|offset|innerTo|outerTo)$/.exec(String(cpId || ""));
     return match ? { side: match[1], key: match[2] } : null;
@@ -2481,13 +3544,38 @@
     if (!startState?.geometry || !startState.point) return;
     const dx = worldPoint.x - startState.point.x;
     const dy = worldPoint.y - startState.point.y;
+    const departure = departureInfo(model);
+    const departureRatio = departure?.version >= DEPARTURE_VERSION
+      ? departureCurveRatio(model, departure)
+      : null;
     if (pointId === "start") {
       const nextStart = { x: startState.geometry.start.x + dx, y: startState.geometry.start.y + dy };
-      model.geometry.start = lineGeometry.snapEndpoint(model.geometry.end, nextStart);
+      const host = departure?.version >= DEPARTURE_VERSION ? departureHostModel(departure) : null;
+      const projection = host ? signedOffsetAtPoint(host, nextStart) : null;
+      if (departure?.version >= DEPARTURE_VERSION && host && projection) {
+        const hostSide = departureSideSectionInfo(roadConfig(host), departure.side, departure);
+        const nextT = clamp(projection.t, 0, departure.fullHostT - 0.02);
+        model.geometry.start = offsetPointAt(host, nextT, hostSide.banketOffset);
+        departure.startHostT = nextT;
+        model.metadata = {
+          ...(model.metadata || {}),
+          roadDeparture: departure
+        };
+      } else {
+        model.geometry.start = lineGeometry.snapEndpoint(model.geometry.end, nextStart);
+      }
     }
     if (pointId === "end") {
       const nextEnd = { x: startState.geometry.end.x + dx, y: startState.geometry.end.y + dy };
       model.geometry.end = lineGeometry.snapEndpoint(model.geometry.start, nextEnd);
+      if (departure?.version >= DEPARTURE_VERSION) {
+        departure.curveRatio = departureRatio;
+        syncDepartureArcControl(model, departure);
+        model.metadata = {
+          ...(model.metadata || {}),
+          roadDeparture: departure
+        };
+      }
     }
     if (model.geometry.profile === ARC) model.geometry.ratio = startState.geometry.ratio;
     if (model.geometry.profile === S_CURVE) {
@@ -2533,6 +3621,17 @@
       model.geometry[key].x += dx;
       model.geometry[key].y += dy;
     });
+    const departure = departureInfo(model);
+    if (departure?.version >= DEPARTURE_VERSION) {
+      ["fullPoint", "parallelPoint", "curveControl"].forEach((key) => {
+        departure[key].x += dx;
+        departure[key].y += dy;
+      });
+      model.metadata = {
+        ...(model.metadata || {}),
+        roadDeparture: departure
+      };
+    }
     if (model.geometry.profile === S_CURVE) {
       const controls = cleanSCurveControls(model.geometry);
       controls.forEach((item) => {
@@ -2629,6 +3728,35 @@
     else if (metadata.roadPocketEdit?.side === "right") metadata.roadPocketEdit = { side: "left" };
     if (metadata.roadPocketIslandEdit?.side === "left") metadata.roadPocketIslandEdit = { side: "right" };
     else if (metadata.roadPocketIslandEdit?.side === "right") metadata.roadPocketIslandEdit = { side: "left" };
+    const departure = normalizeRoadDeparture(metadata.roadDeparture);
+    if (departure) {
+      const reflectedDeparture = {
+        ...departure,
+        side: departure.side === "left" ? "right" : "left"
+      };
+      if (departure.version >= DEPARTURE_VERSION) {
+        reflectedDeparture.fullPoint = reflectPointAcrossAxis(departure.fullPoint, axis, axisValue);
+        reflectedDeparture.parallelPoint = reflectPointAcrossAxis(departure.parallelPoint, axis, axisValue);
+        reflectedDeparture.curveControl = reflectPointAcrossAxis(departure.curveControl, axis, axisValue);
+        if (isFinitePoint(departure.hostDirection)) {
+          reflectedDeparture.hostDirection = {
+            x: axis === "y" ? -departure.hostDirection.x : departure.hostDirection.x,
+            y: axis === "x" ? -departure.hostDirection.y : departure.hostDirection.y
+          };
+        }
+        const basisValue = arcBasis(reflectedDeparture.parallelPoint, model.geometry.end);
+        if (basisValue) {
+          reflectedDeparture.curveMode = "arc";
+          reflectedDeparture.curveRatio = clamp(
+            arcRatioFromPoint(basisValue, reflectedDeparture.curveControl),
+            -3,
+            3
+          );
+          reflectedDeparture.curveControl = arcControlFromRatio(basisValue, reflectedDeparture.curveRatio);
+        }
+      }
+      metadata.roadDeparture = reflectedDeparture;
+    }
     model.metadata = metadata;
     return model;
   }
@@ -2674,6 +3802,140 @@
     return reflectAcrossBoundsAxis(model, "y");
   }
 
+  function outgoingDepartureRoad(hostModel, models, side = "") {
+    const hostId = String(hostModel?.id || "");
+    if (!hostId) return null;
+    const targetSide = side === "left" || side === "right" ? side : "";
+    const source = Array.isArray(models)
+      ? models
+      : (Kroki.EditorObjectManager?.getObjectsInDomOrder?.() || Kroki.EditorObjectManager?.getAll?.() || []);
+    return source.find((model) => {
+      const departure = model?.metadata?.roadDeparture;
+      return model?.type === "road"
+        && String(model.id || "") !== hostId
+        && String(departure?.hostId || "") === hostId
+        && (!targetSide || (departure?.side === "left" ? "left" : "right") === targetSide);
+    }) || null;
+  }
+
+  function canCreateDepartureRoad(hostModel, models, side = "") {
+    const eligible = Boolean(
+      hostModel
+      && hostModel.type === "road"
+      && hostModel.id
+      && !isIslandGeometry(hostModel.geometry)
+      && !hostModel.metadata?.roadDeparture?.hostId
+    );
+    if (!eligible) return false;
+    const targetSide = side === "left" || side === "right" ? side : "";
+    if (targetSide) return !outgoingDepartureRoad(hostModel, models, targetSide);
+    return !outgoingDepartureRoad(hostModel, models, "left")
+      || !outgoingDepartureRoad(hostModel, models, "right");
+  }
+
+  function createDepartureRoadData(hostModel, options = {}) {
+    const side = options.side === "left" ? "left" : "right";
+    if (!canCreateDepartureRoad(hostModel, options.existingModels, side)) return null;
+    const hostConfig = roadConfig(hostModel);
+    const sign = departureSideSign(side);
+    const hostSide = departureSideSectionInfo(hostConfig, side);
+    const laneCount = clampInt(options.laneCount, 1, MAX_DEPARTURE_LANES, DEFAULT_DEPARTURE_LANE_COUNT);
+    const laneWidth = widthOr(options.laneWidth, hostConfig.laneWidth || DEFAULT_POCKET_WIDTH, 10, 180);
+    const laneWidths = Array.from({ length: laneCount }, () => laneWidth);
+    const branchWidth = laneWidths.reduce((sum, width) => sum + width, 0);
+    const hostLength = Math.max(120, centerlineLength(hostModel));
+    const hostFromT = 0.08;
+    const edgeSplitReserve = Math.max(hostLength * 0.28, branchWidth * 2.2);
+    const maxParallelT = clamp(1 - edgeSplitReserve / hostLength, 0.36, 0.72);
+    const availableHostLength = hostLength * (maxParallelT - hostFromT);
+    let wideningLength = Math.max(branchWidth * 2.2, hostLength * 0.3);
+    let parallelLength = Math.max(branchWidth * 1.4, hostLength * 0.24);
+    if (wideningLength + parallelLength > availableHostLength) {
+      const fitScale = availableHostLength / (wideningLength + parallelLength);
+      wideningLength *= fitScale;
+      parallelLength *= fitScale;
+    }
+    const hostFullT = clamp(hostFromT + wideningLength / hostLength, hostFromT + 0.18, 0.64);
+    const hostParallelT = clamp(hostFullT + parallelLength / hostLength, hostFullT + 0.14, maxParallelT);
+    const branchCenterOffset = hostSide.banketOffset + sign * branchWidth / 2;
+    const start = offsetPointAt(hostModel, hostFromT, hostSide.banketOffset);
+    const fullPoint = offsetPointAt(hostModel, hostFullT, branchCenterOffset);
+    const parallelPoint = offsetPointAt(hostModel, hostParallelT, branchCenterOffset);
+    const tangent = tangentAt(hostModel, hostParallelT);
+    const tangentLength = Math.hypot(tangent.x, tangent.y) || 1;
+    const direction = { x: tangent.x / tangentLength, y: tangent.y / tangentLength };
+    const normal = { x: -direction.y, y: direction.x };
+    const forward = Math.max(branchWidth * 3.2, hostLength * 0.36, 240);
+    const outward = Math.max(branchWidth * 1.2, laneWidth * 2.4, 110);
+    const end = {
+      x: parallelPoint.x + direction.x * forward + normal.x * sign * outward,
+      y: parallelPoint.y + direction.y * forward + normal.y * sign * outward
+    };
+    const curveRatio = tangentArcRatio(parallelPoint, end, direction);
+    const curveBasis = arcBasis(parallelPoint, end);
+    const curveControl = curveBasis
+      ? arcControlFromRatio(curveBasis, curveRatio)
+      : lerp(parallelPoint, end, 0.5);
+    const shoulderEnabled = Boolean(hostSide.shoulderEnabled);
+    const shoulderWidth = widthOr(hostSide.shoulderWidth, 20, 0, 180);
+    const branchConfig = normalizeRoadConfig({
+      version: 1,
+      laneCount,
+      laneWidth,
+      laneWidths,
+      divided: false,
+      dividedLaneWidths: {
+        left: laneWidths.slice(),
+        right: laneWidths.slice()
+      },
+      leftShoulder: { enabled: shoulderEnabled, width: shoulderWidth },
+      rightShoulder: { enabled: shoulderEnabled, width: shoulderWidth },
+      innerShoulder: { enabled: false, width: hostConfig.innerShoulder?.width || 15 },
+      waterChannel: { enabled: false, width: hostConfig.waterChannel?.width || 30 },
+      barrier: { enabled: false, width: 6 },
+      marking: utils.clonePlain(hostConfig.marking || { style: "dash", width: 2 }),
+      edgeLine: utils.clonePlain(hostConfig.edgeLine || { enabled: true, width: 2 }),
+      boundaryStyles: {},
+      pockets: { left: null, right: null },
+      barriers: [],
+      autoIntersection: true,
+      bridge: false,
+      segments: [{ from: 0, to: 1, markingStyle: hostConfig.marking?.style || "dash" }]
+    });
+    const controls = [fullPoint, curveControl];
+    return {
+      geometry: {
+        profile: S_CURVE,
+        start,
+        end,
+        controls,
+        c1: controls[0],
+        c2: controls[1]
+      },
+      metadata: {
+        road: branchConfig,
+        roadDeparture: {
+          version: DEPARTURE_VERSION,
+          sideConvention: "visual",
+          hostId: hostModel.id,
+          side,
+          fullT: DEFAULT_DEPARTURE_FULL_T,
+          parallelT: DEFAULT_DEPARTURE_PARALLEL_T,
+          fullPoint,
+          parallelPoint,
+          curveMode: "arc",
+          curveRatio,
+          curveControl,
+          startHostT: hostFromT,
+          fullHostT: hostFullT,
+          parallelHostT: hostParallelT,
+          hostDirection: direction,
+          goreFraction: DEFAULT_DEPARTURE_GORE_FRACTION
+        }
+      }
+    };
+  }
+
   function convertProfileGeometry(model, profile) {
     if (!model?.geometry) return null;
     const nextProfile = normalizeProfile(profile);
@@ -2691,6 +3953,7 @@
   }
 
   function setProfile(model, profile) {
+    if (departureInfo(model)?.version >= DEPARTURE_VERSION) return model;
     const next = convertProfileGeometry(model, profile);
     if (!next) return model;
     model.geometry = next;
@@ -2710,6 +3973,7 @@
 
   function setSCurveControlCount(model, count) {
     if (!model?.geometry || model.geometry.profile !== S_CURVE) return model;
+    if (departureInfo(model)?.version >= DEPARTURE_VERSION) return model;
     const oldControls = cleanSCurveControls(model.geometry);
     const nextCount = clampInt(count, MIN_S_CURVE_CONTROLS, MAX_S_CURVE_CONTROLS, oldControls.length);
     if (nextCount === oldControls.length) return model;
@@ -3127,13 +4391,18 @@
         ...(initialData.metadata || {}),
         road: normalizeRoadConfig(initialData.metadata?.road || initialData.road || {})
       };
-      return {
+      const departure = normalizeRoadDeparture(initialData.metadata?.roadDeparture || initialData.roadDeparture);
+      if (departure) metadata.roadDeparture = departure;
+      else delete metadata.roadDeparture;
+      const model = {
         type: "road",
         geometry,
         style: initialData.style,
         label: initialData.label,
         metadata
       };
+      if (departure?.version >= DEPARTURE_VERSION) syncDepartureArcControl(model, departure);
+      return model;
     },
 
     readFromElement(element) {
@@ -3144,7 +4413,8 @@
         style: styleManager.readStyleFromElement(element, "road"),
         label: styleManager.readLabelFromElement(element, "road"),
         metadata: {
-          road: normalizeRoadConfig(safeParseJson(element.dataset.roadConfig, {}))
+          road: normalizeRoadConfig(safeParseJson(element.dataset.roadConfig, {})),
+          roadDeparture: normalizeRoadDeparture(safeParseJson(element.dataset.roadDeparture, null))
         }
       };
     },
@@ -3154,15 +4424,22 @@
       const section = crossSection(config);
       element.dataset.roadGeometry = JSON.stringify(normalizeGeometry(model.geometry));
       element.dataset.roadConfig = JSON.stringify(config);
+      const departure = departureInfo(model);
+      if (departure) element.dataset.roadDeparture = JSON.stringify(departure);
+      else delete element.dataset.roadDeparture;
       element.replaceChildren();
       renderSurface(model, element, section);
       renderIslandCenterFill(model, element, config);
+      renderDepartureGore(model, element);
       renderSelectedSection(model, element, section);
       renderSelectedPocket(model, element, config);
       section.boundaries.forEach((boundary) => addBoundaryLine(element, model, boundary, config));
       renderActiveBoundaryEdit(model, element, section, config);
       renderBarriers(model, element, config);
       element.removeAttribute("transform");
+      if (departure?.hostId && departure.hostId !== model.id) {
+        Kroki.EditorObjectManager?.renderGeometry?.(departure.hostId, { labels: false });
+      }
     },
 
     hitTest(model, pointValue, tolerance) {
@@ -3176,7 +4453,9 @@
         return distance >= radii.innerRadius - tolerance && distance <= radii.outerRadius + tolerance;
       }
       const section = crossSection(roadConfig(model));
-      return distanceToCenterline(model, pointValue) <= section.totalWidth / 2 + tolerance;
+      const signed = signedOffsetAtPoint(model, pointValue);
+      const widthScale = departureWidthScaleAt(model, signed?.t || 0);
+      return Boolean(signed && signed.distance <= section.totalWidth * widthScale / 2 + tolerance);
     },
 
     getControlPoints(model, metrics, mode) {
@@ -3199,11 +4478,12 @@
         { id: "end", ...endpointHandlePoint(model, "end", metrics.endpointOffset), role: "move", cursor: "grab" }
       ];
       if (model.geometry.profile === ARC) points.push({ id: "arc", ...arcControlPoint(model), role: "curve", cursor: "grab" });
-      if (model.geometry.profile === S_CURVE) {
+      if (model.geometry.profile === S_CURVE && numberOr(departureInfo(model)?.version, 0) < DEPARTURE_VERSION) {
         cleanSCurveControls(model.geometry).forEach((control, index) => {
           points.push({ id: `sctrl-${index}`, ...control, role: "curve", cursor: "grab" });
         });
       }
+      points.push(...departureControlPoints(model, mode));
       points.push(...segmentBoundaryControlPoints(model, metrics, mode));
       return points;
     },
@@ -3226,11 +4506,12 @@
         { id: "end", ...endpointHandlePoint(model, "end", metrics.endpointOffset), role: "move", cursor: "grab" }
       ];
       if (model.geometry.profile === ARC) points.push({ id: "arc", ...arcControlPoint(model), role: "curve", cursor: "grab" });
-      if (model.geometry.profile === S_CURVE) {
+      if (model.geometry.profile === S_CURVE && numberOr(departureInfo(model)?.version, 0) < DEPARTURE_VERSION) {
         cleanSCurveControls(model.geometry).forEach((control, index) => {
           points.push({ id: `sctrl-${index}`, ...control, role: "curve", cursor: "grab" });
         });
       }
+      points.push(...departureControlPoints(model, "edit"));
       points.push(...segmentBoundaryControlPoints(model, metrics, "edit"));
       return points;
     },
@@ -3244,6 +4525,8 @@
       const pocketPoints = selectedPocketControlPoints(model, metrics, "edit");
       const pocketPoint = pocketPoints.find((item) => String(item.id) === id);
       if (pocketPoint) return pocketPoint;
+      const departurePoint = departureControlPoints(model, "edit").find((item) => String(item.id) === id);
+      if (departurePoint) return departurePoint;
       const barrierPoints = selectedBarrierControlPoints(model, metrics, "edit");
       const barrierPoint = barrierPoints.find((item) => String(item.id) === id);
       if (barrierPoint) return barrierPoint;
@@ -3259,7 +4542,7 @@
       }
       if (id === "arc" && model.geometry.profile === ARC) return { id, ...arcControlPoint(model), role: "curve", cursor: "grab" };
       const sControlMatch = id.match(/^sctrl-(\d+)$/);
-      if (sControlMatch && model.geometry.profile === S_CURVE) {
+      if (sControlMatch && model.geometry.profile === S_CURVE && numberOr(departureInfo(model)?.version, 0) < DEPARTURE_VERSION) {
         const control = cleanSCurveControls(model.geometry)[Number(sControlMatch[1])];
         return control ? { id, ...control, role: "curve", cursor: "grab" } : null;
       }
@@ -3293,6 +4576,7 @@
 
     moveControlPoint(model, cpId, worldPoint, modifiers = {}) {
       if (movePocketControlPoint(model, cpId, worldPoint, modifiers)) return;
+      if (moveDepartureControlPoint(model, cpId, worldPoint)) return;
       if (moveBarrierControlPoint(model, cpId, worldPoint, modifiers)) return;
       if (isIslandGeometry(model?.geometry)) {
         if (cpId === "island-inner" || cpId === "island-outer") {
@@ -3406,6 +4690,13 @@
     offsetPathData,
     offsetPathDataRange,
     surfacePathData,
+    departureGoreGeometry,
+    widthScaleAt: departureWidthScaleAt,
+    outgoingDepartureRoad,
+    canCreateDepartureRoad,
+    createDepartureRoadData,
+    syncDepartureRoadConfig,
+    syncDepartureToHostGeometry,
     crossSection,
     tangentAt,
     midpointTangentAngle(model, reverse = false) {

@@ -4,9 +4,14 @@ Trafik levhası sistemi üretilmiş SVG katalog verisini kategori grid'inde gös
 
 ## İlgili kod dosyaları
 
-- `src/data/traffic-signs-tanzim-levhalari.generated.js`: 70 tanzim levhası.
-- `src/data/traffic-signs-uyari-levhalari.generated.js`: 63 uyarı levhası.
-- `src/data/traffic-signs-bilgi-levhalari.generated.js`: 65 bilgi levhası.
+- `src/data/traffic-signs-1-tanzim-levhalari.generated.js`: tanzim levhaları.
+- `src/data/traffic-signs-2-uyari-levhalari.generated.js`: uyarı levhaları.
+- `src/data/traffic-signs-3-bilgi-levhalari.generated.js`: bilgi levhaları.
+- `src/data/traffic-signs-4-durma-ve-parketme.generated.js`: durma ve park etme levhaları.
+- `src/data/traffic-signs-5-yapim-bakim-ve-onarim.generated.js`: yapım, bakım ve onarım levhaları.
+- `src/data/traffic-signs-6-paneller.generated.js`: paneller.
+- `src/data/traffic-signs-7-kaplama-isaretleri.generated.js`: kaplama işaretleri.
+- `src/data/traffic-signs-kontrol-kesimi-custom.js`: yedekten geri alınan Kontrol Kesimi Levhası.
 - `src/core/trafficSignCatalog.js`: normalize, ara, kategorize ve metadata üret.
 - `src/ui/trafficSignLibrary.js`: kategori/list/grid/seçim/ekleme UI'si.
 - `src/adapters/trafficSignAdapter.js`: model, SVG art, hit-test, dönüş ve metin uyarlaması.
@@ -17,7 +22,7 @@ Bağlantılar: [[Menü Sistemi]], [[Nesne Sistemi]], [[Seçim Sistemi]], [[Seria
 
 ## Katalog yükleme
 
-İki generated dosya `window.KrokiTrafficSignCatalog` dizisine kayıtlarını push eder. Her kayıt tipik olarak:
+Yedi generated dosya `window.KrokiTrafficSignCatalog` dizisine kayıtlarını push eder. Her kayıt tipik olarak:
 
 ```js
 {
@@ -32,7 +37,7 @@ Bağlantılar: [[Menü Sistemi]], [[Nesne Sistemi]], [[Seçim Sistemi]], [[Seria
 
 taşır. `art`, dış `<svg>` olmadan iç SVG grubu; `svg` tam kaynak string'idir. Çalışma zamanı katalog API'si yalnız `key` ve `art` olan kayıtları döndürür.
 
-Mevcut toplam 198 levha üç kategoriye ayrılır: tanzim, uyarı ve bilgi levhaları.
+Mevcut katalog toplam 314 levha kaydı taşır.
 
 ## Kütüphane davranışı
 

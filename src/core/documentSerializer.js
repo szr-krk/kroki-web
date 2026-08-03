@@ -126,6 +126,12 @@
       const normalized = sanitizeModel(model, idMap, usedIds, warnings);
       if (normalized) models.push(normalized);
     });
+    models.forEach((model) => {
+      const departure = model?.metadata?.roadDeparture;
+      if (!departure?.hostId) return;
+      const sourceHostId = String(departure.hostId);
+      departure.hostId = idMap.get(sourceHostId) || sourceHostId;
+    });
 
     const runImport = () => {
       Kroki.SelectionManager?.clear?.({ silent: true });

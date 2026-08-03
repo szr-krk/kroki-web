@@ -24,6 +24,8 @@ Bağlantılar: [[Seçim Sistemi]], [[Nesne Sistemi]], [[Yol Sistemi]], [[Kavşak
 
 ViewBox veya pencere boyutu değişince seçim senkronizasyonu tutamaçları yeniden boyutlandırır. Tutamaçlar `circle`; segment ayırıcılar daha ince `rect` görseli kullanabilir.
 
+Kontrol noktalarının görünürlüğü normal seçim, edit, yeniden render veya viewBox senkronizasyonunda kamerayı değiştirmez. Yalnız kullanıcı **Ekrana Sığdır** düğmesine bastığında sonraki `preselect` için tek kullanımlık bir görünürlük kontrolü hazırlanır. O seçimde kontrol noktaları viewport dışında kalıyorsa kamera bir kez düzeltilir; izin tüketilir. Kullanıcının arada pan/zoom hareketi yapması bekleyen izni iptal eder.
+
 ## Genel drag akışı
 
 1. Handle `pointerdown` ile `SelectionManager.startControlPointDrag` çağırır.
@@ -65,4 +67,3 @@ Kavşak Q tutamaçları da engine tarafından `roadIntersectionContourLayer` iç
 
 - Genel kontrol noktaları 48/72 px gibi dokunmatik odaklı büyük boyutlardadır. Mouse kullanımında beklenen ürün ölçüsü koddan ayrı bir ayarla tanımlanmamıştır.
 - Ellipse köşe tutamaçları sınırın tam köşesinde, rectangle tutamaçları sınırdan ek offset ile çizilir; bu farkın bilinçli UX kararı olup olmadığı belirtilmemiştir.
-

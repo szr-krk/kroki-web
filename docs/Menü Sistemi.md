@@ -28,6 +28,8 @@ Bağlantılar: [[Editör]], [[Seçim Sistemi]], [[Yol Sistemi]], [[Trafik Levhas
 
 Bir panel açıldığında diğer ray panelleri kapanır. `Escape` bütün ray panellerini kapatır. Ana menü ve çizim panelinde dışarı tıklama da kapatır; kütüphane panelleri kendi “Kapat” düğmelerini kullanır.
 
+Ray ve kütüphane içindeki etkileşimli seçenekler ortak bir görsel dil kullanır: seçili durumda dolu vurgu rengi ve hafif gölge, klavye odağında ise kalın iç strok yerine zarif dış gölge gösterilir. Çizim araçları, yol seçenekleri, araç tür/varyant listeleri ve sembol kategorileri bu ortak davranışı paylaşır.
+
 ## Ana menü
 
 DOM'da şu komutlar vardır ve `editor-main-menu.js` tarafından bağlanır:

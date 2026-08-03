@@ -5,6 +5,7 @@
   if (!utils || !manager) return;
 
   const HIT_TOLERANCE_PX = 24;
+  const HIT_TOLERANCE_STEPS_PX = [0, 4, 8, 12, 18, HIT_TOLERANCE_PX];
   const LINEAR_HIT_TEST_LIMIT = 80;
   const GRID_CELL_SIZE = 320;
   const MAX_CELLS_PER_OBJECT = 80;
@@ -40,7 +41,7 @@
     );
   }
 
-  function hitObject(model, point, tol) {
+  function entryFor(model, order = 0) {
     const adapter = manager.getAdapter(model);
     const element = manager.getElement(model.id);
     let bounds = null;
@@ -49,17 +50,36 @@
     } catch (_) {
       bounds = null;
     }
-    if (bounds && !pointInsideBounds(point, bounds, tol)) return null;
-    return adapter?.hitTest?.(model, point, tol, element) ? { model, element, adapter } : null;
+    return { model, element, adapter, bounds, order };
   }
 
-  function linearHitTest(point, objects, tol) {
-    for (let index = objects.length - 1; index >= 0; index -= 1) {
-      const model = objects[index];
-      const hit = hitObject(model, point, tol);
-      if (hit) return hit;
+  function hitEntry(entry, point, tol) {
+    if (entry.bounds && !pointInsideBounds(point, entry.bounds, tol)) return false;
+    return Boolean(entry.adapter?.hitTest?.(entry.model, point, tol, entry.element));
+  }
+
+  function prioritizedHitTest(point, entryCount, entryAt, unitsPerPx) {
+    for (let roadPass = 0; roadPass <= 1; roadPass += 1) {
+      for (let stepIndex = 0; stepIndex < HIT_TOLERANCE_STEPS_PX.length; stepIndex += 1) {
+        const tol = HIT_TOLERANCE_STEPS_PX[stepIndex] * unitsPerPx;
+        for (let index = 0; index < entryCount; index += 1) {
+          const entry = entryAt(index);
+          if (!entry || Number(entry.model.type === "road") !== roadPass) continue;
+          if (!hitEntry(entry, point, tol)) continue;
+          return { model: entry.model, element: entry.element, adapter: entry.adapter };
+        }
+      }
     }
     return null;
+  }
+
+  function linearHitTest(point, objects, unitsPerPx) {
+    const entries = new Array(objects.length);
+    return prioritizedHitTest(point, objects.length, (priorityIndex) => {
+      const objectIndex = objects.length - priorityIndex - 1;
+      if (!entries[objectIndex]) entries[objectIndex] = entryFor(objects[objectIndex], objectIndex);
+      return entries[objectIndex];
+    }, unitsPerPx);
   }
 
   function cellRange(bounds) {
@@ -101,15 +121,8 @@
     largeEntries = [];
     unboundedEntries = [];
     indexEntries = objects.map((model, order) => {
-      const adapter = manager.getAdapter(model);
-      const element = manager.getElement(model.id);
-      let bounds = null;
-      try {
-        bounds = typeof adapter?.getBounds === "function" ? adapter.getBounds(model, element) : null;
-      } catch (_) {
-        bounds = null;
-      }
-      const entry = { model, element, adapter, bounds, order };
+      const entry = entryFor(model, order);
+      const { bounds } = entry;
       if (!finiteBounds(bounds)) unboundedEntries.push(entry);
       else addToGrid(entry, bounds);
       return entry;
@@ -152,20 +165,13 @@
 
   function hitTest(point) {
     const objects = manager.getObjectsInDomOrder();
-    const tol = tolerance();
-    if (objects.length <= LINEAR_HIT_TEST_LIMIT) return linearHitTest(point, objects, tol);
+    const unitsPerPx = utils.svgUnitsPerScreenPx(manager.canvas);
+    const tol = HIT_TOLERANCE_PX * unitsPerPx;
+    if (objects.length <= LINEAR_HIT_TEST_LIMIT) return linearHitTest(point, objects, unitsPerPx);
 
     ensureIndex(objects);
     const candidates = spatialCandidates(point, tol);
-    for (let index = 0; index < candidates.length; index += 1) {
-      const entry = candidates[index];
-      if (entry.bounds && !pointInsideBounds(point, entry.bounds, tol)) continue;
-      if (entry.adapter?.hitTest?.(entry.model, point, tol, entry.element)) {
-        return { model: entry.model, element: entry.element, adapter: entry.adapter };
-      }
-    }
-
-    return null;
+    return prioritizedHitTest(point, candidates.length, (index) => candidates[index], unitsPerPx);
   }
 
   function cancelWarmup() {

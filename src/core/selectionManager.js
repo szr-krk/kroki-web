@@ -910,14 +910,31 @@
     if (Kroki.MultiSelectManager?.hasSelection?.()) {
       Kroki.MultiSelectManager.deleteSelected();
       window.krokiEditorRail?.resetCizimAraci?.();
-      return;
+      return true;
     }
-    if (!activeId) return;
-    if (deleteSelectedBarrier()) return;
+    if (!activeId) return false;
+    if (deleteSelectedBarrier()) return true;
     const id = activeId;
     clear();
     manager.remove(id);
     window.krokiEditorRail?.resetCizimAraci?.();
+    return true;
+  }
+
+  function isTextEntryTarget(target) {
+    return Boolean(target?.closest?.(
+      "input, textarea, select, [contenteditable]:not([contenteditable='false']), [role='textbox']"
+    ));
+  }
+
+  function handleDeleteShortcut(event) {
+    if (event.defaultPrevented || event.repeat || event.key !== "Delete") return;
+    if (event.ctrlKey || event.altKey || event.metaKey) return;
+    if (isTextEntryTarget(event.target)) return;
+    if (document.querySelector("#editor")?.classList.contains("gizli")) return;
+    if (window.krokiEditorState?.isBlockingOverlayOpen?.()) return;
+    if (!activeId && !Kroki.MultiSelectManager?.hasSelection?.()) return;
+    deleteActive(event);
   }
 
   function copyActive(event) {
@@ -1014,6 +1031,7 @@
     if (drag && drag.pointerId === event.pointerId) stopDrag(event);
   });
   bindButtons();
+  document.addEventListener("keydown", handleDeleteShortcut);
 
   Kroki.SelectionManager = {
     select,

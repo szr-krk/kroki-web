@@ -4,6 +4,7 @@
   const manager = Kroki.EditorObjectManager;
   const selection = Kroki.SelectionManager;
   if (!utils || !manager || !selection) return;
+  const uiPx = Kroki.uiPx || ((value) => Number(value) || 0);
 
   const MARKING_STYLES = [
     { id: "dash", title: "Kesik" },
@@ -29,6 +30,7 @@
   const MAX_S_CURVE_CONTROLS = 2;
   const ROAD_LINE_COLOR = "#000000";
   let activeBoundaryKey = "";
+  let departureSide = "right";
 
   const controls = {
     root: document.querySelector("#roadIpControls"),
@@ -44,6 +46,15 @@
     profileLabel: document.querySelector("#lblRoadProfileIp"),
     pocket: document.querySelector("#btnRoadPocketIp"),
     pocketLabel: document.querySelector("#lblRoadPocketIp"),
+    departure: document.querySelector("#btnRoadDepartureIp"),
+    departurePanel: document.querySelector("#roadDeparturePanel"),
+    departurePanelClose: document.querySelector("#btnRoadDeparturePanelClose"),
+    departureLeft: document.querySelector("#btnRoadDepartureLeft"),
+    departureRight: document.querySelector("#btnRoadDepartureRight"),
+    departureLaneCount: document.querySelector("#roadDepartureLaneCountInput"),
+    departureLaneMinus: document.querySelector("#btnRoadDepartureLaneMinus"),
+    departureLanePlus: document.querySelector("#btnRoadDepartureLanePlus"),
+    departureCreate: document.querySelector("#btnRoadDepartureCreate"),
     sCurveControls: document.querySelector("#roadSCurveControlIp"),
     sCurveControlCount: document.querySelector("#roadSCurveControlCountIpInput"),
     sCurveControlPlus: document.querySelector("#btnRoadSCurveControlPlus"),
@@ -243,13 +254,15 @@
     manager.updateModel(model.id, (draft) => {
       const config = normalizeConfig(draft, draft.metadata?.road);
       mutator(config);
-      return {
+      const nextDraft = {
         ...draft,
         metadata: {
           ...(draft.metadata || {}),
           road: normalizeConfig(draft, config)
         }
       };
+      adapterFor(nextDraft)?.syncDepartureRoadConfig?.(nextDraft);
+      return nextDraft;
     }, { label: label || "Yol guncelle" });
   }
 
@@ -261,13 +274,15 @@
       const config = normalizeConfig(draft, draft.metadata?.road);
       const section = selectedSectionInfo(draft);
       mutator(config, section, draft);
-      return {
+      const nextDraft = {
         ...draft,
         metadata: {
           ...(draft.metadata || {}),
           road: normalizeConfig(draft, config)
         }
       };
+      adapterFor(nextDraft)?.syncDepartureRoadConfig?.(nextDraft);
+      return nextDraft;
     }, { label: label || "Yol guncelle" });
   }
 
@@ -294,7 +309,10 @@
       updateActiveRoadModel((draft, adapter) => adapter?.setIslandLaneCount?.(draft, value), label || "Ada serit sayisi");
       return;
     }
-    updateRoad((config) => setLaneCount(config, value), label || "Yol serit sayisi");
+    const nextValue = model.metadata?.roadDeparture?.hostId
+      ? clampInt(value, 1, 2, 2)
+      : value;
+    updateRoad((config) => setLaneCount(config, nextValue), label || "Yol serit sayisi");
   }
 
   function updateLaneWidthValue(value, label) {
@@ -590,8 +608,9 @@
   function positionBoundaryPanel(button) {
     const rect = button?.getBoundingClientRect?.();
     if (!rect || !controls.boundaryPanel) return;
-    const maxTop = Math.max(8, window.innerHeight - 210);
-    controls.boundaryPanel.style.top = Math.round(clamp(rect.top, 8, maxTop, 96)) + "px";
+    const edgeGap = uiPx(8);
+    const maxTop = Math.max(edgeGap, window.innerHeight - uiPx(210));
+    controls.boundaryPanel.style.top = Math.round(clamp(rect.top, edgeGap, maxTop, uiPx(96))) + "px";
   }
 
   function closeBoundaryPanel() {
@@ -606,11 +625,135 @@
     const model = activeRoadModel();
     const section = selectedSectionInfo(model);
     if (!section) return;
+    closeDeparturePanel();
     activeBoundaryKey = boundaryKey;
     positionBoundaryPanel(button);
     controls.boundaryPanel?.classList.remove("gizli");
     setBoundaryEditState(boundaryKey, section);
     sync({ model: manager.get(model.id) || model });
+  }
+
+  function positionDeparturePanel() {
+    const rect = controls.departure?.getBoundingClientRect?.();
+    if (!rect || !controls.departurePanel) return;
+    const edgeGap = uiPx(8);
+    const maxTop = Math.max(edgeGap, window.innerHeight - uiPx(245));
+    controls.departurePanel.style.top = Math.round(clamp(rect.top, edgeGap, maxTop, uiPx(96))) + "px";
+  }
+
+  function closeDeparturePanel() {
+    controls.departurePanel?.classList.add("gizli");
+    controls.departure?.setAttribute("aria-expanded", "false");
+  }
+
+  function syncDepartureSideButtons(state = departureCreationState(activeRoadModel())) {
+    const allowedBySide = {
+      left: Boolean(state.leftAllowed),
+      right: Boolean(state.rightAllowed)
+    };
+    if (!allowedBySide[departureSide]) {
+      if (allowedBySide.right) departureSide = "right";
+      else if (allowedBySide.left) departureSide = "left";
+    }
+    [[controls.departureLeft, "left"], [controls.departureRight, "right"]].forEach(([button, side]) => {
+      const allowed = allowedBySide[side];
+      const active = allowed && departureSide === side;
+      button?.classList.toggle("is-active", active);
+      if (button) button.disabled = !allowed;
+      button?.setAttribute("aria-disabled", String(!allowed));
+      button?.setAttribute("aria-pressed", String(active));
+    });
+  }
+
+  function setDepartureSide(side) {
+    const nextSide = side === "left" ? "left" : "right";
+    const state = departureCreationState(activeRoadModel());
+    const allowed = nextSide === "left" ? state.leftAllowed : state.rightAllowed;
+    if (allowed) departureSide = nextSide;
+    syncDepartureSideButtons(state);
+  }
+
+  function departureLaneCount() {
+    const count = clampInt(controls.departureLaneCount?.value, 1, 2, 2);
+    if (controls.departureLaneCount) controls.departureLaneCount.value = String(count);
+    return count;
+  }
+
+  function stepDepartureLaneCount(delta) {
+    if (!controls.departureLaneCount) return;
+    controls.departureLaneCount.value = String(clampInt(departureLaneCount() + delta, 1, 2, 2));
+  }
+
+  function departureCreationState(model) {
+    const adapter = adapterFor(model);
+    const models = manager.getObjectsInDomOrder?.() || manager.getAll?.() || [];
+    const leftAllowed = Boolean(adapter?.canCreateDepartureRoad?.(model, models, "left"));
+    const rightAllowed = Boolean(adapter?.canCreateDepartureRoad?.(model, models, "right"));
+    return {
+      adapter,
+      models,
+      leftAllowed,
+      rightAllowed,
+      allowed: leftAllowed || rightAllowed
+    };
+  }
+
+  function toggleDeparturePanel() {
+    const model = activeRoadModel();
+    const state = departureCreationState(model);
+    if (!state.allowed) {
+      closeDeparturePanel();
+      return;
+    }
+    const opening = controls.departurePanel?.classList.contains("gizli");
+    if (!opening) {
+      closeDeparturePanel();
+      return;
+    }
+    closeBoundaryPanel();
+    positionDeparturePanel();
+    syncDepartureSideButtons(state);
+    departureLaneCount();
+    controls.departurePanel?.classList.remove("gizli");
+    controls.departure?.setAttribute("aria-expanded", "true");
+  }
+
+  function roadInsertBeforeNode() {
+    const layer = manager.objectLayer;
+    if (!layer) return null;
+    return Array.from(layer.children)
+      .find((node) => !(node.dataset?.krokiObject === "true" && node.dataset.shape === "road")) || null;
+  }
+
+  function createDepartureRoad() {
+    const host = activeRoadModel();
+    const state = departureCreationState(host);
+    const adapter = state.adapter;
+    if (!state.allowed || typeof adapter?.createDepartureRoadData !== "function") {
+      closeDeparturePanel();
+      return;
+    }
+    const sideAllowed = departureSide === "left" ? state.leftAllowed : state.rightAllowed;
+    if (!sideAllowed) {
+      syncDepartureSideButtons(state);
+      return;
+    }
+    const initialData = adapter.createDepartureRoadData(host, {
+      side: departureSide,
+      laneCount: departureLaneCount(),
+      existingModels: state.models
+    });
+    if (!initialData) return;
+    const history = Kroki.HistoryManager;
+    const transaction = history?.begin?.("Ayrilan yol ekle");
+    const branch = manager.create("road", initialData, {
+      skipHistory: true,
+      beforeNode: roadInsertBeforeNode()
+    });
+    if (!branch) return;
+    closeDeparturePanel();
+    selection.edit(branch.id);
+    history?.commit?.(transaction, "Ayrilan yol ekle");
   }
 
   function makeSegmentButton(config, boundary, index) {
@@ -656,6 +799,7 @@
     if (!visible) {
       controls.pocketIslandDone?.classList.add("gizli");
       closeBoundaryPanel();
+      closeDeparturePanel();
       return;
     }
     keepRoadLayersAtBack();
@@ -667,9 +811,25 @@
     controls.root?.classList.toggle("gizli", pocketIslandMode);
     controls.pocketIslandDone?.classList.toggle("gizli", !pocketIslandMode);
     const island = isIslandRoad(model);
+    const departureRoad = Boolean(model.metadata?.roadDeparture?.hostId);
+    const departureState = departureCreationState(model);
+    const departureAllowed = departureState.allowed;
+    syncDepartureSideButtons(departureState);
     const barrierMode = Boolean(barrier);
     const sectionMode = Boolean(section) && !barrierMode;
     if (pocketIslandMode) closeBoundaryPanel();
+    if (pocketIslandMode || sectionMode || barrierMode || !departureAllowed) closeDeparturePanel();
+    if (controls.departure) {
+      controls.departure.disabled = !departureAllowed;
+      controls.departure.setAttribute("aria-disabled", String(!departureAllowed));
+    }
+    if (controls.departureCreate) {
+      const selectedSideAllowed = departureSide === "left"
+        ? departureState.leftAllowed
+        : departureState.rightAllowed;
+      controls.departureCreate.disabled = !selectedSideAllowed;
+      controls.departureCreate.setAttribute("aria-disabled", String(!selectedSideAllowed));
+    }
     const pocketSectionMode = sectionMode && section?.role === "pocket";
     const barrierTargets = !barrierMode && sectionMode && !pocketSectionMode ? barrierTargetsForSelection(model, section) : [];
     const addBarrierTarget = barrierTargets.filter((target) => target.remaining > 0)
@@ -707,13 +867,15 @@
     if (island) {
       controls.profile?.classList.add("gizli");
       controls.pocket?.classList.add("gizli");
+      controls.departure?.classList.add("gizli");
       controls.sCurveControls?.classList.add("gizli");
       controls.leftShoulder?.classList.add("gizli");
       controls.rightShoulder?.classList.add("gizli");
       controls.markingStyle?.classList.add("gizli");
     } else {
-      controls.profile?.classList.toggle("gizli", sectionMode || barrierMode);
-      controls.pocket?.classList.toggle("gizli", sectionMode || barrierMode || model.geometry?.profile !== "straight");
+      controls.profile?.classList.toggle("gizli", sectionMode || barrierMode || departureRoad);
+      controls.pocket?.classList.toggle("gizli", sectionMode || barrierMode || departureRoad || model.geometry?.profile !== "straight");
+      controls.departure?.classList.toggle("gizli", sectionMode || barrierMode || !departureAllowed);
       controls.leftShoulder?.classList.toggle("gizli", sectionMode || barrierMode);
       controls.rightShoulder?.classList.toggle("gizli", sectionMode || barrierMode);
       controls.markingStyle?.classList.toggle("gizli", sectionMode || barrierMode);
@@ -730,7 +892,7 @@
     togglePressed(controls.pocket, pocket.id !== "none");
     const sCurveCount = clampInt(adapterFor(model)?.sCurveControlCount?.(model), MIN_S_CURVE_CONTROLS, MAX_S_CURVE_CONTROLS, MIN_S_CURVE_CONTROLS);
     if (controls.sCurveControlCount && controls.sCurveControlCount.value !== String(sCurveCount)) controls.sCurveControlCount.value = String(sCurveCount);
-    if (!island) controls.sCurveControls?.classList.toggle("gizli", sectionMode || barrierMode || model.geometry?.profile !== "sCurve");
+    if (!island) controls.sCurveControls?.classList.toggle("gizli", sectionMode || barrierMode || departureRoad || model.geometry?.profile !== "sCurve");
     if (!sectionMode || pocketSectionMode) closeBoundaryPanel();
     if (controls.laneCount && controls.laneCount.value !== String(config.laneCount)) controls.laneCount.value = String(config.laneCount);
     const widthValue = pickerInt(sectionMode ? section.width : config.laneWidth, 50);
@@ -782,6 +944,14 @@
     if (draft.geometry?.profile !== "straight") return;
     adapter?.setPocketMode?.(draft, nextPocketState(draft).id);
   }, "Yol cebi"));
+  controls.departure?.addEventListener("click", toggleDeparturePanel);
+  controls.departurePanelClose?.addEventListener("click", closeDeparturePanel);
+  controls.departureLeft?.addEventListener("click", () => setDepartureSide("left"));
+  controls.departureRight?.addEventListener("click", () => setDepartureSide("right"));
+  bindHoldAction(controls.departureLaneMinus, () => stepDepartureLaneCount(-1));
+  bindHoldAction(controls.departureLanePlus, () => stepDepartureLaneCount(1));
+  controls.departureLaneCount?.addEventListener("change", departureLaneCount);
+  controls.departureCreate?.addEventListener("click", createDepartureRoad);
   controls.xAxisSymmetry?.addEventListener("click", () => reflectActiveRoad("reflectAcrossBoundsXAxis", "Yol X ekseni simetrisi"));
   controls.yAxisSymmetry?.addEventListener("click", () => reflectActiveRoad("reflectAcrossBoundsYAxis", "Yol Y ekseni simetrisi"));
   bindHoldAction(controls.sCurveControlPlus, () => updateActiveRoadModel((draft, adapter) => {
@@ -834,6 +1004,7 @@
   window.addEventListener("resize", () => {
     const boundaryButton = activeBoundaryKey === "end" ? controls.lowerLine : controls.upperLine;
     positionBoundaryPanel(boundaryButton);
+    if (!controls.departurePanel?.classList.contains("gizli")) positionDeparturePanel();
   });
 
   Kroki.RoadInspector = { sync };

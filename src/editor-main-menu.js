@@ -3,14 +3,17 @@
   const manager = Kroki.EditorObjectManager;
   const serializer = Kroki.DocumentSerializer;
   if (!manager || !serializer) return;
+  const uiPx = Kroki.uiPx || ((value) => Number(value) || 0);
 
   const STORAGE_RECENTS = "krokiPro.recentDocuments.v1";
   const STORAGE_TEMPLATES = "krokiPro.templates.v1";
   const STORAGE_LAST = "krokiPro.lastDocument.v1";
-  const MAX_RECENTS = 12;
+  const MAX_RECENTS = 10;
   const SVG_NS = "http://www.w3.org/2000/svg";
   const SVG_SIGNATURE = "KROKI_PRO_DOCUMENT_V1";
-  const EXPORT_PADDING = 25;
+  const EXPORT_PADDING = window.krokiEditorFraming?.CONTENT_PADDING_WORLD ?? 25;
+  const PNG_MAX_BYTES = 995000;
+  const PNG_SCALE_SEARCH_PASSES = 7;
   const DEFAULT_VIEWBOX = { x: 0, y: 0, width: 1200, height: 800 };
   const ROAD_GEOMETRY_STROKE_SELECTOR = [
     ".editor-road-edge",
@@ -142,7 +145,8 @@
   function storageRead(key) {
     try {
       const parsed = JSON.parse(localStorage.getItem(key) || "[]");
-      return Array.isArray(parsed) ? parsed : [];
+      if (!Array.isArray(parsed)) return [];
+      return key === STORAGE_RECENTS ? parsed.slice(0, MAX_RECENTS) : parsed;
     } catch {
       return [];
     }
@@ -278,7 +282,7 @@
   }
 
   function expandBounds(bounds, amount = EXPORT_PADDING) {
-    return {
+    return window.krokiEditorFraming?.expandBounds?.(bounds, amount) || {
       x: bounds.x - amount,
       y: bounds.y - amount,
       width: bounds.width + amount * 2,
@@ -569,6 +573,107 @@
     };
   }
 
+  function canvasPngBlob(canvas) {
+    return new Promise((resolve) => {
+      canvas.toBlob(resolve, "image/png");
+    });
+  }
+
+  function scaledCanvas(source, scale) {
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(source.width * scale));
+    canvas.height = Math.max(1, Math.round(source.height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) return null;
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    context.drawImage(source, 0, 0, canvas.width, canvas.height);
+    return canvas;
+  }
+
+  async function encodePngAtScale(source, scale) {
+    const canvas = scale >= 0.999999 ? source : scaledCanvas(source, scale);
+    if (!canvas) return null;
+    const blob = await canvasPngBlob(canvas);
+    return blob ? {
+      blob,
+      scale,
+      width: canvas.width,
+      height: canvas.height
+    } : null;
+  }
+
+  async function pngWithinSizeLimit(source, maxBytes = PNG_MAX_BYTES) {
+    const original = await encodePngAtScale(source, 1);
+    if (!original || original.blob.size <= maxBytes) return original;
+
+    const minimumScale = 1 / Math.max(source.width, source.height, 1);
+    let tooLargeScale = 1;
+    let scale = Math.max(
+      minimumScale,
+      Math.min(0.9, Math.sqrt(maxBytes / original.blob.size) * 0.96)
+    );
+    let best = null;
+
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      const candidate = await encodePngAtScale(source, scale);
+      if (!candidate) return null;
+      if (candidate.blob.size <= maxBytes) {
+        best = candidate;
+        break;
+      }
+      tooLargeScale = scale;
+      if (candidate.width === 1 && candidate.height === 1) break;
+      const nextFactor = Math.max(
+        0.1,
+        Math.min(0.9, Math.sqrt(maxBytes / candidate.blob.size) * 0.96)
+      );
+      const nextScale = Math.max(minimumScale, scale * nextFactor);
+      if (nextScale >= scale || (
+        Math.round(source.width * nextScale) === candidate.width
+        && Math.round(source.height * nextScale) === candidate.height
+      )) {
+        scale = Math.max(minimumScale, scale * 0.75);
+      } else {
+        scale = nextScale;
+      }
+    }
+
+    if (!best) {
+      best = await encodePngAtScale(source, minimumScale);
+      if (!best || best.blob.size > maxBytes) {
+        const onePixel = document.createElement("canvas");
+        onePixel.width = 1;
+        onePixel.height = 1;
+        const context = onePixel.getContext("2d");
+        if (!context) return null;
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, 1, 1);
+        const blob = await canvasPngBlob(onePixel);
+        return blob ? { blob, scale: 0, width: 1, height: 1 } : null;
+      }
+    }
+
+    let fitsScale = best.scale;
+    for (let pass = 0; pass < PNG_SCALE_SEARCH_PASSES; pass += 1) {
+      const candidateScale = (fitsScale + tooLargeScale) / 2;
+      const candidateWidth = Math.max(1, Math.round(source.width * candidateScale));
+      const candidateHeight = Math.max(1, Math.round(source.height * candidateScale));
+      if (candidateWidth === best.width && candidateHeight === best.height) break;
+      const candidate = await encodePngAtScale(source, candidateScale);
+      if (!candidate) break;
+      if (candidate.blob.size <= maxBytes) {
+        best = candidate;
+        fitsScale = candidateScale;
+      } else {
+        tooLargeScale = candidateScale;
+      }
+    }
+    return best;
+  }
+
   function exportPng(viewBox, filename, options = {}) {
     return new Promise((resolve) => {
       const svg = exportedSvgString(viewBox, { background: true, includeMetadata: false });
@@ -577,7 +682,7 @@
       const image = new Image();
       const size = pngSizeForViewBox(viewBox);
       const padding = Math.max(0, Number(options.outputPaddingPx) || 0);
-      image.onload = () => {
+      image.onload = async () => {
         const pngCanvas = document.createElement("canvas");
         pngCanvas.width = size.width + padding * 2;
         pngCanvas.height = size.height + padding * 2;
@@ -591,16 +696,21 @@
         context.fillStyle = "#ffffff";
         context.fillRect(0, 0, pngCanvas.width, pngCanvas.height);
         context.drawImage(image, padding, padding, size.width, size.height);
-        pngCanvas.toBlob((blob) => {
+        try {
+          const output = await pngWithinSizeLimit(pngCanvas);
           URL.revokeObjectURL(url);
-          if (!blob) {
+          if (!output?.blob) {
             void notify("Resim oluşturulamadı.");
             resolve(false);
             return;
           }
-          downloadBlob(blob, filename);
+          downloadBlob(output.blob, filename);
           resolve(true);
-        }, "image/png");
+        } catch {
+          URL.revokeObjectURL(url);
+          void notify("Resim oluşturulamadı.");
+          resolve(false);
+        }
       };
       image.onerror = () => {
         URL.revokeObjectURL(url);
@@ -861,8 +971,8 @@
   }
 
   function clampRect(rect, bounds) {
-    const minWidth = 60;
-    const minHeight = 44;
+    const minWidth = uiPx(60);
+    const minHeight = uiPx(44);
     const next = { ...rect };
     next.width = Math.max(minWidth, next.width);
     next.height = Math.max(minHeight, next.height);
@@ -898,8 +1008,8 @@
     }
     stopAreaTool();
     const canvasRect = canvas.getBoundingClientRect();
-    const width = Math.min(520, Math.max(180, canvasRect.width * 0.55));
-    const height = Math.min(340, Math.max(130, canvasRect.height * 0.45));
+    const width = Math.min(uiPx(520), Math.max(uiPx(180), canvasRect.width * 0.55));
+    const height = Math.min(uiPx(340), Math.max(uiPx(130), canvasRect.height * 0.45));
     let rect = clampRect({
       left: canvasRect.left + (canvasRect.width - width) / 2,
       top: canvasRect.top + (canvasRect.height - height) / 2,

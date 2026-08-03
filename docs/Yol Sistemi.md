@@ -105,6 +105,7 @@ Inspector üç bağlama geçer:
 
 - Şerit adedi ve genel şerit genişliği.
 - Profil döngüsü: düz → viraj → S viraj → düz.
+- Sol veya sağ tarafa ayrılan yol ekleme. Bir host yol her tarafında en fazla bir ayrılan yol taşıyabilir; dolu taraf panelde devre dışı kalır, iki taraf da dolunca ekleme girişi gizlenir ve çekirdek doğrulaması aynı tarafa ikinci üretimi reddeder. Bir dal silinirse yalnız o tarafın hakkı belge ilişkisinden otomatik geri açılır.
 - S viraj kontrol adedi (yalnız S profili, 2–5).
 - Yol sınırlarının X veya Y ekseninde simetrisi; ada için gizlidir.
 - Sol/sağ banket aç/kapat.

@@ -272,9 +272,10 @@
     },
 
     getBounds(model) {
-      const points = [model.geometry.start, model.geometry.end];
-      if (model.geometry.bezierType === CUBIC) points.push(model.geometry.c1, model.geometry.c2);
-      else points.push(model.geometry.q);
+      const points = [];
+      for (let index = 0; index <= SAMPLE_COUNT; index += 1) {
+        points.push(pointAt(model, index / SAMPLE_COUNT));
+      }
       const xs = points.map((point) => point.x);
       const ys = points.map((point) => point.y);
       return {

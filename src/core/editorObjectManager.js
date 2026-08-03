@@ -640,6 +640,26 @@
     return element;
   }
 
+  function syncLinkedRoadDepartures(hostId) {
+    const host = objectMap.get(hostId);
+    if (host?.type !== "road") return [];
+    const linkedIds = [];
+    objectMap.forEach((model, id) => {
+      if (
+        model?.type !== "road"
+        || id === hostId
+        || String(model.metadata?.roadDeparture?.hostId || "") !== String(hostId)
+      ) {
+        return;
+      }
+      const adapter = adapterFor(model);
+      if (typeof adapter?.syncDepartureToHostGeometry !== "function") return;
+      adapter.syncDepartureToHostGeometry(model, host);
+      linkedIds.push(id);
+    });
+    return linkedIds;
+  }
+
   function addRaw(modelInput, options = {}) {
     const model = normalizeModel(modelInput);
     const adapter = adapterFor(model);
@@ -705,7 +725,9 @@
     const next = typeof updater === "function" ? updater(utils.clonePlain(current)) : { ...current, ...(updater || {}) };
     const normalized = normalizeModel({ ...next, id: current.id, type: current.type });
     objectMap.set(id, normalized);
+    const linkedIds = options.roadDependents === false ? [] : syncLinkedRoadDepartures(id);
     renderObject(id);
+    linkedIds.forEach((linkedId) => renderObject(linkedId));
     markSceneChanged({ order: false });
     syncDependents(options);
     return normalized;
@@ -719,7 +741,9 @@
     const model = objectMap.get(id);
     if (!model || typeof mutator !== "function") return null;
     mutator(model);
+    const linkedIds = options.roadDependents === false ? [] : syncLinkedRoadDepartures(id);
     renderGeometry(id, options);
+    linkedIds.forEach((linkedId) => renderGeometry(linkedId, { labels: false }));
     markSceneChanged({ order: false, models: false });
     syncDependents({ styleControls: false, ...options });
     return model;
@@ -747,18 +771,61 @@
     return withHistory(options, "Nesne sil", () => removeRaw(id));
   }
 
+  function roadDepartureRemovalOrder(rootId) {
+    const order = [];
+    const visited = new Set();
+
+    function visit(id) {
+      const normalizedId = String(id || "");
+      if (!normalizedId || visited.has(normalizedId) || !objectMap.has(normalizedId)) return;
+      visited.add(normalizedId);
+      objectMap.forEach((model, candidateId) => {
+        if (
+          model?.type === "road"
+          && String(model.metadata?.roadDeparture?.hostId || "") === normalizedId
+        ) {
+          visit(candidateId);
+        }
+      });
+      order.push(normalizedId);
+    }
+
+    visit(rootId);
+    return order;
+  }
+
   function removeRaw(id) {
-    const element = elementMap.get(id);
-    removeLabelArtifacts(id);
-    element?.remove();
-    elementMap.delete(id);
-    objectMap.delete(id);
-    Kroki.GroupManager?.removeObject?.(id);
+    const removalOrder = roadDepartureRemovalOrder(id);
+    if (!removalOrder.length) return false;
+
+    const removalSet = new Set(removalOrder);
+    const rootElement = elementMap.get(id);
+    const externalHostIds = new Set();
+    removalOrder.forEach((removalId) => {
+      const linkedHostId = String(objectMap.get(removalId)?.metadata?.roadDeparture?.hostId || "");
+      if (linkedHostId && !removalSet.has(linkedHostId) && objectMap.has(linkedHostId)) {
+        externalHostIds.add(linkedHostId);
+      }
+    });
+
+    const activeRemoved = removalSet.has(String(Kroki.SelectionManager?.getActiveId?.() || ""));
+    const multiSelectionRemoved = (Kroki.MultiSelectManager?.getSelectedIds?.() || [])
+      .some((selectedId) => removalSet.has(String(selectedId)));
+
+    removalOrder.forEach((removalId) => {
+      removeLabelArtifacts(removalId);
+      elementMap.get(removalId)?.remove();
+      elementMap.delete(removalId);
+      objectMap.delete(removalId);
+      Kroki.GroupManager?.removeObject?.(removalId);
+    });
+
     styleManager.cleanupDefs?.(canvas);
-    if (Kroki.SelectionManager?.getActiveId?.() === id) Kroki.SelectionManager.clear();
-    if (Kroki.MultiSelectManager?.getSelectedIds?.().includes(id)) Kroki.MultiSelectManager.sync();
+    if (activeRemoved) Kroki.SelectionManager?.clear?.();
+    if (multiSelectionRemoved) Kroki.MultiSelectManager?.sync?.();
+    externalHostIds.forEach((hostId) => renderGeometry(hostId, { labels: false }));
     markSceneChanged();
-    return Boolean(element);
+    return Boolean(rootElement);
   }
 
   function clone(id, options = {}) {
@@ -919,6 +986,7 @@
     syncFromDom,
     renderObject,
     renderGeometry,
+    syncLinkedRoadDepartures,
     renderViewportDependentLabels,
     updateModel,
     updateGeometry,
