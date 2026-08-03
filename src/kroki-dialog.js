@@ -61,7 +61,8 @@
 
   function syncViewportHeight() {
     const height = window.visualViewport?.height || window.innerHeight || document.documentElement.clientHeight || 720;
-    document.documentElement.style.setProperty("--kroki-vvh", `${Math.max(320, height)}px`);
+    const minimumHeight = Kroki.uiPx?.(320) || 320;
+    document.documentElement.style.setProperty("--kroki-vvh", `${Math.max(minimumHeight, height)}px`);
   }
 
   syncViewportHeight();

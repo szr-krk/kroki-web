@@ -3,6 +3,7 @@
   const manager = Kroki.EditorObjectManager;
   const serializer = Kroki.DocumentSerializer;
   if (!manager || !serializer) return;
+  const uiPx = Kroki.uiPx || ((value) => Number(value) || 0);
 
   const STORAGE_RECENTS = "krokiPro.recentDocuments.v1";
   const STORAGE_TEMPLATES = "krokiPro.templates.v1";
@@ -970,8 +971,8 @@
   }
 
   function clampRect(rect, bounds) {
-    const minWidth = 60;
-    const minHeight = 44;
+    const minWidth = uiPx(60);
+    const minHeight = uiPx(44);
     const next = { ...rect };
     next.width = Math.max(minWidth, next.width);
     next.height = Math.max(minHeight, next.height);
@@ -1007,8 +1008,8 @@
     }
     stopAreaTool();
     const canvasRect = canvas.getBoundingClientRect();
-    const width = Math.min(520, Math.max(180, canvasRect.width * 0.55));
-    const height = Math.min(340, Math.max(130, canvasRect.height * 0.45));
+    const width = Math.min(uiPx(520), Math.max(uiPx(180), canvasRect.width * 0.55));
+    const height = Math.min(uiPx(340), Math.max(uiPx(130), canvasRect.height * 0.45));
     let rect = clampRect({
       left: canvasRect.left + (canvasRect.width - width) / 2,
       top: canvasRect.top + (canvasRect.height - height) / 2,

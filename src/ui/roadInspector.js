@@ -4,6 +4,7 @@
   const manager = Kroki.EditorObjectManager;
   const selection = Kroki.SelectionManager;
   if (!utils || !manager || !selection) return;
+  const uiPx = Kroki.uiPx || ((value) => Number(value) || 0);
 
   const MARKING_STYLES = [
     { id: "dash", title: "Kesik" },
@@ -607,8 +608,9 @@
   function positionBoundaryPanel(button) {
     const rect = button?.getBoundingClientRect?.();
     if (!rect || !controls.boundaryPanel) return;
-    const maxTop = Math.max(8, window.innerHeight - 210);
-    controls.boundaryPanel.style.top = Math.round(clamp(rect.top, 8, maxTop, 96)) + "px";
+    const edgeGap = uiPx(8);
+    const maxTop = Math.max(edgeGap, window.innerHeight - uiPx(210));
+    controls.boundaryPanel.style.top = Math.round(clamp(rect.top, edgeGap, maxTop, uiPx(96))) + "px";
   }
 
   function closeBoundaryPanel() {
@@ -634,8 +636,9 @@
   function positionDeparturePanel() {
     const rect = controls.departure?.getBoundingClientRect?.();
     if (!rect || !controls.departurePanel) return;
-    const maxTop = Math.max(8, window.innerHeight - 245);
-    controls.departurePanel.style.top = Math.round(clamp(rect.top, 8, maxTop, 96)) + "px";
+    const edgeGap = uiPx(8);
+    const maxTop = Math.max(edgeGap, window.innerHeight - uiPx(245));
+    controls.departurePanel.style.top = Math.round(clamp(rect.top, edgeGap, maxTop, uiPx(96))) + "px";
   }
 
   function closeDeparturePanel() {
