@@ -1,0 +1,1521 @@
+<!doctype html>
+<html lang="tr">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <title>Kroki Pro Kullanım Kılavuzu</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #16222d;
+      --muted: #5d6b78;
+      --paper: #ffffff;
+      --page: #edf3f5;
+      --line: #d8e2e7;
+      --soft: #f5f8f9;
+      --brand: #0c6b64;
+      --brand-dark: #084b47;
+      --brand-soft: #e4f4f1;
+      --blue: #1769aa;
+      --blue-soft: #eaf3fb;
+      --warm: #d97706;
+      --warm-soft: #fff5df;
+      --danger: #b42318;
+      --shadow: 0 14px 36px rgba(19, 42, 54, .08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 12% 0%, rgba(12, 107, 100, .09), transparent 32rem),
+        var(--page);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      line-height: 1.58;
+    }
+
+    button,
+    a {
+      font: inherit;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .skip-link {
+      position: fixed;
+      top: 8px;
+      left: 8px;
+      z-index: 100;
+      transform: translateY(-150%);
+      border-radius: 8px;
+      background: #fff;
+      padding: 9px 12px;
+      color: var(--brand-dark);
+      font-weight: 800;
+    }
+
+    .skip-link:focus {
+      transform: translateY(0);
+    }
+
+    .page {
+      width: min(1240px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 56px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border-radius: 24px;
+      background:
+        linear-gradient(132deg, rgba(5, 39, 47, .98), rgba(10, 102, 96, .96)),
+        #084b47;
+      color: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -90px;
+      bottom: -125px;
+      width: 360px;
+      height: 360px;
+      border: 54px solid rgba(255, 255, 255, .07);
+      border-radius: 50%;
+    }
+
+    .hero-main {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 28px;
+      align-items: start;
+      padding: 42px 44px 32px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: #aee8df;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      overflow-wrap: anywhere;
+    }
+
+    h1 {
+      max-width: 780px;
+      margin: 0;
+      font-size: clamp(34px, 5vw, 62px);
+      line-height: 1.02;
+      letter-spacing: -.045em;
+    }
+
+    .hero-lead {
+      max-width: 760px;
+      margin: 18px 0 0;
+      color: #d8f0ed;
+      font-size: clamp(16px, 2vw, 19px);
+    }
+
+    .print-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      border: 1px solid rgba(255, 255, 255, .3);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .1);
+      padding: 10px 14px;
+      color: #fff;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .print-button:hover,
+    .print-button:focus-visible {
+      background: rgba(255, 255, 255, .18);
+      outline: 3px solid rgba(255, 255, 255, .22);
+      outline-offset: 2px;
+    }
+
+    .print-button svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .quick-start {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      border-top: 1px solid rgba(255, 255, 255, .15);
+      background: rgba(0, 0, 0, .1);
+    }
+
+    .quick-step {
+      min-height: 112px;
+      padding: 18px 20px;
+      border-right: 1px solid rgba(255, 255, 255, .12);
+    }
+
+    .quick-step:last-child {
+      border-right: 0;
+    }
+
+    .quick-number {
+      display: grid;
+      width: 28px;
+      height: 28px;
+      margin-bottom: 9px;
+      place-items: center;
+      border-radius: 9px;
+      background: #f8c760;
+      color: #493005;
+      font-size: 13px;
+      font-weight: 950;
+    }
+
+    .quick-step strong {
+      display: block;
+      margin-bottom: 2px;
+      font-size: 15px;
+    }
+
+    .quick-step span {
+      display: block;
+      color: #cfe8e5;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .guide-layout {
+      display: grid;
+      grid-template-columns: 238px minmax(0, 1fr);
+      gap: 22px;
+      align-items: start;
+      margin-top: 22px;
+    }
+
+    .contents {
+      position: sticky;
+      top: 16px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, .92);
+      box-shadow: 0 8px 24px rgba(19, 42, 54, .05);
+      backdrop-filter: blur(8px);
+    }
+
+    .contents-title {
+      padding: 17px 18px 10px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+
+    .contents a {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      border-left: 3px solid transparent;
+      padding: 9px 15px;
+      color: #40515e;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .contents a::before {
+      content: "";
+      flex: 0 0 auto;
+      width: 7px;
+      height: 7px;
+      border: 2px solid #91a2ad;
+      border-radius: 50%;
+    }
+
+    .contents a:hover,
+    .contents a.is-active {
+      border-left-color: var(--brand);
+      background: var(--brand-soft);
+      color: var(--brand-dark);
+    }
+
+    .contents a.is-active::before {
+      border-color: var(--brand);
+      background: var(--brand);
+    }
+
+    .guide-content {
+      display: grid;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    section {
+      scroll-margin-top: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--paper);
+      padding: clamp(22px, 4vw, 38px);
+      box-shadow: 0 8px 24px rgba(19, 42, 54, .045);
+    }
+
+    .section-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin: 0 0 8px;
+      color: var(--brand);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+
+    .section-kicker::before {
+      content: "";
+      width: 18px;
+      height: 3px;
+      border-radius: 99px;
+      background: var(--brand);
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(26px, 4vw, 36px);
+      line-height: 1.12;
+      letter-spacing: -.025em;
+    }
+
+    .section-lead {
+      max-width: 800px;
+      margin: 10px 0 24px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    h3 {
+      margin: 0 0 5px;
+      font-size: 17px;
+      line-height: 1.3;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .cards.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .card {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--soft);
+      padding: 17px;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .tool-card {
+      display: grid;
+      grid-template-columns: 48px minmax(0, 1fr);
+      gap: 13px;
+      align-items: start;
+    }
+
+    .tool-icon {
+      display: grid;
+      width: 48px;
+      height: 48px;
+      place-items: center;
+      border: 1px solid #bcd8d4;
+      border-radius: 13px;
+      background: var(--brand-soft);
+      color: var(--brand-dark);
+      font-size: 20px;
+      font-weight: 950;
+      line-height: 1;
+    }
+
+    .tool-icon .guide-glyph {
+      width: 30px;
+      height: 30px;
+    }
+
+    .tool-icon.is-text {
+      font-size: 13px;
+      letter-spacing: .02em;
+    }
+
+    .tool-icon.blue {
+      border-color: #c9ddec;
+      background: var(--blue-soft);
+      color: #155b8e;
+    }
+
+    .tool-icon.warm {
+      border-color: #efd39c;
+      background: var(--warm-soft);
+      color: #9a5808;
+    }
+
+    .icon-sprite {
+      position: absolute;
+      width: 0;
+      height: 0;
+      overflow: hidden;
+    }
+
+    kbd {
+      display: inline-block;
+      min-width: 2.1em;
+      border: 1px solid #b7c5cc;
+      border-bottom-width: 2px;
+      border-radius: 5px;
+      background: #fff;
+      padding: 1px 6px;
+      color: #213541;
+      font: 750 12px/1.5 Arial, sans-serif;
+      text-align: center;
+      box-shadow: 0 1px 0 rgba(22, 34, 45, .08);
+    }
+
+    .tool-card .usage {
+      display: block;
+      margin-top: 7px;
+      color: #263c49;
+      font-size: 13px;
+    }
+
+    .tool-card .usage strong {
+      color: var(--brand-dark);
+    }
+
+    .steps {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: guide-step;
+    }
+
+    .steps li {
+      counter-increment: guide-step;
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #fff;
+      padding: 13px 15px;
+      color: var(--muted);
+    }
+
+    .steps li::before {
+      content: counter(guide-step);
+      display: grid;
+      width: 32px;
+      height: 32px;
+      place-items: center;
+      border-radius: 10px;
+      background: var(--brand);
+      color: #fff;
+      font-weight: 900;
+    }
+
+    .steps strong {
+      color: var(--ink);
+    }
+
+    .callout {
+      margin-top: 18px;
+      border: 1px solid #c6ded9;
+      border-left: 5px solid var(--brand);
+      border-radius: 12px;
+      background: var(--brand-soft);
+      padding: 14px 16px;
+      color: #234a46;
+    }
+
+    .callout.warning {
+      border-color: #f0d39b;
+      border-left-color: var(--warm);
+      background: var(--warm-soft);
+      color: #65420c;
+    }
+
+    .callout strong {
+      color: var(--ink);
+    }
+
+    .mini-heading {
+      margin: 28px 0 12px;
+      font-size: 20px;
+      letter-spacing: -.01em;
+    }
+
+    .state-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .state {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 17px;
+    }
+
+    .state-color {
+      width: 48px;
+      height: 8px;
+      margin-bottom: 12px;
+      border-radius: 99px;
+      background: #e5484d;
+    }
+
+    .state.modify .state-color {
+      background: #2f9e62;
+    }
+
+    .state.done .state-color {
+      background: #7c8b95;
+    }
+
+    .state p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .action-list {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .action {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 13px;
+      background: var(--soft);
+    }
+
+    .action strong {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 14px;
+    }
+
+    .action span {
+      display: block;
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.4;
+    }
+
+    .plain-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .plain-list li {
+      position: relative;
+      padding-left: 23px;
+      color: var(--muted);
+    }
+
+    .plain-list li::before {
+      content: "✓";
+      position: absolute;
+      top: 0;
+      left: 0;
+      color: var(--brand);
+      font-weight: 950;
+    }
+
+    .plain-list strong {
+      color: var(--ink);
+    }
+
+    .profile-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 9px;
+    }
+
+    .profile {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--soft);
+      padding: 14px;
+      text-align: center;
+    }
+
+    .profile-mark {
+      display: block;
+      height: 42px;
+      margin-bottom: 8px;
+      color: var(--brand);
+      font-size: 30px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .profile strong {
+      display: block;
+      font-size: 14px;
+    }
+
+    .profile span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .term-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .term {
+      border-left: 4px solid var(--blue);
+      border-radius: 8px;
+      background: var(--blue-soft);
+      padding: 12px 14px;
+    }
+
+    .term strong {
+      display: block;
+      color: #155b8e;
+    }
+
+    .term span {
+      color: #526b7c;
+      font-size: 13px;
+    }
+
+    .faq {
+      display: grid;
+      gap: 9px;
+    }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--soft);
+      padding: 0 15px;
+    }
+
+    summary {
+      cursor: pointer;
+      padding: 14px 28px 14px 0;
+      font-weight: 850;
+    }
+
+    details p {
+      margin: -2px 0 15px;
+      color: var(--muted);
+    }
+
+    footer {
+      padding: 24px 8px 0;
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .to-top {
+      display: inline-flex;
+      margin-top: 8px;
+      color: var(--brand);
+      font-weight: 850;
+      text-decoration: none;
+    }
+
+    @media (max-width: 980px) {
+      .quick-start {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .quick-step {
+        border-bottom: 1px solid rgba(255, 255, 255, .12);
+      }
+
+      .guide-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .contents {
+        position: sticky;
+        z-index: 20;
+        top: 0;
+        display: flex;
+        overflow-x: auto;
+        border-radius: 12px;
+      }
+
+      .contents-title {
+        display: none;
+      }
+
+      .contents a {
+        flex: 0 0 auto;
+        border-bottom: 3px solid transparent;
+        border-left: 0;
+        padding: 12px 13px 10px;
+      }
+
+      .contents a::before {
+        display: none;
+      }
+
+      .contents a:hover,
+      .contents a.is-active {
+        border-bottom-color: var(--brand);
+        border-left-color: transparent;
+      }
+
+      .cards.three,
+      .action-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 680px) {
+      .page {
+        width: min(100% - 18px, 1240px);
+        padding-top: 9px;
+      }
+
+      .hero {
+        border-radius: 16px;
+      }
+
+      .hero-main {
+        grid-template-columns: 1fr;
+        padding: 28px 23px 23px;
+      }
+
+      .print-button {
+        justify-self: start;
+      }
+
+      .quick-start,
+      .cards,
+      .cards.three,
+      .state-row,
+      .action-list,
+      .profile-row,
+      .term-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .quick-step {
+        min-height: auto;
+        border-right: 0;
+        padding: 14px 20px;
+      }
+
+      section {
+        border-radius: 14px;
+        padding: 23px 18px;
+      }
+
+      .tool-card {
+        grid-template-columns: 42px minmax(0, 1fr);
+      }
+
+      .tool-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 11px;
+        font-size: 17px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .page {
+        width: 100%;
+        padding: 0;
+      }
+
+      .hero {
+        border: 1px solid #b8c5cc;
+        background: #fff;
+        color: #111;
+        box-shadow: none;
+      }
+
+      .hero-lead,
+      .quick-step span {
+        color: #444;
+      }
+
+      .quick-start {
+        background: #f2f5f6;
+      }
+
+      .quick-step {
+        border-color: #cdd6db;
+      }
+
+      .contents,
+      .print-button,
+      .to-top {
+        display: none;
+      }
+
+      .guide-layout {
+        display: block;
+      }
+
+      section {
+        break-inside: avoid;
+        margin-top: 12px;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+
+<body id="top">
+  <svg class="icon-sprite" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="icon-new" viewBox="0 0 24 24">
+        <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+        <path d="M19 3v4M21 5h-4" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round"></path>
+      </symbol>
+      <symbol id="icon-template" viewBox="0 0 24 24">
+        <path d="M6 4h8l4 4v12H6z" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linejoin="round"></path>
+        <path d="M14 4v4h4M9 12h6M9 16h6" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round"></path>
+      </symbol>
+      <symbol id="icon-junction" viewBox="0 0 24 24">
+        <path d="M12 4v16M4 12h16" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round"></path>
+        <path d="M7 7l10 10M17 7 7 17" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round"></path>
+      </symbol>
+      <symbol id="icon-upload" viewBox="0 0 24 24">
+        <path d="M12 3v11M8.5 6.5 12 3l3.5 3.5" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round"></path>
+        <path d="M5 14v4a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-4" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round"></path>
+      </symbol>
+      <symbol id="icon-fullscreen" viewBox="0 0 24 24">
+        <path d="M8 4H4v4M16 4h4v4M20 16v4h-4M4 16v4h4" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+      </symbol>
+      <symbol id="icon-fit" viewBox="0 0 24 24">
+        <path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+        <path d="M8 8h8v8H8z" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linejoin="round"></path>
+      </symbol>
+      <symbol id="icon-undo" viewBox="0 0 24 24">
+        <path d="M9 7 4 12l5 5" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round"></path>
+        <path d="M5 12h9a5 5 0 0 1 0 10h-2" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round"></path>
+      </symbol>
+      <symbol id="icon-touch" viewBox="0 0 24 24">
+        <path d="M9 11V6.5a2 2 0 0 1 4 0V11M13 10V8.5a2 2 0 0 1 4 0V12M17 11a2 2 0 0 1 4 0v3.5C21 19 18.5 21 14.5 21H13c-2.2 0-3.7-1.1-5-2.8l-3.3-4.4a1.8 1.8 0 0 1 2.8-2.2L9 13.2V11Z"
+          fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+      </symbol>
+      <symbol id="icon-mouse" viewBox="0 0 24 24">
+        <rect x="6" y="2.5" width="12" height="19" rx="6" fill="none" stroke="currentColor" stroke-width="2"></rect>
+        <path d="M12 3v6M6 10h12" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round"></path>
+      </symbol>
+      <symbol id="icon-line" viewBox="0 0 24 24">
+        <path d="M5 19L19 5" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round"></path>
+      </symbol>
+      <symbol id="icon-arc" viewBox="0 0 24 24">
+        <path d="M5 17A10 10 0 0 1 19 7" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round"></path>
+        <circle cx="5" cy="17" r="1.5" fill="currentColor"></circle>
+        <circle cx="19" cy="7" r="1.5" fill="currentColor"></circle>
+      </symbol>
+      <symbol id="icon-curve" viewBox="0 0 24 24">
+        <path d="M4 17Q9 6 20 10" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round"></path>
+        <circle cx="4" cy="17" r="1.6" fill="currentColor"></circle>
+        <circle cx="10" cy="7" r="1.6" fill="currentColor"></circle>
+        <circle cx="20" cy="10" r="1.6" fill="currentColor"></circle>
+      </symbol>
+      <symbol id="icon-cubic" viewBox="0 0 24 24">
+        <path d="M4 17C7 5 14 19 20 8" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round"></path>
+        <circle cx="4" cy="17" r="1.5" fill="currentColor"></circle>
+        <circle cx="8" cy="7" r="1.5" fill="currentColor"></circle>
+        <circle cx="15" cy="17" r="1.5" fill="currentColor"></circle>
+        <circle cx="20" cy="8" r="1.5" fill="currentColor"></circle>
+      </symbol>
+      <symbol id="icon-circle" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="6.8" fill="none" stroke="currentColor" stroke-width="2"></circle>
+      </symbol>
+      <symbol id="icon-ellipse" viewBox="0 0 24 24">
+        <ellipse cx="12" cy="12" rx="8" ry="5.2" fill="none" stroke="currentColor" stroke-width="2"></ellipse>
+      </symbol>
+      <symbol id="icon-rectangle" viewBox="0 0 24 24">
+        <rect x="5" y="7" width="14" height="10" fill="none" stroke="currentColor" stroke-width="2"></rect>
+      </symbol>
+      <symbol id="icon-text" viewBox="0 0 24 24">
+        <text x="12" y="13" text-anchor="middle" dominant-baseline="middle" fill="currentColor"
+          font-family="Roboto, Arial, sans-serif" font-size="10.2" font-weight="900">Abc</text>
+      </symbol>
+      <symbol id="icon-callout" viewBox="0 0 24 24">
+        <path d="M6.2 4.8h11.6a2.4 2.4 0 0 1 2.4 2.4v5.9a2.4 2.4 0 0 1-2.4 2.4h-5.4l-3.9 4.2v-4.2H6.2a2.4 2.4 0 0 1-2.4-2.4V7.2a2.4 2.4 0 0 1 2.4-2.4Z"
+          fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+        <path d="M7.2 8.6h9.6M7.2 11.7h6.7" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round"></path>
+      </symbol>
+      <symbol id="icon-closed" viewBox="0 0 24 24">
+        <path d="M7.2 6.4C11.1 2.8 18.6 5 19.3 10.6C20 16.7 13.2 20.6 7.5 17.5C3 15 3.4 9.8 7.2 6.4Z"
+          fill="currentColor" opacity=".14"></path>
+        <path d="M7.2 6.4C11.1 2.8 18.6 5 19.3 10.6C20 16.7 13.2 20.6 7.5 17.5C3 15 3.4 9.8 7.2 6.4Z"
+          fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
+        <path d="M7.2 6.4L10.5 3.6M19.3 10.6L21.1 14.1M7.5 17.5L4.6 19M7.2 6.4L4.9 9.2"
+          fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" opacity=".5"></path>
+        <circle cx="10.5" cy="3.6" r="1" fill="currentColor" opacity=".72"></circle>
+        <circle cx="21.1" cy="14.1" r="1" fill="currentColor" opacity=".72"></circle>
+        <circle cx="4.6" cy="19" r="1" fill="currentColor" opacity=".72"></circle>
+        <circle cx="4.9" cy="9.2" r="1" fill="currentColor" opacity=".72"></circle>
+        <circle cx="7.2" cy="6.4" r="1.7" fill="#fff" stroke="currentColor" stroke-width="1.6"></circle>
+        <circle cx="19.3" cy="10.6" r="1.7" fill="#fff" stroke="currentColor" stroke-width="1.6"></circle>
+        <circle cx="7.5" cy="17.5" r="1.7" fill="#fff" stroke="currentColor" stroke-width="1.6"></circle>
+      </symbol>
+      <symbol id="icon-car" viewBox="0 0 102 77">
+        <path d="M 51 1 Q 76 2 78 4 C 84 10 86 17 91 24 Q 91 20 89 19 C 101 20 101 21 101 25 Q 96 27 91 26 C 91 35 101 35 101 45 C 101 75 102 78 99 78 L 89 78 C 86 78 86 75 86 70 L 15 70 C 15 75 15 78 12 78 L 3 78 C 0 78 0 75 0 73 L 0 45 C 0 35 10 35 10 26 Q 5 27 0 25 C 0 21 0 20 12 19 Q 10 20 10 24 C 15 17 16 10 23 4 Q 25 2 51 1 M 23 7 Q 17 15 14 25 L 87 25 Q 84 15 78 7 Q 51 3 23 7 M 4 39 Q 0 43 5 47 Q 9 50 27 48 L 29 45 Q 18 37 4 39 M 98 39 Q 83 38 74 45 L 76 48 Q 91 50 95 47 Q 101 43 98 39 Z M 35 59 L 35 65 L 68 65 L 68 59 Z"
+          fill="currentColor"></path>
+      </symbol>
+      <symbol id="icon-sign" viewBox="0 0 24 24">
+        <path d="M12 3 22 20H2L12 3Z" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linejoin="round"></path>
+        <path d="M12 9v5M12 17h.1" fill="none" stroke="currentColor" stroke-width="2.4"
+          stroke-linecap="round"></path>
+      </symbol>
+      <symbol id="icon-other" viewBox="0 0 51 51">
+        <path d="M 11.4 1.4 A 0.2 0.2 90 0 1 11.8 1.4 Q 12 7 16 9 L 13.8 9 Q 13.8 13 18 14 L 15.2 14 Q 15.2 17 19 19 L 16.6 19 Q 16.6 22 21 24 L 18 24 Q 18 27.6 23 29 L 13 30 L 13 37 L 10 37 L 10 30 L 0 29 Q 5.2 27.6 5.2 24 L 2 24 Q 6.6 22 6.6 19 L 4 19 Q 8 17 8 14 L 5 14 Q 9.4 13 9.4 9 L 7 9 Q 11 7 11.4 1.4 Z M 47 3.8 Q 47.8 4.4 47.4 5 L 47.8 5 L 49.8 6.8 Q 51 8 49.8 8 L 48.6 14 Q 48.4 14.8 49 14.8 Q 47.4 14.8 47.4 17 L 47.4 36.4 L 47.8 37.6 L 47.8 46.4 Q 48.4 46.4 48.4 47 L 48.4 50.4 L 8 50.4 L 8.4 49.8 L 9.8 48.8 L 11.6 45.6 L 11.6 44.6 L 11.4 43 L 10.6 42.8 L 9.8 42.2 L 8.8 42.2 L 7.6 42.4 L 6.6 42 L 6.2 41.4 L 6.2 41.2 L 7.6 40.2 L 8.6 39 L 10 38.4 L 11.6 38.8 L 13.6 40 Q 21.8 38 27.4 34.6 L 27.6 34 L 27.6 33.6 L 27.8 33.4 L 29.2 32.8 L 29.4 32.2 L 32.6 29.2 L 33.8 23.8 L 33.6 23.2 L 34.4 22.4 C 34.2 22.2 34 22 33.8 22 L 33 21.6 L 33 21.2 L 32.8 20.8 L 32.6 20.2 L 32.2 19.8 L 32.6 19 L 32.8 18.4 L 32.4 18 L 32.8 17.4 L 34.8 16.2 L 36.6 16.4 L 37 17 L 37.4 18 L 37 19.6 C 37 19.6 36.8 19.8 36.8 19.8 L 36.8 21.2 L 37.6 21 L 38.2 21.2 L 38.4 22.6 L 39.4 24.2 L 40 27.6 L 40.2 31 L 39.8 34 L 38.6 37 L 42.8 47.6 L 43 47.6 L 43.6 49.6 L 41.8 50.4 L 44.6 50.4 L 44.6 47 Q 44.6 46.4 45.2 46.4 L 45.2 37.6 L 45.6 36.4 L 45.6 17 Q 45.6 14.8 44 14.8 Q 44.6 14.8 44.4 14 L 43.2 8 Q 42 8 43.2 6.8 L 45.2 5 L 45.6 5 Q 45.2 4.4 46 3.8 A 0.2 0.2 90 0 1 47 3.8 M 44 8 L 45.2 14 L 47.8 14 L 49 8 L 44 8 M 30.6 34.2 L 30 34 L 29.6 34.2 C 29.6 34.2 29.6 34.4 29.6 34.4 L 28.8 35.2 L 28.4 35.2 L 27.8 35 Q 22 38.6 15 40 L 14.6 40.4 L 22 40.2 L 24.6 40.8 L 26 42 L 27.4 43.4 L 28.8 44.2 L 29.4 44.2 L 29.4 44.4 L 28.4 45 L 26.2 44.6 L 24.8 42.6 L 25 44.6 L 25.6 45.8 L 26.4 46.6 L 27.2 48.8 L 29.4 48.2 L 33 35.4 L 32.4 35.4 L 32.6 32.6 L 30.6 34.2 M 35.6 39.6 L 32.2 48.6 L 31.8 49 L 31.6 50.4 L 38.2 50.4 L 40.2 48.4 L 35.6 39.6 M 20.4 44.6 L 16.4 46 L 16.8 47.2 L 17.2 49.2 L 17 50.4 L 19.6 50.4 L 20.6 49.8 L 21.4 48.6 L 20.8 46.8 L 20.4 45.6 L 20.4 44.6 M 22.6 45.6 L 22.8 47 L 22.6 48.8 L 21.4 50.4 L 28 50.4 L 26.4 49.8 L 25.6 47.8 L 25 47.4 L 23.2 46.2 L 22.6 45.6 M 14 46.2 L 10 50.4 L 15 50.4 L 15.4 50 L 16 49.8 L 16 48.8 L 14.8 47.2 L 14 46.2 Z"
+          fill="currentColor"></path>
+      </symbol>
+    </defs>
+  </svg>
+  <a class="skip-link" href="#baslangic">İçeriğe geç</a>
+
+  <div class="page">
+    <header class="hero">
+      <div class="hero-main">
+        <div>
+          <p class="eyebrow">Kroki hazırlama ve düzenleme rehberi</p>
+          <h1>Kroki Pro Kullanım Kılavuzu</h1>
+          <p class="hero-lead">Bu kılavuz programı kullanmak isteyen herkes içindir. Teknik bilgi gerekmez; ekranda
+            gördüğünüz düğmelerin ne yaptığını ve hangi sırayla kullanıldığını anlatır.</p>
+        </div>
+        <button class="print-button" id="btnPrintGuide" type="button" aria-label="Kılavuzu yazdır">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M7 8V3h10v5M7 17H5a2 2 0 0 1-2-2v-4a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v4a2 2 0 0 1-2 2h-2"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M7 14h10v7H7z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+          </svg>
+          Yazdır
+        </button>
+      </div>
+
+      <div class="quick-start" aria-label="Beş adımda hızlı başlangıç">
+        <div class="quick-step"><span class="quick-number">1</span><strong>Yeni Kroki</strong><span>Boş çalışma alanını
+            açın.</span></div>
+        <div class="quick-step"><span class="quick-number">2</span><strong>İçerik ekleyin</strong><span>Yol, çizim,
+            araç, levha veya sembol seçin.</span></div>
+        <div class="quick-step"><span class="quick-number">3</span><strong>Yerleştirin</strong><span>Nesneyi çizin ya da
+            listeden seçip ekleyin.</span></div>
+        <div class="quick-step"><span class="quick-number">4</span><strong>Düzenleyin</strong><span>Boyut, konum, renk ve
+            diğer özellikleri ayarlayın.</span></div>
+        <div class="quick-step"><span class="quick-number">5</span><strong>Kaydedin</strong><span>Resim, düzenlenebilir
+            SVG veya şablon oluşturun.</span></div>
+      </div>
+    </header>
+
+    <div class="guide-layout">
+      <nav class="contents" aria-label="Kılavuz bölümleri">
+        <div class="contents-title">Bölümler</div>
+        <a href="#baslangic">İlk kroki</a>
+        <a href="#ana-ekran">Ana ekran</a>
+        <a href="#calisma-alani">Çalışma alanı</a>
+        <a href="#cizim-araclari">Çizim araçları</a>
+        <a href="#secim-duzenleme">Seçim ve düzenleme</a>
+        <a href="#gorunum">Renk ve görünüm</a>
+        <a href="#yollar">Yollar</a>
+        <a href="#kutuphaneler">Araç, levha ve semboller</a>
+        <a href="#kaydetme">Kaydetme</a>
+        <a href="#yardim">Sık karşılaşılan durumlar</a>
+      </nav>
+
+      <main class="guide-content">
+        <section id="baslangic">
+          <p class="section-kicker">Başlangıç</p>
+          <h2>İlk krokinizi oluşturun</h2>
+          <p class="section-lead">Programın temel kullanımı beş kısa adımdan oluşur. İlk denemenizde ayrıntılı ayarlara
+            girmeden bu sırayı izleyebilirsiniz.</p>
+
+          <ol class="steps">
+            <li><span><strong>Ana ekrandan “Yeni Kroki”ye basın.</strong> Boş, beyaz çalışma alanı açılır.</span></li>
+            <li><span><strong>Sağ taraftan eklemek istediğiniz içeriği seçin.</strong> Çizim araçları, yol, araç, levha
+                ve diğer semboller aynı sağ çubuktadır.</span></li>
+            <li><span><strong>Çizim alanına yerleştirin.</strong> Çizgi ve şekilleri parmağınızla ya da fareyle
+                çizersiniz. Katalogdaki öğeler ekranın ortasına eklenir.</span></li>
+            <li><span><strong>Nesne seçiliyken özelliklerini ayarlayın.</strong> Konum ve biçim ayarları, seçtiğiniz
+                nesneye göre sağ tarafta görünür.</span></li>
+            <li><span><strong>Üstteki “Tamam” düğmesiyle düzenlemeyi bitirin.</strong> Sonra başka bir araç seçebilir
+                veya ana menüden çalışmanızı kaydedebilirsiniz.</span></li>
+          </ol>
+
+          <div class="callout"><strong>En kolay hatırlanacak kural:</strong> Bir nesneye ilk dokunuş onu ön seçer.
+            Düzenlemeye geçmek için nesnenin kontrol noktalarından birine dokunun veya ön seçim sürerken sağdaki
+            özelliklerden birini değiştirin.</div>
+        </section>
+
+        <section id="ana-ekran">
+          <p class="section-kicker">Ana ekran</p>
+          <h2>Başlarken kullanabileceğiniz seçenekler</h2>
+          <p class="section-lead">Yeni bir çalışma açabilir, daha önce kaydettiğiniz bir krokiye dönebilir veya hazır
+            içeriklerden başlayabilirsiniz.</p>
+
+          <div class="cards three">
+            <article class="card tool-card">
+              <span class="tool-icon"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-new"></use></svg></span>
+              <div><h3>Yeni Kroki</h3><p>Boş bir çalışma alanı açar.</p></div>
+            </article>
+            <article class="card tool-card">
+              <span class="tool-icon blue is-text">10</span>
+              <div><h3>Son Krokiler</h3><p>En son kaydettiğiniz 10 çalışmayı önizlemeleriyle gösterir. Birini seçerek
+                  devam edebilirsiniz; yeni kayıt geldikçe en eski kayıt listeden çıkar.</p></div>
+            </article>
+            <article class="card tool-card">
+              <span class="tool-icon warm"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-template"></use></svg></span>
+              <div><h3>Şablonlarım</h3><p>Sık kullandığınız düzenlerden yeni bir kopya başlatır. Asıl şablon değişmeden
+                  kalır.</p></div>
+            </article>
+            <article class="card tool-card">
+              <span class="tool-icon"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-junction"></use></svg></span>
+              <div><h3>Hazır Kavşaklar</h3><p>Listeden bir kavşak seçerek hazır çizimi yeni kroki olarak açar.</p></div>
+            </article>
+            <article class="card tool-card">
+              <span class="tool-icon blue"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-upload"></use></svg></span>
+              <div><h3>SVG Yükle</h3><p>Kroki Pro’dan “SVG Olarak Kaydet” seçeneğiyle oluşturulmuş bir dosyayı yeniden
+                  düzenlemek için açar.</p></div>
+            </article>
+            <article class="card tool-card">
+              <span class="tool-icon warm"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-fullscreen"></use></svg></span>
+              <div><h3>Tam Ekran</h3><p>Özellikle tablette çalışma alanını büyütür. Aynı düğmeyle tam ekrandan
+                  çıkabilirsiniz.</p></div>
+            </article>
+          </div>
+
+          <div class="callout warning"><strong>Önemli:</strong> “SVG Yükle” her SVG resmini açmaz. Yalnızca Kroki Pro
+            tarafından düzenlenebilir olarak kaydedilmiş SVG dosyaları açılır.</div>
+        </section>
+
+        <section id="calisma-alani">
+          <p class="section-kicker">Ekranı kullanma</p>
+          <h2>Çalışma alanında hareket etme</h2>
+          <p class="section-lead">Büyük krokilerde farklı bölgelere geçebilir, görüntüyü büyütüp küçültebilir ve bütün
+            çizimi yeniden ekrana sığdırabilirsiniz.</p>
+
+          <div class="cards">
+            <article class="card tool-card">
+              <span class="tool-icon"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-touch"></use></svg></span>
+              <div>
+                <h3>Tablet veya dokunmatik ekran</h3>
+                <p>Bir nesne düzenlenmiyorken boş alanda tek parmakla sürükleyerek görünümü taşıyın. İki parmağı açıp
+                  kapatarak yakınlaştırın veya uzaklaştırın.</p>
+              </div>
+            </article>
+            <article class="card tool-card">
+              <span class="tool-icon blue"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-mouse"></use></svg></span>
+              <div>
+                <h3>Fare ile kullanım</h3>
+                <p>Tekerlekle yakınlaşıp uzaklaşın. Orta tuşu sürükleyerek veya boşluk tuşuna basılı tutup sol tuşla
+                  sürükleyerek görünümü taşıyın. Seçili nesneyi üstteki “Sil” düğmesi yerine <kbd>Delete</kbd> (Del)
+                  tuşuyla da silebilirsiniz.</p>
+              </div>
+            </article>
+            <article class="card tool-card">
+              <span class="tool-icon warm"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-fit"></use></svg></span>
+              <div>
+                <h3>Ekrana Sığdır</h3>
+                <p>Sağ çubuğun en altındaki düğme bütün krokiyi ekranda görülecek şekilde ortalar.</p>
+              </div>
+            </article>
+            <article class="card tool-card">
+              <span class="tool-icon"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-undo"></use></svg></span>
+              <div>
+                <h3>Geri Al / Yinele</h3>
+                <p>Sol üstteki oklar son işlemi geri alır veya geri alınan işlemi yeniden uygular. Bilgisayarda
+                  Ctrl+Z, Ctrl+Shift+Z ve Ctrl+Y de kullanılabilir.</p>
+              </div>
+            </article>
+          </div>
+
+          <div class="callout"><strong>Seçili nesneyi uzaktan taşıyabilirsiniz:</strong> Nesne düzenleme durumundayken
+            sürüklemeye nesnenin üzerinden başlamak zorunda değilsiniz. Çalışma alanının herhangi bir yerinden
+            sürüklediğinizde yalnızca seçili nesne hareket eder; diğer çizimler etkilenmez.</div>
+
+          <h3 class="mini-heading">Sağ taraftaki ana düğmeler</h3>
+          <div class="action-list">
+            <div class="action"><strong>Ana Menü</strong><span>Kaydetme, tam ekran ve ana sayfaya dönüş.</span></div>
+            <div class="action"><strong>Çizim Araçları</strong><span>Çizgi, şekil ve metin çizimi.</span></div>
+            <div class="action"><strong>Yol Ekle</strong><span>Düz, virajlı, S biçimli veya ada yol.</span></div>
+            <div class="action"><strong>Araç Ekle</strong><span>Otomobil ve diğer araç türleri.</span></div>
+            <div class="action"><strong>Levha Ekle</strong><span>Trafik levhaları kataloğu.</span></div>
+            <div class="action"><strong>Diğer Sembol</strong><span>İnsan, hayvan ve çevre öğeleri.</span></div>
+            <div class="action"><strong>Ekrana Sığdır</strong><span>Bütün çizimi tekrar görünür alana getirir.</span></div>
+          </div>
+        </section>
+
+        <section id="cizim-araclari">
+          <p class="section-kicker">Çizim</p>
+          <h2>Çizim araçlarını tanıyın</h2>
+          <p class="section-lead">Sağdaki “Çizim Araçları” düğmesine basın ve istediğiniz aracı seçin. Bir araçla çizim
+            yaptıktan sonra oluşan nesne doğrudan düzenlemeye hazır hale gelir.</p>
+
+          <div class="cards">
+            <article class="card tool-card">
+              <span class="tool-icon"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-line"></use></svg></span>
+              <div><h3>Çizgi</h3><p>Düz çizgi oluşturur.</p><span class="usage"><strong>Kullanım:</strong> Başlangıç
+                    noktasından bitiş noktasına sürükleyin.</span></div>
+            </article>
+            <article class="card tool-card">
+              <span class="tool-icon"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-arc"></use></svg></span>
+              <div><h3>Yay (Arc)</h3><p>Tek parça kavisli çizgi oluşturur.</p><span class="usage"><strong>Kullanım:</strong>
+                    İki uç arasında sürükleyin; sonra ortadaki kontrol noktasını taşıyarak kavisi ayarlayın.</span></div>
+            </article>
+            <article class="card tool-card">
+              <span class="tool-icon blue"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-curve"></use></svg></span>
+              <div><h3>Bezier Eğri</h3><p>Tek bükülme noktasıyla yumuşak bir eğri oluşturur.</p><span
+                  class="usage"><strong>Kullanım:</strong> Uçları çizdikten sonra ortadaki kontrol noktasını eğrinin
+                    istediğiniz yönüne sürükleyin.</span></div>
+            </article>
+            <article class="card tool-card">
+              <span class="tool-icon blue"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-cubic"></use></svg></span>
+              <div><h3>Kübik Eğri</h3><p>İki kontrol noktasıyla daha ayrıntılı bir eğri oluşturur.</p><span
+                  class="usage"><strong>Kullanım:</strong> Uçları çizdikten sonra iki kontrol noktasını ayrı ayrı
+                    taşıyın.</span></div>
+            </article>
+            <article class="card tool-card">
+              <span class="tool-icon warm"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-circle"></use></svg></span>
+              <div><h3>Daire</h3><p>Tam yuvarlak şekil oluşturur.</p><span class="usage"><strong>Kullanım:</strong>
+                    Dairenin bir kenarından karşı kenarına doğru sürükleyin.</span></div>
+            </article>
+            <article class="card tool-card">
+              <span class="tool-icon warm"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-ellipse"></use></svg></span>
+              <div><h3>Elips</h3><p>Yatay veya dikey oval şekil oluşturur.</p><span class="usage"><strong>Kullanım:</strong>
+                    Şekli kapsayacak alanın bir köşesinden karşı köşesine sürükleyin.</span></div>
+            </article>
+            <article class="card tool-card">
+              <span class="tool-icon"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-rectangle"></use></svg></span>
+              <div><h3>Dikdörtgen</h3><p>Dikdörtgen veya kare oluşturur.</p><span
+                  class="usage"><strong>Kullanım:</strong> Bir köşeden karşı köşeye sürükleyin.</span></div>
+            </article>
+            <article class="card tool-card">
+              <span class="tool-icon blue"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-text"></use></svg></span>
+              <div><h3>Metin</h3><p>Çalışma alanına serbest yazı ekler.</p><span
+                  class="usage"><strong>Kullanım:</strong> Metni yazın; boyut, renk ve yazı biçimini seçip “Tamam”a
+                    basın. Metin ekranın ortasına eklenir ve sonra taşınabilir.</span></div>
+            </article>
+            <article class="card tool-card">
+              <span class="tool-icon warm"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-callout"></use></svg></span>
+              <div><h3>Oklu Metin</h3><p>Bir noktayı açıklayan ok ve yazı kutusu oluşturur.</p><span
+                  class="usage"><strong>Kullanım:</strong> Okun göstereceği yerden başlayıp yazı kutusunun bulunacağı
+                    yere sürükleyin.</span></div>
+            </article>
+            <article class="card tool-card">
+              <span class="tool-icon"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-closed"></use></svg></span>
+              <div><h3>Kapalı Bezier Şekil</h3><p>Serbest biçimli, içi doldurulabilen alan oluşturur.</p><span
+                  class="usage"><strong>Kullanım:</strong> En az üç nokta işaretleyin, “Şekli Kapat”a basın; ardından
+                    kenarları kontrol noktalarıyla eğin.</span></div>
+            </article>
+          </div>
+
+          <div class="callout"><strong>Çizimden sonra:</strong> Nesne üzerindeki noktaları sürükleyerek ölçüsünü veya
+            eğimini değiştirebilirsiniz. İşiniz bitince üstteki “Tamam” düğmesine basın.</div>
+        </section>
+
+        <section id="secim-duzenleme">
+          <p class="section-kicker">Nesnelerle çalışma</p>
+          <h2>Seçme, taşıma ve düzenleme</h2>
+          <p class="section-lead">Yanlış nesneyi taşımayı önlemek için seçim iki aşamalıdır. Renkli çerçeve, hangi
+            aşamada olduğunuzu gösterir.</p>
+
+          <div class="state-row">
+            <article class="state">
+              <div class="state-color"></div>
+              <h3>1. Ön seçim</h3>
+              <p>Nesneye ilk dokunduğunuzda kırmızı seçim görünür. Üst işlem çubuğu açılır; nesne henüz şekil
+                değiştirmeye başlamaz.</p>
+            </article>
+            <article class="state modify">
+              <div class="state-color"></div>
+              <h3>2. Düzenleme</h3>
+              <p>Kontrol noktalarından birine dokunun veya ön seçim sürerken sağdaki özelliklerden birini değiştirin.
+                Yeşil düzenleme görünümü açılır; nesneyi taşıyabilir ya da şeklini değiştirebilirsiniz.</p>
+            </article>
+            <article class="state done">
+              <div class="state-color"></div>
+              <h3>3. Tamamlama</h3>
+              <p>Üstteki “Tamam” düğmesine basın. Düzenleme kapanır ve ana araçlar tekrar görünür.</p>
+            </article>
+          </div>
+
+          <h3 class="mini-heading">Üst işlem çubuğu</h3>
+          <div class="action-list">
+            <div class="action"><strong>Tamam</strong><span>Seçimi ve düzenlemeyi bitirir.</span></div>
+            <div class="action"><strong>Kopyala</strong><span>Seçili nesnenin bir kopyasını oluşturur.</span></div>
+            <div class="action"><strong>Çoklu Seç</strong><span>Birden fazla nesneyi sırayla seçmenizi sağlar.</span></div>
+            <div class="action"><strong>Grupla</strong><span>Seçili nesneleri birlikte hareket edecek hale getirir.</span>
+            </div>
+            <div class="action"><strong>Grubu Çöz</strong><span>Birlikte hareket eden nesneleri yeniden ayırır.</span>
+            </div>
+            <div class="action"><strong>Öne Getir</strong><span>Nesneyi diğer nesnelerin önüne taşır.</span></div>
+            <div class="action"><strong>Arkaya Gönder</strong><span>Nesneyi diğer nesnelerin arkasına taşır.</span></div>
+            <div class="action"><strong>Sil</strong><span>Seçili nesneyi veya nesneleri kaldırır. Bilgisayarda aynı işlem
+                <kbd>Delete</kbd> (Del) tuşuyla da yapılabilir.</span></div>
+          </div>
+
+          <h3 class="mini-heading">Birden fazla nesneyi seçme</h3>
+          <ul class="plain-list">
+            <li><strong>Tablette:</strong> “Çoklu Seç” düğmesini açın, ardından eklemek veya çıkarmak istediğiniz
+              nesnelere dokunun.</li>
+            <li><strong>Bilgisayarda:</strong> Ctrl veya Shift tuşuna basılı tutarak nesnelere tıklayabilirsiniz.</li>
+            <li><strong>Alanla seçim:</strong> Çoklu seçim açıkken boş bir yerden sürükleyerek seçim kutusu
+              oluşturabilirsiniz.</li>
+            <li><strong>Birlikte taşıma:</strong> Doğrudan bir toplu taşıma aracı yoktur. Nesneleri seçtikten sonra
+              “Grupla”ya basın, oluşan grubu taşıyın ve isterseniz işlem sonunda “Grubu Çöz”e basın.</li>
+          </ul>
+
+          <div class="callout warning"><strong>Yollar farklı çalışır:</strong> Yol nesneleri çoklu seçime ve gruplamaya
+            alınmaz. Ayrıca yollar, diğer işaret ve şekillerin altında kalacak şekilde düzenlenir.</div>
+        </section>
+
+        <section id="gorunum">
+          <p class="section-kicker">Biçimlendirme</p>
+          <h2>Renk, çizgi, dolgu ve yazı ayarları</h2>
+          <p class="section-lead">Bir nesne seçildiğinde sağdaki ana düğmelerin yerini o nesneye uygun özellikler alır.
+            Her nesnede yalnızca kullanılabilen ayarlar gösterilir.</p>
+
+          <div class="cards">
+            <article class="card">
+              <h3>Çizgi özellikleri</h3>
+              <p>Çizgi rengini, saydamlığını ve kalınlığını değiştirebilirsiniz. Düz, kesik veya noktalı görünüm
+                seçebilir; kesiklerin boyunu ve aralığını ayarlayabilirsiniz.</p>
+            </article>
+            <article class="card">
+              <h3>Oklar ve çizgi uçları</h3>
+              <p>Uygun çizgilerde başlangıç ve bitiş oku ekleyebilirsiniz. Çizgi uçlarını yuvarlak, düz veya köşeli
+                görünüm arasında değiştirebilirsiniz.</p>
+            </article>
+            <article class="card">
+              <h3>Dolgu özellikleri</h3>
+              <p>Kapalı şekillerde iç renk ve saydamlık seçebilirsiniz. Kilit taşı, kaldırım, çim, refüj, çakıl ve
+                toprak gibi hazır desenler kullanılabilir.</p>
+            </article>
+            <article class="card">
+              <h3>Metin özellikleri</h3>
+              <p>Metni, yazı boyutunu, rengini ve konumunu değiştirebilirsiniz. Kalın, italik ve altı çizili yazı
+                seçenekleri bulunur.</p>
+            </article>
+            <article class="card tool-card">
+              <span class="tool-icon blue"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-text"></use></svg></span>
+              <div>
+                <h3>Çizilen araca metin ekleme</h3>
+                <p>“Kapalı Bezier Şekil” dışındaki bütün çizim araçlarının kendine ait bir metin alanı vardır. Çizilmiş
+                  aracı seçin ve sağdaki <strong>Abc</strong> düğmesine basın; açıklamayı yazıp konumunu ve görünümünü
+                  ayarlayın.</p>
+              </div>
+            </article>
+            <article class="card">
+              <h3>Yatay / dikey çizim yardımı</h3>
+              <p>Çizgi ve uygun eğrilerde bu yardım açıkken uç nokta yatay veya dikey hizaya yaklaşınca düzgün biçimde
+                hizalanır.</p>
+            </article>
+            <article class="card">
+              <h3>Kontrol noktaları</h3>
+              <p>Şeklin çevresindeki yuvarlak noktalar; uçları, boyutu, eğimi veya dönüş açısını değiştirir. Her nokta
+                yalnızca ait olduğu özelliği hareket ettirir.</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="yollar">
+          <p class="section-kicker">Yol araçları</p>
+          <h2>Yol oluşturma ve düzenleme</h2>
+          <p class="section-lead">Sağdaki “Yol Ekle” düğmesiyle yolun temel biçimini seçin. Yol eklendikten sonra
+            ayrıntıları sağdaki özellik düğmelerinden değiştirebilirsiniz.</p>
+
+          <h3 class="mini-heading">Yol biçimleri</h3>
+          <div class="profile-row">
+            <div class="profile"><span class="profile-mark">━</span><strong>Düz</strong><span>Düz yol kesimi</span></div>
+            <div class="profile"><span class="profile-mark">⌒</span><strong>Viraj</strong><span>Tek yönlü kavis</span></div>
+            <div class="profile"><span class="profile-mark">∿</span><strong>S Viraj</strong><span>Birden fazla yön
+                  değişimi</span></div>
+            <div class="profile"><span class="profile-mark">◎</span><strong>Ada</strong><span>Dairesel ada yolu</span></div>
+          </div>
+
+          <h3 class="mini-heading">Yeni yol ekleme sırası</h3>
+          <ol class="steps">
+            <li><span><strong>Yol biçimini seçin:</strong> Düz, Viraj, S viraj veya Ada.</span></li>
+            <li><span><strong>Yönü seçin:</strong> Yatay veya dikey. Ada seçildiğinde yön seçimi gerekmez.</span></li>
+            <li><span><strong>Yol türünü seçin:</strong> Normal veya bölünmüş yol.</span></li>
+            <li><span><strong>Başlangıç ayrıntılarını belirleyin:</strong> Şerit sayısı ile sağ/sol banket ve bariyer
+                seçeneklerini ayarlayın.</span></li>
+            <li><span><strong>“Yolu Ekle”ye basın:</strong> Yol ekranın ortasına eklenir ve düzenlemeye hazır olur.</span>
+            </li>
+          </ol>
+
+          <h3 class="mini-heading">Seçili yolun ayarları</h3>
+          <div class="cards">
+            <article class="card"><h3>Şerit sayısı ve genişliği</h3><p>Yolun tamamındaki şerit sayısını ve genel şerit
+                genişliğini artırıp azaltır. Yolun içindeki belirli bir şerit veya bankete dokunursanız yalnızca o
+                bölümün genişliğini değiştirebilirsiniz.</p></article>
+            <article class="card"><h3>Yol biçimi</h3><p>Düz, Viraj ve S viraj arasında geçiş yapar. Yol üzerindeki
+                kontrol noktalarını sürükleyerek yönünü ve eğimini ayarlarsınız.</p></article>
+            <article class="card"><h3>Yol cebi</h3><p>Düğmeye her basışta “Cep yok, Sağ cep, Sol cep, Çift cep”
+                seçenekleri arasında geçer. Cep üzerindeki noktalarla giriş, çıkış ve ada biçimi ayarlanabilir.</p>
+            </article>
+            <article class="card"><h3>Ayrılan yol</h3><p>Ana yoldan sola veya sağa ayrılan yeni bir yol oluşturur.
+                Tarafı ve şerit sayısını seçip “Yolu oluştur”a basın.</p></article>
+            <article class="card"><h3>Yansıtma</h3><p>Yolun biçimini yatay veya dikey yönde ayna görüntüsüne çevirir.
+                Banket, bariyer ve yol çizgileri de yeni tarafa taşınır.</p></article>
+            <article class="card"><h3>Banketler</h3><p>Sol veya sağ banketi ayrı ayrı açıp kapatır. Bankete dokunarak
+                genişliğini ayrıca düzenleyebilirsiniz.</p></article>
+            <article class="card"><h3>Yol çizgileri</h3><p>Yol çizgilerini topluca değiştirebilir veya bir şerit bölümü
+                seçip üst ve alt çizgiyi ayrı ayrı düz, kesik, noktalı ya da görünmez yapabilirsiniz.</p></article>
+            <article class="card"><h3>Bariyer</h3><p>Bariyer eklemek için önce yolun en dış şeridini seçin; ardından
+                bariyer ekleme düğmesini kullanın. Bariyeri yola bağlı ya da serbest biçime çevirebilir; uçlarını, direk
+                aralığını ve şeklini ayarlayabilirsiniz.</p></article>
+          </div>
+
+          <div class="callout"><strong>Kavşaklar otomatik oluşur:</strong> Uygun yolları birbiriyle kesişecek şekilde
+            yerleştirdiğinizde birleşim alanı program tarafından hazırlanır. Yollardan birini taşıdığınızda kavşak da
+            yeni konuma göre yenilenir.</div>
+        </section>
+
+        <section id="kutuphaneler">
+          <p class="section-kicker">Hazır içerikler</p>
+          <h2>Araç, levha ve diğer sembolleri ekleme</h2>
+          <p class="section-lead">Bu öğeleri çizmeniz gerekmez. Sağdaki ilgili kütüphaneyi açın, kategori ve öğeyi seçin,
+            ardından “Tamam”a basın. Seçilen öğe çalışma alanının ortasına eklenir.</p>
+
+          <div class="cards three">
+            <article class="card tool-card">
+              <span class="tool-icon blue"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-car"></use></svg></span>
+              <div>
+                <h3>Araç Ekle</h3>
+                <p>Önce araç türünü, sonra istediğiniz çeşidi seçin. Ekledikten sonra araç rengi, üst/yan görünüm,
+                  temsili görünüm, yatay/dikey çevirme, dönüş açısı ve boyut ayarlanabilir.</p>
+              </div>
+            </article>
+            <article class="card tool-card">
+              <span class="tool-icon warm"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-sign"></use></svg></span>
+              <div>
+                <h3>Levha Ekle</h3>
+                <p>Kategoriyi ve trafik levhasını seçin. Eklenen levhanın boyutunu ve dönüş açısını değiştirebilirsiniz.
+                  Üzerinde değiştirilebilir yazı varsa metin düğmesi de görünür.</p>
+              </div>
+            </article>
+            <article class="card tool-card">
+              <span class="tool-icon"><svg class="guide-glyph" aria-hidden="true"><use href="#icon-other"></use></svg></span>
+              <div>
+                <h3>Diğer Sembol Ekle</h3>
+                <p>İnsan, hayvan ve çevre öğeleri arasından seçim yapın. Sembolü taşıyabilir, boyutlandırabilir,
+                  döndürebilir ve diğer nesnelerle birlikte kullanabilirsiniz.</p>
+              </div>
+            </article>
+          </div>
+
+          <h3 class="mini-heading">Araç etiketi</h3>
+          <p class="section-lead">Bir araç seçildiğinde etiket düğmesiyle plaka, sıra numarası veya kısa açıklama
+            yazabilirsiniz. Etiketi aracın üstüne, sağına, altına veya soluna yerleştirebilirsiniz.</p>
+        </section>
+
+        <section id="kaydetme">
+          <p class="section-kicker">Kaydetme ve paylaşma</p>
+          <h2>Çalışmanızı nasıl saklamak istiyorsunuz?</h2>
+          <p class="section-lead">Sağ üstteki Ana Menü, farklı kullanım amaçları için birkaç kayıt seçeneği sunar.</p>
+
+          <div class="cards">
+            <article class="card">
+              <div>
+                <h3>Resim Olarak Kaydet</h3>
+                <p>Bütün krokiyi paylaşmaya ve yazdırmaya uygun bir PNG resmi olarak indirir. Krokiyi “Son Krokiler”e
+                  de kaydeder ve ana ekrana döner.</p>
+              </div>
+            </article>
+            <article class="card">
+              <div>
+                <h3>Seçerek Resim Kaydet</h3>
+                <p>Ekranda ayarlanabilir bir çerçeve açar. Çerçeveyi taşımak için içinden, boyutlandırmak için kenar ve
+                  köşelerinden sürükleyin; sonra “Kaydet”e basın.</p>
+              </div>
+            </article>
+            <article class="card">
+              <div>
+                <h3>SVG Olarak Kaydet</h3>
+                <p>Krokiyi daha sonra Kroki Pro’ya geri yükleyip düzenleyebileceğiniz bir SVG dosyası olarak indirir.
+                  Başka bir cihazda çalışmaya devam etmek için en uygun seçenektir.</p>
+              </div>
+            </article>
+            <article class="card">
+              <div>
+                <h3>Şablonlarıma Kaydet</h3>
+                <p>Krokiye bir ad vererek tekrar kullanılabilir başlangıç düzeni oluşturur. Kaydın ardından ana ekrana
+                  dönülür.</p>
+              </div>
+            </article>
+            <article class="card">
+              <div>
+                <h3>Ana Sayfaya Dön</h3>
+                <p>Kaydedilmemiş değişiklik varsa “Kaydet ve Dön”, “Kaydetmeden Dön” veya “İptal” seçeneklerini
+                  gösterir.</p>
+              </div>
+            </article>
+          </div>
+
+          <div class="callout warning"><strong>Kayıtların yeri:</strong> “Son Krokiler” ve “Şablonlarım” kayıtları o
+            tarayıcıda ve o cihazda saklanır. Tarayıcı verileri temizlenirse silinebilir. Önemli çalışmalarınızı ayrıca
+            “SVG Olarak Kaydet” ile dosya olarak saklayın.</div>
+
+          <div class="term-grid" aria-label="Dosya türleri">
+            <div class="term"><strong>PNG resim</strong><span>Paylaşmak, yazdırmak veya belgeye eklemek için.</span></div>
+            <div class="term"><strong>SVG çalışma dosyası</strong><span>Daha sonra Kroki Pro’da açıp düzenlemeye devam
+                etmek için.</span></div>
+          </div>
+        </section>
+
+        <section id="yardim">
+          <p class="section-kicker">Yardım</p>
+          <h2>Sık karşılaşılan durumlar</h2>
+          <p class="section-lead">Bir işlem beklediğiniz gibi görünmüyorsa çoğu zaman aşağıdaki kısa çözümlerden biri
+            yeterlidir.</p>
+
+          <div class="faq">
+            <details>
+              <summary>Nesneyi seçtim ama kontrol noktaları görünmedi</summary>
+              <p>İlk dokunuş yalnızca ön seçim yapar; aynı nesneye yeniden dokunmak düzenlemeyi başlatmaz. Nesnenin
+                kontrol noktalarından birine dokunun veya ön seçim sürerken sağdaki özelliklerden birini değiştirin.
+                Yeşil düzenleme görünümü açılır.</p>
+            </details>
+            <details>
+              <summary>Yeni bir çizim aracını kullanamıyorum</summary>
+              <p>Önce devam eden düzenlemeyi üstteki “Tamam” düğmesiyle bitirin. Açık bir araç veya kütüphane paneli
+                varsa kapatın, sonra çizim aracını yeniden seçin.</p>
+            </details>
+            <details>
+              <summary>Krokim ekranda kayboldu</summary>
+              <p>Sağ çubuğun en altındaki “Ekrana Sığdır” düğmesine basın. Bütün içerik yeniden ortalanır.</p>
+            </details>
+            <details>
+              <summary>Yolu gruplayamıyorum veya öne getiremiyorum</summary>
+              <p>Bu normaldir. Yollar diğer nesnelerle gruplanmaz ve levha, araç, metin gibi öğelerin altında tutulur.
+              </p>
+            </details>
+            <details>
+              <summary>Bir SVG dosyası açılmıyor</summary>
+              <p>Program yalnızca Kroki Pro’nun “SVG Olarak Kaydet” seçeneğiyle oluşturduğu düzenlenebilir dosyaları
+                açar. İnternetten indirilen veya başka programda oluşturulan sıradan SVG resimleri doğrudan içeri
+                alınmaz.</p>
+            </details>
+            <details>
+              <summary>Yanlışlıkla bir şeyi sildim veya taşıdım</summary>
+              <p>Sol üstteki “Geri Al” okuna basın. Bilgisayarda Ctrl+Z kısayolunu da kullanabilirsiniz.</p>
+            </details>
+          </div>
+
+          <a class="to-top" href="#top">↑ Sayfanın başına dön</a>
+        </section>
+      </main>
+    </div>
+
+    <footer>Kroki Pro Kullanım Kılavuzu · Programı kullanmaya yönelik kısa ve anlaşılır başvuru kaynağı</footer>
+  </div>
+
+  <script>
+    document.querySelector("#btnPrintGuide")?.addEventListener("click", () => window.print());
+
+    const guideLinks = Array.from(document.querySelectorAll(".contents a"));
+    const guideSections = guideLinks
+      .map((link) => document.querySelector(link.getAttribute("href")))
+      .filter(Boolean);
+
+    if ("IntersectionObserver" in window) {
+      const observer = new IntersectionObserver((entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!visible) return;
+        guideLinks.forEach((link) => {
+          link.classList.toggle("is-active", link.getAttribute("href") === "#" + visible.target.id);
+        });
+      }, { rootMargin: "-12% 0px -68% 0px", threshold: [0, .15, .35] });
+      guideSections.forEach((section) => observer.observe(section));
+    }
+  </script>
+</body>
+
+</html>
