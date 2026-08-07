@@ -1161,10 +1161,12 @@
 }
 
 .line-text-panel {
+  --line-text-panel-right: calc(var(--editor-rail-width) + 0.5rem);
+  --line-text-panel-width: min(18.3125rem, calc(100vw - var(--editor-rail-width) - 1rem));
   position: fixed;
   top: 4.25rem;
-  right: calc(var(--editor-rail-width) + 0.5rem);
-  width: min(18.3125rem, calc(100vw - var(--editor-rail-width) - 1rem));
+  right: var(--line-text-panel-right);
+  width: var(--line-text-panel-width);
   padding: 0.625rem;
   box-sizing: border-box;
   display: grid;
@@ -1443,9 +1445,9 @@
 }
 
 :root.kroki-text-entry-active .kroki-text-entry-host.line-text-panel {
-  right: 8px !important;
+  right: var(--line-text-panel-right) !important;
   left: auto !important;
-  width: min(360px, calc(var(--kroki-visual-viewport-width, 100vw) - 16px)) !important;
+  width: var(--line-text-panel-width) !important;
 }
 
 :root.kroki-text-entry-active .kroki-text-entry-host.free-text-composer {
