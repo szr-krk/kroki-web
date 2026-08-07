@@ -562,7 +562,7 @@ select {
   input[type="password"],
   [contenteditable]:not([contenteditable="false"]),
   [role="textbox"]
-) {
+):not(.line-text-input, .traffic-sign-text-input) {
   min-height: 44px !important;
   box-sizing: border-box;
   font-size: 16px !important;
