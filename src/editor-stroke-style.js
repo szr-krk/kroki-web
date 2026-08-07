@@ -53,6 +53,20 @@
     return Math.max(0.1, Math.round(numberOr(value, 2) * 1000) / 1000);
   }
 
+  function stepPositiveMetric(value, direction, fallback = 1) {
+    const current = Math.max(0.1, Math.round(numberOr(value, fallback) * 1000) / 1000);
+    if (direction > 0) {
+      if (current < 1) {
+        return Math.min(1, Math.round((current + 0.1) * 10) / 10);
+      }
+      return Math.floor(current) + 1;
+    }
+    if (current <= 1) {
+      return Math.max(0.1, Math.round((current - 0.1) * 10) / 10);
+    }
+    return Math.max(1, Math.ceil(current) - 1);
+  }
+
   function normalizeOpacity(value) {
     return Math.max(0, Math.min(1, numberOr(value, 1)));
   }
@@ -205,6 +219,7 @@
     normalizeDashPattern,
     normalizeLineCap,
     normalizeStrokeWidth,
+    stepPositiveMetric,
     normalizeOpacity,
     opacityPercent,
     normalizeDashSize,

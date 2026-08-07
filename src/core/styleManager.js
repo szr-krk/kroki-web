@@ -15,6 +15,7 @@
     normalizeDashPattern,
     normalizeLineCap,
     normalizeStrokeWidth,
+    stepPositiveMetric,
     normalizeOpacity,
     opacityPercent,
     normalizeDashSize,
@@ -1294,17 +1295,15 @@
   }
 
   function steppedStrokeWidth(value, direction) {
-    const current = normalizeStrokeWidth(value);
-    if (direction > 0) {
-      if (current < 1) {
-        return normalizeStrokeWidth(Math.min(1, Math.round((current + 0.1) * 10) / 10));
-      }
-      return normalizeStrokeWidth(Math.floor(current) + 1);
-    }
-    if (current <= 1) {
-      return normalizeStrokeWidth(Math.max(0.1, Math.round((current - 0.1) * 10) / 10));
-    }
-    return normalizeStrokeWidth(Math.max(1, Math.ceil(current) - 1));
+    return normalizeStrokeWidth(stepPositiveMetric(value, direction, 2));
+  }
+
+  function steppedDashSize(value, direction) {
+    return normalizeDashSize(stepPositiveMetric(value, direction, 1), 1);
+  }
+
+  function steppedDashGap(value, direction) {
+    return normalizeDashGap(stepPositiveMetric(value, direction, 1), 1);
   }
 
   function updatePrimarySize(delta) {
@@ -2083,10 +2082,10 @@
 
     bindHoldAction(controls.strokeMinus, () => updatePrimarySize(-1));
     bindHoldAction(controls.strokePlus, () => updatePrimarySize(1));
-    bindHoldAction(controls.dashSizeMinus, () => updateStyle({ dashSize: normalizeDashSize(activeEntry()?.model.style.dashSize - 1, 1) }));
-    bindHoldAction(controls.dashSizePlus, () => updateStyle({ dashSize: normalizeDashSize(activeEntry()?.model.style.dashSize + 1, 1) }));
-    bindHoldAction(controls.dashGapMinus, () => updateStyle({ dashGap: normalizeDashGap(activeEntry()?.model.style.dashGap - 1, 1) }));
-    bindHoldAction(controls.dashGapPlus, () => updateStyle({ dashGap: normalizeDashGap(activeEntry()?.model.style.dashGap + 1, 1) }));
+    bindHoldAction(controls.dashSizeMinus, () => updateStyle({ dashSize: steppedDashSize(activeEntry()?.model.style.dashSize, -1) }));
+    bindHoldAction(controls.dashSizePlus, () => updateStyle({ dashSize: steppedDashSize(activeEntry()?.model.style.dashSize, 1) }));
+    bindHoldAction(controls.dashGapMinus, () => updateStyle({ dashGap: steppedDashGap(activeEntry()?.model.style.dashGap, -1) }));
+    bindHoldAction(controls.dashGapPlus, () => updateStyle({ dashGap: steppedDashGap(activeEntry()?.model.style.dashGap, 1) }));
     bindHoldAction(controls.textSizeMinus, () => {
       blurActiveTextInput();
       updateLabel({ size: normalizeLabelSize(activeEntry()?.model.label.size - 1) });
