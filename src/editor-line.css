@@ -1430,6 +1430,155 @@
   color: #064e3b;
 }
 
+/* Sanal klavye acikken metin paneli ve araclari dokunulabilir boyutta kalir. */
+:root.kroki-text-entry-active .kroki-text-entry-host:is(.line-text-panel, .free-text-composer) {
+  top: calc(var(--kroki-visual-viewport-top, 0px) + 8px) !important;
+  width: min(620px, calc(var(--kroki-visual-viewport-width, 100vw) - 16px)) !important;
+  max-height: calc(var(--kroki-visual-viewport-height, 100dvh) - 16px) !important;
+  padding: 12px !important;
+  gap: 8px !important;
+  overflow: auto !important;
+  overscroll-behavior: contain;
+  z-index: 260 !important;
+}
+
+:root.kroki-text-entry-active .kroki-text-entry-host.line-text-panel {
+  right: 8px !important;
+  left: auto !important;
+  width: min(360px, calc(var(--kroki-visual-viewport-width, 100vw) - 16px)) !important;
+}
+
+:root.kroki-text-entry-active .kroki-text-entry-host.free-text-composer {
+  left: 50vw !important;
+}
+
+:root.kroki-text-entry-active .kroki-text-entry-host :is(
+  .line-text-input,
+  .free-text-input
+) {
+  min-height: 88px !important;
+  max-height: 120px !important;
+  padding: 10px 12px !important;
+  resize: none;
+}
+
+:root.kroki-text-entry-active .kroki-text-entry-host :is(
+  .vehicle-label-input,
+  .traffic-sign-text-input
+) {
+  height: 44px !important;
+  padding: 8px 10px !important;
+}
+
+:root.kroki-text-entry-active .kroki-text-entry-host .traffic-sign-text-field {
+  grid-template-columns: 80px minmax(160px, 1fr) !important;
+  gap: 8px !important;
+}
+
+:root.kroki-text-entry-active .kroki-text-entry-host .traffic-sign-text-label {
+  font-size: 14px !important;
+}
+
+:root.kroki-text-entry-active .kroki-text-entry-host :is(.line-text-actions, .free-text-actions) {
+  min-height: 44px;
+  flex-wrap: nowrap !important;
+  gap: 8px !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex: 0 0 auto;
+  padding-bottom: 2px;
+}
+
+:root.kroki-text-entry-active .kroki-text-entry-host .line-text-size-picker {
+  width: 132px !important;
+  height: 44px !important;
+  flex: 0 0 132px;
+  grid-template-columns: repeat(3, 44px) !important;
+}
+
+:root.kroki-text-entry-active .kroki-text-entry-host :is(
+  .line-text-picker-btn,
+  .line-text-picker-value,
+  .line-text-icon-btn,
+  .free-text-command-btn,
+  .vehicle-label-position-choice
+) {
+  min-width: 44px !important;
+  width: 44px !important;
+  min-height: 44px !important;
+  height: 44px !important;
+  flex: 0 0 44px;
+  font-size: 16px !important;
+}
+
+:root.kroki-text-entry-active .kroki-text-entry-host .free-text-command-btn {
+  width: auto !important;
+  min-width: 72px !important;
+  flex-basis: auto;
+  padding: 0 14px !important;
+  position: sticky;
+  z-index: 2;
+  box-shadow: 0 0 0 4px #ffffff;
+}
+
+:root.kroki-text-entry-active .kroki-text-entry-host #btnFreeTextCancel {
+  right: 92px;
+}
+
+:root.kroki-text-entry-active .kroki-text-entry-host #btnFreeTextDone {
+  right: 0;
+}
+
+:root.kroki-text-entry-active .kroki-text-entry-host.vehicle-label-panel .vehicle-label-actions {
+  grid-template-columns: repeat(4, minmax(44px, 1fr)) !important;
+  gap: 8px !important;
+}
+
+:root.kroki-text-entry-active .kroki-text-entry-host:is(.road-ip-stepper, .side-ip-stepper-vertical) {
+  position: fixed !important;
+  top: calc(var(--kroki-visual-viewport-top, 0px) + 8px) !important;
+  right: 8px !important;
+  width: 132px !important;
+  height: 132px !important;
+  min-height: 132px !important;
+  flex: 0 0 132px !important;
+  grid-template-rows: repeat(3, 44px) !important;
+  border: 2px solid #64748b !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, .28);
+  z-index: 270 !important;
+}
+
+:root.kroki-text-entry-active .kroki-text-entry-host:is(.road-ip-stepper, .side-ip-stepper-vertical) > :is(button, input) {
+  width: 100% !important;
+  min-height: 44px !important;
+  height: 44px !important;
+  font-size: 16px !important;
+}
+
+:root.kroki-text-entry-active .kroki-text-entry-host:is(.road-departure-stepper, .road-builder-stepper) {
+  position: fixed !important;
+  top: calc(var(--kroki-visual-viewport-top, 0px) + 8px) !important;
+  right: 8px !important;
+  width: 220px !important;
+  height: 44px !important;
+  grid-template-columns: 44px minmax(0, 1fr) 44px !important;
+  gap: 0 !important;
+  border: 2px solid #64748b !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+  background: #ffffff !important;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, .28);
+  z-index: 270 !important;
+}
+
+:root.kroki-text-entry-active .kroki-text-entry-host:is(.road-departure-stepper, .road-builder-stepper) > :is(button, input) {
+  min-height: 44px !important;
+  height: 44px !important;
+  font-size: 16px !important;
+}
+
 .road-pocket-cycle-btn {
   min-height: var(--editor-rail-button-size);
   padding: 0.3125rem;

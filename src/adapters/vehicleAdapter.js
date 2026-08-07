@@ -191,6 +191,7 @@
       if (!path?.d) return;
       append(art, "path", {
         d: path.d,
+        transform: path.transform || null,
         ...pathStyleFor(path.role, metadata, path)
       });
     });

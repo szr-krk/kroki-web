@@ -336,6 +336,27 @@
     });
   }
 
+  function normalizeCompactPreviewVisibility(svgElement) {
+    svgElement?.querySelectorAll?.("[stroke]").forEach((node) => {
+      const stroke = String(node.getAttribute("stroke") || "").trim().toLowerCase();
+      const strokeWidthText = node.getAttribute("stroke-width")
+        || node.style?.getPropertyValue?.("stroke-width")
+        || "1";
+      const strokeOpacityText = node.getAttribute("stroke-opacity")
+        || node.style?.getPropertyValue?.("stroke-opacity")
+        || "1";
+      const strokeWidth = Number.parseFloat(strokeWidthText);
+      const strokeOpacity = Number.parseFloat(strokeOpacityText);
+      if (!stroke || stroke === "none" || stroke === "transparent") return;
+      if (Number.isFinite(strokeOpacity) && strokeOpacity <= 0) return;
+      if (Number.isFinite(strokeWidth) && strokeWidth > 3) return;
+
+      node.setAttribute("vector-effect", "non-scaling-stroke");
+      node.style?.setProperty?.("vector-effect", "non-scaling-stroke", "important");
+      node.style?.setProperty?.("stroke-width", "1.1px", "important");
+    });
+  }
+
   function exportedSvgString(viewBox, options = {}) {
     const clone = canvas.cloneNode(true);
     clone.setAttribute("xmlns", SVG_NS);
@@ -388,7 +409,7 @@
     };
   }
 
-  function previewSvgForDisplay(svg) {
+  function previewSvgForDisplay(svg, options = {}) {
     const source = String(svg || "");
     try {
       const parsed = new DOMParser().parseFromString(source, "image/svg+xml");
@@ -411,6 +432,7 @@
         svgElement.setAttribute("preserveAspectRatio", "xMidYMid meet");
       }
       normalizeRoadPreviewStrokeScaling(svgElement);
+      if (options.compactPreview) normalizeCompactPreviewVisibility(svgElement);
       return new XMLSerializer().serializeToString(svgElement);
     } catch {
       return source;
@@ -418,7 +440,7 @@
   }
 
   function svgDataUrl(svg, options = {}) {
-    const output = options.fitPreview ? previewSvgForDisplay(svg) : String(svg || "");
+    const output = options.fitPreview ? previewSvgForDisplay(svg, options) : String(svg || "");
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(output)}`;
   }
 
@@ -746,13 +768,16 @@
     }
   }
 
-  function renderPreviewInto(target, entry) {
+  function renderPreviewInto(target, entry, options = {}) {
     target.replaceChildren();
     if (entry.previewSvg) {
       const image = document.createElement("img");
       image.alt = "";
       image.loading = "lazy";
-      image.src = svgDataUrl(entry.previewSvg, { fitPreview: true });
+      image.src = svgDataUrl(entry.previewSvg, {
+        fitPreview: true,
+        compactPreview: options.compactPreview === true
+      });
       target.append(image);
       return;
     }
@@ -771,7 +796,7 @@
 
     const preview = document.createElement("span");
     preview.className = "stored-doc-thumb";
-    renderPreviewInto(preview, entry);
+    renderPreviewInto(preview, entry, { compactPreview: true });
 
     const meta = document.createElement("span");
     meta.className = "stored-doc-meta";

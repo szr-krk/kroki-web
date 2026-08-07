@@ -2216,6 +2216,371 @@
     },
   };
 
+  function roundVehicleUnit(value) {
+    return Math.round(Number(value) * 1000) / 1000;
+  }
+
+  function vehicleUnits(meters) {
+    return roundVehicleUnit(Number(meters) * METERS_TO_UNITS);
+  }
+
+  function stretchVehicleView(view, targetWidth, targetHeight) {
+    const [sourceX, sourceY, sourceWidth, sourceHeight] = String(view?.viewBox || "")
+      .trim()
+      .split(/[\s,]+/)
+      .map(Number);
+    if (![sourceX, sourceY, sourceWidth, sourceHeight].every(Number.isFinite) || sourceWidth <= 0 || sourceHeight <= 0) {
+      return view;
+    }
+    const width = roundVehicleUnit(targetWidth);
+    const height = roundVehicleUnit(targetHeight);
+    const scaleX = roundVehicleUnit(width / sourceWidth);
+    const scaleY = roundVehicleUnit(height / sourceHeight);
+    const translateX = roundVehicleUnit(-sourceX * scaleX);
+    const translateY = roundVehicleUnit(-sourceY * scaleY);
+    return {
+      viewBox: `0 0 ${width} ${height}`,
+      paths: view.paths.map((path) => ({
+        ...path,
+        transform: `translate(${translateX} ${translateY}) scale(${scaleX} ${scaleY})${path.transform ? ` ${path.transform}` : ""}`,
+      })),
+    };
+  }
+
+  function circlePath(cx, cy, radius) {
+    const left = roundVehicleUnit(cx - radius);
+    const right = roundVehicleUnit(cx + radius);
+    const centerY = roundVehicleUnit(cy);
+    const r = roundVehicleUnit(radius);
+    return `M ${left} ${centerY} A ${r} ${r} 0 1 0 ${right} ${centerY} A ${r} ${r} 0 1 0 ${left} ${centerY} Z`;
+  }
+
+  function busWheelPaths(axles, centerY, radius) {
+    return [
+      {
+        role: "wheel",
+        fill: "#ffffff",
+        stroke: "#000000",
+        strokeWidth: 0.8,
+        ghost: "preserve",
+        d: axles.map((x) => circlePath(x, centerY, radius)).join(" "),
+      },
+      {
+        role: "wheel",
+        fill: "#000000",
+        stroke: "#000000",
+        strokeWidth: 0.5,
+        ghost: "preserve",
+        d: axles.map((x) => circlePath(x, centerY, radius * 0.58)).join(" "),
+      },
+    ];
+  }
+
+  function representativeCoachViews(lengthM, widthM, heightM) {
+    const length = vehicleUnits(lengthM);
+    const width = vehicleUnits(widthM);
+    const height = vehicleUnits(heightM);
+    const wheelY = height * 0.9;
+    const wheelRadius = height * 0.095;
+    const axles = [length * 0.2, length * 0.79];
+    return {
+      top: stretchVehicleView(VEHICLE_SVG_VIEWS.v10_otobus.top, length, width),
+      side: {
+        viewBox: `0 0 ${length} ${height}`,
+        paths: [
+          {
+            role: "body",
+            fill: "vehicle",
+            stroke: "#000000",
+            strokeWidth: 0.8,
+            paintable: true,
+            ghost: "auto",
+            d: `M 2 ${height * 0.86} V ${height * 0.18} Q 2 2 ${height * 0.18} 2 H ${length * 0.82} Q ${length * 0.91} 2 ${length * 0.97} ${height * 0.22} L ${length - 2} ${height * 0.52} V ${height * 0.86} Z`,
+          },
+          {
+            role: "window",
+            fill: "#ffffff",
+            stroke: "#000000",
+            strokeWidth: 0.65,
+            ghost: "preserve",
+            d: `M ${length * 0.055} ${height * 0.14} H ${length * 0.81} Q ${length * 0.87} ${height * 0.14} ${length * 0.94} ${height * 0.3} L ${length * 0.97} ${height * 0.48} H ${length * 0.055} Z`,
+          },
+          {
+            role: "detail",
+            fill: "none",
+            stroke: "#ffffff",
+            strokeWidth: 0.75,
+            ghost: "preserve",
+            d: `M ${length * 0.06} ${height * 0.58} H ${length * 0.91} M ${length * 0.3} ${height * 0.6} V ${height * 0.83} M ${length * 0.47} ${height * 0.6} V ${height * 0.83} M ${length * 0.64} ${height * 0.6} V ${height * 0.83} M ${length * 0.81} ${height * 0.52} V ${height * 0.83}`,
+          },
+          ...busWheelPaths(axles, wheelY, wheelRadius),
+        ],
+      },
+      upsideDown: stretchVehicleView(VEHICLE_SVG_VIEWS.v10_otobus.upsideDown, length, width),
+    };
+  }
+
+  function representativeDoubleDeckerViews(lengthM, widthM, heightM) {
+    const length = vehicleUnits(lengthM);
+    const width = vehicleUnits(widthM);
+    const height = vehicleUnits(heightM);
+    const wheelY = height * 0.91;
+    const wheelRadius = height * 0.09;
+    const axles = [length * 0.2, length * 0.78];
+    return {
+      top: stretchVehicleView(VEHICLE_SVG_VIEWS.v10_otobus.top, length, width),
+      side: {
+        viewBox: `0 0 ${length} ${height}`,
+        paths: [
+          {
+            role: "body",
+            fill: "vehicle",
+            stroke: "#000000",
+            strokeWidth: 0.8,
+            paintable: true,
+            ghost: "auto",
+            d: `M 2 ${height * 0.88} L 2 ${height * 0.12} Q 2 2 ${height * 0.16} 2 L ${length * 0.84} 2 Q ${length * 0.95} 2 ${length - 2} ${height * 0.25} L ${length - 2} ${height * 0.88} Z`,
+          },
+          {
+            role: "window",
+            fill: "#ffffff",
+            stroke: "#000000",
+            strokeWidth: 0.65,
+            ghost: "preserve",
+            d: `M ${length * 0.06} ${height * 0.12} H ${length * 0.83} L ${length * 0.94} ${height * 0.32} H ${length * 0.06} Z M ${length * 0.06} ${height * 0.39} H ${length * 0.94} V ${height * 0.6} H ${length * 0.06} Z`,
+          },
+          {
+            role: "detail",
+            fill: "none",
+            stroke: "#ffffff",
+            strokeWidth: 0.8,
+            ghost: "preserve",
+            d: `M ${length * 0.06} ${height * 0.35} H ${length * 0.94} M ${length * 0.55} ${height * 0.61} V ${height * 0.86} M ${length * 0.68} ${height * 0.61} V ${height * 0.86}`,
+          },
+          ...busWheelPaths(axles, wheelY, wheelRadius),
+        ],
+      },
+      upsideDown: stretchVehicleView(VEHICLE_SVG_VIEWS.v10_otobus.upsideDown, length, width),
+    };
+  }
+
+  function representativeArticulatedViews(lengthM, widthM, heightM) {
+    const length = vehicleUnits(lengthM);
+    const width = vehicleUnits(widthM);
+    const height = vehicleUnits(heightM);
+    const jointStart = length * 0.52;
+    const jointEnd = length * 0.59;
+    const wheelY = height * 0.91;
+    const wheelRadius = height * 0.105;
+    const axles = [length * 0.15, length * 0.47, length * 0.82];
+    const bellowsLines = Array.from({ length: 6 }, (_, index) => {
+      const x = jointStart + (jointEnd - jointStart) * (index + 0.5) / 6;
+      return `M ${x} ${height * 0.12} V ${height * 0.83}`;
+    }).join(" ");
+    return {
+      top: {
+        viewBox: `0 0 ${length} ${width}`,
+        paths: [
+          {
+            role: "body",
+            fill: "vehicle",
+            stroke: "#000000",
+            strokeWidth: 0.8,
+            paintable: true,
+            ghost: "auto",
+            d: `M 2 1 H ${jointStart} V ${width - 1} H 2 Q 0 ${width - 1} 0 ${width - 3} V 3 Q 0 1 2 1 Z M ${jointEnd} 1 H ${length - 3} Q ${length} 1 ${length} 4 V ${width - 4} Q ${length} ${width - 1} ${length - 3} ${width - 1} H ${jointEnd} Z`,
+          },
+          {
+            role: "detail",
+            fill: "#d1d5db",
+            stroke: "#000000",
+            strokeWidth: 0.6,
+            ghost: "preserve",
+            d: `M ${jointStart} 2 H ${jointEnd} V ${width - 2} H ${jointStart} Z`,
+          },
+          {
+            role: "detail",
+            fill: "none",
+            stroke: "#000000",
+            strokeWidth: 0.45,
+            ghost: "preserve",
+            d: Array.from({ length: 6 }, (_, index) => {
+              const x = jointStart + (jointEnd - jointStart) * (index + 0.5) / 6;
+              return `M ${x} 2 V ${width - 2}`;
+            }).join(" "),
+          },
+        ],
+      },
+      side: {
+        viewBox: `0 0 ${length} ${height}`,
+        paths: [
+          {
+            role: "body",
+            fill: "vehicle",
+            stroke: "#000000",
+            strokeWidth: 0.8,
+            paintable: true,
+            ghost: "auto",
+            d: `M 2 ${height * 0.86} V ${height * 0.14} Q 2 2 ${height * 0.16} 2 H ${length * 0.9} Q ${length - 2} 2 ${length - 2} ${height * 0.24} V ${height * 0.86} Z`,
+          },
+          {
+            role: "window",
+            fill: "#ffffff",
+            stroke: "#000000",
+            strokeWidth: 0.65,
+            ghost: "preserve",
+            d: `M ${length * 0.04} ${height * 0.13} H ${jointStart - 2} V ${height * 0.5} H ${length * 0.04} Z M ${jointEnd + 2} ${height * 0.13} H ${length * 0.9} L ${length * 0.97} ${height * 0.5} H ${jointEnd + 2} Z`,
+          },
+          {
+            role: "detail",
+            fill: "#d1d5db",
+            stroke: "#000000",
+            strokeWidth: 0.65,
+            ghost: "preserve",
+            d: `M ${jointStart} ${height * 0.1} H ${jointEnd} V ${height * 0.84} H ${jointStart} Z`,
+          },
+          {
+            role: "detail",
+            fill: "none",
+            stroke: "#000000",
+            strokeWidth: 0.5,
+            ghost: "preserve",
+            d: bellowsLines,
+          },
+          ...busWheelPaths(axles, wheelY, wheelRadius),
+        ],
+      },
+      upsideDown: {
+        viewBox: `0 0 ${length} ${width}`,
+        paths: [
+          {
+            role: "body",
+            fill: "#ffffff",
+            stroke: "#000000",
+            strokeWidth: 0.8,
+            ghost: "auto",
+            d: `M 2 1 H ${jointStart} V ${width - 1} H 2 Q 0 ${width - 1} 0 ${width - 3} V 3 Q 0 1 2 1 Z M ${jointEnd} 1 H ${length - 3} Q ${length} 1 ${length} 4 V ${width - 4} Q ${length} ${width - 1} ${length - 3} ${width - 1} H ${jointEnd} Z`,
+          },
+          {
+            role: "damage-cross",
+            fill: "none",
+            stroke: "#000000",
+            strokeWidth: 0.8,
+            ghost: "auto",
+            d: `M 4 2 L ${jointStart - 2} ${width - 2} M ${jointStart - 2} 2 L 4 ${width - 2} M ${jointEnd + 2} 2 L ${length - 4} ${width - 2} M ${length - 4} 2 L ${jointEnd + 2} ${width - 2}`,
+          },
+          {
+            role: "detail",
+            fill: "#d1d5db",
+            stroke: "#000000",
+            strokeWidth: 0.6,
+            ghost: "preserve",
+            d: `M ${jointStart} 2 H ${jointEnd} V ${width - 2} H ${jointStart} Z`,
+          },
+        ],
+      },
+    };
+  }
+
+  const CRAFTER_LENGTH_M = 7.391;
+  const CRAFTER_WIDTH_M = 2.04;
+  const CRAFTER_HEIGHT_M = 2.637;
+  const TRAVEGO_LENGTH_M = 13.115;
+  const TRAVEGO_WIDTH_M = 2.55;
+  const TRAVEGO_HEIGHT_M = 3.99;
+
+  VEHICLE_SVG_VIEWS.v10_kucuk_crafter = {
+    top: stretchVehicleView(
+      VEHICLE_SVG_VIEWS.v10_otobus.top,
+      vehicleUnits(CRAFTER_LENGTH_M),
+      vehicleUnits(CRAFTER_WIDTH_M)
+    ),
+    side: {
+      viewBox: "12 18 963 350",
+      paths: [
+        {
+          role: "body",
+          fill: "vehicle",
+          stroke: "#ffffff",
+          strokeWidth: 4,
+          paintable: true,
+          ghost: "auto",
+          d: "M14 262 17 262 18 157 21 139 27 36Q29 21 35 21L677 21Q701 20 783 93L847 157Q863 171 927 191 954 198 970 227L970 227 970 261Q973 261 973 266L973 276Q973 281 968 281L968 293Q973 293 973 297L973 310Q973 318 962 318L15 318Z",
+        },
+        {
+          role: "window",
+          fill: "#ffffff",
+          stroke: "#000000",
+          strokeWidth: 2,
+          ghost: "preserve",
+          d: "M45 79Q45 74 50 74L205 74Q210 74 210 79L210 171Q210 176 205 176L50 176Q45 176 45 171ZM220 79Q220 74 225 74L332 74Q337 74 337 79L337 171Q337 176 332 176L225 176Q220 176 220 171ZM473 79Q473 74 478 74L638 75Q647 75 644 93L637 152Q635 175 592 175L478 176Q473 176 473 171ZM347 79Q347 74 352 74L458 74Q463 74 463 79L463 171Q463 176 458 176L352 176Q347 176 347 171ZM673 97Q672 89 680 89L741 89Q749 89 751 92L831 186Q838 196 827 196L782 196 777 190 688 164Q680 162 678 145Z",
+        },
+        {
+          role: "detail",
+          fill: "#ef4444",
+          stroke: "#000000",
+          strokeWidth: 2,
+          ghost: "preserve",
+          d: "M19 176 27 176 43 191 43 261 19 261Z",
+        },
+        {
+          role: "wheel",
+          fill: "vehicle",
+          stroke: "#ffffff",
+          strokeWidth: 4,
+          ghost: "preserve",
+          d: "M224 318A1 1 0 01318 318 1 1 0 01224 318Z M789 318A1 1 0 01883 318 1 1 0 01789 318Z",
+        },
+        {
+          role: "wheel",
+          fill: "#ffffff",
+          stroke: "#000000",
+          strokeWidth: 1,
+          ghost: "preserve",
+          d: "M292 318A1 1 0 01250 318 1 1 0 01292 318Z M857 318A1 1 0 01815 318 1 1 0 01857 318Z",
+        },
+        {
+          role: "detail",
+          fill: "#ffffff",
+          stroke: "#000000",
+          strokeWidth: 2,
+          ghost: "preserve",
+          d: "M890 203Q883 202 887 210 899 233 939 243 956 246 949 227L949 227Q933 206 890 203Z",
+        },
+        {
+          role: "detail",
+          fill: "none",
+          stroke: "#ffffff",
+          strokeWidth: 2,
+          ghost: "preserve",
+          d: "M660 65 660 305Q660 310 665 310L780 310Q786 267 835 260 840 260 840 255L840 175Q840 170 835 165L735 65Q732.5 62.5 725 60L665 60Q660 60 660 65ZM468 65Q468 60 473 60L645 60Q650 60 650 65L650 305Q650 310 645 310L473 310Q468 310 468 305Z M800 150 800 210Q820 210 820 200L820 160Q820 150 800 150Z",
+        },
+        {
+          role: "detail",
+          fill: "#ffffff",
+          stroke: "#000000",
+          strokeWidth: 4,
+          ghost: "preserve",
+          d: "M463 200 250 200 250 190 463 190Z",
+        },
+      ],
+    },
+    upsideDown: stretchVehicleView(
+      VEHICLE_SVG_VIEWS.v10_otobus.upsideDown,
+      vehicleUnits(CRAFTER_LENGTH_M),
+      vehicleUnits(CRAFTER_WIDTH_M)
+    ),
+  };
+
+  VEHICLE_SVG_VIEWS.v10_buyuk_travego = representativeCoachViews(
+    TRAVEGO_LENGTH_M,
+    TRAVEGO_WIDTH_M,
+    TRAVEGO_HEIGHT_M
+  );
+
+  VEHICLE_SVG_VIEWS.v10_cift_katli = representativeDoubleDeckerViews(13.5, 2.55, 4.2);
+  VEHICLE_SVG_VIEWS.v10_koruklu = representativeArticulatedViews(18, 2.55, 3.2);
+
   const TYPES = [
     {
       id: "01",
@@ -2442,11 +2807,24 @@
     },
     {
       id: "10",
-      title: "10 Otobus",
+      title: "10 Otobüs",
       variants: [
         {
+          id: "kucuk-crafter",
+          name: "Küçük Otobüs (Crafter)",
+          kind: "box",
+          lengthM: CRAFTER_LENGTH_M,
+          widthM: CRAFTER_WIDTH_M,
+          heightM: CRAFTER_HEIGHT_M,
+          nominalLengthM: CRAFTER_LENGTH_M,
+          nominalWidthM: CRAFTER_WIDTH_M,
+          nominalHeightM: CRAFTER_HEIGHT_M,
+          color: "#000000",
+          views: VEHICLE_SVG_VIEWS.v10_kucuk_crafter,
+        },
+        {
           id: "otobus",
-          name: "Otobus",
+          name: "Orta Boy Otobüs",
           kind: "box",
           lengthM: 10.327,
           widthM: 2.55,
@@ -2458,17 +2836,43 @@
           views: VEHICLE_SVG_VIEWS.v10_otobus,
         },
         {
-          id: "yolcu-otobusu",
-          name: "Yolcu Otobusu",
+          id: "buyuk-travego",
+          name: "Büyük Otobüs (Travego)",
           kind: "box",
-          lengthM: 10.327,
+          lengthM: TRAVEGO_LENGTH_M,
+          widthM: TRAVEGO_WIDTH_M,
+          heightM: TRAVEGO_HEIGHT_M,
+          nominalLengthM: TRAVEGO_LENGTH_M,
+          nominalWidthM: TRAVEGO_WIDTH_M,
+          nominalHeightM: TRAVEGO_HEIGHT_M,
+          color: "#000000",
+          views: VEHICLE_SVG_VIEWS.v10_buyuk_travego,
+        },
+        {
+          id: "cift-katli",
+          name: "Çift Katlı Otobüs (Temsili)",
+          kind: "long",
+          lengthM: 13.5,
           widthM: 2.55,
-          heightM: 3.13,
+          heightM: 4.2,
           nominalLengthM: 13.5,
           nominalWidthM: 2.55,
-          nominalHeightM: 3.6,
+          nominalHeightM: 4.2,
           color: "#000000",
-          views: VEHICLE_SVG_VIEWS.v10_yolcu_otobusu,
+          views: VEHICLE_SVG_VIEWS.v10_cift_katli,
+        },
+        {
+          id: "koruklu",
+          name: "Körüklü Otobüs (Temsili)",
+          kind: "long",
+          lengthM: 18,
+          widthM: 2.55,
+          heightM: 3.2,
+          nominalLengthM: 18,
+          nominalWidthM: 2.55,
+          nominalHeightM: 3.2,
+          color: "#000000",
+          views: VEHICLE_SVG_VIEWS.v10_koruklu,
         },
       ],
     },

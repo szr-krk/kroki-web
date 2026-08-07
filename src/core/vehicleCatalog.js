@@ -4,6 +4,9 @@
 
   const VIEW_ORDER = ["top", "side", "upsideDown"];
   const DEFAULT_COLOR = "#000000";
+  const LEGACY_VARIANT_ALIASES = {
+    "10/yolcu-otobusu": "10/otobus"
+  };
 
   function typeList() {
     const unsupported = new Set(data.upsideDownUnsupported || []);
@@ -42,10 +45,14 @@
 
   function findVariant(keyOrTypeId, variantId) {
     if (variantId) {
+      const requestedKey = `${String(keyOrTypeId || "")}/${String(variantId || "")}`;
+      const aliasedKey = LEGACY_VARIANT_ALIASES[requestedKey];
+      if (aliasedKey) return allVariants().find((variant) => variant.key === aliasedKey) || null;
       return variantsForType(keyOrTypeId).find((variant) => variant.id === variantId) || null;
     }
     const key = String(keyOrTypeId || "");
-    return allVariants().find((variant) => variant.key === key || variant.id === key) || null;
+    const normalizedKey = LEGACY_VARIANT_ALIASES[key] || key;
+    return allVariants().find((variant) => variant.key === normalizedKey || variant.id === normalizedKey) || null;
   }
 
   function metersToUnits(value) {
