@@ -7,7 +7,7 @@
   <title>Kroki Pro</title>
   <link rel="stylesheet" href="src/home.css?v=20260803-proportional-responsive-v1" />
   <link rel="stylesheet" href="src/editor.css?v=20260803-proportional-responsive-v1" />
-  <link rel="stylesheet" href="src/editor-line.css?v=20260803-proportional-responsive-v1" />
+  <link rel="stylesheet" href="src/editor-line.css?v=20260807-arrow-buttons-v1" />
 </head>
 
 <body>
@@ -672,16 +672,22 @@
 
         <button id="btnLineStyle" class="side-ip-btn side-ip-tool side-ip-style-btn" type="button"
           aria-label="Cizgi stili" title="Cizgi stili" aria-controls="lineStylePanel" aria-expanded="false">
-          <svg id="iconLineStyle" class="side-ip-style-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true"></svg>
+          <svg id="iconLineStyle" class="side-ip-style-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+            <path d="M9 14H39" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="3.8"></path>
+            <path d="M9 24H39" fill="none" stroke="currentColor" stroke-dasharray="6 5" stroke-linecap="round"
+              stroke-width="3.8"></path>
+            <path d="M9 34H39" fill="none" stroke="currentColor" stroke-dasharray="0 9" stroke-linecap="round"
+              stroke-width="3"></path>
+          </svg>
         </button>
 
         <div class="side-ip-arrow-stack side-ip-control line-only-control" aria-label="Cizgi ok uclari">
           <button id="btnLineStartArrow" class="side-ip-arrow-btn" type="button"
-            aria-label="Baslangic ok ucu" title="Baslangic ok ucu">
+            aria-label="Baslangic ok ucu" title="Baslangic ok ucunu degistir. Kaldirmak icin uzun bas.">
             <svg id="iconLineStartArrow" viewBox="0 0 48 24" aria-hidden="true"></svg>
           </button>
           <button id="btnLineEndArrow" class="side-ip-arrow-btn" type="button"
-            aria-label="Bitis ok ucu" title="Bitis ok ucu">
+            aria-label="Bitis ok ucu" title="Bitis ok ucunu degistir. Kaldirmak icin uzun bas.">
             <svg id="iconLineEndArrow" viewBox="0 0 48 24" aria-hidden="true"></svg>
           </button>
         </div>
@@ -1282,7 +1288,7 @@
   <script src="src/editor-rail.js?v=20260801-cp-fit-preselect-v1"></script>
   <script src="src/editor-camera.js?v=20260730-road-departure-geometry-v4"></script>
   <script src="src/editor-object-edit.js?v=20260803-proportional-responsive-v1"></script>
-  <script src="src/editor-stroke-style.js"></script>
+  <script src="src/editor-stroke-style.js?v=20260807-line-style-icon-v2"></script>
   <script src="src/data/traffic-signs-1-tanzim-levhalari.generated.js?v=20260727-314-signs"></script>
   <script src="src/data/traffic-signs-2-uyari-levhalari.generated.js?v=20260727-314-signs"></script>
   <script src="src/data/traffic-signs-3-bilgi-levhalari.generated.js?v=20260727-314-signs"></script>
@@ -1297,7 +1303,7 @@
   <script src="src/core/otherSymbolCatalog.js"></script>
   <script src="src/core/vehicleCatalog.js"></script>
   <script src="src/core/shapeRegistry.js"></script>
-  <script src="src/core/styleManager.js?v=20260713-pattern-none-white"></script>
+  <script src="src/core/styleManager.js?v=20260807-arrow-icons-v2"></script>
   <script src="src/core/editorObjectManager.js?v=20260731-road-departure-lifecycle-v1"></script>
   <script src="src/core/groupManager.js"></script>
   <script src="src/core/documentSerializer.js?v=20260730-road-departure-geometry-v4"></script>

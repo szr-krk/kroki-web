@@ -150,17 +150,17 @@
         d: "M9 24H39",
         fill: "none",
         stroke: "currentColor",
-        "stroke-dasharray": "8 5",
+        "stroke-dasharray": "6 5",
         "stroke-linecap": "round",
         "stroke-width": "3.8"
       }),
       createSvgElement("path", {
-        d: "M10 34H38",
+        d: "M9 34H39",
         fill: "none",
         stroke: "currentColor",
-        "stroke-dasharray": "0 7",
+        "stroke-dasharray": "0 9",
         "stroke-linecap": "round",
-        "stroke-width": "3.8"
+        "stroke-width": "3"
       })
     );
   }

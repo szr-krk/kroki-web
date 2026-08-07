@@ -29,12 +29,12 @@
   } = strokeStyle;
 
   const ARROW_TYPES = [
-    { id: "none" },
-    { id: "triangle" },
-    { id: "triangle2" },
-    { id: "bar" },
-    { id: "trianglewithbar" },
-    { id: "circle" }
+    { id: "none", title: "Ok ucu yok" },
+    { id: "triangle", title: "Dolu ucgen ok" },
+    { id: "triangle2", title: "Kirik ucgen ok" },
+    { id: "bar", title: "Dik cizgi ucu" },
+    { id: "trianglewithbar", title: "Cizgili ucgen ok" },
+    { id: "circle", title: "Daire ucu" }
   ];
   const TEXT_SIDES = [
     { id: "on", title: "Metin cizgi ustunde" },
@@ -956,8 +956,9 @@
   function renderArrowIcon(svg, type, isStart) {
     if (!svg) return;
     const point = isStart ? 10 : 38;
+    const hasTriangle = type === "triangle" || type === "triangle2" || type === "trianglewithbar";
     svg.replaceChildren(utils.createSvgElement("path", {
-      d: "M10 12H38",
+      d: hasTriangle ? (isStart ? "M12 12H38" : "M10 12H36") : "M10 12H38",
       fill: "none",
       stroke: "currentColor",
       "stroke-linecap": "round",
@@ -973,7 +974,7 @@
     }
     if (type === "triangle2") {
       svg.append(utils.createSvgElement("path", {
-        d: isStart ? "M10 12L21 6L21 18L17 12Z" : "M38 12L27 6L27 18L31 12Z",
+        d: isStart ? "M20 18L10 12L20 6L17 12Z" : "M28 18L38 12L28 6L31 12Z",
         fill: "currentColor"
       }));
       return;
@@ -981,11 +982,11 @@
     if (type === "trianglewithbar") {
       svg.append(
         utils.createSvgElement("path", {
-          d: isStart ? "M10 12L20 7L20 17Z" : "M38 12L28 7L28 17Z",
+          d: isStart ? "M10 12L20 5L20 18Z" : "M38 12L28 5L28 18Z",
           fill: "currentColor"
         }),
         utils.createSvgElement("path", {
-          d: isStart ? "M22 6V18" : "M26 6V18",
+          d: isStart ? "M10 6V18" : "M38 6V18",
           fill: "none",
           stroke: "currentColor",
           "stroke-linecap": "round",
@@ -1822,6 +1823,12 @@
     controls.lineCapButton?.setAttribute("aria-label", style.dash === "dot" ? "Noktali desende yuvarlak stroke ucu" : lineCap.title);
     renderArrowIcon(controls.startArrowIcon, style.arrowStart, true);
     renderArrowIcon(controls.endArrowIcon, style.arrowEnd, false);
+    const startArrowTitle = choiceById(ARROW_TYPES, style.arrowStart).title;
+    const endArrowTitle = choiceById(ARROW_TYPES, style.arrowEnd).title;
+    controls.startArrow?.setAttribute("title", `Baslangic: ${startArrowTitle}. Kaldirmak icin uzun bas.`);
+    controls.startArrow?.setAttribute("aria-label", `Baslangic ok ucu: ${startArrowTitle}. Kaldirmak icin uzun bas.`);
+    controls.endArrow?.setAttribute("title", `Bitis: ${endArrowTitle}. Kaldirmak icin uzun bas.`);
+    controls.endArrow?.setAttribute("aria-label", `Bitis ok ucu: ${endArrowTitle}. Kaldirmak icin uzun bas.`);
     const pointEditActive = selection.getMode?.() === "edit" && Boolean(model.metadata?.pointEdit);
     controls.closedShapeEdit?.classList.toggle("is-active", pointEditActive);
     controls.closedShapeEdit?.setAttribute("aria-pressed", String(pointEditActive));
@@ -2247,14 +2254,45 @@
         updateStyle(lineStylePatch(button.dataset.lineStyle));
       });
     });
-    controls.startArrow?.addEventListener("click", () => {
-      const style = activeEntry()?.model.style;
-      if (style) updateStyle({ arrowStart: nextChoiceId(style.arrowStart, ARROW_TYPES) });
-    });
-    controls.endArrow?.addEventListener("click", () => {
-      const style = activeEntry()?.model.style;
-      if (style) updateStyle({ arrowEnd: nextChoiceId(style.arrowEnd, ARROW_TYPES) });
-    });
+    const bindArrowButton = (button, styleKey) => {
+      if (!button) return;
+      let longPressTimer = 0;
+      let suppressClick = false;
+
+      const clearLongPress = () => {
+        window.clearTimeout(longPressTimer);
+        longPressTimer = 0;
+        button.classList.remove("is-long-press");
+      };
+
+      button.addEventListener("pointerdown", (event) => {
+        if (event.button != null && event.button !== 0) return;
+        clearLongPress();
+        suppressClick = false;
+        longPressTimer = window.setTimeout(() => {
+          longPressTimer = 0;
+          suppressClick = true;
+          button.classList.add("is-long-press");
+          if (activeEntry()?.model.style) updateStyle({ [styleKey]: "none" });
+        }, 500);
+      });
+      button.addEventListener("pointerup", clearLongPress);
+      button.addEventListener("pointercancel", clearLongPress);
+      button.addEventListener("pointerleave", clearLongPress);
+      button.addEventListener("contextmenu", (event) => event.preventDefault());
+      button.addEventListener("click", (event) => {
+        if (suppressClick) {
+          suppressClick = false;
+          event.preventDefault();
+          return;
+        }
+        const style = activeEntry()?.model.style;
+        if (style) updateStyle({ [styleKey]: nextChoiceId(style[styleKey], ARROW_TYPES) });
+      });
+    };
+
+    bindArrowButton(controls.startArrow, "arrowStart");
+    bindArrowButton(controls.endArrow, "arrowEnd");
     controls.lineCapButton?.addEventListener("click", () => {
       const style = activeEntry()?.model.style;
       if (style) updateStyle({ lineCap: nextChoiceId(style.lineCap, LINE_CAPS) });
