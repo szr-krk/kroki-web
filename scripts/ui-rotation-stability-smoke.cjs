@@ -10,6 +10,7 @@ const responsiveScale = read("src/responsive-scale.js");
 const editorCss = read("src/editor-line.css");
 const homeCss = read("src/home.css");
 const styleManager = read("src/core/styleManager.js");
+const selectionManager = read("src/core/selectionManager.js");
 const vehicleAdapter = read("src/adapters/vehicleAdapter.js");
 
 assert.match(responsiveScale, /TOUCH_TEXT_ENTRY_QUERY\s*=\s*"\(hover: none\) and \(pointer: coarse\)"/);
@@ -23,6 +24,7 @@ assert.match(styleManager, /typeof adapter\?\.setRotation === "function"/);
 assert.match(styleManager, /entry\.adapter\.setRotation\(draft, nextRotation\)/);
 assert.match(styleManager, /bindHoldAction\(controls\.objectRotateMinus/);
 assert.match(styleManager, /bindHoldAction\(controls\.objectRotatePlus/);
+assert.match(selectionManager, /styleControls:\s*dragState\.cpId === "rotate"/);
 
 for (const file of [
   "src/adapters/circleAdapter.js",

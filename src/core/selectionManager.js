@@ -158,7 +158,12 @@
         skipHistory: true,
         labels: false,
         controlPoints: false,
-        styleControls: Boolean(adapter.capabilities?.trafficSign || adapter.capabilities?.otherSymbol || adapter.capabilities?.catalogObject || adapter.capabilities?.vehicleObject)
+        styleControls: dragState.cpId === "rotate" || Boolean(
+          adapter.capabilities?.trafficSign
+          || adapter.capabilities?.otherSymbol
+          || adapter.capabilities?.catalogObject
+          || adapter.capabilities?.vehicleObject
+        )
       });
       controlPoints.sync({ reuseMetrics: true, resize: false });
       dragState.lastPoint = point;
