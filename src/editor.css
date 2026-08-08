@@ -1048,7 +1048,7 @@
   box-shadow: 0 0.1875rem 0.625rem var(--editor-menu-yellow-shadow);
 }
 
-.road-builder-choice:active {
+.road-builder-choice:active:not(.is-active) {
   background: var(--editor-menu-yellow-active);
 }
 
