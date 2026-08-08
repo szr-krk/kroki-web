@@ -63,7 +63,9 @@
   }
 
   function keepTextEntryVisible() {
-    if (!activeTextEntry?.isConnected) return;
+    // freeTextComposer ekranin ustunde sabit bir paneldir. Tablet sanal
+    // klavyesi acilirken scrollIntoView uygulamak sayfayi/paneli kaydirir.
+    if (!activeTextEntry?.isConnected || activeTextEntryHost?.classList.contains("free-text-composer")) return;
     window.requestAnimationFrame(() => {
       try {
         activeTextEntry.scrollIntoView({ block: "nearest", inline: "nearest" });

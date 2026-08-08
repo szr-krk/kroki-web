@@ -17,10 +17,10 @@ assert.match(baseRule, /width:\s*var\(--line-text-panel-width\)/);
 assert.ok(focusSectionStart >= 0 && focusSectionEnd > focusSectionStart);
 assert.doesNotMatch(focusSection, /\.kroki-text-entry-host\.line-text-panel/);
 assert.doesNotMatch(focusSection, /:is\([^)]*\.line-text-panel/);
-assert.match(focusSection, /\.kroki-text-entry-host:not\(\.line-text-panel\)\s+:is\(\s*\.line-text-input/);
-assert.match(focusSection, /\.kroki-text-entry-host:not\(\.line-text-panel\)\s+:is\(\.line-text-actions/);
-assert.match(focusSection, /\.kroki-text-entry-host:not\(\.line-text-panel\)\s+\.line-text-size-picker/);
-assert.match(focusSection, /\.kroki-text-entry-host:not\(\.line-text-panel\)\s+:is\(\s*\.line-text-picker-btn/);
-assert.match(homeCss, /\):not\(\.line-text-input,\s*\.traffic-sign-text-input\)\s*\{/);
+assert.match(focusSection, /\.kroki-text-entry-host:not\(\.line-text-panel\):not\(\.free-text-composer\)\s+:is\(\s*\.line-text-input/);
+assert.match(focusSection, /\.kroki-text-entry-host:not\(\.line-text-panel\):not\(\.free-text-composer\)\s+:is\(\.line-text-actions/);
+assert.match(focusSection, /\.kroki-text-entry-host:not\(\.line-text-panel\):not\(\.free-text-composer\)\s+\.line-text-size-picker/);
+assert.match(focusSection, /\.kroki-text-entry-host:not\(\.line-text-panel\):not\(\.free-text-composer\)\s+:is\(\s*\.line-text-picker-btn/);
+assert.match(homeCss, /\):not\(\.line-text-input,\s*\.traffic-sign-text-input,\s*\.free-text-input\)\s*\{/);
 
 console.log("line text panel box stability smoke: ok");
