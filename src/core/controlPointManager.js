@@ -6,6 +6,9 @@
 
   const CP_VISIBLE_DIAMETER_PX = 48;
   const CP_TOUCH_DIAMETER_PX = 72;
+  const ROTATE_ICON_SIZE_PX = 36;
+  const ROTATE_ICON_VIEWBOX_SIZE = 24;
+  const ROTATE_ICON_PATH = "M12 6V3L8 7L12 11V8C14.21 8 16 9.79 16 12C16 12.74 15.79 13.43 15.44 14.03L16.9 15.49C17.59 14.5 18 13.3 18 12C18 8.69 15.31 6 12 6ZM8 12C8 11.26 8.21 10.57 8.56 9.97L7.1 8.51C6.41 9.5 6 10.7 6 12C6 15.31 8.69 18 12 18V21L16 17L12 13V16C9.79 16 8 14.21 8 12Z";
   const CP_VISIBILITY_INSET_PX = CP_VISIBLE_DIAMETER_PX / 2 + 2;
   const CP_FIT_MAX_PASSES = 4;
 
@@ -195,7 +198,13 @@
     handle.querySelector(".editor-object-cp-hit")?.setAttribute("r", String(sizes.touchRadius));
     const visualCircle = handle.querySelector("circle.editor-object-cp-visual");
     const visualRect = handle.querySelector("rect.editor-object-cp-visual");
+    const rotateIcon = handle.querySelector("path.editor-object-cp-rotate-icon");
     visualCircle?.setAttribute("r", String(sizes.visibleRadius));
+    if (rotateIcon) {
+      const iconScale = ROTATE_ICON_SIZE_PX * sizes.unit / ROTATE_ICON_VIEWBOX_SIZE;
+      const iconOffset = -ROTATE_ICON_VIEWBOX_SIZE * iconScale / 2;
+      rotateIcon.setAttribute("transform", `translate(${iconOffset} ${iconOffset}) scale(${iconScale})`);
+    }
     if (visualRect) {
       const width = sizes.visibleRadius * (cp.visualWidthScale || 0.68);
       const height = sizes.visibleRadius * (cp.visualHeightScale || 1.32);
@@ -207,6 +216,25 @@
     }
   }
 
+  function isRotateControlPoint(cp = {}) {
+    return cp.id === "rotate" || cp.role === "rotate";
+  }
+
+  function createControlPointVisual(cp = {}) {
+    if (isRotateControlPoint(cp)) {
+      return utils.createSvgElement("path", {
+        class: "editor-object-cp-visual editor-object-cp-rotate-icon",
+        d: ROTATE_ICON_PATH
+      });
+    }
+    if (cp.shape === "segment") {
+      return utils.createSvgElement("rect", {
+        class: "editor-object-cp-visual editor-object-cp-segment-visual"
+      });
+    }
+    return utils.createSvgElement("circle", { class: "editor-object-cp-visual" });
+  }
+
   function createHandle(cp, sizes) {
     const handle = utils.createSvgElement("g", {
       class: "editor-object-cp" + (cp.role ? " editor-object-cp-role-" + String(cp.role).replace(/[^a-z0-9_-]/gi, "-") : ""),
@@ -214,9 +242,7 @@
       "data-cp-role": cp.role || "",
       cursor: cp.cursor || ""
     });
-    const visual = cp.shape === "segment"
-      ? utils.createSvgElement("rect", { class: "editor-object-cp-visual editor-object-cp-segment-visual" })
-      : utils.createSvgElement("circle", { class: "editor-object-cp-visual" });
+    const visual = createControlPointVisual(cp);
     handle.append(
       utils.createSvgElement("circle", { class: "editor-object-cp-hit" }),
       visual
@@ -234,7 +260,8 @@
 
   function updateHandle(handle, cp, sizes, options = {}) {
     if (options.resize !== false) resizeHandle(handle, sizes, cp);
-    const rotation = Number.isFinite(cp.angle) ? ` rotate(${cp.angle})` : "";
+    const isRotate = isRotateControlPoint(cp);
+    const rotation = !isRotate && Number.isFinite(cp.angle) ? ` rotate(${cp.angle})` : "";
     handle.setAttribute("transform", `translate(${cp.x} ${cp.y})${rotation}`);
     handle.classList.toggle("is-preselect", mode === "preselect");
     if (cp.cursor) handle.style.cursor = cp.cursor;

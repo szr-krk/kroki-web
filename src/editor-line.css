@@ -215,6 +215,20 @@
   stroke: #dc2626;
 }
 
+.editor-object-cp-rotate-icon {
+  fill: #059669;
+  fill-opacity: 1;
+  stroke: #ffffff;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+}
+
+.editor-object-cp.is-preselect .editor-object-cp-rotate-icon {
+  fill: #dc2626;
+  stroke: #ffffff;
+}
+
 .editor-object-cp-role-road-segment-boundary .editor-object-cp-segment-visual {
   fill: #dbeafe;
   stroke: #2563eb;
