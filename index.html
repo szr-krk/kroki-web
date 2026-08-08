@@ -7,11 +7,11 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <meta name="kroki-build" content="20260808-tablet-free-text-stable-v1" />
+  <meta name="kroki-build" content="20260808-rotate-picker-icons-v1" />
   <title>Kroki Pro</title>
   <link rel="stylesheet" href="src/home.css?v=20260808-tablet-free-text-stable-v1" />
   <link rel="stylesheet" href="src/editor.css?v=20260803-proportional-responsive-v1" />
-  <link rel="stylesheet" href="src/editor-line.css?v=20260808-tablet-free-text-stable-v1" />
+  <link rel="stylesheet" href="src/editor-line.css?v=20260808-rotate-picker-icons-v1" />
 </head>
 
 <body>
@@ -503,11 +503,19 @@
           </div>
           <div id="trafficSignRotateStepper" class="side-ip-stepper-vertical" aria-label="Levha acisi">
             <button id="btnTrafficSignRotatePlus" class="side-ip-stepper-btn" type="button"
-              aria-label="Levha acisini 1 derece arttir">+</button>
+              aria-label="Levha acisini 1 derece arttir">
+              <svg class="side-ip-rotate-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M 12.48 3.43 A 9.09 9.09 0 0 1 18.3 5.55 L 18.3 2.35 L 19.94 2.35 L 19.94 8.85 L 13.44 8.85 L 13.44 7.21 L 17.7 7.21 A 7.46 7.46 0 1 0 19.17 15.86 L 20.63 16.59 A 9.11 9.11 0 1 1 12.48 3.43 Z" fill="currentColor"></path>
+              </svg>
+            </button>
             <input id="trafficSignRotateInput" class="side-ip-stepper-number" type="number" min="-180" max="180"
               step="1" value="0" inputmode="numeric" aria-label="Levha acisi">
             <button id="btnTrafficSignRotateMinus" class="side-ip-stepper-btn" type="button"
-              aria-label="Levha acisini 1 derece azalt">-</button>
+              aria-label="Levha acisini 1 derece azalt">
+              <svg class="side-ip-rotate-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M 12.48 20.57 A 9.09 9.09 0 0 0 18.3 18.45 L 18.3 21.65 L 19.94 21.65 L 19.94 15.15 L 13.44 15.15 L 13.44 16.79 L 17.7 16.79 A 7.46 7.46 0 1 1 19.17 8.14 L 20.63 7.41 A 9.11 9.11 0 1 0 12.48 20.57 Z" fill="currentColor"></path>
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -556,11 +564,19 @@
           </button>
           <div id="vehicleRotateStepper" class="side-ip-stepper-vertical" aria-label="Arac acisi">
             <button id="btnVehicleRotatePlus" class="side-ip-stepper-btn" type="button"
-              aria-label="Arac acisini 1 derece arttir">+</button>
+              aria-label="Arac acisini 1 derece arttir">
+              <svg class="side-ip-rotate-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M 12.48 3.43 A 9.09 9.09 0 0 1 18.3 5.55 L 18.3 2.35 L 19.94 2.35 L 19.94 8.85 L 13.44 8.85 L 13.44 7.21 L 17.7 7.21 A 7.46 7.46 0 1 0 19.17 15.86 L 20.63 16.59 A 9.11 9.11 0 1 1 12.48 3.43 Z" fill="currentColor"></path>
+              </svg>
+            </button>
             <input id="vehicleRotateInput" class="side-ip-stepper-number" type="number" min="-180" max="180"
               step="1" value="0" inputmode="numeric" aria-label="Arac acisi">
             <button id="btnVehicleRotateMinus" class="side-ip-stepper-btn" type="button"
-              aria-label="Arac acisini 1 derece azalt">-</button>
+              aria-label="Arac acisini 1 derece azalt">
+              <svg class="side-ip-rotate-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M 12.48 20.57 A 9.09 9.09 0 0 0 18.3 18.45 L 18.3 21.65 L 19.94 21.65 L 19.94 15.15 L 13.44 15.15 L 13.44 16.79 L 17.7 16.79 A 7.46 7.46 0 1 1 19.17 8.14 L 20.63 7.41 A 9.11 9.11 0 1 0 12.48 20.57 Z" fill="currentColor"></path>
+              </svg>
+            </button>
           </div>
           <div id="vehicleScaleStepper" class="side-ip-stepper-vertical" aria-label="Arac boyutu">
             <button id="btnVehicleScalePlus" class="side-ip-stepper-btn" type="button"
@@ -644,11 +660,19 @@
         <div id="objectRotateStepper" class="side-ip-stepper-vertical side-ip-control object-rotation-control gizli"
           aria-label="Nesne acisi">
           <button id="btnObjectRotatePlus" class="side-ip-stepper-btn" type="button"
-            aria-label="Nesne acisini 1 derece arttir">+</button>
+            aria-label="Nesne acisini 1 derece arttir">
+            <svg class="side-ip-rotate-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M 12.48 3.43 A 9.09 9.09 0 0 1 18.3 5.55 L 18.3 2.35 L 19.94 2.35 L 19.94 8.85 L 13.44 8.85 L 13.44 7.21 L 17.7 7.21 A 7.46 7.46 0 1 0 19.17 15.86 L 20.63 16.59 A 9.11 9.11 0 1 1 12.48 3.43 Z" fill="currentColor"></path>
+            </svg>
+          </button>
           <input id="objectRotateInput" class="side-ip-stepper-number" type="number" min="-180" max="180"
             step="1" value="0" inputmode="numeric" aria-label="Nesne acisi">
           <button id="btnObjectRotateMinus" class="side-ip-stepper-btn" type="button"
-            aria-label="Nesne acisini 1 derece azalt">-</button>
+            aria-label="Nesne acisini 1 derece azalt">
+            <svg class="side-ip-rotate-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M 12.48 20.57 A 9.09 9.09 0 0 0 18.3 18.45 L 18.3 21.65 L 19.94 21.65 L 19.94 15.15 L 13.44 15.15 L 13.44 16.79 L 17.7 16.79 A 7.46 7.46 0 1 1 19.17 8.14 L 20.63 7.41 A 9.11 9.11 0 1 0 12.48 20.57 Z" fill="currentColor"></path>
+            </svg>
+          </button>
         </div>
         <button id="btnLineText" class="side-ip-btn side-ip-tool side-ip-text-btn" type="button"
           aria-label="Cizgi metni" title="Cizgi metni" aria-controls="lineTextPanel" aria-expanded="false">

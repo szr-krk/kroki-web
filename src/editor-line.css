@@ -745,6 +745,14 @@
   touch-action: manipulation;
 }
 
+.side-ip-rotate-icon {
+  display: block;
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: currentColor;
+  pointer-events: none;
+}
+
 .side-ip-stepper-btn:active {
   background: #e2e8f0;
 }
