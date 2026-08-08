@@ -524,6 +524,17 @@
             aria-label="Arac etiketi" title="Arac etiketi" aria-controls="vehicleLabelPanel" aria-expanded="false">
             <span class="side-ip-text-mark vehicle-ip-text-mark">Abc</span>
           </button>
+          <button id="btnVehicleLabelPositionIp" class="side-ip-btn side-ip-tool vehicle-ip-btn vehicle-label-position-btn"
+            type="button" data-current-position="top" aria-label="Etiket ustte. Konumu degistir"
+            title="Etiket ustte. Konumu degistir">
+            <svg class="vehicle-label-cycle-icon" viewBox="0 0 48 48" aria-hidden="true">
+              <rect class="vehicle-label-cycle-body" x="12" y="15" width="24" height="18" rx="3"></rect>
+              <circle class="vehicle-label-cycle-dot vehicle-label-cycle-dot-top" cx="24" cy="7" r="3.25"></circle>
+              <circle class="vehicle-label-cycle-dot vehicle-label-cycle-dot-right" cx="43" cy="24" r="3.25"></circle>
+              <circle class="vehicle-label-cycle-dot vehicle-label-cycle-dot-bottom" cx="24" cy="41" r="3.25"></circle>
+              <circle class="vehicle-label-cycle-dot vehicle-label-cycle-dot-left" cx="5" cy="24" r="3.25"></circle>
+            </svg>
+          </button>
           <label class="side-ip-btn side-ip-tool vehicle-color-picker vehicle-ip-btn" aria-label="Arac rengi"
             title="Arac rengi">
             <input id="vehicleColorInput" type="color" value="#dc2626" aria-label="Arac rengi">
@@ -1050,36 +1061,6 @@
       <div id="vehicleLabelPanel" class="line-text-panel vehicle-label-panel gizli" aria-label="Arac etiketi">
         <input id="vehicleLabelInput" class="vehicle-label-input" type="text" maxlength="24" autocomplete="off"
           aria-label="Arac etiketi" placeholder="Etiket">
-        <div class="vehicle-label-actions" aria-label="Etiket konumu">
-          <button class="line-text-icon-btn vehicle-label-position-choice" type="button"
-            data-vehicle-label-position="top" aria-label="Etiket ustte" title="Etiket ustte">
-            <svg class="vehicle-label-position-icon" viewBox="0 0 48 48" aria-hidden="true">
-              <rect class="vehicle-label-position-car" x="14" y="18" width="20" height="12" rx="3"></rect>
-              <text x="24" y="10" text-anchor="middle">Abc</text>
-            </svg>
-          </button>
-          <button class="line-text-icon-btn vehicle-label-position-choice" type="button"
-            data-vehicle-label-position="right" aria-label="Etiket sagda" title="Etiket sagda">
-            <svg class="vehicle-label-position-icon" viewBox="0 0 48 48" aria-hidden="true">
-              <rect class="vehicle-label-position-car" x="14" y="18" width="20" height="12" rx="3"></rect>
-              <text x="39" y="25" text-anchor="middle">Abc</text>
-            </svg>
-          </button>
-          <button class="line-text-icon-btn vehicle-label-position-choice" type="button"
-            data-vehicle-label-position="bottom" aria-label="Etiket altta" title="Etiket altta">
-            <svg class="vehicle-label-position-icon" viewBox="0 0 48 48" aria-hidden="true">
-              <rect class="vehicle-label-position-car" x="14" y="18" width="20" height="12" rx="3"></rect>
-              <text x="24" y="40" text-anchor="middle">Abc</text>
-            </svg>
-          </button>
-          <button class="line-text-icon-btn vehicle-label-position-choice" type="button"
-            data-vehicle-label-position="left" aria-label="Etiket solda" title="Etiket solda">
-            <svg class="vehicle-label-position-icon" viewBox="0 0 48 48" aria-hidden="true">
-              <rect class="vehicle-label-position-car" x="14" y="18" width="20" height="12" rx="3"></rect>
-              <text x="9" y="25" text-anchor="middle">Abc</text>
-            </svg>
-          </button>
-        </div>
       </div>
 
       <div class="rail-menu-panel gizli" id="railMenuAna" role="dialog" aria-label="Ana menü">

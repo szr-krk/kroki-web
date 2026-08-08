@@ -57,10 +57,10 @@
     { id: "flat", title: "Metin yatay kalir" }
   ];
   const VEHICLE_LABEL_POSITIONS = [
-    { id: "top", title: "Etiket ustte", x: 24, y: 10, anchor: "middle" },
-    { id: "right", title: "Etiket sagda", x: 39, y: 25, anchor: "middle" },
-    { id: "bottom", title: "Etiket altta", x: 24, y: 40, anchor: "middle" },
-    { id: "left", title: "Etiket solda", x: 9, y: 25, anchor: "middle" }
+    { id: "top", title: "Etiket ustte" },
+    { id: "right", title: "Etiket sagda" },
+    { id: "bottom", title: "Etiket altta" },
+    { id: "left", title: "Etiket solda" }
   ];
   const PAVER_LAYOUT_PATH = "M 0 0 L 2 0 L 3 1 L 7 1 L 8 0 L 10 0 L 10 6 L 8 6 L 7 5 L 3 5 L 2 6 L 0 6 Z M -5 5 L -3 5 L -2 6 L 2 6 L 3 5 L 5 5 L 5 11 L 3 11 L 2 10 L -2 10 L -3 11 L -5 11 Z M 5 5 L 7 5 L 8 6 L 12 6 L 13 5 L 15 5 L 15 11 L 13 11 L 12 10 L 8 10 L 7 11 L 5 11 Z M 10 0 L 12 0 L 13 1 L 17 1 L 18 0 L 20 0 L 20 6 L 18 6 L 17 5 L 13 5 L 12 6 L 10 6 Z M 15 5 L 17 5 L 18 6 L 22 6 L 23 5 L 25 5 L 25 11 L 23 11 L 22 10 L 18 10 L 17 11 L 15 11 Z";
 
@@ -1461,7 +1461,10 @@
   }
 
   function normalizeVehicleLabelText(value) {
-    return String(value || "").replace(/[\r\n]+/g, " ").slice(0, 24);
+    return String(value || "")
+      .replace(/[\r\n]+/g, " ")
+      .toLocaleUpperCase("tr-TR")
+      .slice(0, 24);
   }
 
   function normalizeVehicleLabelPosition(value) {
@@ -1541,9 +1544,12 @@
     }), "Arac etiketi", options);
   }
 
-  function updateVehicleLabelPosition(position) {
-    updateVehicleMetadata(() => ({
-      vehicleLabelPosition: normalizeVehicleLabelPosition(position)
+  function cycleVehicleLabelPosition() {
+    updateVehicleMetadata((metadata) => ({
+      vehicleLabelPosition: nextChoiceId(
+        normalizeVehicleLabelPosition(metadata.vehicleLabelPosition),
+        VEHICLE_LABEL_POSITIONS
+      )
     }), "Arac etiketi konumu");
   }
 
@@ -1602,11 +1608,10 @@
     controls?.vehicleLabelToggle?.setAttribute("title", labelText ? "Etiket: " + labelText : "Arac etiketi");
     controls?.vehicleLabelToggle?.setAttribute("aria-label", labelText ? "Etiket: " + labelText : "Arac etiketi");
     if (controls?.vehicleLabelInput && controls.vehicleLabelInput.value !== labelText) controls.vehicleLabelInput.value = labelText;
-    controls?.vehicleLabelPositionChoices?.forEach((button) => {
-      const selected = button.dataset.vehicleLabelPosition === labelPosition;
-      button.classList.toggle("is-selected", selected);
-      button.setAttribute("aria-pressed", String(selected));
-    });
+    const labelPositionTitle = choiceById(VEHICLE_LABEL_POSITIONS, labelPosition).title;
+    if (controls?.vehicleLabelPosition) controls.vehicleLabelPosition.dataset.currentPosition = labelPosition;
+    controls?.vehicleLabelPosition?.setAttribute("title", labelPositionTitle + ". Konumu degistir");
+    controls?.vehicleLabelPosition?.setAttribute("aria-label", labelPositionTitle + ". Konumu degistir");
     if (controls?.vehicleScaleInput && controls.vehicleScaleInput.value !== String(percent)) controls.vehicleScaleInput.value = String(percent);
     if (controls?.vehicleRotateInput && controls.vehicleRotateInput.value !== String(rotation)) controls.vehicleRotateInput.value = String(rotation);
   }
@@ -2038,9 +2043,9 @@
       vehicleViewLabel: document.querySelector("#lblVehicleViewIp"),
       vehicleGhost: document.querySelector("#btnVehicleGhostIp"),
       vehicleLabelToggle: document.querySelector("#btnVehicleLabelToggleIp"),
+      vehicleLabelPosition: document.querySelector("#btnVehicleLabelPositionIp"),
       vehicleLabelPanel: document.querySelector("#vehicleLabelPanel"),
       vehicleLabelInput: document.querySelector("#vehicleLabelInput"),
-      vehicleLabelPositionChoices: Array.from(document.querySelectorAll("[data-vehicle-label-position]")),
       vehicleFlipX: document.querySelector("#btnVehicleFlipXIp"),
       vehicleFlipY: document.querySelector("#btnVehicleFlipYIp"),
       vehicleScaleMinus: document.querySelector("#btnVehicleScaleMinus"),
@@ -2215,9 +2220,7 @@
       event.preventDefault();
       toggleVehicleLabelPanel(vehicleLabelPanel);
     });
-    controls.vehicleLabelPositionChoices?.forEach((button) => {
-      button.addEventListener("click", () => updateVehicleLabelPosition(button.dataset.vehicleLabelPosition));
-    });
+    controls.vehicleLabelPosition?.addEventListener("click", cycleVehicleLabelPosition);
     controls.vehicleLabelInput?.addEventListener("focus", beginVehicleLabelInputHistory);
     controls.vehicleLabelInput?.addEventListener("input", () => {
       beginVehicleLabelInputHistory();

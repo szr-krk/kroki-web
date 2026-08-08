@@ -22,7 +22,10 @@
   }
 
   function normalizeVehicleLabelText(value) {
-    return String(value || "").replace(/[\r\n]+/g, " ").slice(0, VEHICLE_LABEL_MAX_LENGTH);
+    return String(value || "")
+      .replace(/[\r\n]+/g, " ")
+      .toLocaleUpperCase("tr-TR")
+      .slice(0, VEHICLE_LABEL_MAX_LENGTH);
   }
 
   function normalizeVehicleLabelPosition(value) {
