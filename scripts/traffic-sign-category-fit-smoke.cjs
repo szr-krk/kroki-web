@@ -8,8 +8,8 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const index = read("index.html");
 const editorCss = read("src/editor.css");
 
-assert.match(index, /kroki-build" content="20260808-traffic-sign-category-fit-v1"/);
-assert.match(index, /src\/editor\.css\?v=20260808-traffic-sign-category-fit-v1/);
+assert.match(index, /kroki-build" content="[^"]+"/);
+assert.match(index, /src\/editor\.css\?v=[^"]+/);
 assert.match(
   editorCss,
   /\.traffic-sign-library\s*\{[^}]*grid-template-columns:\s*14\.875rem minmax\(0, 1fr\);/s

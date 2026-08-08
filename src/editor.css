@@ -561,6 +561,7 @@
 }
 
 .editor-library-header {
+  flex: 0 0 auto;
   min-height: 3.875rem;
   padding: 0.75rem 1rem;
   display: flex;
@@ -883,6 +884,7 @@
 }
 
 .editor-library-footer {
+  flex: 0 0 auto;
   padding: 0.875rem 1rem;
   border-top: 0.0625rem solid var(--editor-menu-yellow-border);
   background: var(--editor-menu-yellow-panel);
