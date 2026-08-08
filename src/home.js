@@ -45,39 +45,6 @@ function svgDataUrl(svg) {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(String(svg || ""))}`;
 }
 
-const readyDrawingPreviewLineSelector = [
-  ".editor-road-edge",
-  ".editor-road-channel-line",
-  ".editor-road-marking",
-  ".road-intersection-outer-contour",
-  ".road-intersection-auxiliary-contour"
-].join(",");
-
-function readyDrawingPreviewSvg(svg) {
-  const source = String(svg || "");
-  if (!source) return source;
-
-  try {
-    const previewDocument = new DOMParser().parseFromString(source, "image/svg+xml");
-    const svgElement = previewDocument.documentElement;
-    if (!svgElement || previewDocument.querySelector("parsererror")) return source;
-
-    svgElement.setAttribute("preserveAspectRatio", "xMidYMid meet");
-    svgElement.querySelectorAll(readyDrawingPreviewLineSelector).forEach((line) => {
-      const stroke = String(line.getAttribute("stroke") || "").trim().toLowerCase();
-      if (!stroke || stroke === "none" || stroke === "transparent") return;
-
-      line.setAttribute("vector-effect", "non-scaling-stroke");
-      line.style.setProperty("vector-effect", "non-scaling-stroke", "important");
-      line.style.setProperty("stroke-width", "1.1px", "important");
-    });
-
-    return new XMLSerializer().serializeToString(svgElement);
-  } catch {
-    return source;
-  }
-}
-
 function readyIntersections() {
   return (window.Kroki?.ReadyDrawings || []).filter((item) => item?.type === "intersection");
 }
@@ -102,7 +69,8 @@ function renderHazirKavsaklar() {
     thumb.className = "stored-doc-thumb";
     const img = document.createElement("img");
     img.alt = item.title || "Hazır çizim";
-    img.src = svgDataUrl(readyDrawingPreviewSvg(item.svg));
+    img.loading = "lazy";
+    img.src = svgDataUrl(item.svg);
     thumb.append(img);
 
     const meta = document.createElement("div");
