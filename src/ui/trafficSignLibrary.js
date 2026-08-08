@@ -3,7 +3,8 @@
   const catalog = Kroki.TrafficSignCatalog;
   const manager = Kroki.EditorObjectManager;
   const selection = Kroki.SelectionManager;
-  if (!catalog || !manager || !selection) return;
+  const utils = Kroki.EditorUtils;
+  if (!catalog || !manager || !selection || !utils) return;
 
   const SVG_NS = "http://www.w3.org/2000/svg";
   const categoryList = document.querySelector("#trafficSignCategoryList");
@@ -123,7 +124,8 @@
       button.setAttribute("aria-pressed", "false");
       const title = document.createElement("span");
       const count = document.createElement("strong");
-      title.textContent = String(category.title || "").replace(/^\s*\d+\s+/, "");
+      const categoryTitle = String(category.title || "").replace(/^\s*\d+\s+/, "");
+      title.textContent = utils.turkishListLabel(categoryTitle);
       count.textContent = String(category.signs.length);
       button.append(title, count);
       button.addEventListener("click", () => setActiveCategory(category.key));

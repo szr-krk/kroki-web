@@ -2603,7 +2603,7 @@
     },
     {
       id: "02",
-      title: "02 At Arabasi",
+      title: "02 At Arabası",
       variants: [
         {
           id: "at-arabasi",
@@ -2692,7 +2692,7 @@
     },
     {
       id: "06",
-      title: "06 Minibus",
+      title: "06 Minibüs",
       variants: [
         {
           id: "minibus",
@@ -2775,7 +2775,7 @@
     },
     {
       id: "09",
-      title: "09 Cekici",
+      title: "09 Çekici",
       variants: [
         {
           id: "cekici",
@@ -2878,7 +2878,7 @@
     },
     {
       id: "11",
-      title: "11 Traktor",
+      title: "11 Traktör",
       variants: [
         {
           id: "traktor",
@@ -2910,7 +2910,7 @@
     },
     {
       id: "12",
-      title: "12 Arazi Tasiti",
+      title: "12 Arazi Taşıtı",
       variants: [
         {
           id: "arazi-tasiti",
@@ -2929,7 +2929,7 @@
     },
     {
       id: "13",
-      title: "13 Ozel Amacli",
+      title: "13 Özel Amaçlı",
       variants: [
         {
           id: "ozel-amacli-arac",
@@ -2948,7 +2948,7 @@
     },
     {
       id: "14",
-      title: "14 Is Makinesi",
+      title: "14 İş Makinesi",
       variants: [
         {
           id: "ekskavator",
@@ -3082,7 +3082,7 @@
     },
     {
       id: "19",
-      title: "19 Diger",
+      title: "19 Diğer",
       variants: [
         {
           id: "diger-arac",

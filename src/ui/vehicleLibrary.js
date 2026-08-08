@@ -4,7 +4,8 @@
   const renderer = Kroki.VehicleRenderer;
   const manager = Kroki.EditorObjectManager;
   const selection = Kroki.SelectionManager;
-  if (!catalog || !renderer || !manager || !selection) return;
+  const utils = Kroki.EditorUtils;
+  if (!catalog || !renderer || !manager || !selection || !utils) return;
 
   const typeList = document.querySelector("#vehicleTypeList");
   const grid = document.querySelector("#vehicleVariantGrid");
@@ -71,7 +72,7 @@
       button.setAttribute("aria-pressed", "false");
 
       const title = document.createElement("span");
-      title.textContent = type.title;
+      title.textContent = utils.turkishListLabel(type.title);
       const count = document.createElement("strong");
       count.textContent = String(type.variants.length);
       button.append(title, count);

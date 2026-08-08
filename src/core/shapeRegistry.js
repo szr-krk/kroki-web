@@ -42,6 +42,12 @@
     return angle;
   }
 
+  function turkishListLabel(value) {
+    return String(value ?? "")
+      .toLocaleLowerCase("tr-TR")
+      .replace(/\p{L}/u, (letter) => letter.toLocaleUpperCase("tr-TR"));
+  }
+
   function typeFromElement(element) {
     const shape = element?.dataset?.shape;
     if (shape === "arc" || shape === "bezier" || shape === "circle" || shape === "ellipse" || shape === "rectangle" || shape === "closedShape" || shape === "text" || shape === "callout" || shape === "road" || shape === "trafficSign" || shape === "otherSymbol" || shape === "vehicle") return shape;
@@ -67,6 +73,7 @@
     pointFromEvent,
     svgUnitsPerScreenPx,
     normalizeRotation,
+    turkishListLabel,
     typeFromElement
   };
 

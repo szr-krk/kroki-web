@@ -3,7 +3,8 @@
   const catalog = Kroki.OtherSymbolCatalog;
   const manager = Kroki.EditorObjectManager;
   const selection = Kroki.SelectionManager;
-  if (!catalog || !manager || !selection) return;
+  const utils = Kroki.EditorUtils;
+  if (!catalog || !manager || !selection || !utils) return;
 
   const SVG_NS = "http://www.w3.org/2000/svg";
   const categoryList = document.querySelector("#otherSymbolCategoryList");
@@ -122,7 +123,7 @@
       button.setAttribute("aria-pressed", "false");
       const title = document.createElement("span");
       const count = document.createElement("strong");
-      title.textContent = category.title;
+      title.textContent = utils.turkishListLabel(category.title);
       count.textContent = String(category.symbols.length);
       button.append(title, count);
       button.addEventListener("click", () => setActiveCategory(category.key));
