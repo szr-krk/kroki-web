@@ -149,6 +149,11 @@ document.querySelector("#btnSvgYukle")?.addEventListener("click", () => {
   else window.KrokiDialog?.alert("SVG yükleme hazırlanıyor.", "SVG Yükle");
 });
 
+document.querySelector("#btnFotografYukle")?.addEventListener("click", () => {
+  if (window.KrokiMainMenu?.importPhotoFile) window.KrokiMainMenu.importPhotoFile();
+  else window.KrokiDialog?.alert("Fotoğraf yükleme hazırlanıyor.", "Fotoğraf Yükle");
+});
+
 hazirKavsaklarListesi?.addEventListener("click", (event) => {
   const button = event.target?.closest?.("[data-ready-drawing-id]");
   if (button) openReadyDrawing(button.dataset.readyDrawingId);

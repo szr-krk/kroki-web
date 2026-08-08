@@ -228,7 +228,11 @@
   }
 
   function getContentBounds() {
-    return getObjectsInDomOrder().reduce((bounds, model) => unionBounds(bounds, boundsForModel(model)), null);
+    const objectBounds = getObjectsInDomOrder().reduce(
+      (bounds, model) => unionBounds(bounds, boundsForModel(model)),
+      null
+    );
+    return unionBounds(Kroki.PhotoBackgroundManager?.getBounds?.(), objectBounds);
   }
 
   function layerNodesFor(id) {

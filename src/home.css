@@ -314,6 +314,11 @@ select {
   border-color: rgba(71, 85, 105, .28);
 }
 
+#btnFotografYukle .mini-ikon {
+  background: #fff7ed;
+  border-color: rgba(194, 65, 12, .32);
+}
+
 .mini-ikon svg {
   width: 1.75rem;
   height: 1.75rem;

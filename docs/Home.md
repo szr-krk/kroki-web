@@ -6,7 +6,8 @@ Home, uygulamanın başlangıç ekranıdır. Görevi editöre geçiş, tam ekran
 
 - `index.html`: `#home` DOM'u, hızlı başlangıç düğmeleri ve üç modal.
 - `src/home.js`: modal açma/kapama, tam ekran ve Home düğmelerinin ilk bağları.
-- `src/editor-main-menu.js`: yeni belge, son krokiler, şablonlar, localStorage kayıtları, SVG import/export ve Home liste renderı.
+- `src/editor-main-menu.js`: yeni belge, son krokiler, şablonlar, IndexedDB kayıtları, SVG import/export ve Home liste renderı.
+- `src/core/documentStorage.js`: son kroki/şablon kayıtları ile fotoğraf Blob'larını yöneten IndexedDB katmanı.
 - `src/home.css`: Home yerleşimi, kartlar ve modal görünümü.
 - Editöre geçişin devamı: [[Editör]].
 
@@ -18,29 +19,31 @@ Home, uygulamanın başlangıç ekranıdır. Görevi editöre geçiş, tam ekran
 - `data-modal-close` düğmeleri ve `Escape` tüm Home modallarını kapatır.
 - “Kılavuz” özel dialog ile “sonraki aşamada bağlanacak” mesajı verir.
 - “SVG Yükle”, `KrokiMainMenu.importSvgFile()` varsa dosya seçici açar; yalnız Kroki Pro imzalı SVG içindeki belge metadata'sını import eder.
+- “Fotoğraf Yükle”, seçilen görselin bir kopyasını etkileşimsiz SVG altlığı olarak belgeye ekler; kaynak dosyayı değiştirmez.
 
 ## Hızlı başlangıç alanları
 
-- **Şablonlarım:** `localStorage` içindeki `krokiPro.templates.v1` listesinden kartlar render edilir.
+- **Şablonlarım:** IndexedDB `documents` deposundaki şablon kayıtlarından kartlar render edilir.
 - **Hazır Kavşaklar:** modal var, içerik boş yer tutucudur.
 - **Hazır Yollar:** modal var, içerik boş yer tutucudur.
 - **SVG Yükle:** Kroki Pro export metadata'sı taşıyan SVG dosyasını belge olarak açar; genel SVG parser değildir.
-- **Son Krokiler:** `krokiPro.recentDocuments.v1` listesinden en fazla 12 kayıt gösterilir.
+- **Fotoğraf Yükle:** JPEG, PNG, WebP, GIF, BMP veya AVIF görselini SVG altlığı olarak açar.
+- **Son Krokiler:** IndexedDB `documents` deposundan en fazla 10 kayıt gösterilir.
 
 Bu eksikler [[Açık Hatalar]] ve [[Yeni Özellikler]] içinde izlenir.
 
 ## Bağlı modüller
 
 - [[Editör]]: Home'un tek çalışan ana geçiş hedefi.
-- [[Menü Sistemi]]: editördeki kayıt, export, çıkış ve yeni belge komutları Home listeleriyle aynı localStorage akışına bağlıdır.
-- [[Serializer]]: localStorage kayıtları, şablonlar ve imzalı SVG import/export için belge formatını sağlar.
+- [[Menü Sistemi]]: editördeki kayıt, export, çıkış ve yeni belge komutları Home listeleriyle aynı IndexedDB akışına bağlıdır.
+- [[Serializer]]: IndexedDB kayıtları, şablonlar ve imzalı SVG import/export için belge formatını sağlar.
 
 ## Geliştirici notları
 
 - Yeni krokiye geçiş `resetDocument()` ile manager, seçim, kavşak state'i, kamera ve history'yi temizler.
 - Home ve editör aynı sayfada yaşar; route veya ayrı HTML sayfası yoktur.
 - Fullscreen başarısızlığı yakalanır fakat kullanıcıya hata verilmez; yalnız düğme etiketi yeniden senkronize edilir.
-- Son kroki ve şablon preview'leri SVG string olarak localStorage'a yazılır; çok büyük belgelerde quota/performance riski vardır.
+- Fotoğraf altlığı IndexedDB `assets` deposunda tek Blob olarak saklanır. Belge ve önizleme kayıtları aynı veriyi tekrar etmez; okuma sırasında altlık yeniden bağlanır.
 
 ## Belirsiz
 

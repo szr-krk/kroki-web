@@ -23,7 +23,7 @@ Home Kılavuz düğmesi yalnız özel dialog ile sonraki aşamada bağlanacağı
 
 ### Genel JSON dosya import/export UI'si yok
 
-Serializer localStorage, history ve imzalı SVG import/export tarafından kullanılır. Buna karşılık doğrudan `.json` indir/yükle UI'si yoktur.
+Serializer IndexedDB belge kaydı, history ve imzalı SVG import/export tarafından kullanılır. Buna karşılık doğrudan `.json` indir/yükle UI'si yoktur.
 
 ## Somut veri tutarsızlıkları
 
@@ -77,7 +77,6 @@ Depoda test dosyası, test koşucusu veya package/build tanımı bulunmuyor. Öz
 
 - Yukarıdaki “Olası riskler” tarayıcı etkileşim testi yapılmadan kesin hata sayılmamalıdır.
 - Kodda issue numarası veya resmi hata takip sistemi referansı yoktur.
-
 
 
 

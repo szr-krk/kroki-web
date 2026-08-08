@@ -1,10 +1,11 @@
 # Serializer
 
-`DocumentSerializer`, çalışma zamanı modellerini JSON uyumlu belgeye dönüştürür ve belgeyi yeniden manager/group/viewport/kavşak state'ine kurar. Çekirdek; `editor-main-menu.js` üzerinden localStorage kayıtları, şablonlar, SVG metadata export/import ve history snapshot'ları tarafından kullanılır.
+`DocumentSerializer`, çalışma zamanı modellerini JSON uyumlu belgeye dönüştürür ve belgeyi yeniden manager/group/viewport/kavşak state'ine kurar. Çekirdek; `editor-main-menu.js` üzerinden IndexedDB kayıtları, şablonlar, SVG metadata export/import ve history snapshot'ları tarafından kullanılır.
 
 ## İlgili kod dosyaları
 
 - `src/core/documentSerializer.js`: export/import ve JSON dönüşümü.
+- `src/core/documentStorage.js`: serializer belgelerini ve fotoğraf Blob'larını IndexedDB'de saklar.
 - `src/core/editorObjectManager.js`: nesne sırası ve replace.
 - `src/core/groupManager.js`: grup export/import.
 - `src/core/styleManager.js`: tip bazlı style/label normalizasyonu.
@@ -83,9 +84,9 @@ Nesneler SVG DOM sırasıyla export edilir; bu sıra katman sırasıdır.
 
 `editor-main-menu.js` serializer'ı şu işler için kullanır:
 
-- Son kroki kaydı: `localStorage` `krokiPro.recentDocuments.v1`
-- Şablon kaydı: `localStorage` `krokiPro.templates.v1`
-- Son snapshot: `krokiPro.lastDocument.v1`
+- Son kroki kaydı: IndexedDB `documents` deposunda `recent` türü
+- Şablon kaydı: IndexedDB `documents` deposunda `template` türü
+- Fotoğraf altlığı: IndexedDB `assets` deposunda Blob; belge ve önizleme içinde yinelenmez
 - SVG export metadata'sı
 - Kroki Pro imzalı SVG import
 - PNG export öncesi preview/kayıt snapshot'ı

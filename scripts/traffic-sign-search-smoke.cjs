@@ -19,7 +19,7 @@ assert.equal(searchText("İŞARET ÇEŞİTLERİ"), "isaret cesitleri");
 assert.equal(searchText("IŞIKLI İŞARET"), "isikli isaret");
 assert.equal(searchText("TT-29a"), "tt 29a");
 
-assert.match(index, /kroki-build" content="20260808-traffic-sign-search-v1"/);
+assert.match(index, /kroki-build" content="[^"]+"/);
 assert.match(index, /id="trafficSignSearch"[^>]*placeholder="Levha ara\.\.\."/s);
 assert.match(index, /id="trafficSignSearchCount"/);
 assert.match(index, /id="btnTrafficSignSearchClear"/);

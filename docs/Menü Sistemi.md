@@ -47,7 +47,7 @@ DOM'da şu komutlar vardır ve `editor-main-menu.js` tarafından bağlanır:
 - **Tam Ekran:** document fullscreen API'si.
 - **Resim Olarak Kaydet:** belge varsa içeriğe fit eder, recent kaydı alır, PNG indirir ve Home'a döner.
 - **Alanı Resim Kaydet:** canvas üzerinde sürüklenebilir/resize edilebilir alan kutusu açar ve seçilen viewBox'ı PNG indirir.
-- **Kaydet:** belgeyi `localStorage` recent listesine yazar.
+- **Kaydet:** belgeyi IndexedDB içindeki Son Krokiler listesine yazar.
 - **Kaydet ve Çık:** recent kaydı alır, belgeyi sıfırlar ve Home'a döner.
 - **Kaydetmeden Çık:** onay alır, belgeyi sıfırlar ve Home'a döner.
 - **Şablonlarıma Kaydet:** ad ister, belgeyi template listesine yazar ve Home'a döner.

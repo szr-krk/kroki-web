@@ -2,13 +2,10 @@
   const Kroki = window.Kroki = window.Kroki || {};
   const manager = Kroki.EditorObjectManager;
   const serializer = Kroki.DocumentSerializer;
-  if (!manager || !serializer) return;
+  const documentStorage = Kroki.DocumentStorage;
+  if (!manager || !serializer || !documentStorage) return;
   const uiPx = Kroki.uiPx || ((value) => Number(value) || 0);
 
-  const STORAGE_RECENTS = "krokiPro.recentDocuments.v1";
-  const STORAGE_TEMPLATES = "krokiPro.templates.v1";
-  const STORAGE_LAST = "krokiPro.lastDocument.v1";
-  const MAX_RECENTS = 10;
   const SVG_NS = "http://www.w3.org/2000/svg";
   const SVG_SIGNATURE = "KROKI_PRO_DOCUMENT_V1";
   const EXPORT_PADDING = window.krokiEditorFraming?.CONTENT_PADDING_WORLD ?? 25;
@@ -39,6 +36,7 @@
   let previewLayer = null;
   let areaTool = null;
   let busyLayer = null;
+  let storedListRenderVersion = 0;
 
   function dialog() {
     return window.KrokiDialog || Kroki.Dialog;
@@ -142,36 +140,8 @@
     return `${prefix} ${displayDate(new Date().toISOString())}`;
   }
 
-  function storageRead(key) {
-    try {
-      const parsed = JSON.parse(localStorage.getItem(key) || "[]");
-      if (!Array.isArray(parsed)) return [];
-      return key === STORAGE_RECENTS ? parsed.slice(0, MAX_RECENTS) : parsed;
-    } catch {
-      return [];
-    }
-  }
-
-  function storageWrite(key, value) {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-      return true;
-    } catch {
-      void notify("Kayıt için tarayıcı depolama alanı yeterli değil.");
-      return false;
-    }
-  }
-
-  function saveLastDocument(doc) {
-    try {
-      localStorage.setItem(STORAGE_LAST, JSON.stringify(doc));
-    } catch {
-      // Last snapshot is best effort; the visible save operation reports quota problems.
-    }
-  }
-
-  function storageKey(kind) {
-    return kind === "template" ? STORAGE_TEMPLATES : STORAGE_RECENTS;
+  function normalizedEntryKind(kind) {
+    return kind === "template" ? "template" : "recent";
   }
 
   function entryPrefix(kind) {
@@ -179,7 +149,7 @@
   }
 
   function hasContent() {
-    return (manager.getAll?.() || []).length > 0;
+    return (manager.getAll?.() || []).length > 0 || Boolean(Kroki.PhotoBackgroundManager?.has?.());
   }
 
   function captureDocument(options = {}) {
@@ -215,7 +185,7 @@
     window.krokiEditorRail?.closeRailMenus?.();
     editorScreen?.classList.add("gizli");
     homeScreen?.classList.remove("gizli");
-    renderStoredLists();
+    void renderStoredLists();
   }
 
   function showEditor() {
@@ -238,6 +208,7 @@
     Kroki.SelectionManager?.clear?.({ silent: true });
     Kroki.MultiSelectManager?.clear?.({ silent: true });
     manager.clear?.({ skipHistory: true });
+    Kroki.PhotoBackgroundManager?.clear?.();
     Kroki.RoadIntersectionEngine?.importState?.(null, { skipRefresh: true });
     Kroki.RoadIntersectionEngine?.scheduleRefresh?.();
     resetCanvasView();
@@ -359,11 +330,21 @@
       const metadata = document.createElementNS(SVG_NS, "metadata");
       metadata.id = "krokiProDocument";
       metadata.setAttribute("data-kroki-pro-signature", SVG_SIGNATURE);
+      const documentData = options.document || captureDocument();
+      const metadataDocument = documentData?.photoBackground
+        ? {
+          ...documentData,
+          photoBackground: {
+            ...documentData.photoBackground,
+            dataUrl: ""
+          }
+        }
+        : documentData;
       metadata.textContent = JSON.stringify({
         signature: SVG_SIGNATURE,
         app: "Kroki Pro",
         exportedAt: new Date().toISOString(),
-        document: options.document || captureDocument()
+        document: metadataDocument
       });
       clone.insertBefore(metadata, style.nextSibling);
     }
@@ -423,31 +404,33 @@
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(output)}`;
   }
 
-  function saveRecent(options = {}) {
-    const doc = captureDocument();
-    const now = new Date().toISOString();
-    const recents = storageRead(STORAGE_RECENTS);
-    const existingIndex = currentDocumentId
-      ? recents.findIndex((entry) => entry.id === currentDocumentId)
-      : -1;
-    const existing = existingIndex >= 0 ? recents[existingIndex] : null;
-    const preview = previewSnapshot();
-    const entry = {
-      id: existing?.id || entryId("doc"),
-      name: existing?.name || options.name || documentTitle("Kroki"),
-      createdAt: existing?.createdAt || now,
-      updatedAt: now,
-      document: doc,
-      previewSvg: preview.svg,
-      previewViewBox: preview.viewBox
-    };
-    const next = [entry, ...recents.filter((item) => item.id !== entry.id)].slice(0, MAX_RECENTS);
-    if (!storageWrite(STORAGE_RECENTS, next)) return null;
-    currentDocumentId = entry.id;
-    saveLastDocument(doc);
-    markDocumentSaved();
-    renderStoredLists();
-    return entry;
+  async function saveRecent(options = {}) {
+    try {
+      const doc = captureDocument();
+      const now = new Date().toISOString();
+      const existing = currentDocumentId
+        ? await documentStorage.get("recent", currentDocumentId)
+        : null;
+      const preview = previewSnapshot();
+      const entry = {
+        id: existing?.id || entryId("doc"),
+        name: existing?.name || options.name || documentTitle("Kroki"),
+        createdAt: existing?.createdAt || now,
+        updatedAt: now,
+        document: doc,
+        previewSvg: preview.svg,
+        previewViewBox: preview.viewBox
+      };
+      await documentStorage.put("recent", entry);
+      currentDocumentId = entry.id;
+      markDocumentSaved();
+      await renderStoredLists();
+      return entry;
+    } catch (error) {
+      console.warn("Kroki IndexedDB save failed", error);
+      await notify("Kroki cihaz depolamasına kaydedilemedi.");
+      return null;
+    }
   }
 
   async function saveTemplate(options = {}) {
@@ -466,10 +449,15 @@
       previewSvg: preview.svg,
       previewViewBox: preview.viewBox
     };
-    const templates = [entry, ...storageRead(STORAGE_TEMPLATES)];
-    if (!storageWrite(STORAGE_TEMPLATES, templates)) return null;
-    renderStoredLists();
-    return entry;
+    try {
+      await documentStorage.put("template", entry);
+      await renderStoredLists();
+      return entry;
+    } catch (error) {
+      console.warn("Template IndexedDB save failed", error);
+      await notify("Şablon cihaz depolamasına kaydedilemedi.");
+      return null;
+    }
   }
 
   function loadDocument(doc, options = {}) {
@@ -484,21 +472,32 @@
     Kroki.StyleManager?.syncControls?.();
     if (options.fitToContent) window.krokiEditorCamera?.fitToContent?.();
     else dispatchViewBoxChange();
-    markDocumentSaved();
+    if (options.markSaved === false) lastSavedSnapshot = "";
+    else markDocumentSaved();
     return true;
   }
 
-  function findEntry(kind, id) {
-    return storageRead(storageKey(kind)).find((entry) => entry.id === id) || null;
+  async function findEntry(kind, id) {
+    try {
+      return await documentStorage.get(normalizedEntryKind(kind), id);
+    } catch (error) {
+      console.warn("Stored document read failed", error);
+      await notify("Kayıt cihaz depolamasından okunamadı.");
+      return null;
+    }
   }
 
-  function deleteEntry(kind, id) {
-    const key = storageKey(kind);
-    const next = storageRead(key).filter((entry) => entry.id !== id);
-    if (!storageWrite(key, next)) return false;
-    if (kind === "recent" && currentDocumentId === id) currentDocumentId = "";
-    renderStoredLists();
-    return true;
+  async function deleteEntry(kind, id) {
+    try {
+      await documentStorage.remove(normalizedEntryKind(kind), id);
+      if (kind === "recent" && currentDocumentId === id) currentDocumentId = "";
+      await renderStoredLists();
+      return true;
+    } catch (error) {
+      console.warn("Stored document delete failed", error);
+      await notify("Kayıt cihaz depolamasından silinemedi.");
+      return false;
+    }
   }
 
   function currentFullscreenElement() {
@@ -731,7 +730,7 @@
     await nextPaint();
     try {
       window.krokiEditorCamera?.fitToContent?.();
-      const entry = saveRecent();
+      const entry = await saveRecent();
       if (!entry) return;
       const viewBox = contentViewBox(EXPORT_PADDING);
       if (!viewBox) {
@@ -808,17 +807,41 @@
     target.append(list);
   }
 
-  function renderStoredLists() {
-    renderList(recentList, storageRead(STORAGE_RECENTS), {
-      kind: "recent",
-      prefix: "Kroki",
-      emptyText: "Henüz kayıt yok."
-    });
-    renderList(templateList, storageRead(STORAGE_TEMPLATES), {
-      kind: "template",
-      prefix: "Şablon",
-      emptyText: "Şablon kaydı yok."
-    });
+  async function renderStoredLists() {
+    const renderVersion = storedListRenderVersion += 1;
+    try {
+      const [recents, templates] = await Promise.all([
+        documentStorage.list("recent", { summary: true }),
+        documentStorage.list("template", { summary: true })
+      ]);
+      if (renderVersion !== storedListRenderVersion) return false;
+      renderList(recentList, recents, {
+        kind: "recent",
+        prefix: "Kroki",
+        emptyText: "Henüz kayıt yok."
+      });
+      renderList(templateList, templates, {
+        kind: "template",
+        prefix: "Şablon",
+        emptyText: "Şablon kaydı yok."
+      });
+      return true;
+    } catch (error) {
+      console.warn("Stored document lists failed", error);
+      if (renderVersion === storedListRenderVersion) {
+        renderList(recentList, [], {
+          kind: "recent",
+          prefix: "Kroki",
+          emptyText: "Kayıtlar okunamadı."
+        });
+        renderList(templateList, [], {
+          kind: "template",
+          prefix: "Şablon",
+          emptyText: "Şablonlar okunamadı."
+        });
+      }
+      return false;
+    }
   }
 
   function closePreview() {
@@ -826,8 +849,8 @@
     previewLayer = null;
   }
 
-  function openEntryPreview(kind, id) {
-    const entry = findEntry(kind, id);
+  async function openEntryPreview(kind, id) {
+    const entry = await findEntry(kind, id);
     if (!entry) return;
     closePreview();
 
@@ -896,19 +919,19 @@
       } else if (action === "delete") {
         const ok = await ask(`${entry.name || entryPrefix(kind)} silinsin mi?`, "Sil");
         if (!ok) return;
-        deleteEntry(kind, entry.id);
+        await deleteEntry(kind, entry.id);
         closePreview();
       }
     });
   }
 
   async function saveAndNotify() {
-    const entry = saveRecent();
+    const entry = await saveRecent();
     if (entry) await notify("Kroki kaydedildi.");
   }
 
-  function saveAndExit() {
-    const entry = saveRecent();
+  async function saveAndExit() {
+    const entry = await saveRecent();
     if (!entry) return;
     resetDocument();
     showHome();
@@ -963,7 +986,7 @@
     if (hasUnsavedChanges()) {
       const decision = await askHomeSaveDecision();
       if (decision === "save") {
-        const entry = saveRecent();
+        const entry = await saveRecent();
         if (!entry) return;
       } else if (decision !== "discard") {
         return;
@@ -1141,6 +1164,12 @@
     if (payload?.signature !== SVG_SIGNATURE || !payload.document) {
       return notify("SVG içindeki Kroki Pro imzası uyumsuz.", "SVG Yükle");
     }
+    if (payload.document.photoBackground && !payload.document.photoBackground.dataUrl) {
+      const photo = parsed.querySelector("[data-kroki-photo-background='true']");
+      payload.document.photoBackground.dataUrl = photo?.getAttribute("href")
+        || photo?.getAttributeNS?.("http://www.w3.org/1999/xlink", "href")
+        || "";
+    }
     return confirmDiscard("Mevcut kroki kapatılıp SVG içindeki kroki açılacak. Devam edilsin mi?")
       .then((ok) => {
         if (ok) loadDocument(payload.document, { currentDocumentId: "" });
@@ -1161,11 +1190,50 @@
     input.click();
   }
 
+  function importPhotoFile() {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".jpg,.jpeg,.png,.webp,.gif,.bmp,.avif,image/jpeg,image/png,image/webp,image/gif,image/bmp,image/avif";
+    input.hidden = true;
+    input.addEventListener("cancel", () => input.remove(), { once: true });
+    input.addEventListener("change", async () => {
+      const file = input.files?.[0];
+      if (!file) {
+        input.remove();
+        return;
+      }
+      showBusy("Fotoğraf kopyalanıyor...");
+      try {
+        const photoBackground = await Kroki.PhotoBackgroundManager?.stateFromFile?.(file);
+        if (!photoBackground) throw new Error("photo-background-unavailable");
+        hideBusy();
+        const ok = await confirmDiscard("Mevcut kroki kapatılıp fotoğraf altlık olarak açılacak. Devam edilsin mi?");
+        if (!ok) return;
+        loadDocument({
+          schemaVersion: 1,
+          app: "Kroki Pro",
+          viewport: { viewBox: viewBoxString(DEFAULT_VIEWBOX) },
+          objects: [],
+          photoBackground,
+          groups: [],
+          roadIntersection: null
+        }, { currentDocumentId: "", markSaved: false });
+      } catch {
+        await notify("Fotoğraf okunamadı. JPEG, PNG, WebP, GIF, BMP veya AVIF dosyası seçin.", "Fotoğraf Yükle");
+      } finally {
+        hideBusy();
+        input.remove();
+      }
+    }, { once: true });
+    document.body.append(input);
+    input.click();
+  }
+
   async function handleMenuAction(action) {
     if (action === "export-png") await exportFullPngAndExit();
     else if (action === "export-area-png") startAreaTool();
     else if (action === "save") await saveAndNotify();
-    else if (action === "save-exit") saveAndExit();
+    else if (action === "save-exit") await saveAndExit();
     else if (action === "exit-nosave") await exitWithoutSave();
     else if (action === "save-template") await saveTemplateFlow();
     else if (action === "export-svg") exportSvg();
@@ -1190,12 +1258,12 @@
 
   recentList?.addEventListener("click", (event) => {
     const button = event.target?.closest?.("[data-entry-id]");
-    if (button) openEntryPreview(button.dataset.entryKind || "recent", button.dataset.entryId);
+    if (button) void openEntryPreview(button.dataset.entryKind || "recent", button.dataset.entryId);
   });
 
   templateList?.addEventListener("click", (event) => {
     const button = event.target?.closest?.("[data-entry-id]");
-    if (button) openEntryPreview(button.dataset.entryKind || "template", button.dataset.entryId);
+    if (button) void openEntryPreview(button.dataset.entryKind || "template", button.dataset.entryId);
   });
 
   document.addEventListener("keydown", (event) => {
@@ -1214,9 +1282,10 @@
     renderStoredLists,
     resetDocument,
     importSvgFile,
+    importPhotoFile,
     importKrokiSvgText
   };
 
-  renderStoredLists();
+  void renderStoredLists();
   markDocumentSaved();
 })();

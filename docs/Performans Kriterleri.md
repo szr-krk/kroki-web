@@ -81,11 +81,11 @@ Ayrıntı: [[Sembol ve Asset Sistemi]].
 
 ## Export ve kayıt performansı
 
-SVG/PNG export, localStorage kayıt ve preview üretimi pahalı olabilir. Bunlar kullanıcı komutu ile çalışmalı, pointer move veya kamera olayına bağlanmamalıdır.
+SVG/PNG export, IndexedDB kayıt ve preview üretimi pahalı olabilir. Bunlar kullanıcı komutu ile çalışmalı, pointer move veya kamera olayına bağlanmamalıdır.
 
 Riskler:
 
-- `localStorage` büyük JSON/SVG preview ile hızla quota'ya yaklaşabilir.
+- Büyük fotoğraf altlığı tek Blob olarak `assets` deposunda tutulmalı; belge JSON'u ve SVG preview içinde yinelenmemelidir.
 - PNG export canvas rasterizasyonu RAM tüketir; özellikle büyük viewBox için çıktı boyutu sınırlanmalıdır.
 - Recents preview SVG'leri Home'da `img` olarak lazy yüklenmelidir.
 
@@ -110,7 +110,6 @@ Resmi test altyapısı yoksa bile `.tmp` altında geçici benchmark HTML'i ile �
 - Yol sürükleme sırasında kavşak rebuild sayısı.
 - Aynı viewBox yazımının tekrar sayısı.
 - Canvas üzerindeki toplam SVG node sayısı.
-- localStorage kayıt boyutu.
+- IndexedDB `documents` ve `assets` depolarının kayıt boyutu.
 
 Bu ölçümler depoya kalıcı test olarak eklenecekse [[Codex Talimatları]] güncellenmelidir.
-

@@ -15,7 +15,7 @@ Bağlantılar: [[Açık Hatalar]], [[Home]], [[Menü Sistemi]], [[Serializer]].
 
 ### Kalıcı belge kaydet/yükle geliştirmeleri
 
-Ana menü ve Home localStorage üzerinden son kroki/şablon kaydı yapar. Eksik olanlar: dosya sistemi veya kullanıcı seçimli kayıt yeri, quota yönetimi, schema migration, doğrudan `.json` indir/yükle UI'si ve uzun vadeli kayıt kimliği politikasıdır.
+Ana menü ve Home IndexedDB üzerinden son kroki/şablon kaydı yapar. Eksik olanlar: dosya sistemi veya kullanıcı seçimli kayıt yeri, quota görünümü/temizleme aracı, schema migration, doğrudan `.json` indir/yükle UI'si ve uzun vadeli kayıt kimliği politikasıdır.
 
 ### SVG içe/dışa aktarma
 
@@ -27,7 +27,7 @@ Home'da SVG Yükle, editör ana menüsünde SVG Olarak Kaydet vardır. Mevcut im
 
 ### Şablonlarım geliştirmeleri
 
-Şablon kaydetme, adlandırma, listeleme, önizleme, silme ve düzenle açışı localStorage ile bağlıdır. Eksik olanlar: kategori/etiket, sıralama, dışa aktarma, cihazlar arası taşıma ve hazır şablon setidir.
+Şablon kaydetme, adlandırma, listeleme, önizleme, silme ve düzenle açışı IndexedDB ile bağlıdır. Eksik olanlar: kategori/etiket, sıralama, dışa aktarma, cihazlar arası taşıma ve hazır şablon setidir.
 
 ### Hazır yollar ve hazır kavşaklar
 
@@ -65,5 +65,5 @@ Engine `setDebug` ve `resetQEndpointEdits` API'lerini açar. UI düğmesi yoktur
 
 ## Belirsiz
 
-- Öncelik, hedef platform, dosya API'si ve localStorage dışı depolama kararı kodda yoktur.
+- Öncelik, hedef platform ve kullanıcı seçimli dosya API'si kararı netleşmemiştir; tarayıcı içi kalıcılık IndexedDB ile sağlanır.
 - Hazır yol/kavşak içeriklerinin ürün formatı tanımlı değildir.

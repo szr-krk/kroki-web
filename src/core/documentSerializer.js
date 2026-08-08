@@ -111,6 +111,7 @@
         label: styleManager.normalizeLabel(model.label, model.type),
         metadata: cleanMetadata(model.metadata)
       })),
+      photoBackground: Kroki.PhotoBackgroundManager?.exportState?.() || null,
       groups: Kroki.GroupManager?.getAll?.() || [],
       roadIntersection: Kroki.RoadIntersectionEngine?.exportState?.() || null
     };
@@ -137,6 +138,7 @@
       Kroki.SelectionManager?.clear?.({ silent: true });
       Kroki.MultiSelectManager?.clear?.({ silent: true });
       manager.replaceAll(models, { skipHistory: true });
+      Kroki.PhotoBackgroundManager?.importState?.(source.photoBackground || null);
       if (source.viewport?.viewBox) manager.canvas?.setAttribute("viewBox", String(source.viewport.viewBox));
       const liveIds = new Set(models.map((model) => model.id));
       Kroki.GroupManager?.replaceGroups?.(normalizeGroups(source.groups, idMap, liveIds));

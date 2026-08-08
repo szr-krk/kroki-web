@@ -12,7 +12,7 @@ Home ekranı editöre geçiş, fullscreen, modal aç/kapat, son krokiler ve şab
 
 ### Ana menü ve yerel kayıt
 
-Ana menüde kaydetme, kaydet ve çık, kaydetmeden çık, yeni kroki, şablona kaydet, SVG export, PNG export ve alan PNG export akışları bağlıdır. Kayıt ve şablonlar `localStorage` içinde tutulur. SVG export içine Kroki Pro metadata'sı yazılır; import yalnız bu imzalı SVG'yi güvenli belge olarak açar.
+Ana menüde kaydetme, kaydet ve çık, kaydetmeden çık, yeni kroki, şablona kaydet, SVG export, PNG export ve alan PNG export akışları bağlıdır. Son krokiler ve şablonlar IndexedDB içinde tutulur; fotoğraf altlığı ayrı Blob olarak bir kez saklanır. SVG export içine Kroki Pro metadata'sı yazılır; import yalnız bu imzalı SVG'yi güvenli belge olarak açar.
 
 ### SVG editör iskeleti
 
