@@ -48,6 +48,16 @@
       .replace(/\p{L}/u, (letter) => letter.toLocaleUpperCase("tr-TR"));
   }
 
+  function turkishSearchText(value) {
+    return String(value ?? "")
+      .toLocaleLowerCase("tr-TR")
+      .normalize("NFD")
+      .replace(/\p{M}/gu, "")
+      .replace(/ı/g, "i")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  }
+
   function typeFromElement(element) {
     const shape = element?.dataset?.shape;
     if (shape === "arc" || shape === "bezier" || shape === "circle" || shape === "ellipse" || shape === "rectangle" || shape === "closedShape" || shape === "text" || shape === "callout" || shape === "road" || shape === "trafficSign" || shape === "otherSymbol" || shape === "vehicle") return shape;
@@ -74,6 +84,7 @@
     svgUnitsPerScreenPx,
     normalizeRotation,
     turkishListLabel,
+    turkishSearchText,
     typeFromElement
   };
 

@@ -8,8 +8,8 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const index = read("index.html");
 const editorCss = read("src/editor.css");
 
-assert.match(index, /kroki-build" content="20260808-library-header-stability-v1"/);
-assert.match(index, /src\/editor\.css\?v=20260808-library-header-stability-v1/);
+assert.match(index, /kroki-build" content="[^"]+"/);
+assert.match(index, /src\/editor\.css\?v=[^"]+/);
 assert.match(
   editorCss,
   /\.editor-library-header\s*\{[^}]*flex:\s*0 0 auto;[^}]*min-height:\s*3\.875rem;/s

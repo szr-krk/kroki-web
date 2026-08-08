@@ -11,12 +11,19 @@
   const grid = document.querySelector("#trafficSignGrid");
   const selectedLabel = document.querySelector("#trafficSignSelectedLabel");
   const addButton = document.querySelector("#btnTrafficSignAdd");
+  const searchInput = document.querySelector("#trafficSignSearch");
+  const searchCount = document.querySelector("#trafficSignSearchCount");
+  const searchClearButton = document.querySelector("#btnTrafficSignSearchClear");
   const panel = document.querySelector("#railMenuLevha");
+  const browser = panel?.querySelector(".traffic-sign-browser");
 
   let activeCategoryKey = "";
   let selectedKey = "";
+  let searchQuery = "";
+  let searchTimer = 0;
   let rendered = false;
   const artCache = new Map();
+  const searchTextCache = new Map();
 
   function createSvgElement(tag, attrs = {}) {
     const element = document.createElementNS(SVG_NS, tag);
@@ -57,6 +64,25 @@
     return allCategories.find((category) => category.key === activeCategoryKey) || allCategories[0] || null;
   }
 
+  function searchableText(sign) {
+    const key = sign?.key || "";
+    if (key && searchTextCache.has(key)) return searchTextCache.get(key);
+    const text = utils.turkishSearchText(`${sign?.code || ""} ${sign?.name || ""} ${sign?.category || ""}`);
+    if (key) searchTextCache.set(key, text);
+    return text;
+  }
+
+  function matchingSigns() {
+    if (!searchQuery) return null;
+    const queryTokens = searchQuery.split(" ").filter(Boolean);
+    return catalog.all().filter((sign) => {
+      const signTokens = searchableText(sign).split(" ").filter(Boolean);
+      return queryTokens.every((queryToken) => (
+        signTokens.some((signToken) => signToken.startsWith(queryToken))
+      ));
+    });
+  }
+
   function renderSignArt(sign) {
     const cacheKey = sign?.key || "";
     const cached = cacheKey ? artCache.get(cacheKey) : null;
@@ -71,10 +97,12 @@
     return svg.cloneNode(true);
   }
 
-  function renderGrid() {
+  function renderGrid({ resetScroll = false } = {}) {
     if (!grid) return;
     const category = activeCategory();
-    if (!category) {
+    const searchResults = matchingSigns();
+    const signs = searchResults || category?.signs || [];
+    if (!category && !searchResults) {
       const empty = document.createElement("div");
       empty.className = "traffic-sign-empty";
       empty.textContent = "Levha katalogu bulunamadi.";
@@ -83,8 +111,24 @@
       return;
     }
 
+    if (searchCount) {
+      searchCount.textContent = String(signs.length);
+      searchCount.classList.toggle("gizli", !searchQuery);
+      searchCount.title = searchQuery ? `${signs.length} levha bulundu` : "";
+    }
+
+    if (!signs.length) {
+      const empty = document.createElement("div");
+      empty.className = "traffic-sign-empty";
+      empty.textContent = "Levha bulunamadı.";
+      grid.replaceChildren(empty);
+      setSelected(null);
+      if (resetScroll && browser) browser.scrollTop = 0;
+      return;
+    }
+
     const fragment = document.createDocumentFragment();
-    category.signs.forEach((sign) => {
+    signs.forEach((sign) => {
       const tile = document.createElement("button");
       tile.className = "traffic-sign-tile";
       tile.type = "button";
@@ -98,18 +142,36 @@
     });
     grid.replaceChildren(fragment);
     syncTileSelection();
+    if (resetScroll && browser) browser.scrollTop = 0;
+  }
+
+  function syncCategorySelection() {
+    categoryList?.querySelectorAll(".traffic-sign-category").forEach((button) => {
+      const selected = !searchQuery && button.dataset.categoryKey === activeCategoryKey;
+      button.classList.toggle("is-selected", selected);
+      button.setAttribute("aria-pressed", String(selected));
+    });
+  }
+
+  function setSearchValue(value, { render = true } = {}) {
+    window.clearTimeout(searchTimer);
+    if (searchInput) searchInput.value = String(value || "");
+    const nextQuery = utils.turkishSearchText(searchInput?.value || "");
+    const changed = nextQuery !== searchQuery;
+    searchQuery = nextQuery;
+    searchClearButton?.classList.toggle("gizli", !(searchInput?.value || ""));
+    syncCategorySelection();
+    if (changed) setSelected(null);
+    if (render) renderGrid({ resetScroll: true });
   }
 
   function setActiveCategory(key) {
     const nextKey = String(key || "");
+    if (searchQuery || searchInput?.value) setSearchValue("", { render: false });
     if (activeCategoryKey && activeCategoryKey !== nextKey) setSelected(null);
     activeCategoryKey = nextKey;
-    categoryList?.querySelectorAll(".traffic-sign-category").forEach((button) => {
-      const selected = button.dataset.categoryKey === activeCategoryKey;
-      button.classList.toggle("is-selected", selected);
-      button.setAttribute("aria-pressed", String(selected));
-    });
-    renderGrid();
+    syncCategorySelection();
+    renderGrid({ resetScroll: true });
   }
 
   function renderCategories() {
@@ -171,6 +233,19 @@
   }
 
   addButton?.addEventListener("click", addSelectedSign);
+  searchInput?.addEventListener("input", () => {
+    window.clearTimeout(searchTimer);
+    searchTimer = window.setTimeout(() => setSearchValue(searchInput.value), 100);
+  });
+  searchInput?.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || !searchInput.value) return;
+    event.preventDefault();
+    setSearchValue("");
+  });
+  searchClearButton?.addEventListener("click", () => {
+    setSearchValue("");
+    searchInput?.focus({ preventScroll: true });
+  });
   panel?.addEventListener("kroki:rail-menu-open", ensureRendered);
   if (panel && !panel.classList.contains("gizli")) ensureRendered();
 
