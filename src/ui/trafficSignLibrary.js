@@ -122,8 +122,10 @@
       button.dataset.categoryKey = category.key;
       button.setAttribute("aria-pressed", "false");
       const title = document.createElement("span");
+      const count = document.createElement("strong");
       title.textContent = String(category.title || "").replace(/^\s*\d+\s+/, "");
-      button.append(title);
+      count.textContent = String(category.signs.length);
+      button.append(title, count);
       button.addEventListener("click", () => setActiveCategory(category.key));
       fragment.append(button);
     });
