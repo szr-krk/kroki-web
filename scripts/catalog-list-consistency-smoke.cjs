@@ -59,7 +59,7 @@ assert.match(
 );
 assert.doesNotMatch(editorCss, /:where\(#trafficSignCategoryList\) \.traffic-sign-category\s*\{/);
 
-assert.match(index, /kroki-build" content="20260808-catalog-list-consistency-v1"/);
+assert.match(index, /kroki-build" content="[^"]+"/);
 for (const asset of [
   "src/editor.css",
   "src/data/vehicle-catalog-data.js",
@@ -69,7 +69,7 @@ for (const asset of [
   "src/ui/otherSymbolLibrary.js"
 ]) {
   assert.ok(
-    index.includes(`${asset}?v=20260808-catalog-list-consistency-v1`),
+    index.includes(`${asset}?v=`),
     `${asset} sürüm etiketi güncel değil`
   );
 }

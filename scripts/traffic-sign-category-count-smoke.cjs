@@ -17,11 +17,11 @@ assert.match(trafficSignLibrary, /count\.textContent = String\(category\.signs\.
 assert.match(trafficSignLibrary, /button\.append\(title, count\)/);
 assert.match(
   editorCss,
-  /\.traffic-sign-category,\s*\.catalog-category,\s*\.vehicle-type-button\s*\{[^}]*justify-content:\s*space-between;[^}]*gap:\s*0\.625rem;/s
+  /\.traffic-sign-category,\s*\.catalog-category,\s*\.vehicle-type-button\s*\{[^}]*justify-content:\s*space-between;[^}]*gap:\s*0\.375rem;/s
 );
 assert.match(
   editorCss,
-  /\.traffic-sign-category strong,\s*\.catalog-category strong,\s*\.vehicle-type-button strong\s*\{[^}]*min-width:\s*2rem;[^}]*font-size:\s*0\.75rem;/s
+  /\.traffic-sign-category strong,\s*\.catalog-category strong,\s*\.vehicle-type-button strong\s*\{[^}]*min-width:\s*1\.75rem;[^}]*font-size:\s*0\.75rem;/s
 );
 
 console.log("traffic sign category count smoke: ok");
