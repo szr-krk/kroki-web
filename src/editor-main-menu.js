@@ -307,7 +307,8 @@
     });
     if (chunks.length) return chunks.join("\n");
     return [
-      ".editor-line-label,.editor-circle-label-text,.editor-ellipse-label-text,.editor-rectangle-label-text,.editor-vehicle-label{font-family:Roboto,Arial,sans-serif;font-weight:800;paint-order:stroke fill;stroke-linejoin:round;stroke-width:.18em;}",
+      ".editor-line-label,.editor-circle-label-text,.editor-ellipse-label-text,.editor-rectangle-label-text{font-family:Roboto,Arial,sans-serif;font-weight:800;paint-order:stroke fill;stroke-linejoin:round;stroke-width:.18em;}",
+      ".editor-vehicle-label{font-family:Roboto,sans-serif;font-weight:400;paint-order:stroke fill;stroke:#fff;stroke-linejoin:round;stroke-width:.16em;}",
       ".editor-text,.editor-callout-text{font-family:Roboto,Arial,sans-serif;}",
       ".editor-road-edge,.editor-road-channel-line,.editor-road-marking,.road-intersection-outer-contour,.road-intersection-auxiliary-contour{vector-effect:none;}",
       ".editor-object-selection{vector-effect:non-scaling-stroke;}"

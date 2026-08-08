@@ -1177,6 +1177,7 @@
     const catalogObjectHasText = isCatalogObject && (adapter?.hasEditableText?.(model) ?? true);
     const noText = Boolean(adapter?.capabilities?.noText) || (isCatalogObject && !catalogObjectHasText);
     const hasPointEdit = Boolean(adapter?.capabilities?.pointEdit);
+    const hasRotationPicker = typeof adapter?.setRotation === "function";
     const supportsTextFormatting = isTextObject || Boolean(adapter?.capabilities?.textFormatting);
     const hasFill = Boolean(adapter?.capabilities?.fill);
     const hasFillPattern = supportsFillPatternTarget(adapter, model);
@@ -1189,6 +1190,7 @@
     controls?.lineOnlyControls?.forEach((control) => control.classList.toggle("gizli", !hasArrows));
     controls?.textObjectControls?.forEach((control) => control.classList.toggle("gizli", !supportsTextFormatting));
     controls?.closedShapeControls?.forEach((control) => control.classList.toggle("gizli", !hasPointEdit));
+    controls?.objectRotationControl?.classList.toggle("gizli", !hasRotationPicker);
     controls?.roadOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isRoadObject));
     controls?.trafficSignOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isCatalogObject));
     controls?.vehicleOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isVehicleObject));
@@ -1332,6 +1334,45 @@
     const entry = activeCalloutEntry();
     if (!entry || entry.multi) return;
     updateLabel({ size: normalizeLabelSize(value) });
+  }
+
+  function activeRotatableEntry() {
+    const entry = activeEntry();
+    return !entry?.multi && typeof entry?.adapter?.setRotation === "function" ? entry : null;
+  }
+
+  function objectRotation(entry) {
+    if (!entry) return 0;
+    const value = entry.adapter.getRotation?.(entry.model) ?? entry.model.geometry?.rotation;
+    return utils.normalizeRotation(numberOr(value, 0));
+  }
+
+  function setObjectRotation(rotation) {
+    const entry = activeRotatableEntry();
+    if (!entry) return;
+    const nextRotation = utils.normalizeRotation(numberOr(rotation, 0));
+    selection.promoteToEdit();
+    manager.updateGeometry(entry.model.id, (draft) => {
+      entry.adapter.setRotation(draft, nextRotation);
+    }, { label: "Nesne acisi guncelle", styleControls: true });
+  }
+
+  function updateObjectRotation(delta) {
+    const entry = activeRotatableEntry();
+    if (!entry) return;
+    setObjectRotation(objectRotation(entry) + delta);
+  }
+
+  function updateObjectRotationInput(value) {
+    const rotation = numberOr(value, NaN);
+    if (!Number.isFinite(rotation)) return;
+    setObjectRotation(rotation);
+  }
+
+  function syncObjectRotationControls(entry) {
+    if (!controls?.objectRotateInput || typeof entry?.adapter?.setRotation !== "function") return;
+    const rotation = Math.round(objectRotation(entry));
+    if (controls.objectRotateInput.value !== String(rotation)) controls.objectRotateInput.value = String(rotation);
   }
 
   function activeCatalogObjectEntry() {
@@ -1748,6 +1789,7 @@
     const primaryOpacityValue = isTextObject ? opacityPercent(style.opacity) : strokeOpacityValue;
 
     setControlVisibility(adapter, model);
+    syncObjectRotationControls(entry);
     syncTrafficSignTextFields(entry);
     Kroki.RoadInspector?.sync?.(entry);
     if (isCatalogObject) {
@@ -2056,6 +2098,10 @@
       calloutTextSizeMinus: document.querySelector("#btnCalloutTextSizeMinus"),
       calloutTextSizePlus: document.querySelector("#btnCalloutTextSizePlus"),
       calloutTextSizeInput: document.querySelector("#calloutTextSizeInput"),
+      objectRotationControl: document.querySelector("#objectRotateStepper"),
+      objectRotateMinus: document.querySelector("#btnObjectRotateMinus"),
+      objectRotatePlus: document.querySelector("#btnObjectRotatePlus"),
+      objectRotateInput: document.querySelector("#objectRotateInput"),
       stylePanel: document.querySelector("#lineStylePanel"),
       shapeOnlyControls: Array.from(document.querySelectorAll(".shape-only-control")),
       fillPatternControls: Array.from(document.querySelectorAll(".fill-pattern-control")),
@@ -2096,6 +2142,8 @@
     });
     bindHoldAction(controls.calloutTextSizeMinus, () => updateCalloutTextSize(-1));
     bindHoldAction(controls.calloutTextSizePlus, () => updateCalloutTextSize(1));
+    bindHoldAction(controls.objectRotateMinus, () => updateObjectRotation(-1), { startDelay: 240, repeatDelay: 32 });
+    bindHoldAction(controls.objectRotatePlus, () => updateObjectRotation(1), { startDelay: 240, repeatDelay: 32 });
     bindHoldAction(controls.trafficSignScaleMinus, () => updateCatalogObjectScale(-1));
     bindHoldAction(controls.trafficSignScalePlus, () => updateCatalogObjectScale(1));
     bindHoldAction(controls.trafficSignRotateMinus, () => updateCatalogObjectRotation(-1));
@@ -2134,6 +2182,14 @@
     });
     controls.vehicleRotateInput?.addEventListener("change", () => {
       updateVehicleRotationInput(controls.vehicleRotateInput.value);
+      syncControls();
+    });
+    controls.objectRotateInput?.addEventListener("input", () => {
+      if (controls.objectRotateInput.value === "" || controls.objectRotateInput.value === "-") return;
+      updateObjectRotationInput(controls.objectRotateInput.value);
+    });
+    controls.objectRotateInput?.addEventListener("change", () => {
+      updateObjectRotationInput(controls.objectRotateInput.value);
       syncControls();
     });
     controls.vehicleView?.addEventListener("click", cycleVehicleView);

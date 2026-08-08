@@ -240,8 +240,7 @@
 .editor-line-label,
 .editor-circle-label-text,
 .editor-ellipse-label-text,
-.editor-rectangle-label-text,
-.editor-vehicle-label {
+.editor-rectangle-label-text {
   font-family: Roboto, Arial, sans-serif;
   font-weight: 800;
   paint-order: stroke fill;
@@ -678,10 +677,17 @@
 }
 
 .editor-vehicle-label {
-  fill: #111827;
-  font-size: 1.125rem;
-  stroke-width: 0.25rem;
+  fill: #000000;
+  font-family: Roboto, sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  paint-order: stroke fill;
+  pointer-events: none;
+  stroke: #ffffff;
+  stroke-linejoin: round;
+  stroke-width: .16em;
   text-transform: none;
+  user-select: none;
 }
 
 .vehicle-color-picker {
@@ -1433,7 +1439,7 @@
 }
 
 /* Sanal klavye acikken serbest metin paneli ve diger giris araclari dokunulabilir boyutta kalir. */
-:root.kroki-text-entry-active .kroki-text-entry-host.free-text-composer {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host.free-text-composer {
   top: calc(var(--kroki-visual-viewport-top, 0px) + 8px) !important;
   width: min(620px, calc(var(--kroki-visual-viewport-width, 100vw) - 16px)) !important;
   max-height: calc(var(--kroki-visual-viewport-height, 100dvh) - 16px) !important;
@@ -1444,11 +1450,11 @@
   z-index: 260 !important;
 }
 
-:root.kroki-text-entry-active .kroki-text-entry-host.free-text-composer {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host.free-text-composer {
   left: 50vw !important;
 }
 
-:root.kroki-text-entry-active .kroki-text-entry-host:not(.line-text-panel) :is(
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host:not(.line-text-panel) :is(
   .line-text-input,
   .free-text-input
 ) {
@@ -1458,7 +1464,7 @@
   resize: none;
 }
 
-:root.kroki-text-entry-active .kroki-text-entry-host:not(.line-text-panel) :is(
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host:not(.line-text-panel) :is(
   .vehicle-label-input,
   .traffic-sign-text-input
 ) {
@@ -1466,16 +1472,16 @@
   padding: 8px 10px !important;
 }
 
-:root.kroki-text-entry-active .kroki-text-entry-host:not(.line-text-panel) .traffic-sign-text-field {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host:not(.line-text-panel) .traffic-sign-text-field {
   grid-template-columns: 80px minmax(160px, 1fr) !important;
   gap: 8px !important;
 }
 
-:root.kroki-text-entry-active .kroki-text-entry-host:not(.line-text-panel) .traffic-sign-text-label {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host:not(.line-text-panel) .traffic-sign-text-label {
   font-size: 14px !important;
 }
 
-:root.kroki-text-entry-active .kroki-text-entry-host:not(.line-text-panel) :is(.line-text-actions, .free-text-actions) {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host:not(.line-text-panel) :is(.line-text-actions, .free-text-actions) {
   min-height: 44px;
   flex-wrap: nowrap !important;
   gap: 8px !important;
@@ -1485,14 +1491,14 @@
   padding-bottom: 2px;
 }
 
-:root.kroki-text-entry-active .kroki-text-entry-host:not(.line-text-panel) .line-text-size-picker {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host:not(.line-text-panel) .line-text-size-picker {
   width: 132px !important;
   height: 44px !important;
   flex: 0 0 132px;
   grid-template-columns: repeat(3, 44px) !important;
 }
 
-:root.kroki-text-entry-active .kroki-text-entry-host:not(.line-text-panel) :is(
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host:not(.line-text-panel) :is(
   .line-text-picker-btn,
   .line-text-picker-value,
   .line-text-icon-btn,
@@ -1507,7 +1513,7 @@
   font-size: 16px !important;
 }
 
-:root.kroki-text-entry-active .kroki-text-entry-host .free-text-command-btn {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host .free-text-command-btn {
   width: auto !important;
   min-width: 72px !important;
   flex-basis: auto;
@@ -1517,20 +1523,20 @@
   box-shadow: 0 0 0 4px #ffffff;
 }
 
-:root.kroki-text-entry-active .kroki-text-entry-host #btnFreeTextCancel {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host #btnFreeTextCancel {
   right: 92px;
 }
 
-:root.kroki-text-entry-active .kroki-text-entry-host #btnFreeTextDone {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host #btnFreeTextDone {
   right: 0;
 }
 
-:root.kroki-text-entry-active .kroki-text-entry-host.vehicle-label-panel .vehicle-label-actions {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host.vehicle-label-panel .vehicle-label-actions {
   grid-template-columns: repeat(4, minmax(44px, 1fr)) !important;
   gap: 8px !important;
 }
 
-:root.kroki-text-entry-active .kroki-text-entry-host:is(.road-ip-stepper, .side-ip-stepper-vertical) {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host:is(.road-ip-stepper, .side-ip-stepper-vertical) {
   position: fixed !important;
   top: calc(var(--kroki-visual-viewport-top, 0px) + 8px) !important;
   right: 8px !important;
@@ -1546,14 +1552,14 @@
   z-index: 270 !important;
 }
 
-:root.kroki-text-entry-active .kroki-text-entry-host:is(.road-ip-stepper, .side-ip-stepper-vertical) > :is(button, input) {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host:is(.road-ip-stepper, .side-ip-stepper-vertical) > :is(button, input) {
   width: 100% !important;
   min-height: 44px !important;
   height: 44px !important;
   font-size: 16px !important;
 }
 
-:root.kroki-text-entry-active .kroki-text-entry-host:is(.road-departure-stepper, .road-builder-stepper) {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host:is(.road-departure-stepper, .road-builder-stepper) {
   position: fixed !important;
   top: calc(var(--kroki-visual-viewport-top, 0px) + 8px) !important;
   right: 8px !important;
@@ -1569,7 +1575,7 @@
   z-index: 270 !important;
 }
 
-:root.kroki-text-entry-active .kroki-text-entry-host:is(.road-departure-stepper, .road-builder-stepper) > :is(button, input) {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host:is(.road-departure-stepper, .road-builder-stepper) > :is(button, input) {
   min-height: 44px !important;
   height: 44px !important;
   font-size: 16px !important;

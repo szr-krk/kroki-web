@@ -351,6 +351,21 @@
     className: "editor-closed-shape",
     capabilities: { arrows: false, fill: true, curvedLabel: false, noText: true, pointEdit: true },
 
+    getRotation(model) {
+      return ensureFrame(model.geometry).rotation;
+    },
+
+    setRotation(model, rotation) {
+      const frame = ensureFrame(model.geometry);
+      const nextRotation = utils.normalizeRotation(rotation);
+      const delta = utils.normalizeRotation(nextRotation - frame.rotation);
+      if (delta) {
+        const center = { x: frame.cx, y: frame.cy };
+        transformGeometry(model, (item) => rotatePointAround(item, center, delta));
+      }
+      model.geometry.frame = { ...frame, rotation: nextRotation };
+    },
+
     create(initialData = {}) {
       return {
         type: "closedShape",

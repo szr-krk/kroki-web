@@ -11,9 +11,8 @@
   const MULTI_SELECTION_STROKE_WIDTH = 4;
   const VEHICLE_LABEL_POSITIONS = ["top", "right", "bottom", "left"];
   const VEHICLE_LABEL_MAX_LENGTH = 24;
-  const VEHICLE_LABEL_FONT_SIZE = 18;
-  const VEHICLE_LABEL_STROKE_WIDTH = 4;
-  const VEHICLE_LABEL_CLEARANCE = 2;
+  const VEHICLE_LABEL_FONT_SIZE = 16;
+  const VEHICLE_LABEL_EDGE_CLEARANCE = 2;
   const metricsCache = new WeakMap();
 
   function clampScale(value) {
@@ -512,32 +511,39 @@
     };
   }
 
-  function vehicleLabelGap(text, position) {
-    const strokePadding = VEHICLE_LABEL_STROKE_WIDTH / 2;
-    const normalizedPosition = normalizeVehicleLabelPosition(position);
-    if (normalizedPosition === "left" || normalizedPosition === "right") {
-      const charCount = Math.max(1, Array.from(normalizeVehicleLabelText(text).trim()).length);
-      const halfTextWidth = Math.max(VEHICLE_LABEL_FONT_SIZE * 0.34, charCount * VEHICLE_LABEL_FONT_SIZE * 0.28);
-      return Math.ceil(halfTextWidth + strokePadding + VEHICLE_LABEL_CLEARANCE);
-    }
-    return Math.ceil(VEHICLE_LABEL_FONT_SIZE / 2 + strokePadding + VEHICLE_LABEL_CLEARANCE);
-  }
-
-  function vehicleLabelPoint(model, metrics, position, text) {
-    const gap = vehicleLabelGap(text, position);
+  function vehicleLabelPoint(model, metrics, position) {
     const halfWidth = metrics.width / 2;
     const halfHeight = metrics.height / 2;
+    const centerClearance = VEHICLE_LABEL_EDGE_CLEARANCE + vehicleLabelFontSize(metrics) / 2;
     const local = {
-      top: { x: 0, y: -halfHeight - gap },
-      right: { x: halfWidth + gap, y: 0 },
-      bottom: { x: 0, y: halfHeight + gap },
-      left: { x: -halfWidth - gap, y: 0 }
+      top: { x: 0, y: -halfHeight - centerClearance },
+      right: { x: halfWidth + centerClearance, y: 0 },
+      bottom: { x: 0, y: halfHeight + centerClearance },
+      left: { x: -halfWidth - centerClearance, y: 0 }
     }[normalizeVehicleLabelPosition(position)];
     const offset = rotatedOffset(local, utils.normalizeRotation(model.geometry?.rotation || 0));
     return {
       x: model.geometry.cx + offset.x,
       y: model.geometry.cy + offset.y
     };
+  }
+
+  function vehicleLabelFontSize(metrics) {
+    return VEHICLE_LABEL_FONT_SIZE * Math.max(MIN_SCALE, Number(metrics?.scale) || 1);
+  }
+
+  function vehicleLabelAngle(model, position) {
+    const sideAngle = {
+      top: 0,
+      right: 90,
+      bottom: 180,
+      left: 270
+    }[normalizeVehicleLabelPosition(position)];
+    const rawAngle = Number(model.geometry?.rotation || 0) + sideAngle;
+    const normalized = ((rawAngle % 360) + 360) % 360;
+    return normalized > 90 && normalized < 270
+      ? (normalized + 180) % 360
+      : normalized;
   }
 
   function renderVehicleLabel(parent, model, metrics, metadata) {
@@ -547,17 +553,26 @@
       label?.remove();
       return;
     }
-    const point = vehicleLabelPoint(model, metrics, metadata.vehicleLabelPosition, text);
+    if (label?.tagName?.toLowerCase() !== "text") {
+      label?.remove();
+      label = null;
+    }
+    const point = vehicleLabelPoint(model, metrics, metadata.vehicleLabelPosition);
+    const angle = vehicleLabelAngle(model, metadata.vehicleLabelPosition);
     if (!label) {
       label = create("text", {
         class: "editor-vehicle-label",
+        "font-size": vehicleLabelFontSize(metrics),
         "text-anchor": "middle",
         "dominant-baseline": "middle"
       });
       parent.append(label);
     }
+    label.setAttribute("font-size", String(vehicleLabelFontSize(metrics)));
+    label.style.fontSize = `${vehicleLabelFontSize(metrics)}px`;
     label.setAttribute("x", String(point.x));
     label.setAttribute("y", String(point.y));
+    label.setAttribute("transform", `rotate(${angle} ${point.x} ${point.y})`);
     if (label.textContent !== text) label.textContent = text;
   }
 

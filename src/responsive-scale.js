@@ -23,6 +23,8 @@
     ".road-ip-stepper",
     ".side-ip-stepper-vertical"
   ].join(",");
+  const TOUCH_TEXT_ENTRY_QUERY = "(hover: none) and (pointer: coarse)";
+  const touchTextEntryMedia = window.matchMedia?.(TOUCH_TEXT_ENTRY_QUERY) || null;
   const root = document.documentElement;
   let activeTextEntry = null;
   let activeTextEntryHost = null;
@@ -41,6 +43,10 @@
 
   function isTextEntryControl(node) {
     return Boolean(node?.matches?.(TEXT_ENTRY_SELECTOR));
+  }
+
+  function syncTextEntryMode() {
+    root.classList.toggle("kroki-touch-entry-mode", Boolean(touchTextEntryMedia?.matches));
   }
 
   function syncVisualViewport() {
@@ -118,6 +124,9 @@
   window.visualViewport?.addEventListener("scroll", handleViewportChange);
   window.addEventListener("resize", handleViewportChange);
   window.addEventListener("orientationchange", handleViewportChange);
+  touchTextEntryMedia?.addEventListener?.("change", syncTextEntryMode);
+  touchTextEntryMedia?.addListener?.(syncTextEntryMode);
+  syncTextEntryMode();
   syncVisualViewport();
 
   Kroki.ResponsiveScale = Object.freeze({

@@ -44,6 +44,14 @@
     className: "editor-ellipse",
     capabilities: { arrows: false, fill: true, curvedLabel: false },
 
+    getRotation(model) {
+      return utils.normalizeRotation(model.geometry?.rotation);
+    },
+
+    setRotation(model, rotation) {
+      model.geometry.rotation = utils.normalizeRotation(rotation);
+    },
+
     create(initialData = {}) {
       const geometry = initialData.geometry || ellipseGeometry.fromBounds(
         initialData.start || { x: 0, y: 0 },

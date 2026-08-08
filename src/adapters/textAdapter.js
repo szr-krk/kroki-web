@@ -116,6 +116,14 @@
     className: "editor-text",
     capabilities: { arrows: false, fill: false, curvedLabel: false, textObject: true },
 
+    getRotation(model) {
+      return utils.normalizeRotation(model.geometry?.rotation);
+    },
+
+    setRotation(model, rotation) {
+      model.geometry.rotation = utils.normalizeRotation(rotation);
+    },
+
     create(initialData = {}) {
       const geometry = initialData.geometry || {};
       return {

@@ -550,7 +550,7 @@ select {
 }
 
 /* Metin girisinde fiziksel okunabilirlik, oransal UI olceginden bagimsiz korunur. */
-:root.kroki-text-entry-active :is(
+:root.kroki-text-entry-active.kroki-touch-entry-mode :is(
   textarea,
   input:not([type]),
   input[type="text"],
@@ -570,7 +570,7 @@ select {
   scroll-margin: 12px;
 }
 
-:root.kroki-text-entry-active .kroki-dialog-layer {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-dialog-layer {
   inset: auto !important;
   top: var(--kroki-visual-viewport-top, 0px) !important;
   left: var(--kroki-visual-viewport-left, 0px) !important;
@@ -581,7 +581,7 @@ select {
   overflow: auto;
 }
 
-:root.kroki-text-entry-active .kroki-dialog-panel.kroki-text-entry-host {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-dialog-panel.kroki-text-entry-host {
   width: min(440px, calc(100% - 16px)) !important;
   max-height: calc(100% - 16px) !important;
   margin-top: 0 !important;
@@ -590,34 +590,34 @@ select {
   overflow: auto !important;
 }
 
-:root.kroki-text-entry-active .kroki-dialog-title {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-dialog-title {
   font-size: 20px !important;
 }
 
-:root.kroki-text-entry-active .kroki-dialog-body {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-dialog-body {
   gap: 10px !important;
   font-size: 16px !important;
 }
 
-:root.kroki-text-entry-active .kroki-dialog-field {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-dialog-field {
   gap: 7px !important;
 }
 
-:root.kroki-text-entry-active .kroki-dialog-field span {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-dialog-field span {
   font-size: 14px !important;
 }
 
-:root.kroki-text-entry-active .kroki-dialog-field input {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-dialog-field input {
   padding: 0 12px !important;
 }
 
-:root.kroki-text-entry-active .kroki-dialog-actions {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-dialog-actions {
   flex-wrap: nowrap;
   gap: 8px !important;
   overflow-x: auto;
 }
 
-:root.kroki-text-entry-active .kroki-dialog-btn {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-dialog-btn {
   min-width: 72px;
   min-height: 44px !important;
   padding: 0 14px !important;
@@ -627,24 +627,24 @@ select {
 
 /* Klavye yatay telefonda cok az yukseklik biraktiginda alan ve onaylar ayni anda gorunur. */
 @media (max-height: 220px) {
-  :root.kroki-text-entry-active .kroki-dialog-panel.kroki-text-entry-host {
+  :root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-dialog-panel.kroki-text-entry-host {
     gap: 6px !important;
     padding: 8px 12px !important;
   }
 
-  :root.kroki-text-entry-active .kroki-dialog-body {
+  :root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-dialog-body {
     gap: 4px !important;
   }
 
-  :root.kroki-text-entry-active .kroki-dialog-body > p {
+  :root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-dialog-body > p {
     display: none;
   }
 
-  :root.kroki-text-entry-active .kroki-dialog-field {
+  :root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-dialog-field {
     gap: 0 !important;
   }
 
-  :root.kroki-text-entry-active .kroki-dialog-field > span {
+  :root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-dialog-field > span {
     position: absolute;
     width: 1px;
     height: 1px;
