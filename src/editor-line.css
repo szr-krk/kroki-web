@@ -902,6 +902,12 @@
   border-top: 0.125rem solid #cbd5e1;
 }
 
+.side-ip-text-align-btn path,
+.side-ip-text-align-btn rect,
+.side-ip-text-align-btn circle {
+  vector-effect: non-scaling-stroke;
+}
+
 .side-ip-text-format-btn.is-active,
 .line-text-format-btn.is-active,
 .free-text-composer .line-text-icon-btn.is-active {
@@ -1254,12 +1260,6 @@
   border-color: #2563eb;
 }
 
-.line-text-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4375rem;
-}
-
 .line-text-size-picker {
   width: 5.875rem;
   height: 2.375rem;
@@ -1475,7 +1475,7 @@
   font-size: 14px !important;
 }
 
-:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host:not(.line-text-panel):not(.free-text-composer) :is(.line-text-actions, .free-text-actions) {
+:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host:not(.line-text-panel):not(.free-text-composer) .free-text-actions {
   min-height: 44px;
   flex-wrap: nowrap !important;
   gap: 8px !important;

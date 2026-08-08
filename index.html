@@ -7,11 +7,11 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <meta name="kroki-build" content="20260809-indexeddb-library-v1" />
+  <meta name="kroki-build" content="20260809-line-text-ip-align-v1" />
   <title>Kroki Pro</title>
   <link rel="stylesheet" href="src/home.css?v=20260809-photo-background-v1" />
   <link rel="stylesheet" href="src/editor.css?v=20260808-road-touch-contrast-v1" />
-  <link rel="stylesheet" href="src/editor-line.css?v=20260808-vehicle-label-thumbnail-v1" />
+  <link rel="stylesheet" href="src/editor-line.css?v=20260809-line-text-ip-align-v1" />
 </head>
 
 <body>
@@ -703,6 +703,11 @@
           <span class="side-ip-text-mark" aria-hidden="true">Abc</span>
         </button>
 
+        <button id="btnLineTextAlign" class="side-ip-btn side-ip-tool side-ip-text-align-btn gizli" type="button"
+          aria-label="Metin yatay konumu" title="Metin yatay konumu">
+          <svg id="iconLineTextAlign" viewBox="0 0 32 32" aria-hidden="true"></svg>
+        </button>
+
         <div class="side-ip-text-format-stack side-ip-control text-object-control gizli" aria-label="Metin bicimi">
           <button id="btnSideTextBold" class="side-ip-text-format-btn" type="button" aria-label="Kalin"
             title="Kalin" aria-pressed="false">B</button>
@@ -1023,52 +1028,9 @@
         </div>
       </div>
 
-      <div id="textColorPanel" class="side-ip-color-panel gizli" aria-label="Metin rengi ve opakligi">
-        <div class="side-ip-color-opacity" aria-label="Metin opakligi">
-          <input id="textOpacityInput" class="side-ip-opacity-range" type="range" min="0" max="100" step="5"
-            value="100" aria-label="Metin opakligi">
-          <span id="textOpacityValue" class="side-ip-opacity-value" aria-hidden="true">100%</span>
-        </div>
-        <input id="lineTextColorInput" class="side-ip-color-picker" type="color" value="#111827"
-          aria-label="Metin rengi">
-      </div>
-
       <div id="lineTextPanel" class="line-text-panel gizli" aria-label="Cizgi metni">
         <div id="trafficSignTextFields" class="traffic-sign-text-fields gizli" aria-label="Levha metin alanlari"></div>
         <textarea id="lineTextInput" class="line-text-input" rows="3" maxlength="240" placeholder="Metin"></textarea>
-        <div class="line-text-actions">
-          <div class="line-text-size-picker" aria-label="Metin boyutu">
-            <button id="btnLineTextSizeMinus" class="line-text-picker-btn" type="button"
-              aria-label="Metin boyutunu azalt" title="Metin boyutunu azalt">-</button>
-            <span id="valLineTextSize" class="line-text-picker-value" aria-hidden="true">12</span>
-            <button id="btnLineTextSizePlus" class="line-text-picker-btn" type="button"
-              aria-label="Metin boyutunu arttir" title="Metin boyutunu arttir">+</button>
-          </div>
-          <button id="btnLineTextAlign" class="line-text-icon-btn" type="button" aria-label="Metin yatay konumu"
-            title="Metin yatay konumu">
-            <svg id="iconLineTextAlign" viewBox="0 0 32 32" aria-hidden="true"></svg>
-          </button>
-          <button id="btnLineTextSide" class="line-text-icon-btn" type="button" aria-label="Metin dusey konumu"
-            title="Metin dusey konumu">
-            <svg id="iconLineTextSide" viewBox="0 0 32 32" aria-hidden="true"></svg>
-          </button>
-          <button id="btnLineTextColor" class="line-text-icon-btn line-text-color-btn side-ip-color-btn is-fill"
-            type="button" aria-label="Metin rengi" title="Metin rengi" aria-controls="textColorPanel"
-            aria-expanded="false">
-            <svg class="side-ip-palette-icon" viewBox="0 0 49 57" aria-hidden="true">
-              <path class="side-ip-palette-fill-art"
-                d="M 27.7 23.3 Q 34.3 9.3 45.6 0 L 48.1 1.8 Q 41.8 14.9 30.2 25.4 L 27.7 23.3 Z M 0.1 29.4 C 2.1 4.1 30.2 5.7 34.1 11.1 C 31.3 14.9 28.6 19 26.6 23.3 C 25.5 23.5 21.2 23.3 21.2 30.6 Q 20.9 32.4 18.4 34.4 C 31.6 35.5 30.7 26.9 30.7 26 C 34.1 23.1 37 19.7 39.9 16.3 C 41.5 18.1 47 26 41.1 29 C 33.6 31.7 30.7 37.6 33.6 44.6 Q 34.5 46.2 33.4 46.6 C 9.4 56.8 -0.8 39.6 0.1 29.4 M 19.1 15.4 A 0.2 0.2 90 0 0 25.9 15.4 A 0.2 0.2 90 0 0 19.1 15.4 M 10.5 18.8 A 0.2 0.2 90 0 0 17.3 18.8 A 0.2 0.2 90 0 0 10.5 18.8 M 6 26.9 A 0.2 0.2 90 0 0 12.8 26.9 A 0.2 0.2 90 0 0 6 26.9 M 6.9 36.5 A 0.2 0.2 90 0 0 13.7 36.5 A 0.2 0.2 90 0 0 6.9 36.5 M 21.4 42.8 A 0.2 0.2 90 0 0 14.6 42.8 A 0.2 0.2 90 0 0 21.4 42.8 Z M 22.3 30.3 C 21.8 24.2 26.4 24 27.3 24.2 L 29.8 26 C 30.4 29.4 27.5 33.7 20 33.7 Q 22.3 32.2 22.3 30.3 Z"></path>
-            </svg>
-          </button>
-          <button id="btnLineTextBold" class="line-text-icon-btn line-text-format-btn text-object-control gizli"
-            type="button" aria-label="Kalin" title="Kalin" aria-pressed="false">B</button>
-          <button id="btnLineTextItalic"
-            class="line-text-icon-btn line-text-format-btn is-italic text-object-control gizli" type="button"
-            aria-label="Italik" title="Italik" aria-pressed="false">I</button>
-          <button id="btnLineTextUnderline"
-            class="line-text-icon-btn line-text-format-btn is-underline text-object-control gizli" type="button"
-            aria-label="Alti cizili" title="Alti cizili" aria-pressed="false">U</button>
-        </div>
       </div>
 
       <div id="vehicleLabelPanel" class="line-text-panel vehicle-label-panel gizli" aria-label="Arac etiketi">
@@ -1349,7 +1311,7 @@
   <script src="src/core/otherSymbolCatalog.js"></script>
   <script src="src/core/vehicleCatalog.js?v=20260807-web-sync-v1"></script>
   <script src="src/core/shapeRegistry.js?v=20260808-traffic-sign-search-v1"></script>
-  <script src="src/core/styleManager.js?v=20260808-vehicle-label-thumbnail-v1"></script>
+  <script src="src/core/styleManager.js?v=20260809-line-text-ip-align-v1"></script>
   <script src="src/core/editorObjectManager.js?v=20260809-photo-background-v1"></script>
   <script src="src/core/photoBackgroundManager.js?v=20260809-photo-background-v1"></script>
   <script src="src/core/documentStorage.js?v=20260809-indexeddb-library-v1"></script>
@@ -1358,7 +1320,7 @@
   <script src="src/core/historyManager.js"></script>
   <script src="src/core/hitTestManager.js"></script>
   <script src="src/core/controlPointManager.js?v=20260808-rotate-cp-two-way-v1"></script>
-  <script src="src/core/multiSelectManager.js"></script>
+  <script src="src/core/multiSelectManager.js?v=20260809-callout-refinement-v1"></script>
   <script src="src/core/roadDragPreview.js?v=20260713-island-circle-preview"></script>
   <script src="src/core/selectionManager.js?v=20260808-rotation-live-sync-v1"></script>
   <script src="src/geometry/lineGeometry.js"></script>
@@ -1372,7 +1334,7 @@
   <script src="src/adapters/ellipseAdapter.js?v=20260808-rotation-panel-stable-v1"></script>
   <script src="src/adapters/rectangleAdapter.js?v=20260808-rotation-panel-stable-v1"></script>
   <script src="src/adapters/closedShapeAdapter.js?v=20260808-rotation-panel-stable-v1"></script>
-  <script src="src/adapters/calloutAdapter.js?v=20260713-callout-stroke-scale"></script>
+  <script src="src/adapters/calloutAdapter.js?v=20260809-callout-leader-inset-v1"></script>
   <script src="src/adapters/roadAdapter.js?v=20260808-pocket-attached-v1"></script>
   <script src="src/core/roadIntersectionEngine.js?v=20260730-road-departure-geometry-v4"></script>
   <script src="src/adapters/textAdapter.js?v=20260808-rotation-panel-stable-v1"></script>

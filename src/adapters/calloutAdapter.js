@@ -10,7 +10,10 @@
   const LINE_HEIGHT = 1.16;
   const WIDTH_FACTOR = 0.58;
   const BOX_PADDING = 1;
-  const BOX_FIT_VERSION = 4;
+  const BOX_RADIUS_FACTOR = 0.18;
+  const BOX_RADIUS_MIN = 1.5;
+  const BOX_RADIUS_MAX = 4;
+  const BOX_FIT_VERSION = 5;
   const DEFAULT_STROKE = "#d11f1f";
   const DEFAULT_FILL = "#ffffff";
   const DEFAULT_TEXT_COLOR = "#000000";
@@ -37,14 +40,18 @@
     return { width, height };
   }
 
-  function boxPadding() {
-    return { x: BOX_PADDING, y: BOX_PADDING };
+  function boxPadding(model) {
+    const insetProtection = styleFor(model).strokeWidth / 2;
+    return {
+      x: BOX_PADDING + insetProtection,
+      y: BOX_PADDING + insetProtection
+    };
   }
 
   function fittedBoxBounds(model) {
     const label = labelFor(model);
     const textBounds = textVisualBounds(model);
-    const padding = boxPadding();
+    const padding = boxPadding(model);
     const width = textBounds.width + padding.x * 2;
     const height = textBounds.height + padding.y * 2;
     return {
@@ -71,20 +78,48 @@
     return signedBox(model, labelFor(model)) || fittedBoxBounds(model);
   }
 
-  function calloutBoxSignature(labelInput) {
+  function boxRadius(model, box = boxBounds(model)) {
+    const label = labelFor(model);
+    return Math.min(
+      BOX_RADIUS_MAX,
+      Math.max(BOX_RADIUS_MIN, label.size * BOX_RADIUS_FACTOR),
+      box.width / 2,
+      box.height / 2
+    );
+  }
+
+  function roundedBoxPath(box, radius) {
+    const r = Math.max(0, Math.min(radius, box.width / 2, box.height / 2));
+    return [
+      "M", box.x + r, box.y,
+      "H", box.x + box.width - r,
+      "Q", box.x + box.width, box.y, box.x + box.width, box.y + r,
+      "V", box.y + box.height - r,
+      "Q", box.x + box.width, box.y + box.height, box.x + box.width - r, box.y + box.height,
+      "H", box.x + r,
+      "Q", box.x, box.y + box.height, box.x, box.y + box.height - r,
+      "V", box.y + r,
+      "Q", box.x, box.y, box.x + r, box.y,
+      "Z"
+    ].join(" ");
+  }
+
+  function calloutBoxSignature(labelInput, styleInput) {
     const label = styleManager.normalizeLabel(labelInput, "callout");
+    const style = styleManager.normalizeStyle(styleInput, "callout");
     return JSON.stringify({
       fit: BOX_FIT_VERSION,
       text: label.text,
       size: label.size,
       bold: Boolean(label.bold),
-      italic: Boolean(label.italic)
+      italic: Boolean(label.italic),
+      strokeWidth: style.strokeWidth
     });
   }
 
   function signedBox(model, label) {
     const box = model.metadata?.calloutBox;
-    if (!box || model.metadata?.calloutBoxSignature !== calloutBoxSignature(label)) return null;
+    if (!box || model.metadata?.calloutBoxSignature !== calloutBoxSignature(label, model.style)) return null;
     return boxAroundCenter(model, box);
   }
 
@@ -141,7 +176,7 @@
   }
 
   function boxBoundsFromMeasurement(model, measured) {
-    const padding = boxPadding();
+    const padding = boxPadding(model);
     return {
       x: model.geometry.center.x - measured.width / 2 - padding.x,
       y: model.geometry.center.y - measured.height / 2 - padding.y,
@@ -158,7 +193,7 @@
   }
 
   function fallbackTextPlacement(model, box, align, lineHeight, lineCount) {
-    const padding = boxPadding();
+    const padding = boxPadding(model);
     return {
       x: align === "left" ? box.x + padding.x : align === "right" ? box.x + box.width - padding.x : model.geometry.center.x,
       y: model.geometry.center.y - ((lineCount - 1) * lineHeight) / 2
@@ -173,7 +208,7 @@
       width: box.width,
       height: box.height
     };
-    model.metadata.calloutBoxSignature = calloutBoxSignature(label);
+    model.metadata.calloutBoxSignature = calloutBoxSignature(label, model.style);
   }
 
   function distanceToSegment(start, end, point) {
@@ -194,24 +229,32 @@
     );
   }
 
-  function arrowPath(center, tip, strokeWidth) {
-    const dx = tip.x - center.x;
-    const dy = tip.y - center.y;
-    const length = Math.hypot(dx, dy) || 1;
-    const ux = dx / length;
-    const uy = dy / length;
+  function arrowGeometry(center, tip, strokeWidth) {
+    const direction = normalizedVector(center, tip);
+    const { x: ux, y: uy, length } = direction;
     const px = -uy;
     const py = ux;
-    const headLength = Math.max(12, strokeWidth * 5.2);
-    const headHalf = Math.max(5, strokeWidth * 2.4);
+    const headSize = Math.max(3, strokeWidth) * 2 + 10;
+    const headLength = headSize;
+    const headHalf = headSize / 2;
     const baseX = tip.x - ux * headLength;
     const baseY = tip.y - uy * headLength;
-    return [
-      "M", tip.x, tip.y,
-      "L", baseX + px * headHalf, baseY + py * headHalf,
-      "L", baseX - px * headHalf, baseY - py * headHalf,
-      "Z"
-    ].join(" ");
+    const notchX = tip.x - ux * headLength * 0.6;
+    const notchY = tip.y - uy * headLength * 0.6;
+    const leaderInset = Math.min(headLength * 0.48, Math.max(0, length - 1));
+    return {
+      path: [
+        "M", baseX + px * headHalf, baseY + py * headHalf,
+        "L", tip.x, tip.y,
+        "L", baseX - px * headHalf, baseY - py * headHalf,
+        "L", notchX, notchY,
+        "Z"
+      ].join(" "),
+      leaderEnd: {
+        x: tip.x - ux * leaderInset,
+        y: tip.y - uy * leaderInset
+      }
+    };
   }
 
   function normalizedVector(from, to) {
@@ -281,11 +324,7 @@
     const center = model.geometry.center;
     const tip = model.geometry.tip;
     return [
-      "M", box.x, box.y,
-      "L", box.x + box.width, box.y,
-      "L", box.x + box.width, box.y + box.height,
-      "L", box.x, box.y + box.height,
-      "Z",
+      roundedBoxPath(box, boxRadius(model, box)),
       "M", center.x, center.y,
       "L", tip.x, tip.y
     ].join(" ");
@@ -350,13 +389,15 @@
     const textPlacement = measured
       ? measuredTextPlacement(model, measured)
       : fallbackTextPlacement(model, box, align, lineHeight, lines.length);
+    const radius = boxRadius(model, box);
+    const arrowGeometryData = arrowGeometry(center, tip, style.strokeWidth);
     rememberBox(model, box, label);
     const leaderAttrs = {
       class: "editor-callout-leader",
       x1: String(center.x),
       y1: String(center.y),
-      x2: String(tip.x),
-      y2: String(tip.y),
+      x2: String(arrowGeometryData.leaderEnd.x),
+      y2: String(arrowGeometryData.leaderEnd.y),
       stroke: style.stroke,
       "stroke-opacity": String(style.strokeOpacity),
       "stroke-width": String(style.strokeWidth),
@@ -368,13 +409,10 @@
     const leader = utils.createSvgElement("line", leaderAttrs);
     const arrow = utils.createSvgElement("path", {
       class: "editor-callout-arrow",
-      d: arrowPath(center, tip, style.strokeWidth),
+      d: arrowGeometryData.path,
       fill: style.stroke,
       "fill-opacity": String(style.strokeOpacity),
-      stroke: style.stroke,
-      "stroke-opacity": String(style.strokeOpacity),
-      "stroke-width": String(Math.max(1, style.strokeWidth * 0.85)),
-      "stroke-linejoin": "round"
+      stroke: "none"
     });
     const boxElement = utils.createSvgElement("rect", {
       class: "editor-callout-box",
@@ -382,16 +420,15 @@
       y: String(box.y),
       width: String(box.width),
       height: String(box.height),
-      rx: "0",
-      ry: "0",
+      rx: String(radius),
+      ry: String(radius),
       fill: style.fill,
       "fill-opacity": String(style.fillOpacity),
       stroke: style.stroke,
       "stroke-opacity": String(style.strokeOpacity),
       "stroke-width": String(style.strokeWidth)
     });
-    [leader, arrow].forEach((item) => applyGeometryStrokeScaling(item, dashed));
-    applyGeometryStrokeScaling(boxElement, true);
+    [leader, boxElement].forEach((item) => applyGeometryStrokeScaling(item, dashed));
 
     element.append(leader, arrow, boxElement);
 

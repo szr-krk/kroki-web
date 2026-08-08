@@ -1051,18 +1051,6 @@
     );
   }
 
-  function renderLineTextSideIcon(svg, sideId) {
-    if (!svg) return;
-    const side = choiceById(TEXT_SIDES, sideId);
-    const textY = side.id === "above" ? 5 : side.id === "below" ? 21 : 12;
-    svg.replaceChildren(
-      utils.createSvgElement("path", { d: "M5 16H27", fill: "none", stroke: "currentColor", "stroke-linecap": "round", "stroke-width": "2.4" }),
-      utils.createSvgElement("path", { d: "M16 7V25", fill: "none", stroke: "currentColor", "stroke-dasharray": "2 3", "stroke-linecap": "round", "stroke-width": "1.7", opacity: ".44" }),
-      utils.createSvgElement("rect", { x: "9", y: String(textY), width: "14", height: "4", rx: "1.4", fill: "currentColor" }),
-      utils.createSvgElement("rect", { x: "11", y: String(textY + 6.5), width: "10", height: "4", rx: "1.4", fill: "currentColor" })
-    );
-  }
-
   function renderShapeTextAlignIcon(svg, alignId, type) {
     if (!svg) return;
     const align = choiceById(TEXT_ALIGNS, alignId);
@@ -1091,20 +1079,6 @@
       utils.createSvgElement("rect", { x: String(textX), y: "9", width: "12", height: "3.8", rx: "1.3", fill: "currentColor" }),
       utils.createSvgElement("rect", { x: String(textX), y: "16", width: "9", height: "3.8", rx: "1.3", fill: "currentColor" }),
       utils.createSvgElement("rect", { x: String(textX), y: "23", width: "14", height: "3.8", rx: "1.3", fill: "currentColor" })
-    );
-  }
-
-  function renderShapeTextRotateIcon(svg, rotateMode) {
-    if (!svg) return;
-    const followsShape = rotateMode === "shape";
-    const shacklePath = followsShape
-      ? "M13 15V12.5A4 4 0 0 1 20.2 10.1"
-      : "M12 15V12.5A4 4 0 0 1 20 12.5V15";
-    svg.replaceChildren(
-      utils.createSvgElement("path", { d: "M16 4A12 12 0 1 0 28 16M28 16L24.7 13.1M28 16L25.1 19.3", fill: "none", stroke: "currentColor", "stroke-linecap": "round", "stroke-linejoin": "round", "stroke-width": "2.2" }),
-      utils.createSvgElement("path", { d: shacklePath, fill: "none", stroke: "currentColor", "stroke-linecap": "round", "stroke-linejoin": "round", "stroke-width": "2.2" }),
-      utils.createSvgElement("rect", { x: "9.5", y: "15", width: "13", height: "10", rx: "2", fill: "currentColor" }),
-      utils.createSvgElement("circle", { cx: "16", cy: "19.2", r: "1.25", fill: "#ffffff" })
     );
   }
 
@@ -1141,7 +1115,6 @@
     cachedControl("strokeColorPanel", "#strokeColorPanel")?.classList.add("gizli");
     cachedControl("fillColorPanel", "#fillColorPanel")?.classList.add("gizli");
     cachedControl("fillPatternPanel", "#fillPatternPanel")?.classList.add("gizli");
-    cachedControl("textColorPanel", "#textColorPanel")?.classList.add("gizli");
     controls?.styleButton?.setAttribute("aria-expanded", "false");
     controls?.textButton?.setAttribute("aria-expanded", "false");
     controls?.vehicleLabelToggle?.setAttribute("aria-expanded", "false");
@@ -1149,7 +1122,6 @@
     controls?.colorButton?.setAttribute("aria-expanded", "false");
     controls?.fillButton?.setAttribute("aria-expanded", "false");
     controls?.fillPatternButton?.setAttribute("aria-expanded", "false");
-    controls?.textColorButton?.setAttribute("aria-expanded", "false");
     controls?.closedShapeEdit?.classList.remove("is-active");
     controls?.closedShapeEdit?.setAttribute("aria-pressed", "false");
     commitVehicleLabelInputHistory();
@@ -1160,11 +1132,9 @@
     cachedControl("strokeColorPanel", "#strokeColorPanel")?.classList.add("gizli");
     cachedControl("fillColorPanel", "#fillColorPanel")?.classList.add("gizli");
     cachedControl("fillPatternPanel", "#fillPatternPanel")?.classList.add("gizli");
-    cachedControl("textColorPanel", "#textColorPanel")?.classList.add("gizli");
     controls?.colorButton?.setAttribute("aria-expanded", "false");
     controls?.fillButton?.setAttribute("aria-expanded", "false");
     controls?.fillPatternButton?.setAttribute("aria-expanded", "false");
-    controls?.textColorButton?.setAttribute("aria-expanded", "false");
   }
 
   function setControlVisibility(adapter, model) {
@@ -1182,9 +1152,7 @@
     const hasFill = Boolean(adapter?.capabilities?.fill);
     const hasFillPattern = supportsFillPatternTarget(adapter, model);
     const hasArrows = Boolean(adapter?.capabilities?.arrows);
-    const catalogObjectTextOnly = isCatalogObject && !noText;
     const trafficSignFieldText = isTrafficSign && trafficSignEditableFields({ adapter, model }).length > 0;
-    const textSizeControl = controls?.textSizeValue?.closest?.(".line-text-size-picker");
     controls?.shapeOnlyControls?.forEach((control) => control.classList.toggle("gizli", !hasFill));
     controls?.fillPatternControls?.forEach((control) => control.classList.toggle("gizli", !hasFillPattern));
     controls?.lineOnlyControls?.forEach((control) => control.classList.toggle("gizli", !hasArrows));
@@ -1200,10 +1168,7 @@
     controls?.textButton?.classList.toggle("gizli", noText);
     controls?.trafficSignTextFields?.classList.toggle("gizli", !trafficSignFieldText);
     controls?.textInput?.classList.toggle("gizli", trafficSignFieldText);
-    controls?.textActions?.classList.toggle("gizli", trafficSignFieldText || catalogObjectTextOnly);
-    textSizeControl?.classList.toggle("gizli", catalogObjectTextOnly);
-    controls?.textAlign?.classList.toggle("gizli", catalogObjectTextOnly);
-    controls?.textColorButton?.classList.toggle("gizli", catalogObjectTextOnly);
+    controls?.textAlign?.classList.toggle("gizli", noText || isCatalogObject);
     if (isRoadObject || isVehicleObject) {
       cachedControl("strokeColorPanel", "#strokeColorPanel")?.classList.add("gizli");
       controls?.colorButton?.setAttribute("aria-expanded", "false");
@@ -1215,13 +1180,7 @@
     }
     if (noText) {
       cachedControl("textPanel", "#lineTextPanel")?.classList.add("gizli");
-      cachedControl("textColorPanel", "#textColorPanel")?.classList.add("gizli");
       controls?.textButton?.setAttribute("aria-expanded", "false");
-      controls?.textColorButton?.setAttribute("aria-expanded", "false");
-    }
-    if (catalogObjectTextOnly) {
-      document.querySelector("#textColorPanel")?.classList.add("gizli");
-      controls?.textColorButton?.setAttribute("aria-expanded", "false");
     }
     if (!hasFillPattern) {
       document.querySelector("#fillPatternPanel")?.classList.add("gizli");
@@ -1231,10 +1190,9 @@
       document.querySelector("#strokeColorPanel")?.classList.add("gizli");
       controls?.colorButton?.setAttribute("aria-expanded", "false");
     }
-    controls?.strokeStepper?.classList.toggle("gizli", isCallout || isRoadObject || isCatalogObject || isVehicleObject);
+    controls?.strokeStepper?.classList.toggle("gizli", isRoadObject || isCatalogObject || isVehicleObject);
     controls?.styleButton?.classList.toggle("gizli", isTextObject || isRoadObject || isCatalogObject || isVehicleObject);
     controls?.lineCapButton?.classList.toggle("gizli", isTextObject || isCallout || isRoadObject || isCatalogObject || isVehicleObject);
-    controls?.textSide?.classList.toggle("gizli", noText || isCatalogObject || adapter?.type === "ellipse" || adapter?.type === "rectangle" || supportsTextFormatting);
   }
 
   function updateStyle(patch) {
@@ -1790,7 +1748,6 @@
     const fillPattern = choiceById(FILL_PATTERNS, style.fillPattern);
     const strokeOpacityValue = opacityPercent(style.strokeOpacity);
     const fillOpacityValue = opacityPercent(style.fillOpacity);
-    const textOpacityValue = opacityPercent(label.opacity);
     const primaryOpacityValue = isTextObject ? opacityPercent(style.opacity) : strokeOpacityValue;
 
     setControlVisibility(adapter, model);
@@ -1833,8 +1790,6 @@
     if (controls.strokeOpacityValue) controls.strokeOpacityValue.textContent = primaryOpacityValue + "%";
     if (controls.fillOpacityInput && controls.fillOpacityInput.value !== String(fillOpacityValue)) controls.fillOpacityInput.value = String(fillOpacityValue);
     if (controls.fillOpacityValue) controls.fillOpacityValue.textContent = fillOpacityValue + "%";
-    if (controls.textOpacityInput && controls.textOpacityInput.value !== String(textOpacityValue)) controls.textOpacityInput.value = String(textOpacityValue);
-    if (controls.textOpacityValue) controls.textOpacityValue.textContent = textOpacityValue + "%";
     if (controls.strokeStepper) controls.strokeStepper.setAttribute("aria-label", isTextObject ? "Metin boyutu" : "Cizgi kalinligi");
     controls.strokePlus?.setAttribute("aria-label", isTextObject ? "Metin boyutunu arttir" : "Cizgi kalinligini arttir");
     controls.strokeMinus?.setAttribute("aria-label", isTextObject ? "Metin boyutunu azalt" : "Cizgi kalinligini azalt");
@@ -1879,13 +1834,7 @@
     controls.closedShapeEdit?.classList.toggle("is-active", pointEditActive);
     controls.closedShapeEdit?.setAttribute("aria-pressed", String(pointEditActive));
     if (controls.textInput && controls.textInput.value !== label.text) controls.textInput.value = label.text;
-    if (controls.textColorInput) controls.textColorInput.value = label.color;
-    if (controls.textSizeValue) controls.textSizeValue.textContent = String(label.size);
     if (controls.calloutTextSizeInput && controls.calloutTextSizeInput.value !== String(label.size)) controls.calloutTextSizeInput.value = String(label.size);
-    controls.textColorButton?.style.setProperty("--side-ip-fill-color", label.color);
-    setToggleButton(controls.textBold, label.bold);
-    setToggleButton(controls.textItalic, label.italic);
-    setToggleButton(controls.textUnderline, label.underline);
     setToggleButton(controls.sideTextBold, label.bold);
     setToggleButton(controls.sideTextItalic, label.italic);
     setToggleButton(controls.sideTextUnderline, label.underline);
@@ -1908,12 +1857,8 @@
     }
 
     if (model.type === "line" || model.type === "arc" || model.type === "bezier") {
-      const textSide = choiceById(TEXT_SIDES, label.position.side);
       const textAnchor = choiceById(TEXT_ANCHORS, label.position.anchor);
-      renderLineTextSideIcon(controls.textSideIcon, textSide.id);
       renderLineTextAlignIcon(controls.textAlignIcon, textAnchor.id);
-      controls.textSide?.setAttribute("title", textSide.title);
-      controls.textSide?.setAttribute("aria-label", textSide.title);
       controls.textAlign?.setAttribute("title", textAnchor.title);
       controls.textAlign?.setAttribute("aria-label", textAnchor.title);
       return;
@@ -1923,12 +1868,6 @@
     renderShapeTextAlignIcon(controls.textAlignIcon, align.id, model.type);
     controls.textAlign?.setAttribute("title", align.title);
     controls.textAlign?.setAttribute("aria-label", align.title);
-    if (model.type === "circle") {
-      const rotateMode = choiceById(TEXT_ROTATE_MODES, label.position.rotateMode);
-      renderShapeTextRotateIcon(controls.textSideIcon, rotateMode.id);
-      controls.textSide?.setAttribute("title", rotateMode.title);
-      controls.textSide?.setAttribute("aria-label", rotateMode.title);
-    }
   }
 
   function repositionPanel(panel, button) {
@@ -1960,15 +1899,14 @@
     }
   }
 
-  function showColorPanel(panel, button, options = {}) {
+  function showColorPanel(panel, button) {
     if (!activeEntry() || !panel) return;
     if (!panel.classList.contains("gizli")) {
       hideColorPanels();
       return;
     }
     selection.promoteToEdit();
-    if (options.keepTextPanel) hideColorPanels();
-    else hidePanels();
+    hidePanels();
     syncControls();
     panel.classList.remove("gizli");
     button?.setAttribute("aria-expanded", "true");
@@ -2054,9 +1992,6 @@
       vehicleRotateMinus: document.querySelector("#btnVehicleRotateMinus"),
       vehicleRotatePlus: document.querySelector("#btnVehicleRotatePlus"),
       vehicleRotateInput: document.querySelector("#vehicleRotateInput"),
-      textColorPanel: document.querySelector("#textColorPanel"),
-      textOpacityInput: document.querySelector("#textOpacityInput"),
-      textOpacityValue: document.querySelector("#textOpacityValue"),
       styleButton: document.querySelector("#btnLineStyle"),
       styleIcon: document.querySelector("#iconLineStyle"),
       lineCapButton: document.querySelector("#btnLineCap"),
@@ -2084,19 +2019,8 @@
       textPanel: document.querySelector("#lineTextPanel"),
       trafficSignTextFields: document.querySelector("#trafficSignTextFields"),
       textInput: document.querySelector("#lineTextInput"),
-      textActions: document.querySelector("#lineTextPanel .line-text-actions"),
-      textSizeMinus: document.querySelector("#btnLineTextSizeMinus"),
-      textSizePlus: document.querySelector("#btnLineTextSizePlus"),
-      textSizeValue: document.querySelector("#valLineTextSize"),
-      textSide: document.querySelector("#btnLineTextSide"),
-      textSideIcon: document.querySelector("#iconLineTextSide"),
       textAlign: document.querySelector("#btnLineTextAlign"),
       textAlignIcon: document.querySelector("#iconLineTextAlign"),
-      textColorButton: document.querySelector("#btnLineTextColor"),
-      textColorInput: document.querySelector("#lineTextColorInput"),
-      textBold: document.querySelector("#btnLineTextBold"),
-      textItalic: document.querySelector("#btnLineTextItalic"),
-      textUnderline: document.querySelector("#btnLineTextUnderline"),
       sideTextBold: document.querySelector("#btnSideTextBold"),
       sideTextItalic: document.querySelector("#btnSideTextItalic"),
       sideTextUnderline: document.querySelector("#btnSideTextUnderline"),
@@ -2127,7 +2051,6 @@
     const strokeColorPanel = controls.strokeColorPanel;
     const fillColorPanel = controls.fillColorPanel;
     const fillPatternPanel = controls.fillPatternPanel;
-    const textColorPanel = controls.textColorPanel;
     let vehicleLabelTogglePointerHandled = false;
     let vehicleLabelTogglePointerTimer = 0;
 
@@ -2137,14 +2060,6 @@
     bindHoldAction(controls.dashSizePlus, () => updateStyle({ dashSize: steppedDashSize(activeEntry()?.model.style.dashSize, 1) }));
     bindHoldAction(controls.dashGapMinus, () => updateStyle({ dashGap: steppedDashGap(activeEntry()?.model.style.dashGap, -1) }));
     bindHoldAction(controls.dashGapPlus, () => updateStyle({ dashGap: steppedDashGap(activeEntry()?.model.style.dashGap, 1) }));
-    bindHoldAction(controls.textSizeMinus, () => {
-      blurActiveTextInput();
-      updateLabel({ size: normalizeLabelSize(activeEntry()?.model.label.size - 1) });
-    });
-    bindHoldAction(controls.textSizePlus, () => {
-      blurActiveTextInput();
-      updateLabel({ size: normalizeLabelSize(activeEntry()?.model.label.size + 1) });
-    });
     bindHoldAction(controls.calloutTextSizeMinus, () => updateCalloutTextSize(-1));
     bindHoldAction(controls.calloutTextSizePlus, () => updateCalloutTextSize(1));
     bindHoldAction(controls.objectRotateMinus, () => updateObjectRotation(-1), { startDelay: 240, repeatDelay: 32 });
@@ -2386,13 +2301,6 @@
     });
     controls.textInput?.addEventListener("change", commitTextInputHistory);
     controls.textInput?.addEventListener("blur", commitTextInputHistory);
-    controls.textSide?.addEventListener("click", () => {
-      const entry = activeEntry();
-      if (!entry) return;
-      const label = normalizeLabel(entry.model.label, entry.model.type);
-      if (entry.model.type === "circle") updateLabel({ position: { ...label.position, rotateMode: nextChoiceId(label.position.rotateMode, TEXT_ROTATE_MODES) } });
-      else updateLabel({ position: { ...label.position, side: nextChoiceId(label.position.side, TEXT_SIDES) } });
-    });
     controls.textAlign?.addEventListener("click", () => {
       const entry = activeEntry();
       if (!entry) return;
@@ -2403,23 +2311,12 @@
         updateLabel({ position: { ...label.position, align: nextChoiceId(label.position.align, TEXT_ALIGNS) } });
       }
     });
-    controls.textColorButton?.addEventListener("click", () => {
-      if (!activeEntry()) return;
-      selection.promoteToEdit();
-      showColorPanel(textColorPanel, controls.textColorButton, { keepTextPanel: true });
-    });
-    controls.textColorInput?.addEventListener("input", () => updateLabel({ color: controls.textColorInput.value }));
-    controls.textOpacityInput?.addEventListener("input", () => updateLabel({ opacity: normalizeOpacity(Number(controls.textOpacityInput.value) / 100) }));
-    controls.textOpacityInput?.addEventListener("change", () => updateLabel({ opacity: normalizeOpacity(Number(controls.textOpacityInput.value) / 100) }));
     const toggleTextFlag = (flag) => {
       const entry = activeEntry();
       if (!entry) return;
       const label = normalizeLabel(entry.model.label, entry.model.type);
       updateLabel({ [flag]: !label[flag] });
     };
-    controls.textBold?.addEventListener("click", () => toggleTextFlag("bold"));
-    controls.textItalic?.addEventListener("click", () => toggleTextFlag("italic"));
-    controls.textUnderline?.addEventListener("click", () => toggleTextFlag("underline"));
     controls.sideTextBold?.addEventListener("click", () => toggleTextFlag("bold"));
     controls.sideTextItalic?.addEventListener("click", () => toggleTextFlag("italic"));
     controls.sideTextUnderline?.addEventListener("click", () => toggleTextFlag("underline"));
@@ -2427,7 +2324,6 @@
     document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, strokeColorPanel, controls.colorButton), true);
     document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, fillColorPanel, controls.fillButton), true);
     document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, fillPatternPanel, controls.fillPatternButton), true);
-    document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, textColorPanel, controls.textColorButton), true);
     document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, textPanel, controls.textButton), true);
     document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, vehicleLabelPanel, controls.vehicleLabelToggle), true);
     window.addEventListener("resize", () => {
@@ -2435,7 +2331,6 @@
       repositionPanel(strokeColorPanel, controls.colorButton);
       repositionPanel(fillColorPanel, controls.fillButton);
       repositionPanel(fillPatternPanel, controls.fillPatternButton);
-      repositionPanel(textColorPanel, controls.textColorButton);
       repositionPanel(textPanel, controls.textButton);
       repositionPanel(vehicleLabelPanel, controls.vehicleLabelToggle);
     });

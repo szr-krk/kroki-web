@@ -876,8 +876,8 @@
     return next;
   }
 
-  function calloutBoxSignature(label) {
-    return Kroki.ShapeRegistry?.get?.("callout")?.calloutBoxSignature?.(label) || "";
+  function calloutBoxSignature(label, style) {
+    return Kroki.ShapeRegistry?.get?.("callout")?.calloutBoxSignature?.(label, style) || "";
   }
 
   function transformModelFromStart(draft, source, mapper, options = {}) {
@@ -955,7 +955,7 @@
       geometry.tip = transformPoint(geometry.tip, mapper);
       if (draft.metadata?.calloutBox) {
         draft.metadata.calloutBox = transformCalloutBox(draft.metadata.calloutBox, geometry.center, scale);
-        const signature = calloutBoxSignature(draft.label);
+        const signature = calloutBoxSignature(draft.label, draft.style);
         if (signature) draft.metadata.calloutBoxSignature = signature;
       }
       return draft;

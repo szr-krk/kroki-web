@@ -135,7 +135,7 @@ Ellipse ile aynı merkez-yarıçap-rotation modelini kullanır. Köşe handle'la
 
 ### Callout
 
-`center` metin kutusu, `tip` ok ucudur. Kırmızı leader/çerçeve ve beyaz kutu varsayılandır. Adapter metni ölçmek için geçici gizli SVG text kullanır; ölçümü `metadata.calloutBox` ve label signature ile cache'ler. İki kontrol noktası kutu merkezini ve oku taşır. Leader dash stili ve metin biçimleme desteklenir.
+`center` metin kutusu, `tip` ok ucudur. Kırmızı leader/çerçeve, normal çizgideki `triangle2` (kırık üçgen) ok ucu ve beyaz, hafif yuvarlatılmış kutu varsayılandır. Leader, kalın stroke değerlerinde ok dolgusunun arkasından taşmaması için gerçek uçtan önce ve üçgenin içinde biter. Adapter metni ölçmek için geçici gizli SVG text kullanır; ölçümü `metadata.calloutBox` ile metin ve stroke kalınlığına bağlı signature üzerinden cache'ler. Stroke büyüdüğünde kutunun iç boşluğu da yarım stroke kadar genişleyerek çerçevenin metni örtmesini engeller. Leader ve kutu çerçevesi aynı `vector-effect` kuralını kullandığından zoom ve export ölçeğinde eşit kalınlıkta kalır. İki kontrol noktası kutu merkezini ve oku taşır. Leader dash stili, çizgi kalınlığı picker'ı ve metin biçimleme desteklenir.
 
 ### Kapalı şekil
 
