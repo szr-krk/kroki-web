@@ -37,6 +37,7 @@
   const POCKET_MODES = ["none", "right", "left", "double"];
   const DEFAULT_POCKET_WIDTH = 50;
   const DEFAULT_POCKET_GAP = 20;
+  const POCKET_ATTACHED_EPSILON = 0.01;
   const DEFAULT_DEPARTURE_LANE_COUNT = 2;
   const MAX_DEPARTURE_LANES = 2;
   const MIN_DEPARTURE_T_GAP = 0.05;
@@ -1651,15 +1652,31 @@
         : -Infinity;
       return { points: visible, outside };
     }).filter((item) => item.points.length >= 2).sort((a, b) => b.outside - a.outside);
-    if (candidates.length < 2) return null;
+    if (!candidates.length) return null;
     const outer = candidates[0].points;
-    const inner = candidates[1].points;
     const hostOffset = geometry.sign * geometry.section.totalWidth / 2;
     const hostRanges = visibleHostEdgeRanges(model, geometry, hostOffset);
     const outerStartT = parameterAtPoint(model, outer[0]);
     const outerEndT = parameterAtPoint(model, outer[outer.length - 1]);
     const hostStart = offsetPointAt(model, hostRangeBefore(hostRanges, outerStartT), hostOffset);
     const hostEnd = offsetPointAt(model, hostRangeAfter(hostRanges, outerEndT), hostOffset);
+    const outerPoints = compactPolyline([hostStart, ...outer, hostEnd]);
+    const attachedToRoad = geometry.config.outset - geometry.config.width / 2 <= POCKET_ATTACHED_EPSILON;
+    if (attachedToRoad) {
+      return {
+        side: geometry.side,
+        outer,
+        inner: [],
+        outerPoints,
+        islandPoints: [],
+        separatorPoints: compactPolyline([
+          offsetPointAt(model, geometry.config.innerFrom, hostOffset),
+          offsetPointAt(model, geometry.config.innerTo, hostOffset)
+        ])
+      };
+    }
+    if (candidates.length < 2) return null;
+    const inner = candidates[1].points;
     const islandPoints = compactPolyline([
       inner[0],
       inner[inner.length - 1],
@@ -1669,8 +1686,9 @@
       side: geometry.side,
       outer,
       inner,
-      outerPoints: compactPolyline([hostStart, ...outer, hostEnd]),
-      islandPoints
+      outerPoints,
+      islandPoints,
+      separatorPoints: []
     };
   }
 
@@ -2514,6 +2532,16 @@
         cornerHints: contour.outerPoints.slice(1, -1),
         className: "editor-road-edge editor-road-pocket-line"
       }];
+      if (contour.separatorPoints.length >= 2) {
+        items.push({
+          ...common,
+          id: `pocket:${model.id}:${geometry.side}:separator`,
+          role: "separator",
+          points: contour.separatorPoints,
+          closed: false,
+          className: "editor-road-edge editor-road-pocket-line"
+        });
+      }
       if (pocketIslandArea(contour.islandPoints) >= 1) {
         items.push({
           ...common,
