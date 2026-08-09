@@ -7,11 +7,11 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <meta name="kroki-build" content="20260809-line-family-v2" />
+  <meta name="kroki-build" content="20260810-free-text-ip-v2" />
   <title>Kroki Pro</title>
   <link rel="stylesheet" href="src/home.css?v=20260809-photo-background-v1" />
   <link rel="stylesheet" href="src/editor.css?v=20260808-road-touch-contrast-v1" />
-  <link rel="stylesheet" href="src/editor-line.css?v=20260809-line-family-v2" />
+  <link rel="stylesheet" href="src/editor-line.css?v=20260810-free-text-ip-v2" />
 </head>
 
 <body>
@@ -652,7 +652,7 @@
               d="M 27.7 23.3 Q 34.3 9.3 45.6 0 L 48.1 1.8 Q 41.8 14.9 30.2 25.4 L 27.7 23.3 Z M 0.1 29.4 C 2.1 4.1 30.2 5.7 34.1 11.1 C 31.3 14.9 28.6 19 26.6 23.3 C 25.5 23.5 21.2 23.3 21.2 30.6 Q 20.9 32.4 18.4 34.4 C 31.6 35.5 30.7 26.9 30.7 26 C 34.1 23.1 37 19.7 39.9 16.3 C 41.5 18.1 47 26 41.1 29 C 33.6 31.7 30.7 37.6 33.6 44.6 Q 34.5 46.2 33.4 46.6 C 9.4 56.8 -0.8 39.6 0.1 29.4 M 19.1 15.4 A 0.2 0.2 90 0 0 25.9 15.4 A 0.2 0.2 90 0 0 19.1 15.4 M 10.5 18.8 A 0.2 0.2 90 0 0 17.3 18.8 A 0.2 0.2 90 0 0 10.5 18.8 M 6 26.9 A 0.2 0.2 90 0 0 12.8 26.9 A 0.2 0.2 90 0 0 6 26.9 M 6.9 36.5 A 0.2 0.2 90 0 0 13.7 36.5 A 0.2 0.2 90 0 0 6.9 36.5 M 21.4 42.8 A 0.2 0.2 90 0 0 14.6 42.8 A 0.2 0.2 90 0 0 21.4 42.8 Z M 22.3 30.3 C 21.8 24.2 26.4 24 27.3 24.2 L 29.8 26 C 30.4 29.4 27.5 33.7 20 33.7 Q 22.3 32.2 22.3 30.3 Z"></path>
           </svg>
         </button>
-        <button id="btnFillPattern" class="side-ip-btn side-ip-tool side-ip-pattern-btn fill-pattern-control gizli"
+        <button id="btnFillPattern" class="side-ip-btn side-ip-tool side-ip-pattern-btn gizli"
           type="button" aria-label="Dolgu deseni" title="Dolgu deseni" aria-controls="fillPatternPanel"
           aria-expanded="false">
           <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
@@ -673,12 +673,16 @@
         <button id="btnClosedShapeEdit" class="side-ip-btn side-ip-tool side-ip-shape-edit-btn closed-shape-control gizli"
           type="button" aria-label="Şekli düzenle" title="Şekli düzenle" aria-pressed="false">
           <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
-            <path d="M10 26 Q14 10 27 12 Q37 14 38 25 Q39 36 26 38 Q14 39 10 26Z"
-              stroke="currentColor" stroke-width="3" stroke-linejoin="round"></path>
-            <circle cx="10" cy="26" r="3.5"></circle>
-            <circle cx="27" cy="12" r="3.5"></circle>
-            <circle cx="38" cy="25" r="3.5"></circle>
-            <circle cx="26" cy="38" r="3.5"></circle>
+            <g class="closed-shape-edit-icon">
+              <path d="M10 26 Q14 10 27 12 Q37 14 38 25 Q39 36 26 38 Q14 39 10 26Z"
+                stroke="currentColor" stroke-width="3" stroke-linejoin="round"></path>
+              <circle cx="10" cy="26" r="3.5"></circle>
+              <circle cx="27" cy="12" r="3.5"></circle>
+              <circle cx="38" cy="25" r="3.5"></circle>
+              <circle cx="26" cy="38" r="3.5"></circle>
+            </g>
+            <path class="closed-shape-done-icon" d="M11 25L20 34L38 15" stroke="currentColor" stroke-width="5"
+              stroke-linecap="round" stroke-linejoin="round"></path>
           </svg>
         </button>
         <div id="objectRotateStepper" class="side-ip-stepper-vertical side-ip-control object-rotation-control gizli"
@@ -721,15 +725,6 @@
           <svg id="iconLineTextAlign" viewBox="0 0 32 32" aria-hidden="true"></svg>
         </button>
 
-        <div class="side-ip-text-format-stack side-ip-control text-object-control gizli" aria-label="Metin bicimi">
-          <button id="btnSideTextBold" class="side-ip-text-format-btn" type="button" aria-label="Kalin"
-            title="Kalin" aria-pressed="false">B</button>
-          <button id="btnSideTextItalic" class="side-ip-text-format-btn is-italic" type="button" aria-label="Italik"
-            title="Italik" aria-pressed="false">I</button>
-          <button id="btnSideTextUnderline" class="side-ip-text-format-btn is-underline" type="button"
-            aria-label="Alti cizili" title="Alti cizili" aria-pressed="false">U</button>
-        </div>
-
         <div id="calloutTextSizeStepper" class="side-ip-stepper-vertical side-ip-control callout-only-control gizli"
           aria-label="Etiket metin boyutu">
           <button id="btnCalloutTextSizePlus" class="side-ip-stepper-btn" type="button"
@@ -760,11 +755,6 @@
           </svg>
         </button>
 
-        <button id="btnLineCap" class="side-ip-btn side-ip-tool side-ip-cap-btn" type="button"
-          aria-label="Cizgi ucu" title="Cizgi ucu">
-          <svg id="iconLineCap" class="side-ip-cap-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true"></svg>
-        </button>
-
       </div>
 
       <div id="closedShapeDraftPanel" class="closed-shape-draft-panel gizli" aria-label="Kapalı şekil çizimi">
@@ -774,44 +764,8 @@
       </div>
 
       <div id="freeTextComposer" class="free-text-composer gizli" role="dialog" aria-label="Metin ekle">
-        <textarea id="freeTextInput" class="free-text-input" rows="3" maxlength="240" placeholder="METIN"></textarea>
-        <div class="free-text-actions">
-          <div class="line-text-size-picker" aria-label="Metin boyutu">
-            <button id="btnFreeTextSizeMinus" class="line-text-picker-btn" type="button"
-              aria-label="Metin boyutunu azalt" title="Metin boyutunu azalt">-</button>
-            <span id="valFreeTextSize" class="line-text-picker-value" aria-hidden="true">28</span>
-            <button id="btnFreeTextSizePlus" class="line-text-picker-btn" type="button"
-              aria-label="Metin boyutunu arttir" title="Metin boyutunu arttir">+</button>
-          </div>
-          <div class="line-text-size-picker" aria-label="Metin opakligi">
-            <button id="btnFreeTextOpacityMinus" class="line-text-picker-btn" type="button"
-              aria-label="Metin opakligini azalt" title="Metin opakligini azalt">-</button>
-            <span id="valFreeTextOpacity" class="line-text-picker-value" aria-hidden="true">100%</span>
-            <button id="btnFreeTextOpacityPlus" class="line-text-picker-btn" type="button"
-              aria-label="Metin opakligini arttir" title="Metin opakligini arttir">+</button>
-          </div>
-          <button id="btnFreeTextAlign" class="line-text-icon-btn free-text-align-btn" type="button"
-            aria-label="Metin hizalama" title="Metin hizalama" data-align="center">
-            <span aria-hidden="true"></span>
-          </button>
-          <button id="btnFreeTextBold" class="line-text-icon-btn line-text-format-btn" type="button"
-            aria-label="Kalin" title="Kalin" aria-pressed="false">B</button>
-          <button id="btnFreeTextItalic" class="line-text-icon-btn line-text-format-btn is-italic" type="button"
-            aria-label="Italik" title="Italik" aria-pressed="false">I</button>
-          <button id="btnFreeTextUnderline" class="line-text-icon-btn line-text-format-btn is-underline" type="button"
-            aria-label="Alti cizili" title="Alti cizili" aria-pressed="false">U</button>
-          <button id="btnFreeTextColor" class="line-text-icon-btn line-text-color-btn side-ip-color-btn is-fill"
-            type="button" aria-label="Metin rengi" title="Metin rengi">
-            <svg class="side-ip-palette-icon" viewBox="0 0 49 57" aria-hidden="true">
-              <path class="side-ip-palette-fill-art"
-                d="M 27.7 23.3 Q 34.3 9.3 45.6 0 L 48.1 1.8 Q 41.8 14.9 30.2 25.4 L 27.7 23.3 Z M 0.1 29.4 C 2.1 4.1 30.2 5.7 34.1 11.1 C 31.3 14.9 28.6 19 26.6 23.3 C 25.5 23.5 21.2 23.3 21.2 30.6 Q 20.9 32.4 18.4 34.4 C 31.6 35.5 30.7 26.9 30.7 26 C 34.1 23.1 37 19.7 39.9 16.3 C 41.5 18.1 47 26 41.1 29 C 33.6 31.7 30.7 37.6 33.6 44.6 Q 34.5 46.2 33.4 46.6 C 9.4 56.8 -0.8 39.6 0.1 29.4 M 19.1 15.4 A 0.2 0.2 90 0 0 25.9 15.4 A 0.2 0.2 90 0 0 19.1 15.4 M 10.5 18.8 A 0.2 0.2 90 0 0 17.3 18.8 A 0.2 0.2 90 0 0 10.5 18.8 M 6 26.9 A 0.2 0.2 90 0 0 12.8 26.9 A 0.2 0.2 90 0 0 6 26.9 M 6.9 36.5 A 0.2 0.2 90 0 0 13.7 36.5 A 0.2 0.2 90 0 0 6.9 36.5 M 21.4 42.8 A 0.2 0.2 90 0 0 14.6 42.8 A 0.2 0.2 90 0 0 21.4 42.8 Z M 22.3 30.3 C 21.8 24.2 26.4 24 27.3 24.2 L 29.8 26 C 30.4 29.4 27.5 33.7 20 33.7 Q 22.3 32.2 22.3 30.3 Z"></path>
-            </svg>
-          </button>
-          <button id="btnFreeTextCancel" class="free-text-command-btn" type="button">Kapat</button>
-          <button id="btnFreeTextDone" class="free-text-command-btn is-ok" type="button">Tamam</button>
-        </div>
-        <input id="freeTextColorInput" class="side-ip-hidden-input" type="color" value="#111827" tabindex="-1"
-          aria-hidden="true">
+        <textarea id="freeTextInput" class="free-text-input" rows="3" maxlength="240" placeholder="METIN"
+          aria-label="Metin girisi"></textarea>
       </div>
 
       <div id="lineStylePanel" class="line-style-panel gizli" aria-label="Cizgi stili">
@@ -849,6 +803,27 @@
             <span id="valLineDashGap" class="line-style-control-value" aria-hidden="true">8</span>
             <button id="btnLineDashGapPlus" class="line-style-control-btn" type="button"
               aria-label="Desen boslugunu arttir" title="Desen boslugunu arttir">+</button>
+          </div>
+        </div>
+        <div id="shapeAdvancedStyleControls" class="line-style-advanced gizli">
+          <div class="line-secondary-panel-section">
+            <span id="shapeAdvancedStyleLabel" class="line-secondary-panel-label">Dolgu deseni</span>
+            <div class="line-style-tool-row">
+              <button id="btnLinePanelFillPattern" class="line-style-tool-btn" type="button"
+                aria-label="Dolgu deseni" title="Dolgu deseni" aria-controls="fillPatternPanel"
+                aria-expanded="false">
+                <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                  <rect x="8" y="8" width="32" height="32" rx="5" fill="var(--side-ip-fill-color)"
+                    stroke="currentColor" stroke-width="2.4"></rect>
+                  <path d="M12 34L34 12M19 40L40 19M8 27L27 8" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" opacity=".72"></path>
+                </svg>
+              </button>
+              <button id="btnLineCap" class="line-style-tool-btn" type="button"
+                aria-label="Cizgi ucu" title="Cizgi ucu">
+                <svg id="iconLineCap" viewBox="0 0 48 48" fill="none" aria-hidden="true"></svg>
+              </button>
+            </div>
           </div>
         </div>
         <div id="lineAdvancedStyleControls" class="line-style-advanced gizli">
@@ -1054,7 +1029,7 @@
       </div>
 
       <div id="lineTextStylePanel" class="line-text-style-panel gizli" aria-label="Cizgi metin stili">
-        <div class="line-secondary-panel-section">
+        <div id="lineTextStyleSizeSection" class="line-secondary-panel-section">
           <span class="line-secondary-panel-label">Boyut</span>
           <div class="line-text-style-size" aria-label="Metin boyutu">
             <button id="btnLineTextStyleSizeMinus" class="line-text-picker-btn" type="button"
@@ -1180,22 +1155,6 @@
             </svg>
           </button>
 
-          <button type="button" class="rail-tool-btn" data-arac="metin" title="Metin" aria-label="Metin">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <text x="12" y="13" text-anchor="middle" dominant-baseline="middle" fill="currentColor"
-                font-family="Roboto, Arial, sans-serif" font-size="10.2" font-weight="900">Abc</text>
-            </svg>
-          </button>
-
-          <button type="button" class="rail-tool-btn" data-arac="olcu" title="Oklu Metin" aria-label="Oklu Metin">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M6.2 4.8h11.6a2.4 2.4 0 0 1 2.4 2.4v5.9a2.4 2.4 0 0 1-2.4 2.4h-5.4l-3.9 4.2v-4.2H6.2a2.4 2.4 0 0 1-2.4-2.4V7.2a2.4 2.4 0 0 1 2.4-2.4Z"
-                stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
-              <path d="M7.2 8.6h9.6M7.2 11.7h6.7" stroke="currentColor" stroke-width="1.8"
-                stroke-linecap="round"></path>
-            </svg>
-          </button>
-
           <button type="button" class="rail-tool-btn" data-arac="kapali" title="Kapalı Bezier Şekil" aria-label="Kapalı Bezier Şekil">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M7.2 6.4C11.1 2.8 18.6 5 19.3 10.6C20 16.7 13.2 20.6 7.5 17.5C3 15 3.4 9.8 7.2 6.4Z"
@@ -1211,6 +1170,21 @@
               <circle cx="7.2" cy="6.4" r="1.7" fill="#ffffff" stroke="currentColor" stroke-width="1.6"></circle>
               <circle cx="19.3" cy="10.6" r="1.7" fill="#ffffff" stroke="currentColor" stroke-width="1.6"></circle>
               <circle cx="7.5" cy="17.5" r="1.7" fill="#ffffff" stroke="currentColor" stroke-width="1.6"></circle>
+            </svg>
+          </button>
+          <button type="button" class="rail-tool-btn" data-arac="olcu" title="Oklu Metin" aria-label="Oklu Metin">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M6.2 4.8h11.6a2.4 2.4 0 0 1 2.4 2.4v5.9a2.4 2.4 0 0 1-2.4 2.4h-5.4l-3.9 4.2v-4.2H6.2a2.4 2.4 0 0 1-2.4-2.4V7.2a2.4 2.4 0 0 1 2.4-2.4Z"
+                stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+              <path d="M7.2 8.6h9.6M7.2 11.7h6.7" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round"></path>
+            </svg>
+          </button>
+
+          <button type="button" class="rail-tool-btn" data-arac="metin" title="Metin" aria-label="Metin">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <text x="12" y="13" text-anchor="middle" dominant-baseline="middle" fill="currentColor"
+                font-family="Roboto, Arial, sans-serif" font-size="10.2" font-weight="900">Abc</text>
             </svg>
           </button>
           <button type="button" class="rail-tool-btn is-empty" disabled aria-hidden="true" tabindex="-1"></button>
@@ -1386,8 +1360,8 @@
   <script src="src/core/otherSymbolCatalog.js"></script>
   <script src="src/core/vehicleCatalog.js?v=20260807-web-sync-v1"></script>
   <script src="src/core/shapeRegistry.js?v=20260808-traffic-sign-search-v1"></script>
-  <script src="src/core/styleManager.js?v=20260809-line-family-v2"></script>
-  <script src="src/core/editorObjectManager.js?v=20260809-line-family-v1"></script>
+  <script src="src/core/styleManager.js?v=20260810-free-text-ip-v2"></script>
+  <script src="src/core/editorObjectManager.js?v=20260809-shape-family-ip-v1"></script>
   <script src="src/core/photoBackgroundManager.js?v=20260809-photo-background-v1"></script>
   <script src="src/core/documentStorage.js?v=20260809-indexeddb-library-v1"></script>
   <script src="src/core/groupManager.js"></script>
@@ -1409,14 +1383,14 @@
   <script src="src/adapters/ellipseAdapter.js?v=20260808-rotation-panel-stable-v1"></script>
   <script src="src/adapters/rectangleAdapter.js?v=20260808-rotation-panel-stable-v1"></script>
   <script src="src/adapters/closedShapeAdapter.js?v=20260808-rotation-panel-stable-v1"></script>
-  <script src="src/adapters/calloutAdapter.js?v=20260809-callout-leader-inset-v1"></script>
+  <script src="src/adapters/calloutAdapter.js?v=20260810-callout-ip-v3"></script>
   <script src="src/adapters/roadAdapter.js?v=20260808-pocket-attached-v1"></script>
   <script src="src/core/roadIntersectionEngine.js?v=20260730-road-departure-geometry-v4"></script>
   <script src="src/adapters/textAdapter.js?v=20260808-rotation-panel-stable-v1"></script>
   <script src="src/adapters/trafficSignAdapter.js?v=20260727-all-sign-text-v2"></script>
   <script src="src/adapters/otherSymbolAdapter.js"></script>
   <script src="src/adapters/vehicleAdapter.js?v=20260808-vehicle-label-thumbnail-v1"></script>
-  <script src="src/ui/editorTextComposer.js?v=20260713-live-text-edit"></script>
+  <script src="src/ui/editorTextComposer.js?v=20260810-free-text-ip-v2"></script>
   <script src="src/ui/editorBindings.js"></script>
   <script src="src/ui/roadBuilder.js?v=20260710-numberpicker"></script>
   <script src="src/ui/roadInspector.js?v=20260803-proportional-responsive-v1"></script>

@@ -625,6 +625,74 @@
   order: 50;
 }
 
+.editor-side-ip.is-shape-family-ip #btnLineText {
+  order: 10;
+}
+
+.editor-side-ip.is-shape-family-ip #btnLineTextStyle {
+  order: 20;
+}
+
+.editor-side-ip.is-shape-family-ip #btnLineColor {
+  order: 30;
+}
+
+.editor-side-ip.is-shape-family-ip #btnShapeFill {
+  order: 31;
+}
+
+.editor-side-ip.is-shape-family-ip #lineStrokeWidthStepper {
+  order: 40;
+}
+
+.editor-side-ip.is-shape-family-ip #objectRotateStepper {
+  order: 41;
+}
+
+.editor-side-ip.is-shape-family-ip #btnLineStyle {
+  order: 50;
+}
+
+.editor-side-ip.is-shape-family-ip #btnClosedShapeEdit {
+  order: 60;
+}
+
+.editor-side-ip.is-callout-ip #btnLineText {
+  order: 10;
+}
+
+.editor-side-ip.is-callout-ip #btnLineTextStyle {
+  order: 20;
+}
+
+.editor-side-ip.is-callout-ip #btnLineColor {
+  order: 30;
+}
+
+.editor-side-ip.is-callout-ip #calloutTextSizeStepper {
+  order: 40;
+}
+
+.editor-side-ip.is-callout-ip #btnLineStyle {
+  order: 50;
+}
+
+.editor-side-ip.is-text-object-ip #btnLineText {
+  order: 10;
+}
+
+.editor-side-ip.is-text-object-ip #btnLineTextStyle {
+  order: 20;
+}
+
+.editor-side-ip.is-text-object-ip #lineStrokeWidthStepper {
+  order: 30;
+}
+
+.editor-side-ip.is-text-object-ip #objectRotateStepper {
+  order: 40;
+}
+
 .vehicle-ip-stack {
   --vehicle-color: #dc2626;
   width: var(--editor-rail-button-size);
@@ -834,7 +902,6 @@
 }
 
 .side-ip-style-btn,
-.side-ip-cap-btn,
 .side-ip-shape-edit-btn,
 .side-ip-pattern-btn {
   --side-ip-stroke-color: #111827;
@@ -842,7 +909,6 @@
 }
 
 .side-ip-style-icon path,
-.side-ip-cap-icon path,
 .side-ip-shape-edit-btn path {
   vector-effect: none;
 }
@@ -852,6 +918,18 @@
   stroke: currentColor;
   stroke-width: 3;
   vector-effect: none;
+}
+
+.side-ip-shape-edit-btn .closed-shape-done-icon {
+  display: none;
+}
+
+.side-ip-shape-edit-btn.is-active .closed-shape-edit-icon {
+  display: none;
+}
+
+.side-ip-shape-edit-btn.is-active .closed-shape-done-icon {
+  display: block;
 }
 
 .side-ip-pattern-btn svg path,
@@ -872,45 +950,13 @@
   color: #047857;
 }
 
-.side-ip-text-format-stack {
-  width: var(--editor-rail-button-size);
-  min-height: 8.25rem;
-  flex: 0 0 8.25rem;
-  border: 0.1875rem solid #94a3b8;
-  border-radius: 0.5rem;
-  display: grid;
-  grid-template-rows: repeat(3, 1fr);
-  overflow: hidden;
-  background: #f8fafc;
-}
-
-.side-ip-text-format-btn {
-  min-width: 0;
-  min-height: 0;
-  border: 0;
-  display: grid;
-  place-items: center;
-  background: transparent;
-  color: #0f172a;
-  cursor: pointer;
-  font-size: 1.125rem;
-  font-weight: 900;
-  touch-action: manipulation;
-}
-
-.side-ip-text-format-btn + .side-ip-text-format-btn {
-  border-top: 0.125rem solid #cbd5e1;
-}
-
 .side-ip-text-align-btn path,
 .side-ip-text-align-btn rect,
 .side-ip-text-align-btn circle {
   vector-effect: none;
 }
 
-.side-ip-text-format-btn.is-active,
-.line-text-format-btn.is-active,
-.free-text-composer .line-text-icon-btn.is-active {
+.line-text-format-btn.is-active {
   background: #dbeafe;
   color: #1d4ed8;
   box-shadow: inset 0 0 0 0.125rem rgba(37, 99, 235, .18);
@@ -1091,8 +1137,14 @@
   z-index: 9;
 }
 
-.line-style-panel.is-line-family-panel {
+.line-style-panel.is-line-family-panel,
+.line-style-panel.is-shape-family-panel,
+.line-style-panel.is-callout-panel {
   width: min(17rem, calc(100vw - var(--editor-rail-width) - 1rem));
+}
+
+.line-style-panel.is-callout-panel .line-style-tool-row {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .line-style-options {
@@ -1221,6 +1273,12 @@
 .line-style-tool-row,
 .line-text-style-tool-row.is-position {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.line-text-style-panel.is-shape-family-panel .line-text-style-tool-row.is-position,
+.line-text-style-panel.is-callout-panel .line-text-style-tool-row.is-position,
+.line-text-style-panel.is-text-object-panel .line-text-style-tool-row.is-position {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .line-text-style-tool-row.is-format {
@@ -1504,16 +1562,6 @@
   vector-effect: none;
 }
 
-.line-text-color-btn {
-  --side-ip-fill-color: #111827;
-  --side-ip-stroke-color: #111827;
-}
-
-.line-text-color-btn .side-ip-palette-icon {
-  width: 1.9375rem;
-  height: 2.1875rem;
-}
-
 .free-text-composer {
   position: fixed;
   top: 0.5rem;
@@ -1552,74 +1600,10 @@
   border-color: #2563eb;
 }
 
-.free-text-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4375rem;
-}
-
-.free-text-align-btn span,
-.free-text-align-btn span::before,
-.free-text-align-btn span::after {
-  width: 1.0625rem;
-  height: 0.25rem;
-  border-radius: 0.125rem;
-  display: block;
-  background: currentColor;
-}
-
-.free-text-align-btn span {
-  position: relative;
-}
-
-.free-text-align-btn span::before,
-.free-text-align-btn span::after {
-  position: absolute;
-  content: "";
-}
-
-.free-text-align-btn span::before {
-  top: -0.5rem;
-}
-
-.free-text-align-btn span::after {
-  top: 0.5rem;
-}
-
-.free-text-align-btn[data-align="left"] {
-  justify-items: start;
-  padding-left: 0.5rem;
-}
-
-.free-text-align-btn[data-align="right"] {
-  justify-items: end;
-  padding-right: 0.5rem;
-}
-
 .line-text-format-btn {
   color: #0f172a;
   font-size: 1.125rem;
   font-weight: 900;
-}
-
-.free-text-command-btn {
-  min-width: 4.5rem;
-  height: 2.375rem;
-  padding: 0 0.75rem;
-  border: 0.125rem solid #cbd5e1;
-  border-radius: 0.4375rem;
-  background: #f8fafc;
-  color: #0f172a;
-  cursor: pointer;
-  font-weight: 900;
-  touch-action: manipulation;
-}
-
-.free-text-command-btn.is-ok {
-  border-color: #059669;
-  background: #d1fae5;
-  color: #064e3b;
 }
 
 /* Sanal klavye acikken diger giris araclari dokunulabilir boyutta kalir.
@@ -1651,16 +1635,6 @@
   font-size: 14px !important;
 }
 
-:root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host:not(.line-text-panel):not(.free-text-composer) .free-text-actions {
-  min-height: 44px;
-  flex-wrap: nowrap !important;
-  gap: 8px !important;
-  overflow-x: auto;
-  overflow-y: hidden;
-  flex: 0 0 auto;
-  padding-bottom: 2px;
-}
-
 :root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host:not(.line-text-panel):not(.free-text-composer) .line-text-size-picker {
   width: 132px !important;
   height: 44px !important;
@@ -1671,8 +1645,7 @@
 :root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host:not(.line-text-panel):not(.free-text-composer) :is(
   .line-text-picker-btn,
   .line-text-picker-value,
-  .line-text-icon-btn,
-  .free-text-command-btn
+  .line-text-icon-btn
 ) {
   min-width: 44px !important;
   width: 44px !important;

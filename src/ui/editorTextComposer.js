@@ -5,7 +5,6 @@
   const styleManager = Kroki.StyleManager;
   if (!manager || !selection || !styleManager) return;
 
-  const ALIGN_IDS = ["left", "center", "right"];
   const DEFAULT_STATE = {
     text: "METIN",
     size: 28,
@@ -21,43 +20,22 @@
   if (!panel) return;
 
   const controls = {
-    input: panel.querySelector("#freeTextInput"),
-    done: panel.querySelector("#btnFreeTextDone"),
-    cancel: panel.querySelector("#btnFreeTextCancel"),
-    sizeMinus: panel.querySelector("#btnFreeTextSizeMinus"),
-    sizePlus: panel.querySelector("#btnFreeTextSizePlus"),
-    sizeValue: panel.querySelector("#valFreeTextSize"),
-    opacityMinus: panel.querySelector("#btnFreeTextOpacityMinus"),
-    opacityPlus: panel.querySelector("#btnFreeTextOpacityPlus"),
-    opacityValue: panel.querySelector("#valFreeTextOpacity"),
-    align: panel.querySelector("#btnFreeTextAlign"),
-    bold: panel.querySelector("#btnFreeTextBold"),
-    italic: panel.querySelector("#btnFreeTextItalic"),
-    underline: panel.querySelector("#btnFreeTextUnderline"),
-    color: panel.querySelector("#btnFreeTextColor"),
-    colorInput: panel.querySelector("#freeTextColorInput")
+    input: panel.querySelector("#freeTextInput")
   };
 
   let state = { ...DEFAULT_STATE };
   let mode = "create";
   let editModelId = "";
   let liveEditTransaction = null;
-  const bindHoldAction = window.krokiObjectEditCore?.bindHoldAction || ((button, action) => {
-    button?.addEventListener("click", action);
-    return () => {};
-  });
+  let initialEditSnapshot = null;
 
-  function normalizeSize(value) {
-    return Math.max(6, Math.min(160, Math.round(Number(value) || DEFAULT_STATE.size)));
-  }
-
-  function normalizeOpacity(value) {
-    const number = Number(value);
-    return Math.max(0, Math.min(1, Number.isFinite(number) ? number : DEFAULT_STATE.opacity));
+  function cloneModel(model) {
+    if (!model) return null;
+    return Kroki.EditorUtils?.clonePlain?.(model) || JSON.parse(JSON.stringify(model));
   }
 
   function normalizeText(value) {
-    return styleManager.normalizeLabelText(value || DEFAULT_STATE.text);
+    return styleManager.normalizeLabelText(value ?? "");
   }
 
   function hexToRgb(hex) {
@@ -86,28 +64,9 @@
     controls.input.style.lineHeight = "1.22";
   }
 
-  function nextAlign() {
-    const index = ALIGN_IDS.indexOf(state.align);
-    state.align = ALIGN_IDS[(index + 1 + ALIGN_IDS.length) % ALIGN_IDS.length];
-  }
-
-  function setPressed(button, value) {
-    button?.classList.toggle("is-active", Boolean(value));
-    button?.setAttribute("aria-pressed", String(Boolean(value)));
-  }
-
   function sync() {
     if (controls.input && controls.input.value !== state.text) controls.input.value = state.text;
-    if (controls.sizeValue) controls.sizeValue.textContent = String(state.size);
-    if (controls.opacityValue) controls.opacityValue.textContent = Math.round(state.opacity * 100) + "%";
-    if (controls.colorInput) controls.colorInput.value = state.color;
     syncPreview();
-    controls.color?.style.setProperty("--side-ip-fill-color", state.color);
-    controls.align?.setAttribute("data-align", state.align);
-    controls.align?.setAttribute("title", state.align === "left" ? "Metin solda" : state.align === "right" ? "Metin sagda" : "Metin ortada");
-    setPressed(controls.bold, state.bold);
-    setPressed(controls.italic, state.italic);
-    setPressed(controls.underline, state.underline);
   }
 
   function stateFromModel(model) {
@@ -136,11 +95,15 @@
     liveEditTransaction = null;
   }
 
+  function discardLiveEditTransaction() {
+    liveEditTransaction = null;
+  }
+
   function applyLiveEdit(options = {}) {
     if (mode !== "edit" || !editModelId) return;
     const model = manager.get(editModelId);
     if (!model || model.type !== "text") return;
-    const text = normalizeText(controls.input?.value || state.text);
+    const text = normalizeText(controls.input?.value ?? state.text);
     if (!text.trim()) return;
     state.text = text;
     ensureLiveEditTransaction();
@@ -165,6 +128,7 @@
     commitLiveEditTransaction();
     mode = "create";
     editModelId = "";
+    initialEditSnapshot = null;
     selection.clear();
     panel.classList.remove("gizli");
     state = { ...DEFAULT_STATE };
@@ -182,6 +146,7 @@
     if (!model || model.type !== "text") return;
     mode = "edit";
     editModelId = model.id;
+    initialEditSnapshot = cloneModel(model);
     panel.classList.remove("gizli");
     state = stateFromModel(model);
     panel.setAttribute("aria-label", "Metni duzenle");
@@ -193,11 +158,11 @@
   }
 
   function hide() {
-    if (mode === "edit") commitLiveEditTransaction();
-    if (mode === "edit") document.querySelector("#btnLineText")?.setAttribute("aria-expanded", "false");
+    document.querySelector("#btnLineText")?.setAttribute("aria-expanded", "false");
     panel.classList.add("gizli");
     mode = "create";
     editModelId = "";
+    initialEditSnapshot = null;
   }
 
   function visibleCanvasPoint() {
@@ -212,8 +177,12 @@
   }
 
   function createText() {
-    const text = normalizeText(controls.input?.value || state.text);
-    if (!text.trim()) return;
+    const text = normalizeText(controls.input?.value ?? state.text);
+    if (!text.trim()) {
+      hide();
+      window.krokiEditorRail?.resetCizimAraci?.();
+      return;
+    }
     const point = visibleCanvasPoint();
     const model = manager.create("text", {
       geometry: { x: point.x, y: point.y, rotation: 0 },
@@ -240,12 +209,15 @@
       return;
     }
 
-    const text = normalizeText(controls.input?.value || state.text);
-    if (!text.trim()) return;
+    const text = normalizeText(controls.input?.value ?? state.text);
+    if (!text.trim()) {
+      cancelText();
+      return;
+    }
 
     state.text = text;
     applyLiveEdit();
-    selection.edit(model.id);
+    commitLiveEditTransaction();
     hide();
   }
 
@@ -254,22 +226,15 @@
     else createText();
   }
 
-  function blurTextInput() {
-    if (document.activeElement === controls.input) controls.input.blur();
-  }
-
-  function changeSize(delta) {
-    blurTextInput();
-    state.size = normalizeSize(state.size + delta);
-    sync();
-    applyLiveEdit();
-  }
-
-  function changeOpacity(delta) {
-    blurTextInput();
-    state.opacity = normalizeOpacity(state.opacity + delta);
-    sync();
-    applyLiveEdit();
+  function cancelText() {
+    const wasCreateMode = mode === "create";
+    if (!wasCreateMode && initialEditSnapshot?.id && manager.get(initialEditSnapshot.id)) {
+      const snapshot = cloneModel(initialEditSnapshot);
+      manager.updateModel(snapshot.id, () => snapshot, { skipHistory: true });
+      discardLiveEditTransaction();
+    }
+    hide();
+    if (wasCreateMode) window.krokiEditorRail?.resetCizimAraci?.();
   }
 
   controls.input?.addEventListener("input", () => {
@@ -283,64 +248,38 @@
     state.text = normalized;
     applyLiveEdit({ controlPoints: false, styleControls: false });
   });
-  controls.done?.addEventListener("click", submitText);
-  controls.cancel?.addEventListener("click", () => {
-    const wasCreateMode = mode === "create";
-    hide();
-    if (wasCreateMode) window.krokiEditorRail?.resetCizimAraci?.();
-  });
-  bindHoldAction(controls.sizeMinus, () => changeSize(-1));
-  bindHoldAction(controls.sizePlus, () => changeSize(1));
-  bindHoldAction(controls.opacityMinus, () => changeOpacity(-0.05));
-  bindHoldAction(controls.opacityPlus, () => changeOpacity(0.05));
-  controls.align?.addEventListener("click", () => {
-    blurTextInput();
-    nextAlign();
-    sync();
-    applyLiveEdit();
-  });
-  controls.bold?.addEventListener("click", () => {
-    blurTextInput();
-    state.bold = !state.bold;
-    sync();
-    applyLiveEdit();
-  });
-  controls.italic?.addEventListener("click", () => {
-    blurTextInput();
-    state.italic = !state.italic;
-    sync();
-    applyLiveEdit();
-  });
-  controls.underline?.addEventListener("click", () => {
-    blurTextInput();
-    state.underline = !state.underline;
-    sync();
-    applyLiveEdit();
-  });
-  controls.color?.addEventListener("click", () => {
-    blurTextInput();
-    controls.colorInput?.click();
-  });
-  controls.colorInput?.addEventListener("input", () => {
-    state.color = controls.colorInput.value;
-    sync();
-    applyLiveEdit();
-  });
   controls.input?.addEventListener("keydown", (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+      event.preventDefault();
       submitText();
+      return;
     }
+    if (event.key === "Escape") cancelText();
   });
+  document.addEventListener("pointerdown", (event) => {
+    if (panel.classList.contains("gizli") || panel.contains(event.target)) return;
+    if (event.target?.closest?.("#btnLineText")) return;
+    const canvasTap = Boolean(event.target?.closest?.("#editorCanvas"));
+    submitText();
+    if (canvasTap) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }, true);
 
   window.addEventListener("kroki:active-tool-change", (event) => {
     if (event.detail?.tool === "metin") showCreate();
-    else hide();
+    else if (!panel.classList.contains("gizli")) cancelText();
   });
 
   Kroki.FreeTextComposer = {
     openEdit: showEdit,
+    isOpenFor(modelId) {
+      return mode === "edit" && editModelId === modelId && !panel.classList.contains("gizli");
+    },
+    complete: submitText,
     hideEdit() {
-      if (mode === "edit") hide();
+      if (mode === "edit") updateText();
     }
   };
 })();

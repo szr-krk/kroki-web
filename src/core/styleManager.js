@@ -452,6 +452,18 @@
     return type === "line" || type === "arc" || type === "bezier";
   }
 
+  function isBasicShapeToolType(type) {
+    return type === "circle" || type === "ellipse" || type === "rectangle";
+  }
+
+  function usesShapeStylePanel(type) {
+    return isBasicShapeToolType(type) || type === "closedShape";
+  }
+
+  function usesStructuredTextStylePanel(type) {
+    return type === "text" || isLineToolType(type) || isBasicShapeToolType(type) || type === "callout";
+  }
+
   function normalizeFillPattern(value) {
     return choiceOr(value, FILL_PATTERNS, "none");
   }
@@ -477,7 +489,7 @@
     return {
       stroke: type === "callout" ? "#d11f1f" : isShapeWithFill(type) ? "#000000" : "#111827",
       fill,
-      strokeWidth: isLineToolType(type) || type === "callout" ? 1 : 2,
+      strokeWidth: isLineToolType(type) ? 1 : 2,
       opacity: 1,
       strokeOpacity: 1,
       fillOpacity: 1,
@@ -500,11 +512,11 @@
     const legacyOpacity = source.opacity;
     const normalized = {
       stroke: colorOr(merged.stroke || merged.strokeColor, base.stroke),
-      fill: isShapeWithFill(type) ? colorOr(merged.fill || merged.fillColor, base.fill) : "none",
+      fill: type === "callout" ? "#ffffff" : isShapeWithFill(type) ? colorOr(merged.fill || merged.fillColor, base.fill) : "none",
       strokeWidth: normalizeStrokeWidth(merged.strokeWidth),
       opacity: normalizeOpacity(merged.opacity),
       strokeOpacity: normalizeOpacity(source.strokeOpacity ?? source.strokeAlpha ?? legacyOpacity ?? base.strokeOpacity),
-      fillOpacity: normalizeOpacity(source.fillOpacity ?? source.fillAlpha ?? legacyOpacity ?? base.fillOpacity),
+      fillOpacity: type === "callout" ? 1 : normalizeOpacity(source.fillOpacity ?? source.fillAlpha ?? legacyOpacity ?? base.fillOpacity),
       fillPattern: isShapeWithFill(type) ? normalizeFillPattern(merged.fillPattern || merged.fillTexture || merged.patternFill) : "none",
       dash: dashPattern,
       dashSize: normalizeDashSize(merged.dashSize, defaults.dashSize),
@@ -640,9 +652,15 @@
       if (style.fillPattern && style.fillPattern !== "none") element.dataset.fillPattern = style.fillPattern;
       else delete element.dataset.fillPattern;
       element.dataset.labelAlign = label.position.align;
-      delete element.dataset.labelBold;
-      delete element.dataset.labelItalic;
-      delete element.dataset.labelUnderline;
+      if (isBasicShapeToolType(model.type)) {
+        element.dataset.labelBold = label.bold ? "1" : "0";
+        element.dataset.labelItalic = label.italic ? "1" : "0";
+        element.dataset.labelUnderline = label.underline ? "1" : "0";
+      } else {
+        delete element.dataset.labelBold;
+        delete element.dataset.labelItalic;
+        delete element.dataset.labelUnderline;
+      }
       delete element.dataset.labelSide;
       delete element.dataset.labelAnchor;
       if (model.type === "circle") element.dataset.labelRotateMode = label.position.rotateMode;
@@ -1155,9 +1173,7 @@
     controls?.vehicleLabelToggle?.classList.remove("is-active");
     controls?.colorButton?.setAttribute("aria-expanded", "false");
     controls?.fillButton?.setAttribute("aria-expanded", "false");
-    controls?.fillPatternButton?.setAttribute("aria-expanded", "false");
-    controls?.closedShapeEdit?.classList.remove("is-active");
-    controls?.closedShapeEdit?.setAttribute("aria-pressed", "false");
+    controls?.fillPatternButtons?.forEach((button) => button.setAttribute("aria-expanded", "false"));
     commitVehicleLabelInputHistory();
     if (!options.keepTextComposer) Kroki.FreeTextComposer?.hideEdit?.();
   }
@@ -1168,13 +1184,14 @@
     cachedControl("fillPatternPanel", "#fillPatternPanel")?.classList.add("gizli");
     controls?.colorButton?.setAttribute("aria-expanded", "false");
     controls?.fillButton?.setAttribute("aria-expanded", "false");
-    controls?.fillPatternButton?.setAttribute("aria-expanded", "false");
+    controls?.fillPatternButtons?.forEach((button) => button.setAttribute("aria-expanded", "false"));
   }
 
   function setControlVisibility(adapter, model) {
     const isTextObject = Boolean(adapter?.capabilities?.textObject);
     const isCallout = adapter?.type === "callout";
     const isLineFamily = isLineToolType(model?.type);
+    const isShapeFamily = usesShapeStylePanel(model?.type);
     const isRoadObject = Boolean(adapter?.capabilities?.roadObject);
     const isTrafficSign = Boolean(adapter?.capabilities?.trafficSign);
     const isCatalogObject = isCatalogObjectAdapter(adapter);
@@ -1183,13 +1200,13 @@
     const noText = Boolean(adapter?.capabilities?.noText) || (isCatalogObject && !catalogObjectHasText);
     const hasPointEdit = Boolean(adapter?.capabilities?.pointEdit);
     const hasRotationPicker = typeof adapter?.setRotation === "function";
-    const supportsTextFormatting = isTextObject || Boolean(adapter?.capabilities?.textFormatting);
     const hasFill = Boolean(adapter?.capabilities?.fill);
     const hasFillPattern = supportsFillPatternTarget(adapter, model);
     const trafficSignFieldText = isTrafficSign && trafficSignEditableFields({ adapter, model }).length > 0;
     controls?.shapeOnlyControls?.forEach((control) => control.classList.toggle("gizli", !hasFill));
-    controls?.fillPatternControls?.forEach((control) => control.classList.toggle("gizli", !hasFillPattern));
-    controls?.textObjectControls?.forEach((control) => control.classList.toggle("gizli", !supportsTextFormatting));
+    controls?.fillButton?.classList.toggle("gizli", !hasFill || isCallout);
+    controls?.fillPatternButton?.classList.toggle("gizli", !hasFillPattern || isShapeFamily);
+    controls?.fillPatternPanelButton?.classList.toggle("gizli", !hasFillPattern || !isShapeFamily);
     controls?.closedShapeControls?.forEach((control) => control.classList.toggle("gizli", !hasPointEdit));
     controls?.objectRotationControl?.classList.toggle("gizli", !hasRotationPicker);
     controls?.roadOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isRoadObject));
@@ -1198,14 +1215,26 @@
     controls?.calloutOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isCallout));
     controls?.sideIp?.classList.toggle("is-traffic-sign-ip", isTrafficSign);
     controls?.sideIp?.classList.toggle("is-line-family-ip", isLineFamily);
+    controls?.sideIp?.classList.toggle("is-shape-family-ip", isShapeFamily);
+    controls?.sideIp?.classList.toggle("is-callout-ip", isCallout);
+    controls?.sideIp?.classList.toggle("is-text-object-ip", isTextObject);
     controls?.stylePanel?.classList.toggle("is-line-family-panel", isLineFamily);
+    controls?.stylePanel?.classList.toggle("is-shape-family-panel", isShapeFamily);
+    controls?.stylePanel?.classList.toggle("is-callout-panel", isCallout);
+    controls?.textStylePanel?.classList.toggle("is-shape-family-panel", isShapeFamily);
+    controls?.textStylePanel?.classList.toggle("is-callout-panel", isCallout);
+    controls?.textStylePanel?.classList.toggle("is-text-object-panel", isTextObject);
     controls?.lineAdvancedStyleControls?.classList.toggle("gizli", !isLineFamily);
-    controls?.colorButton?.classList.toggle("gizli", isRoadObject || isCatalogObject || isVehicleObject);
+    controls?.shapeAdvancedStyleControls?.classList.toggle("gizli", !isShapeFamily && !isCallout);
+    if (controls?.shapeAdvancedStyleLabel) controls.shapeAdvancedStyleLabel.textContent = isCallout ? "Cizgi davranisi" : "Dolgu deseni";
+    controls?.colorButton?.classList.toggle("gizli", isTextObject || isRoadObject || isCatalogObject || isVehicleObject);
     controls?.textButton?.classList.toggle("gizli", noText);
-    controls?.textStyleButton?.classList.toggle("gizli", !isLineFamily || noText);
+    controls?.textStyleButton?.classList.toggle("gizli", !usesStructuredTextStylePanel(model?.type) || noText);
+    controls?.textStyleSizeSection?.classList.toggle("gizli", isTextObject || isCallout);
+    controls?.textStyleSide?.classList.toggle("gizli", isTextObject || isShapeFamily || isCallout);
     controls?.trafficSignTextFields?.classList.toggle("gizli", !trafficSignFieldText);
     controls?.textInput?.classList.toggle("gizli", trafficSignFieldText);
-    controls?.textAlign?.classList.toggle("gizli", noText || isCatalogObject || isLineFamily);
+    controls?.textAlign?.classList.toggle("gizli", isTextObject || noText || isCatalogObject || isLineFamily || isShapeFamily || isCallout);
     if (isRoadObject || isVehicleObject) {
       cachedControl("strokeColorPanel", "#strokeColorPanel")?.classList.add("gizli");
       controls?.colorButton?.setAttribute("aria-expanded", "false");
@@ -1219,21 +1248,20 @@
       cachedControl("textPanel", "#lineTextPanel")?.classList.add("gizli");
       controls?.textButton?.setAttribute("aria-expanded", "false");
     }
-    if (!isLineFamily || noText) {
+    if (!usesStructuredTextStylePanel(model?.type) || noText) {
       cachedControl("textStylePanel", "#lineTextStylePanel")?.classList.add("gizli");
       controls?.textStyleButton?.setAttribute("aria-expanded", "false");
     }
     if (!hasFillPattern) {
       document.querySelector("#fillPatternPanel")?.classList.add("gizli");
-      controls?.fillPatternButton?.setAttribute("aria-expanded", "false");
+      controls?.fillPatternButtons?.forEach((button) => button.setAttribute("aria-expanded", "false"));
     }
     if (isCatalogObject) {
       document.querySelector("#strokeColorPanel")?.classList.add("gizli");
       controls?.colorButton?.setAttribute("aria-expanded", "false");
     }
-    controls?.strokeStepper?.classList.toggle("gizli", isRoadObject || isCatalogObject || isVehicleObject);
+    controls?.strokeStepper?.classList.toggle("gizli", isCallout || isRoadObject || isCatalogObject || isVehicleObject);
     controls?.styleButton?.classList.toggle("gizli", isTextObject || isRoadObject || isCatalogObject || isVehicleObject);
-    controls?.lineCapButton?.classList.toggle("gizli", isLineFamily || isTextObject || isCallout || isRoadObject || isCatalogObject || isVehicleObject);
   }
 
   function updateStyle(patch) {
@@ -1337,19 +1365,31 @@
 
   function updateLineTextStyleSize(delta) {
     const entry = activeEntry();
-    if (!entry || entry.multi || !isLineToolType(entry.model.type)) return;
+    if (!entry || entry.multi || !usesStructuredTextStylePanel(entry.model.type)) return;
     const label = normalizeLabel(entry.model.label, entry.model.type);
     updateLabel({ size: normalizeLabelSize(label.size + delta) });
   }
 
   function updateLineTextColor(color) {
     const entry = activeEntry();
-    if (!entry || entry.multi || !isLineToolType(entry.model.type)) return;
+    if (!entry || entry.multi || !usesStructuredTextStylePanel(entry.model.type)) return;
+    if (isTextObjectEntry(entry) || isBasicShapeToolType(entry.model.type) || entry.model.type === "callout") {
+      updateLabel({ color });
+      return;
+    }
     const style = normalizeStyle(entry.model.style, entry.model.type);
     updateLabel({
       color,
       colorLinked: String(color).toLowerCase() === String(style.stroke).toLowerCase()
     });
+  }
+
+  function updateStructuredTextOpacity(value) {
+    const entry = activeEntry();
+    if (!entry || entry.multi || !usesStructuredTextStylePanel(entry.model.type)) return;
+    const opacity = normalizeOpacity(Number(value) / 100);
+    if (isTextObjectEntry(entry)) updateStyle({ opacity });
+    else updateLabel({ opacity });
   }
 
   function activeRotatableEntry() {
@@ -1618,7 +1658,6 @@
     setToggleButton(controls?.vehicleFlipX, metadata.vehicleFlipX);
     setToggleButton(controls?.vehicleFlipY, metadata.vehicleFlipY);
     if (controls?.vehicleColorInput && controls.vehicleColorInput.value !== color) controls.vehicleColorInput.value = color;
-    controls?.vehicleColorSwatch?.style.setProperty("--vehicle-color", color);
     controls?.vehicleLabelToggle?.classList.toggle("is-active", labelPanelOpen);
     controls?.vehicleLabelToggle?.setAttribute("aria-expanded", String(labelPanelOpen));
     controls?.vehicleLabelToggle?.setAttribute("title", labelText ? "Etiket: " + labelText : "Arac etiketi");
@@ -1786,13 +1825,22 @@
       hidePanels();
       controls?.sideIp?.classList.remove("is-traffic-sign-ip");
       controls?.sideIp?.classList.remove("is-line-family-ip");
+      controls?.sideIp?.classList.remove("is-shape-family-ip");
+      controls?.sideIp?.classList.remove("is-callout-ip");
+      controls?.sideIp?.classList.remove("is-text-object-ip");
       controls?.stylePanel?.classList.remove("is-line-family-panel");
+      controls?.stylePanel?.classList.remove("is-shape-family-panel");
+      controls?.stylePanel?.classList.remove("is-callout-panel");
+      controls?.textStylePanel?.classList.remove("is-shape-family-panel");
+      controls?.textStylePanel?.classList.remove("is-callout-panel");
+      controls?.textStylePanel?.classList.remove("is-text-object-panel");
       Kroki.RoadInspector?.sync?.(null);
       return;
     }
 
     const { model, adapter } = entry;
     const isTextObject = isTextObjectEntry(entry);
+    const isCallout = adapter?.type === "callout";
     const isTrafficSign = Boolean(adapter?.capabilities?.trafficSign);
     const isOtherSymbol = Boolean(adapter?.capabilities?.otherSymbol);
     const isCatalogObject = isCatalogObjectAdapter(adapter);
@@ -1824,9 +1872,11 @@
     }
     controls.colorButton?.style.setProperty("--side-ip-stroke-color", isTextObject ? label.color : style.stroke);
     controls.fillButton?.style.setProperty("--side-ip-fill-color", style.fill);
-    controls.fillPatternButton?.style.setProperty("--side-ip-fill-color", style.fill === "none" ? "#ffffff" : style.fill);
+    controls.fillPatternButtons?.forEach((button) => {
+      button.style.setProperty("--side-ip-fill-color", style.fill === "none" ? "#ffffff" : style.fill);
+    });
     controls.styleButton?.style.setProperty("--side-ip-stroke-color", style.stroke);
-    controls.lineCapButton?.style.setProperty("--side-ip-stroke-color", style.stroke);
+    controls.shapePanelCapButton?.style.setProperty("--side-ip-stroke-color", style.stroke);
     controls.linePanelCapButton?.style.setProperty("--side-ip-stroke-color", style.stroke);
     controls.linePanelArrowStack?.style.setProperty("--side-ip-stroke-color", style.stroke);
     controls.linePanelToolRow?.style.setProperty("--side-ip-stroke-color", style.stroke);
@@ -1836,13 +1886,19 @@
     controls.fillButton?.setAttribute("title", model.type === "callout" ? "Metin arka plan rengi" : "Dolgu rengi");
     controls.fillButton?.setAttribute("aria-label", model.type === "callout" ? "Metin arka plan rengi" : "Dolgu rengi");
     const fillPatternLabel = fillPattern.id === "none" ? "Dolgu deseni" : "Dolgu deseni: " + fillPattern.title;
-    controls.fillPatternButton?.classList.toggle("is-active", fillPattern.id !== "none");
-    controls.fillPatternButton?.setAttribute("title", fillPatternLabel);
-    controls.fillPatternButton?.setAttribute("aria-label", fillPatternLabel);
-    const textButtonLabel = isTextObject ? "Metni duzenle" : isTrafficSign ? "Levha metni" : isOtherSymbol ? "Sembol metni" : "Cizgi metni";
+    controls.fillPatternButtons?.forEach((button) => {
+      button.classList.toggle("is-active", fillPattern.id !== "none");
+      button.setAttribute("title", fillPatternLabel);
+      button.setAttribute("aria-label", fillPatternLabel);
+    });
+    const textButtonLabel = isTextObject ? "Metni duzenle" : isTrafficSign ? "Levha metni" : isOtherSymbol ? "Sembol metni" : isCallout ? "Oklu metin" : isBasicShapeToolType(model.type) ? "Sekil metni" : "Cizgi metni";
     controls.textButton?.setAttribute("title", textButtonLabel);
     controls.textButton?.setAttribute("aria-label", textButtonLabel);
     controls.textButton?.setAttribute("aria-controls", isTextObject ? "freeTextComposer" : "lineTextPanel");
+    const textStyleButtonLabel = isTextObject ? "Metin stili" : isCallout ? "Oklu metin stili" : isBasicShapeToolType(model.type) ? "Sekil metin stili" : "Cizgi metin stili";
+    controls.textStyleButton?.setAttribute("title", textStyleButtonLabel);
+    controls.textStyleButton?.setAttribute("aria-label", textStyleButtonLabel);
+    controls.textStylePanel?.setAttribute("aria-label", textStyleButtonLabel);
     if (controls.colorInput) controls.colorInput.value = isTextObject ? label.color : style.stroke;
     if (controls.fillInput) controls.fillInput.value = style.fill === "none" ? "#ffffff" : style.fill;
     controls.strokeOpacityControl?.classList.remove("gizli");
@@ -1860,7 +1916,7 @@
     const primarySize = isTextObject ? label.size : style.strokeWidth;
     if (controls.strokeInput && controls.strokeInput.value !== String(primarySize)) controls.strokeInput.value = String(primarySize);
     renderLineStyleIcon(controls.styleIcon);
-    renderLineCapIcon(controls.lineCapIcon);
+    renderLineCapIcon(controls.shapePanelCapIcon);
     renderLineCapIcon(controls.linePanelCapIcon);
     renderLineSnapIcon(controls.linePanelSnapIcon);
     const snapEnabled = Boolean(Kroki.LineSnap?.isEnabled?.());
@@ -1885,7 +1941,7 @@
     controls.dashSizeControl?.classList.toggle("gizli", !dashPattern.usesDashSize);
     controls.dashGapControl?.classList.toggle("gizli", !dashPattern.usesDashGap);
     const lineCapLabel = style.dash === "dot" ? "Noktali desende yuvarlak stroke ucu" : lineCap.title;
-    [controls.lineCapButton, controls.linePanelCapButton].forEach((button) => {
+    [controls.shapePanelCapButton, controls.linePanelCapButton].forEach((button) => {
       button?.setAttribute("title", lineCapLabel);
       button?.setAttribute("aria-label", lineCapLabel);
     });
@@ -1900,33 +1956,42 @@
     const pointEditActive = selection.getMode?.() === "edit" && Boolean(model.metadata?.pointEdit);
     controls.closedShapeEdit?.classList.toggle("is-active", pointEditActive);
     controls.closedShapeEdit?.setAttribute("aria-pressed", String(pointEditActive));
+    const pointEditLabel = pointEditActive ? "Nokta duzenlemesini bitir" : "Sekli duzenle";
+    controls.closedShapeEdit?.setAttribute("title", pointEditLabel);
+    controls.closedShapeEdit?.setAttribute("aria-label", pointEditLabel);
     if (controls.textInput && controls.textInput.value !== label.text) controls.textInput.value = label.text;
     if (controls.textStyleSizeValue) controls.textStyleSizeValue.textContent = String(label.size);
     if (controls.textStyleColorInput && controls.textStyleColorInput.value !== label.color) controls.textStyleColorInput.value = label.color;
-    if (controls.textStyleOpacityInput && controls.textStyleOpacityInput.value !== String(labelOpacityValue)) controls.textStyleOpacityInput.value = String(labelOpacityValue);
-    if (controls.textStyleOpacityValue) controls.textStyleOpacityValue.textContent = labelOpacityValue + "%";
+    const textStyleOpacityValue = isTextObject ? primaryOpacityValue : labelOpacityValue;
+    if (controls.textStyleOpacityInput && controls.textStyleOpacityInput.value !== String(textStyleOpacityValue)) controls.textStyleOpacityInput.value = String(textStyleOpacityValue);
+    if (controls.textStyleOpacityValue) controls.textStyleOpacityValue.textContent = textStyleOpacityValue + "%";
     if (controls.calloutTextSizeInput && controls.calloutTextSizeInput.value !== String(label.size)) controls.calloutTextSizeInput.value = String(label.size);
     setToggleButton(controls.textStyleBold, label.bold);
     setToggleButton(controls.textStyleItalic, label.italic);
     setToggleButton(controls.textStyleUnderline, label.underline);
-    setToggleButton(controls.sideTextBold, label.bold);
-    setToggleButton(controls.sideTextItalic, label.italic);
-    setToggleButton(controls.sideTextUnderline, label.underline);
     syncTextInputPreview(label, style, supportsTextFormatting);
 
     if (isTextObject) {
       const align = choiceById(TEXT_ALIGNS, label.position.align);
       renderFreeTextAlignIcon(controls.textAlignIcon, align.id);
+      renderFreeTextAlignIcon(controls.textStyleAnchorIcon, align.id);
       controls.textAlign?.setAttribute("title", align.title);
       controls.textAlign?.setAttribute("aria-label", align.title);
+      controls.textStyleAnchor?.setAttribute("title", align.title);
+      controls.textStyleAnchor?.setAttribute("aria-label", align.title);
       return;
     }
 
     if (adapter?.capabilities?.textFormatting) {
       const align = choiceById(TEXT_ALIGNS, label.position.align);
       renderFreeTextAlignIcon(controls.textAlignIcon, align.id);
+      if (isCallout) renderFreeTextAlignIcon(controls.textStyleAnchorIcon, align.id);
       controls.textAlign?.setAttribute("title", align.title);
       controls.textAlign?.setAttribute("aria-label", align.title);
+      if (isCallout) {
+        controls.textStyleAnchor?.setAttribute("title", align.title);
+        controls.textStyleAnchor?.setAttribute("aria-label", align.title);
+      }
       return;
     }
 
@@ -1947,8 +2012,11 @@
 
     const align = choiceById(TEXT_ALIGNS, label.position.align);
     renderShapeTextAlignIcon(controls.textAlignIcon, align.id, model.type);
+    if (isBasicShapeToolType(model.type)) renderShapeTextAlignIcon(controls.textStyleAnchorIcon, align.id, model.type);
     controls.textAlign?.setAttribute("title", align.title);
     controls.textAlign?.setAttribute("aria-label", align.title);
+    controls.textStyleAnchor?.setAttribute("title", align.title);
+    controls.textStyleAnchor?.setAttribute("aria-label", align.title);
   }
 
   function repositionPanel(panel, button) {
@@ -1962,14 +2030,14 @@
     repositionPanel(panel, button);
   }
 
-  function showPanel(panel, button) {
+  function showPanel(panel, button, anchorButton = button) {
     if (!activeEntry() || !panel) return;
     selection.promoteToEdit();
     hidePanels();
     syncControls();
     panel.classList.remove("gizli");
     button?.setAttribute("aria-expanded", "true");
-    window.krokiObjectEditCore?.positionPanelNearButton?.(panel, button);
+    window.krokiObjectEditCore?.positionPanelNearButton?.(panel, anchorButton);
     if (panel.id === "lineTextPanel") {
       const fieldInput = controls?.trafficSignTextFields?.classList.contains("gizli")
         ? null
@@ -2005,6 +2073,11 @@
     const entry = activeEntry();
     if (!entry) return;
     if (isTextObjectEntry(entry)) {
+      if (Kroki.FreeTextComposer?.isOpenFor?.(entry.model.id)) {
+        Kroki.FreeTextComposer.complete?.();
+        controls?.textButton?.setAttribute("aria-expanded", "false");
+        return;
+      }
       selection.promoteToEdit();
       hidePanels({ keepTextComposer: true });
       syncControls();
@@ -2015,18 +2088,29 @@
     showPanel(textPanel, controls.textButton);
   }
 
-  function togglePanel(panel, button) {
+  function togglePanel(panel, button, anchorButton = button) {
     if (!panel) return;
-    if (panel.classList.contains("gizli")) showPanel(panel, button);
+    if (panel.classList.contains("gizli")) showPanel(panel, button, anchorButton);
     else hidePanels();
   }
 
   function closePanelOnOutsideClick(event, panel, button) {
     if (!panel || panel.classList.contains("gizli")) return;
-    if (panel.contains(event.target) || button?.contains(event.target)) return;
+    const buttons = Array.isArray(button) ? button : [button];
+    if (panel.contains(event.target) || buttons.some((item) => item?.contains(event.target))) return;
     panel.classList.add("gizli");
-    button?.setAttribute("aria-expanded", "false");
-    if (panel.id === "vehicleLabelPanel") button?.classList.remove("is-active");
+    buttons.forEach((item) => item?.setAttribute("aria-expanded", "false"));
+    if (panel.id === "vehicleLabelPanel") buttons.forEach((item) => item?.classList.remove("is-active"));
+  }
+
+  function fillPatternAnchor(button) {
+    return button === controls?.fillPatternPanelButton ? controls?.styleButton : button;
+  }
+
+  function activeFillPatternAnchor() {
+    const trigger = controls?.fillPatternButtons?.find((button) => button.getAttribute("aria-expanded") === "true")
+      || controls?.fillPatternButton;
+    return fillPatternAnchor(trigger);
   }
 
   function blurActiveTextInput() {
@@ -2054,6 +2138,8 @@
       fillOpacityInput: document.querySelector("#fillOpacityInput"),
       fillOpacityValue: document.querySelector("#fillOpacityValue"),
       fillPatternButton: document.querySelector("#btnFillPattern"),
+      fillPatternPanelButton: document.querySelector("#btnLinePanelFillPattern"),
+      fillPatternButtons: Array.from(document.querySelectorAll("#btnFillPattern, #btnLinePanelFillPattern")),
       fillPatternPanel: document.querySelector("#fillPatternPanel"),
       fillPatternChoices: Array.from(document.querySelectorAll("button[data-fill-pattern]")),
       trafficSignScaleMinus: document.querySelector("#btnTrafficSignScaleMinus"),
@@ -2064,7 +2150,6 @@
       trafficSignRotateInput: document.querySelector("#trafficSignRotateInput"),
       vehicleIpStack: document.querySelector("#vehicleIpStack"),
       vehicleColorInput: document.querySelector("#vehicleColorInput"),
-      vehicleColorSwatch: document.querySelector("#vehicleColorSwatch"),
       vehicleView: document.querySelector("#btnVehicleViewIp"),
       vehicleViewLabel: document.querySelector("#lblVehicleViewIp"),
       vehicleGhost: document.querySelector("#btnVehicleGhostIp"),
@@ -2082,9 +2167,11 @@
       vehicleRotateInput: document.querySelector("#vehicleRotateInput"),
       styleButton: document.querySelector("#btnLineStyle"),
       styleIcon: document.querySelector("#iconLineStyle"),
-      lineCapButton: document.querySelector("#btnLineCap"),
-      lineCapIcon: document.querySelector("#iconLineCap"),
+      shapePanelCapButton: document.querySelector("#btnLineCap"),
+      shapePanelCapIcon: document.querySelector("#iconLineCap"),
       lineAdvancedStyleControls: document.querySelector("#lineAdvancedStyleControls"),
+      shapeAdvancedStyleControls: document.querySelector("#shapeAdvancedStyleControls"),
+      shapeAdvancedStyleLabel: document.querySelector("#shapeAdvancedStyleLabel"),
       linePanelArrowStack: document.querySelector("#linePanelArrowStack"),
       linePanelStartArrow: document.querySelector("#btnLinePanelStartArrow"),
       linePanelStartArrowIcon: document.querySelector("#iconLinePanelStartArrow"),
@@ -2111,6 +2198,7 @@
       textPanel: document.querySelector("#lineTextPanel"),
       textStyleButton: document.querySelector("#btnLineTextStyle"),
       textStylePanel: document.querySelector("#lineTextStylePanel"),
+      textStyleSizeSection: document.querySelector("#lineTextStyleSizeSection"),
       textStyleSizeMinus: document.querySelector("#btnLineTextStyleSizeMinus"),
       textStyleSizePlus: document.querySelector("#btnLineTextStyleSizePlus"),
       textStyleSizeValue: document.querySelector("#valLineTextStyleSize"),
@@ -2128,9 +2216,6 @@
       textInput: document.querySelector("#lineTextInput"),
       textAlign: document.querySelector("#btnLineTextAlign"),
       textAlignIcon: document.querySelector("#iconLineTextAlign"),
-      sideTextBold: document.querySelector("#btnSideTextBold"),
-      sideTextItalic: document.querySelector("#btnSideTextItalic"),
-      sideTextUnderline: document.querySelector("#btnSideTextUnderline"),
       calloutTextSizeMinus: document.querySelector("#btnCalloutTextSizeMinus"),
       calloutTextSizePlus: document.querySelector("#btnCalloutTextSizePlus"),
       calloutTextSizeInput: document.querySelector("#calloutTextSizeInput"),
@@ -2140,8 +2225,6 @@
       objectRotateInput: document.querySelector("#objectRotateInput"),
       stylePanel: document.querySelector("#lineStylePanel"),
       shapeOnlyControls: Array.from(document.querySelectorAll(".shape-only-control")),
-      fillPatternControls: Array.from(document.querySelectorAll(".fill-pattern-control")),
-      textObjectControls: Array.from(document.querySelectorAll(".text-object-control")),
       closedShapeControls: Array.from(document.querySelectorAll(".closed-shape-control")),
       roadOnlyControls: Array.from(document.querySelectorAll(".road-only-control")),
       trafficSignOnlyControls: Array.from(document.querySelectorAll(".traffic-sign-only-control")),
@@ -2306,7 +2389,9 @@
     controls.fillInput?.addEventListener("input", () => updateStyle({ fill: controls.fillInput.value }));
     controls.fillOpacityInput?.addEventListener("input", () => updateStyle({ fillOpacity: normalizeOpacity(Number(controls.fillOpacityInput.value) / 100) }));
     controls.fillOpacityInput?.addEventListener("change", () => updateStyle({ fillOpacity: normalizeOpacity(Number(controls.fillOpacityInput.value) / 100) }));
-    controls.fillPatternButton?.addEventListener("click", () => togglePanel(fillPatternPanel, controls.fillPatternButton));
+    controls.fillPatternButtons.forEach((button) => {
+      button.addEventListener("click", () => togglePanel(fillPatternPanel, button, fillPatternAnchor(button)));
+    });
     controls.fillPatternChoices.forEach((button) => {
       button.addEventListener("click", () => {
         const entry = activeEntry();
@@ -2316,12 +2401,11 @@
         const selectedIslandCenter = islandCenterInfo(entry.adapter, entry.model);
         const selectedFillTarget = selectedPocketIsland || selectedIslandCenter;
         const currentStyle = normalizeStyle(selectedFillTarget?.style || entry.model.style, selectedFillTarget ? "closedShape" : entry.model.type);
-        if (currentStyle.fillPattern === pattern) return;
+        const shouldResetFill = pattern === "none" && String(currentStyle.fill).toLowerCase() !== "#ffffff";
+        if (currentStyle.fillPattern === pattern && !shouldResetFill) return;
         const patternChoice = choiceById(FILL_PATTERNS, pattern);
         const patch = { fillPattern: pattern };
-        if (pattern === "none" && selectedFillTarget) {
-          patch.fill = "#ffffff";
-        }
+        if (pattern === "none") patch.fill = "#ffffff";
         if (pattern !== "none" && (selectedFillTarget || currentStyle.fill === "none" || currentStyle.fill === "#ffffff")) {
           patch.fill = patternChoice.defaultFill || "#d1d5db";
         }
@@ -2383,7 +2467,7 @@
       Kroki.LineSnap?.toggle?.();
       syncControls();
     };
-    controls.lineCapButton?.addEventListener("click", cycleLineCap);
+    controls.shapePanelCapButton?.addEventListener("click", cycleLineCap);
     controls.linePanelCapButton?.addEventListener("click", cycleLineCap);
     controls.linePanelSnapButton?.addEventListener("click", toggleLineSnap);
     controls.closedShapeEdit?.addEventListener("click", () => {
@@ -2426,9 +2510,13 @@
     });
     controls.textStyleAnchor?.addEventListener("click", () => {
       const entry = activeEntry();
-      if (!entry || !isLineToolType(entry.model.type)) return;
+      if (!entry || !usesStructuredTextStylePanel(entry.model.type)) return;
       const label = normalizeLabel(entry.model.label, entry.model.type);
-      updateLabel({ position: { ...label.position, anchor: nextChoiceId(label.position.anchor, TEXT_ANCHORS) } });
+      if (isLineToolType(entry.model.type)) {
+        updateLabel({ position: { ...label.position, anchor: nextChoiceId(label.position.anchor, TEXT_ANCHORS) } });
+      } else {
+        updateLabel({ position: { ...label.position, align: nextChoiceId(label.position.align, TEXT_ALIGNS) } });
+      }
     });
     controls.textStyleSide?.addEventListener("click", () => {
       const entry = activeEntry();
@@ -2437,12 +2525,8 @@
       updateLabel({ position: { ...label.position, side: nextChoiceId(label.position.side, TEXT_SIDES) } });
     });
     controls.textStyleColorInput?.addEventListener("input", () => updateLineTextColor(controls.textStyleColorInput.value));
-    controls.textStyleOpacityInput?.addEventListener("input", () => {
-      updateLabel({ opacity: normalizeOpacity(Number(controls.textStyleOpacityInput.value) / 100) });
-    });
-    controls.textStyleOpacityInput?.addEventListener("change", () => {
-      updateLabel({ opacity: normalizeOpacity(Number(controls.textStyleOpacityInput.value) / 100) });
-    });
+    controls.textStyleOpacityInput?.addEventListener("input", () => updateStructuredTextOpacity(controls.textStyleOpacityInput.value));
+    controls.textStyleOpacityInput?.addEventListener("change", () => updateStructuredTextOpacity(controls.textStyleOpacityInput.value));
     const toggleTextFlag = (flag) => {
       const entry = activeEntry();
       if (!entry) return;
@@ -2452,13 +2536,10 @@
     controls.textStyleBold?.addEventListener("click", () => toggleTextFlag("bold"));
     controls.textStyleItalic?.addEventListener("click", () => toggleTextFlag("italic"));
     controls.textStyleUnderline?.addEventListener("click", () => toggleTextFlag("underline"));
-    controls.sideTextBold?.addEventListener("click", () => toggleTextFlag("bold"));
-    controls.sideTextItalic?.addEventListener("click", () => toggleTextFlag("italic"));
-    controls.sideTextUnderline?.addEventListener("click", () => toggleTextFlag("underline"));
     document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, stylePanel, controls.styleButton), true);
     document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, strokeColorPanel, controls.colorButton), true);
     document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, fillColorPanel, controls.fillButton), true);
-    document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, fillPatternPanel, controls.fillPatternButton), true);
+    document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, fillPatternPanel, controls.fillPatternButtons), true);
     document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, textPanel, controls.textButton), true);
     document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, textStylePanel, controls.textStyleButton), true);
     document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, vehicleLabelPanel, controls.vehicleLabelToggle), true);
@@ -2466,7 +2547,7 @@
       repositionPanel(stylePanel, controls.styleButton);
       repositionPanel(strokeColorPanel, controls.colorButton);
       repositionPanel(fillColorPanel, controls.fillButton);
-      repositionPanel(fillPatternPanel, controls.fillPatternButton);
+      repositionPanel(fillPatternPanel, activeFillPatternAnchor());
       repositionTextEntryPanel(textPanel, controls.textButton);
       repositionPanel(textStylePanel, controls.textStyleButton);
       repositionPanel(vehicleLabelPanel, controls.vehicleLabelToggle);

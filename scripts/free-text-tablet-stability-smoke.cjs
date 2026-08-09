@@ -9,6 +9,39 @@ const index = read("index.html");
 const responsiveScale = read("src/responsive-scale.js");
 const editorCss = read("src/editor-line.css");
 const homeCss = read("src/home.css");
+const styleManager = read("src/core/styleManager.js");
+const composerSource = read("src/ui/editorTextComposer.js");
+
+const composerMarkup = index.match(/<div id="freeTextComposer"[\s\S]*?<\/div>/)?.[0] || "";
+assert.ok(composerMarkup, "serbest metin giris kutusu bulunmali");
+assert.match(composerMarkup, /<textarea id="freeTextInput"/);
+assert.doesNotMatch(composerMarkup, /<button|free-text-actions|type="color"/);
+assert.doesNotMatch(index, /btnFreeText(?:Size|Opacity|Align|Bold|Italic|Underline|Color|Cancel|Done)|freeTextColorInput|btnSideText/);
+assert.doesNotMatch(composerSource, /sizeMinus|sizePlus|opacityMinus|opacityPlus|controls\.(?:align|bold|italic|underline|color|done|cancel)/);
+assert.doesNotMatch(composerSource, /controls\.input\?\.addEventListener\("blur",/);
+assert.match(composerSource, /document\.addEventListener\("pointerdown", \(event\) => \{/);
+assert.match(composerSource, /panel\.contains\(event\.target\)/);
+assert.match(composerSource, /event\.target\?\.closest\?\.\("#btnLineText"\)/);
+assert.match(composerSource, /event\.target\?\.closest\?\.\("#editorCanvas"\)/);
+assert.match(composerSource, /event\.preventDefault\(\);\s*event\.stopPropagation\(\);/);
+assert.match(composerSource, /\(event\.ctrlKey \|\| event\.metaKey\) && event\.key === "Enter"/);
+assert.match(composerSource, /if \(event\.key === "Escape"\) cancelText\(\)/);
+assert.match(composerSource, /initialEditSnapshot = cloneModel\(model\)/);
+assert.match(composerSource, /manager\.updateModel\(snapshot\.id, \(\) => snapshot, \{ skipHistory: true \}\)/);
+assert.match(composerSource, /isOpenFor\(modelId\)/);
+assert.match(composerSource, /complete: submitText/);
+
+assert.match(styleManager, /return type === "text" \|\| isLineToolType\(type\) \|\| isBasicShapeToolType\(type\) \|\| type === "callout";/);
+assert.match(styleManager, /controls\?\.sideIp\?\.classList\.toggle\("is-text-object-ip", isTextObject\)/);
+assert.match(styleManager, /controls\?\.textStyleSizeSection\?\.classList\.toggle\("gizli", isTextObject \|\| isCallout\)/);
+assert.match(styleManager, /controls\?\.colorButton\?\.classList\.toggle\("gizli", isTextObject \|\| isRoadObject/);
+assert.match(styleManager, /if \(isTextObjectEntry\(entry\)\) updateStyle\(\{ opacity \}\);/);
+assert.match(styleManager, /renderFreeTextAlignIcon\(controls\.textStyleAnchorIcon, align\.id\);/);
+assert.match(styleManager, /Kroki\.FreeTextComposer\?\.isOpenFor\?\.\(entry\.model\.id\)/);
+assert.match(styleManager, /Kroki\.FreeTextComposer\.complete\?\.\(\)/);
+for (const [id, order] of [["btnLineText", 10], ["btnLineTextStyle", 20], ["lineStrokeWidthStepper", 30], ["objectRotateStepper", 40]]) {
+  assert.match(editorCss, new RegExp(`\\.editor-side-ip\\.is-text-object-ip #${id}\\s*\\{\\s*order:\\s*${order};`));
+}
 
 assert.match(index, /kroki-build" content="[^"]+"/);
 assert.match(index, /src\/responsive-scale\.js\?v=20260809-line-family-v1/);

@@ -58,7 +58,7 @@ Kalıcılık formatı için [[Serializer]], Home listeleri için [[Home]].
 
 ## Çizim araçları paneli
 
-Araçlar: çizgi, arc, quadratic Bezier, cubic Bezier, daire, elips, dikdörtgen, metin, callout ve kapalı quadratic şekil. Seçilen aracın ikonu raydaki “Çizim Araçları” düğmesine taşınır ve aktif araç global state'e yazılır. Yeni araç seçimi mevcut tekli seçimi temizler.
+Araçlar: çizgi, arc, quadratic Bezier, cubic Bezier, daire, elips, dikdörtgen, kapalı quadratic şekil, callout ve metin. Seçilen aracın ikonu raydaki “Çizim Araçları” düğmesine taşınır ve aktif araç global state'e yazılır. Yeni araç seçimi mevcut tekli seçimi temizler.
 
 Çizim davranışı: [[Editör#Çizim akışı]].
 
@@ -88,7 +88,7 @@ Araçlar: çizgi, arc, quadratic Bezier, cubic Bezier, daire, elips, dikdörtgen
 
 `#editorSideIp`, seçim sırasında aynı sağ alanı ve daha yüksek `z-index`i kullanarak ana rayın üstüne gelir. `StyleManager`, adapter `capabilities` alanına göre kontrolleri gösterir:
 
-- Çizgi/şekil: stroke rengi, kalınlık, opaklık, çizgi stili ve uç tipi.
+- Çizgi/şekil: stroke rengi, kalınlık, opaklık ve çizgi stili.
 - Dolgulu şekil: dolgu rengi, dolgu opaklığı ve pattern.
 - Ok destekleyen tip: başlangıç/bitiş oku ve snap düğmesi.
 - Metin destekleyen tip: metin paneli ve hizalama/biçim kontrolleri.
@@ -97,6 +97,14 @@ Araçlar: çizgi, arc, quadratic Bezier, cubic Bezier, daire, elips, dikdörtgen
 - Trafik levhası ve diğer sembol: yüzde ölçek ve derece dönüş; varsa katalog art'ı içindeki metin alanı.
 
 Çizgi ailesi (`line`, `arc`, quadratic/cubic `bezier`) aynı sade özellik düzenini kullanır. Sağ ray sırası metin girişi, metin stili, çizgi rengi, çizgi kalınlığı ve gelişmiş çizgi stilidir. Metin boyutu/konumu/biçimi/renk-opaklığı metin stili panelinde; desen, oklar, uç ve snap gelişmiş çizgi panelindedir.
+
+Daire, elips ve dikdörtgen aynı sade düzeni genişletir. Sağ ray sırası metin girişi, metin stili, stroke rengi, dolgu rengi, stroke kalınlığı, dönüş ve gelişmiş stildir. Metin hizalaması ile biçim kontrolleri metin stili panelinde; dolgu deseni ile yuvarlak/küt çizgi ucu gelişmiş stil panelinde aynı satırdadır. Bu üç şekil için doğrudan hizalama, dolgu deseni ve çizgi ucu düğmeleri gösterilmez. Dolgu deseni “düz dolgu”ya çevrildiğinde desenin bıraktığı fill rengi beyaza sıfırlanır.
+
+Kapalı Bézier metin desteklemez. Sağ ray sırası stroke rengi, dolgu rengi, stroke kalınlığı, dönüş, gelişmiş stil ve nokta düzenlemedir. Dolgu deseni ile yuvarlak/küt çizgi ucu aynı gelişmiş stil panelini kullanır. Nokta düzenleme düğmesi etkinleşince onay tikine dönüşür; tike basmak nokta düzenlemeyi bitirip normal ikonu geri getirir.
+
+Oklu metin (callout) sağ rayda metin girişi, metin özellikleri, stroke rengi, metin boyutu ve stroke stili sırasını kullanır. Metin özellikleri paneli hizalama/biçim/renk-opaklık içerir; boyut bu panelde tekrarlanmaz. Genel stroke kalınlığı picker'ı, dönüş picker'ı ve fill kontrolü gösterilmez. Yuvarlak/küt çizgi ucu seçimi stroke stili panelindedir. Callout kutu dolgusu eski belgeler dahil daima beyaza normalize edilir; yeni callout stroke kalınlığı `2` ile başlar.
+
+Serbest metin (`text`) sağ rayda metin girişi, metin özellikleri, metin boyutu ve dönüş sırasını kullanır. Ortadaki `FreeTextComposer` yalnızca metin alanını içerir; boyut, hizalama, biçim, renk ve opaklık için ikinci bir kontrol takımı taşımaz. Metin özellikleri paneli hizalama/biçim/renk-opaklığı yönetir, boyut doğrudan sağ raydaki picker'dan değiştirilir.
 
 Grup veya grup birimleri seçildiğinde sağ ray `is-empty` olur ve stil panelleri kapatılır. Saf çoklu nesne seçiminde ortak uygulanabilir stil, adapter yeteneklerine göre filtrelenerek uygulanabilir.
 

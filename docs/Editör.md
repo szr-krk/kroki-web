@@ -59,7 +59,7 @@ Pointer ile sürüklenen taslaklar geçmiş kaydı atlanarak canlı güncellenir
 
 ## Metin oluşturma
 
-Serbest metin aracı canvas merkezine yakın (`viewBox` merkezinin yatay merkezi, yüksekliğin `%46` noktası) bir `text` nesnesi ekler. Panel metin, boyut, opaklık, hizalama, kalın/italik/altı çizili ve renk alanlarını yönetir. Ayrıntı: [[Nesne Sistemi#Metin]].
+Serbest metin aracı canvas merkezine yakın (`viewBox` merkezinin yatay merkezi, yüksekliğin `%46` noktası) bir `text` nesnesi ekler. Ortadaki composer yalnızca metin girişidir; kutu dışına dokunmak, `Abc` düğmesine yeniden basmak veya `Ctrl/Cmd+Enter` metni tamamlar. `Escape` iptal eder. Yeni metin boşsa nesne oluşturulmaz; mevcut metin boş bırakılırsa önceki içerik geri yüklenir. Boyut, dönüş ve diğer metin stilleri seçili nesnenin sağ rayından yönetilir. Ayrıntı: [[Nesne Sistemi#Metin]].
 
 ## Etkileşim önceliği
 

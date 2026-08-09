@@ -99,7 +99,7 @@ Label alanları: `text`, `size`, `color`, `opacity`, `position`, `bold`, `italic
 - Trafik levhası ve diğer sembol dışındaki metinler Türkçe locale ile büyük harfe normalize edilir.
 - Line/arc/bezier label'ı çizgi üstü/üstünde/altında ve başlangıç/orta/son konum alır. Eğri label'lar gizli path üzerinde `textPath` kullanır.
 - Çizgi ailesi label rengi varsayılan olarak stroke rengini takip eder. Kullanıcı metin rengini farklı seçerse `colorLinked` kapanır; metin tekrar stroke rengine ayarlanırsa bağ yeniden kurulur. Bu durum `data-label-color-linked` ve belge modeliyle kalıcıdır.
-- Circle/ellipse/rectangle label'ları şekil içine satır kırarak, clip path ile taşmayı keserek yerleştirilir.
+- Circle/ellipse/rectangle label'ları şekil içine satır kırarak, clip path ile taşmayı keserek yerleştirilir; sol/orta/sağ hizalama, kalın, italik ve altı çizili biçimleri belgeyle birlikte kalıcıdır.
 - Circle label'ı şekille dönebilir veya yatay kalabilir.
 - `text`, `callout`, `trafficSign` ve `otherSymbol` kendi label render'ını adapter içinde yapar (`textObject` veya `ownsLabel`).
 - `road` ve `closedShape` `noText` nedeniyle ortak label üretmez.
@@ -132,15 +132,15 @@ Ellipse ile aynı merkez-yarıçap-rotation modelini kullanır. Köşe handle'la
 
 ### Metin
 
-`geometry: { x, y, rotation }`; label asıl içerik/stildir. Çok satır, sol/orta/sağ hizalama ve kalın/italik/altı çizili destekler. Bounding box gerçek font ölçümü yerine karakter sayısı × boyut katsayısıyla yaklaşık hesaplanır. Yalnız rotate kontrol noktası vardır; boyut yan panelden değişir.
+`geometry: { x, y, rotation }`; label asıl içerik/stildir. Çok satır, sol/orta/sağ hizalama ve kalın/italik/altı çizili destekler. Bounding box gerçek font ölçümü yerine karakter sayısı × boyut katsayısıyla yaklaşık hesaplanır. Yalnız rotate kontrol noktası vardır. IP sırası metin girişi, metin özellikleri, metin boyutu ve dönüş şeklindedir; ortadaki composer yalnızca metin girişini taşır.
 
 ### Callout
 
-`center` metin kutusu, `tip` ok ucudur. Kırmızı leader/çerçeve, normal çizgideki `triangle2` (kırık üçgen) ok ucu ve beyaz, hafif yuvarlatılmış kutu varsayılandır. Leader, kalın stroke değerlerinde ok dolgusunun arkasından taşmaması için gerçek uçtan önce ve üçgenin içinde biter. Adapter metni ölçmek için geçici gizli SVG text kullanır; ölçümü `metadata.calloutBox` ile metin ve stroke kalınlığına bağlı signature üzerinden cache'ler. Stroke büyüdüğünde kutunun iç boşluğu da yarım stroke kadar genişleyerek çerçevenin metni örtmesini engeller. Leader ve kutu çerçevesi aynı `vector-effect` kuralını kullandığından zoom ve export ölçeğinde eşit kalınlıkta kalır. İki kontrol noktası kutu merkezini ve oku taşır. Leader dash stili, çizgi kalınlığı picker'ı ve metin biçimleme desteklenir.
+`center` metin kutusu, `tip` ok ucudur. Kırmızı leader/çerçeve, normal çizgideki `triangle2` (kırık üçgen) ok ucu ve daima beyaz, hafif yuvarlatılmış kutu varsayılandır. Yeni callout stroke kalınlığı `2` ile başlar. Leader, kalın stroke değerlerinde ok dolgusunun arkasından taşmaması için gerçek uçtan önce ve üçgenin içinde biter. Adapter metni ölçmek için geçici gizli SVG text kullanır; ölçümü `metadata.calloutBox` ile metin ve stroke kalınlığına bağlı signature üzerinden cache'ler. Stroke büyüdüğünde kutunun iç boşluğu da yarım stroke kadar genişleyerek çerçevenin metni örtmesini engeller. Leader ve kutu çerçevesi aynı `vector-effect` kuralını kullandığından zoom ve export ölçeğinde eşit kalınlıkta kalır. İki kontrol noktası kutu merkezini ve oku taşır; ayrı bir rotate picker kullanılmaz. Leader dash stili, yuvarlak/küt çizgi ucu ve metin biçimleme desteklenir.
 
 ### Kapalı şekil
 
-Bir dizi `points`; her segment için quadratic `controls`; `closed` ve döndürülmüş `frame` taşır. Normal modda resize/rotate, nokta düzenleme modunda tüm `pN/qN` noktaları görünür. Ortak metin desteklemez. Üretim akışı: [[Editör#Kapalı şekil taslağı]].
+Bir dizi `points`; her segment için quadratic `controls`; `closed` ve döndürülmüş `frame` taşır. Normal modda resize/rotate, nokta düzenleme modunda tüm `pN/qN` noktaları görünür. Ortak metin desteklemez. IP’deki nokta düzenleme düğmesi etkin durumda onay tikine dönüşür ve ikinci tıklama `metadata.pointEdit` durumunu kapatır. Üretim akışı: [[Editör#Kapalı şekil taslağı]].
 
 ### Yol
 

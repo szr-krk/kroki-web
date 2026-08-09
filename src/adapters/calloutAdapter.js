@@ -451,9 +451,9 @@
         },
         style: {
           stroke: DEFAULT_STROKE,
-          fill: DEFAULT_FILL,
-          strokeWidth: 1,
-          ...(initialData.style || {})
+          strokeWidth: 2,
+          ...(initialData.style || {}),
+          fill: DEFAULT_FILL
         },
         label: {
           text: initialData.text || DEFAULT_TEXT,

@@ -563,6 +563,9 @@
     textElement.setAttribute("fill", model.label.color);
     textElement.setAttribute("font-size", String(wrapped.fontSize));
     textElement.setAttribute("text-anchor", align.anchor);
+    textElement.style.fontWeight = model.label.bold ? "900" : "500";
+    textElement.style.fontStyle = model.label.italic ? "italic" : "normal";
+    textElement.style.textDecoration = model.label.underline ? "underline" : "none";
     strokeStyle.applyOpacity(textElement, model.label.opacity);
     wrapped.lines.forEach((line, index) => {
       const offset = lineOffset(index, wrapped.lines.length, wrapped.lineHeight);
