@@ -11,11 +11,11 @@ const editorCss = read("src/editor-line.css");
 const homeCss = read("src/home.css");
 
 assert.match(index, /kroki-build" content="[^"]+"/);
-assert.match(index, /src\/responsive-scale\.js\?v=20260808-tablet-free-text-stable-v1/);
+assert.match(index, /src\/responsive-scale\.js\?v=20260809-line-ip-pilot-v1/);
 assert.match(
   responsiveScale,
-  /activeTextEntryHost\?\.classList\.contains\("free-text-composer"\)/,
-  "freeTextComposer icin scrollIntoView devre disi kalmali"
+  /activeTextEntryHost\?\.matches\?\.\("\.free-text-composer, \.line-text-panel"\)/,
+  "sabit metin panelleri icin scrollIntoView devre disi kalmali"
 );
 assert.doesNotMatch(
   editorCss,

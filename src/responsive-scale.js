@@ -63,9 +63,9 @@
   }
 
   function keepTextEntryVisible() {
-    // freeTextComposer ekranin ustunde sabit bir paneldir. Tablet sanal
-    // klavyesi acilirken scrollIntoView uygulamak sayfayi/paneli kaydirir.
-    if (!activeTextEntry?.isConnected || activeTextEntryHost?.classList.contains("free-text-composer")) return;
+    // Sabit metin panellerinde scrollIntoView sanal klavye acilirken
+    // sayfayi ve paneli gereksiz yere kaydirir.
+    if (!activeTextEntry?.isConnected || activeTextEntryHost?.matches?.(".free-text-composer, .line-text-panel")) return;
     window.requestAnimationFrame(() => {
       try {
         activeTextEntry.scrollIntoView({ block: "nearest", inline: "nearest" });

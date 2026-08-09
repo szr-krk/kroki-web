@@ -7,11 +7,11 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <meta name="kroki-build" content="20260809-line-text-ip-align-v1" />
+  <meta name="kroki-build" content="20260809-line-ip-pilot-v3" />
   <title>Kroki Pro</title>
   <link rel="stylesheet" href="src/home.css?v=20260809-photo-background-v1" />
   <link rel="stylesheet" href="src/editor.css?v=20260808-road-touch-contrast-v1" />
-  <link rel="stylesheet" href="src/editor-line.css?v=20260809-line-text-ip-align-v1" />
+  <link rel="stylesheet" href="src/editor-line.css?v=20260809-line-ip-pilot-v3" />
 </head>
 
 <body>
@@ -703,6 +703,19 @@
           <span class="side-ip-text-mark" aria-hidden="true">Abc</span>
         </button>
 
+        <button id="btnLineTextStyle" class="side-ip-btn side-ip-tool side-ip-text-style-btn gizli" type="button"
+          aria-label="Cizgi metin stili" title="Cizgi metin stili" aria-controls="lineTextStylePanel"
+          aria-expanded="false">
+          <span class="side-ip-text-style-mark" aria-hidden="true">
+            <span>Aa</span>
+            <svg viewBox="0 0 24 9">
+              <path d="M2 2H15M18 2H22M2 7H7M10 7H22"></path>
+              <circle cx="16.5" cy="2" r="1.5"></circle>
+              <circle cx="8.5" cy="7" r="1.5"></circle>
+            </svg>
+          </span>
+        </button>
+
         <button id="btnLineTextAlign" class="side-ip-btn side-ip-tool side-ip-text-align-btn gizli" type="button"
           aria-label="Metin yatay konumu" title="Metin yatay konumu">
           <svg id="iconLineTextAlign" viewBox="0 0 32 32" aria-hidden="true"></svg>
@@ -853,6 +866,35 @@
             <span id="valLineDashGap" class="line-style-control-value" aria-hidden="true">8</span>
             <button id="btnLineDashGapPlus" class="line-style-control-btn" type="button"
               aria-label="Desen boslugunu arttir" title="Desen boslugunu arttir">+</button>
+          </div>
+        </div>
+        <div id="lineAdvancedStyleControls" class="line-style-advanced gizli">
+          <div class="line-secondary-panel-section">
+            <span class="line-secondary-panel-label">Ok uclari</span>
+            <div id="linePanelArrowStack" class="line-style-arrow-row" aria-label="Cizgi ok uclari">
+              <button id="btnLinePanelStartArrow" class="line-style-arrow-btn" type="button"
+                aria-label="Baslangic ok ucu" title="Baslangic ok ucunu degistir. Kaldirmak icin uzun bas.">
+                <svg id="iconLinePanelStartArrow" viewBox="0 0 48 24" aria-hidden="true"></svg>
+              </button>
+              <button id="btnLinePanelEndArrow" class="line-style-arrow-btn" type="button"
+                aria-label="Bitis ok ucu" title="Bitis ok ucunu degistir. Kaldirmak icin uzun bas.">
+                <svg id="iconLinePanelEndArrow" viewBox="0 0 48 24" aria-hidden="true"></svg>
+              </button>
+            </div>
+          </div>
+          <div class="line-secondary-panel-section">
+            <span class="line-secondary-panel-label">Cizgi davranisi</span>
+            <div class="line-style-tool-row">
+              <button id="btnLinePanelCap" class="line-style-tool-btn" type="button"
+                aria-label="Cizgi ucu" title="Cizgi ucu">
+                <svg id="iconLinePanelCap" viewBox="0 0 48 48" fill="none" aria-hidden="true"></svg>
+              </button>
+              <button id="btnLinePanelSnap" class="line-style-tool-btn is-active" type="button"
+                aria-label="Yatay dikey cizim yardimcisi acik" title="Yatay dikey cizim yardimcisi acik"
+                aria-pressed="true">
+                <svg id="iconLinePanelSnap" viewBox="0 0 48 48" fill="none" aria-hidden="true"></svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1025,6 +1067,56 @@
                 stroke="#7c2d12" stroke-width="1.8" fill="none" stroke-linecap="round" opacity=".55"></path>
             </svg>
           </button>
+        </div>
+      </div>
+
+      <div id="lineTextStylePanel" class="line-text-style-panel gizli" aria-label="Cizgi metin stili">
+        <div class="line-secondary-panel-section">
+          <span class="line-secondary-panel-label">Boyut</span>
+          <div class="line-text-style-size" aria-label="Metin boyutu">
+            <button id="btnLineTextStyleSizeMinus" class="line-text-picker-btn" type="button"
+              aria-label="Metin boyutunu azalt" title="Metin boyutunu azalt">-</button>
+            <span id="valLineTextStyleSize" class="line-text-picker-value" aria-hidden="true">12</span>
+            <button id="btnLineTextStyleSizePlus" class="line-text-picker-btn" type="button"
+              aria-label="Metin boyutunu arttir" title="Metin boyutunu arttir">+</button>
+          </div>
+        </div>
+        <div class="line-secondary-panel-section">
+          <span class="line-secondary-panel-label">Konum</span>
+          <div class="line-text-style-tool-row is-position">
+            <button id="btnLineTextStyleAnchor" class="line-text-icon-btn" type="button"
+              aria-label="Metin yatay konumu" title="Metin yatay konumu">
+              <svg id="iconLineTextStyleAnchor" viewBox="0 0 32 32" aria-hidden="true"></svg>
+            </button>
+            <button id="btnLineTextStyleSide" class="line-text-icon-btn" type="button"
+              aria-label="Metin dusey konumu" title="Metin dusey konumu">
+              <svg id="iconLineTextStyleSide" viewBox="0 0 32 32" aria-hidden="true"></svg>
+            </button>
+          </div>
+        </div>
+        <div class="line-secondary-panel-section">
+          <span class="line-secondary-panel-label">Bicim</span>
+          <div class="line-text-style-tool-row is-format">
+            <button id="btnLineTextStyleBold" class="line-text-icon-btn line-text-format-btn" type="button"
+              aria-label="Kalin" title="Kalin" aria-pressed="false">B</button>
+            <button id="btnLineTextStyleItalic" class="line-text-icon-btn line-text-format-btn is-italic" type="button"
+              aria-label="Italik" title="Italik" aria-pressed="false">I</button>
+            <button id="btnLineTextStyleUnderline" class="line-text-icon-btn line-text-format-btn is-underline"
+              type="button" aria-label="Alti cizili" title="Alti cizili" aria-pressed="false">U</button>
+          </div>
+        </div>
+        <div class="line-secondary-panel-section">
+          <label class="line-secondary-panel-label" for="lineTextStyleColorInput">Renk</label>
+          <input id="lineTextStyleColorInput" class="side-ip-color-picker" type="color" value="#111827"
+            aria-label="Metin rengi">
+        </div>
+        <div class="line-secondary-panel-section">
+          <label class="line-secondary-panel-label" for="lineTextStyleOpacityInput">Opaklik</label>
+          <div class="side-ip-color-opacity">
+            <input id="lineTextStyleOpacityInput" class="side-ip-opacity-range" type="range" min="0" max="100"
+              step="5" value="100" aria-label="Metin opakligi">
+            <span id="lineTextStyleOpacityValue" class="side-ip-opacity-value" aria-hidden="true">100%</span>
+          </div>
         </div>
       </div>
 
@@ -1287,7 +1379,7 @@
     </section>
   </div>
 
-  <script src="src/responsive-scale.js?v=20260808-tablet-free-text-stable-v1"></script>
+  <script src="src/responsive-scale.js?v=20260809-line-ip-pilot-v1"></script>
   <script src="src/kroki-dialog.js?v=20260803-proportional-responsive-v1"></script>
   <script src="src/data/ready-drawings.js"></script>
   <script src="src/home.js?v=20260809-photo-background-v1"></script>
@@ -1311,8 +1403,8 @@
   <script src="src/core/otherSymbolCatalog.js"></script>
   <script src="src/core/vehicleCatalog.js?v=20260807-web-sync-v1"></script>
   <script src="src/core/shapeRegistry.js?v=20260808-traffic-sign-search-v1"></script>
-  <script src="src/core/styleManager.js?v=20260809-line-text-ip-align-v1"></script>
-  <script src="src/core/editorObjectManager.js?v=20260809-photo-background-v1"></script>
+  <script src="src/core/styleManager.js?v=20260809-line-ip-pilot-v3"></script>
+  <script src="src/core/editorObjectManager.js?v=20260809-line-ip-pilot-v3"></script>
   <script src="src/core/photoBackgroundManager.js?v=20260809-photo-background-v1"></script>
   <script src="src/core/documentStorage.js?v=20260809-indexeddb-library-v1"></script>
   <script src="src/core/groupManager.js"></script>

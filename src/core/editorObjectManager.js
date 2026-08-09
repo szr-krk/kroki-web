@@ -358,6 +358,9 @@
     label.setAttribute("fill", model.label.color);
     label.setAttribute("font-size", String(model.label.size));
     strokeStyle.applyOpacity(label, model.label.opacity);
+    label.style.fontWeight = model.label.bold ? "900" : "500";
+    label.style.fontStyle = model.label.italic ? "italic" : "normal";
+    label.style.textDecoration = model.label.underline ? "underline" : "none";
     label.setAttribute("text-anchor", anchor.anchor);
     label.setAttribute("dominant-baseline", "middle");
     label.setAttribute("x", "0");

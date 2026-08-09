@@ -6,27 +6,19 @@ const css = fs.readFileSync(path.join(__dirname, "..", "src", "editor-line.css")
 const homeCss = fs.readFileSync(path.join(__dirname, "..", "src", "home.css"), "utf8");
 const index = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 const styleManager = fs.readFileSync(path.join(__dirname, "..", "src", "core", "styleManager.js"), "utf8");
+const editorObjectManager = fs.readFileSync(path.join(__dirname, "..", "src", "core", "editorObjectManager.js"), "utf8");
+const responsiveScale = fs.readFileSync(path.join(__dirname, "..", "src", "responsive-scale.js"), "utf8");
 
 const baseRule = css.match(/\.line-text-panel\s*\{([^}]*)\}/)?.[1] || "";
 const focusSectionStart = css.indexOf("/* Sanal klavye acikken");
 const focusSectionEnd = css.indexOf(".road-pocket-cycle-btn", focusSectionStart);
 const focusSection = css.slice(focusSectionStart, focusSectionEnd);
+const ipPanelSectionStart = css.indexOf(".road-ip-icon-btn");
+const ipPanelCss = css.slice(ipPanelSectionStart);
 const sideIp = index.slice(index.indexOf('<div id="editorSideIp"'), index.indexOf('<div id="closedShapeDraftPanel"'));
 const lineTextPanel = index.slice(index.indexOf('<div id="lineTextPanel"'), index.indexOf('<div id="vehicleLabelPanel"'));
-const removedControlIds = [
-  "btnLineTextSizeMinus",
-  "btnLineTextSizePlus",
-  "valLineTextSize",
-  "btnLineTextSide",
-  "iconLineTextSide",
-  "btnLineTextColor",
-  "lineTextColorInput",
-  "textColorPanel",
-  "textOpacityInput",
-  "btnLineTextBold",
-  "btnLineTextItalic",
-  "btnLineTextUnderline"
-];
+const lineTextStylePanel = index.slice(index.indexOf('<div id="lineTextStylePanel"'), index.indexOf('<div id="lineTextPanel"'));
+const lineStylePanel = index.slice(index.indexOf('<div id="lineStylePanel"'), index.indexOf('<div id="strokeColorPanel"'));
 
 assert.match(baseRule, /--line-text-panel-right:\s*calc\(var\(--editor-rail-width\)\s*\+\s*0\.5rem\)/);
 assert.match(baseRule, /--line-text-panel-width:\s*min\(18\.3125rem,\s*calc\(100vw\s*-\s*var\(--editor-rail-width\)\s*-\s*1rem\)\)/);
@@ -40,18 +32,71 @@ assert.match(focusSection, /\.kroki-text-entry-host:not\(\.line-text-panel\):not
 assert.match(focusSection, /\.kroki-text-entry-host:not\(\.line-text-panel\):not\(\.free-text-composer\)\s+\.line-text-size-picker/);
 assert.match(focusSection, /\.kroki-text-entry-host:not\(\.line-text-panel\):not\(\.free-text-composer\)\s+:is\(\s*\.line-text-picker-btn/);
 assert.match(homeCss, /\):not\(\.line-text-input,\s*\.traffic-sign-text-input,\s*\.free-text-input\)\s*\{/);
+assert.ok(ipPanelSectionStart >= 0, "IP ikon stilleri bulunmali");
+assert.doesNotMatch(ipPanelCss, /vector-effect:\s*non-scaling-stroke/, "IP ve panel ikon stroke degerleri ikonla birlikte olceklenmeli");
+assert.match(css, /\.editor-cizgi\s*\{[^}]*vector-effect:\s*non-scaling-stroke/s, "tuval cizgisi ekran kalinligini korumali");
+assert.match(css, /\.line-style-arrow-btn svg \*,\s*\.line-style-tool-btn svg \*\s*\{\s*vector-effect:\s*none/);
+assert.match(css, /\.line-text-icon-btn path,\s*\.line-text-icon-btn line,\s*\.line-text-icon-btn rect\s*\{\s*vector-effect:\s*none/);
+assert.match(sideIp, /id="btnLineTextStyle"/);
 assert.match(sideIp, /id="btnLineTextAlign"/);
 assert.match(sideIp, /id="iconLineTextAlign"/);
-assert.match(styleManager, /controls\?\.textAlign\?\.classList\.toggle\("gizli", noText \|\| isCatalogObject\)/);
+assert.match(css, /\.editor-side-ip\.is-line-ip-pilot #btnLineText\s*\{\s*order:\s*10;/);
+assert.match(css, /\.editor-side-ip\.is-line-ip-pilot #btnLineTextStyle\s*\{\s*order:\s*20;/);
+assert.match(css, /\.editor-side-ip\.is-line-ip-pilot #btnLineColor\s*\{\s*order:\s*30;/);
+assert.match(css, /\.editor-side-ip\.is-line-ip-pilot #lineStrokeWidthStepper\s*\{\s*order:\s*40;/);
+assert.match(css, /\.editor-side-ip\.is-line-ip-pilot #btnLineStyle\s*\{\s*order:\s*50;/);
+assert.match(styleManager, /classList\.toggle\("is-line-ip-pilot", isSimpleLine\)/);
+assert.match(styleManager, /controls\?\.textAlign\?\.classList\.toggle\("gizli", noText \|\| isCatalogObject \|\| isSimpleLine\)/);
+assert.match(styleManager, /controls\?\.arrowStack\?\.classList\.toggle\("gizli", !hasArrows \|\| isSimpleLine\)/);
 assert.match(styleManager, /controls\.textAlign\?\.addEventListener\("click",/);
 assert.match(styleManager, /anchor:\s*nextChoiceId\(label\.position\.anchor, TEXT_ANCHORS\)/);
 assert.match(styleManager, /align:\s*nextChoiceId\(label\.position\.align, TEXT_ALIGNS\)/);
 assert.doesNotMatch(lineTextPanel, /<button\b/);
 assert.match(lineTextPanel, /id="lineTextInput"/);
 assert.doesNotMatch(css, /\.line-text-actions\s*\{/);
-for (const id of removedControlIds) {
-  assert.doesNotMatch(index, new RegExp(`id="${id}"`), `${id} HTML'den kaldirilmali`);
-  assert.doesNotMatch(styleManager, new RegExp(`#${id}\\b`), `${id} baglantisi kaldirilmali`);
-}
+assert.match(lineTextStylePanel, /class="line-text-style-tool-row is-position"/);
+assert.match(lineTextStylePanel, /class="line-text-style-tool-row is-format"/);
+assert.match(css, /\.line-text-style-size\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) auto minmax\(0, 1fr\)/s);
+assert.match(css, /\.line-text-style-size \.line-text-picker-value\s*\{[^}]*min-width:\s*3\.25rem/s);
+assert.match(css, /\.line-style-tool-row,\s*\.line-text-style-tool-row\.is-position\s*\{\s*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/);
+assert.match(css, /\.line-text-style-tool-row\.is-format\s*\{\s*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
+assert.match(css, /\.line-style-tool-btn\s*\{[^}]*width:\s*100%/s);
+assert.match(css, /#iconLinePanelCap path:nth-child\(-n \+ 2\)\s*\{\s*stroke-width:\s*5/);
+assert.match(css, /#iconLinePanelSnap path:first-child\s*\{\s*stroke-width:\s*3\.2/);
 
-console.log("line text panel simplification smoke: ok");
+for (const id of [
+  "btnLineTextStyleSizeMinus",
+  "btnLineTextStyleSizePlus",
+  "valLineTextStyleSize",
+  "btnLineTextStyleAnchor",
+  "btnLineTextStyleSide",
+  "lineTextStyleColorInput",
+  "lineTextStyleOpacityInput",
+  "btnLineTextStyleBold",
+  "btnLineTextStyleItalic",
+  "btnLineTextStyleUnderline"
+]) assert.match(lineTextStylePanel, new RegExp(`id="${id}"`), `${id} metin stil panelinde olmali`);
+
+for (const id of [
+  "lineAdvancedStyleControls",
+  "btnLinePanelStartArrow",
+  "btnLinePanelEndArrow",
+  "btnLinePanelCap",
+  "btnLinePanelSnap"
+]) assert.match(lineStylePanel, new RegExp(`id="${id}"`), `${id} cizgi stil panelinde olmali`);
+
+assert.match(styleManager, /controls\.textStyleButton\?\.addEventListener\("click", \(\) => togglePanel\(textStylePanel/);
+assert.match(styleManager, /controls\.textStyleColorInput\?\.addEventListener\("input",/);
+assert.match(styleManager, /controls\.textStyleOpacityInput\?\.addEventListener\("input",/);
+assert.match(styleManager, /if \(isLineToolType\(model\.type\)\) \{\s*element\.dataset\.labelBold = label\.bold \? "1" : "0";\s*element\.dataset\.labelItalic = label\.italic \? "1" : "0";\s*element\.dataset\.labelUnderline = label\.underline \? "1" : "0";/);
+assert.match(editorObjectManager, /label\.style\.fontWeight = model\.label\.bold \? "900" : "500";/);
+assert.match(editorObjectManager, /label\.style\.fontStyle = model\.label\.italic \? "italic" : "normal";/);
+assert.match(editorObjectManager, /label\.style\.textDecoration = model\.label\.underline \? "underline" : "none";/);
+assert.match(styleManager, /bindArrowButton\(controls\.linePanelStartArrow, "arrowStart"\)/);
+assert.match(styleManager, /controls\.linePanelCapButton\?\.addEventListener\("click", cycleLineCap\)/);
+assert.match(styleManager, /function repositionTextEntryPanel\(panel, button\)/);
+assert.match(styleManager, /if \(textEntryActive\) return;\s*repositionPanel\(panel, button\)/);
+assert.match(styleManager, /repositionTextEntryPanel\(textPanel, controls\.textButton\)/);
+assert.match(responsiveScale, /activeTextEntryHost\?\.matches\?\.\("\.free-text-composer, \.line-text-panel"\)/);
+
+console.log("line IP pilot and text panel stability smoke: ok");

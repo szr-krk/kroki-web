@@ -662,9 +662,15 @@
     element.dataset.labelAnchor = label.position.anchor;
     delete element.dataset.labelAlign;
     delete element.dataset.labelRotateMode;
-    delete element.dataset.labelBold;
-    delete element.dataset.labelItalic;
-    delete element.dataset.labelUnderline;
+    if (isLineToolType(model.type)) {
+      element.dataset.labelBold = label.bold ? "1" : "0";
+      element.dataset.labelItalic = label.italic ? "1" : "0";
+      element.dataset.labelUnderline = label.underline ? "1" : "0";
+    } else {
+      delete element.dataset.labelBold;
+      delete element.dataset.labelItalic;
+      delete element.dataset.labelUnderline;
+    }
   }
 
   function styleForStrokeHelpers(style) {
@@ -1051,6 +1057,18 @@
     );
   }
 
+  function renderLineTextSideIcon(svg, sideId) {
+    if (!svg) return;
+    const side = choiceById(TEXT_SIDES, sideId);
+    const textY = side.id === "above" ? 5 : side.id === "below" ? 21 : 12;
+    svg.replaceChildren(
+      utils.createSvgElement("path", { d: "M5 16H27", fill: "none", stroke: "currentColor", "stroke-linecap": "round", "stroke-width": "2.4" }),
+      utils.createSvgElement("path", { d: "M16 7V25", fill: "none", stroke: "currentColor", "stroke-dasharray": "2 3", "stroke-linecap": "round", "stroke-width": "1.7", opacity: ".44" }),
+      utils.createSvgElement("rect", { x: "9", y: String(textY), width: "14", height: "4", rx: "1.4", fill: "currentColor" }),
+      utils.createSvgElement("rect", { x: "11", y: String(textY + 6.5), width: "10", height: "4", rx: "1.4", fill: "currentColor" })
+    );
+  }
+
   function renderShapeTextAlignIcon(svg, alignId, type) {
     if (!svg) return;
     const align = choiceById(TEXT_ALIGNS, alignId);
@@ -1111,12 +1129,14 @@
   function hidePanels(options = {}) {
     cachedControl("stylePanel", "#lineStylePanel")?.classList.add("gizli");
     cachedControl("textPanel", "#lineTextPanel")?.classList.add("gizli");
+    cachedControl("textStylePanel", "#lineTextStylePanel")?.classList.add("gizli");
     cachedControl("vehicleLabelPanel", "#vehicleLabelPanel")?.classList.add("gizli");
     cachedControl("strokeColorPanel", "#strokeColorPanel")?.classList.add("gizli");
     cachedControl("fillColorPanel", "#fillColorPanel")?.classList.add("gizli");
     cachedControl("fillPatternPanel", "#fillPatternPanel")?.classList.add("gizli");
     controls?.styleButton?.setAttribute("aria-expanded", "false");
     controls?.textButton?.setAttribute("aria-expanded", "false");
+    controls?.textStyleButton?.setAttribute("aria-expanded", "false");
     controls?.vehicleLabelToggle?.setAttribute("aria-expanded", "false");
     controls?.vehicleLabelToggle?.classList.remove("is-active");
     controls?.colorButton?.setAttribute("aria-expanded", "false");
@@ -1140,6 +1160,7 @@
   function setControlVisibility(adapter, model) {
     const isTextObject = Boolean(adapter?.capabilities?.textObject);
     const isCallout = adapter?.type === "callout";
+    const isSimpleLine = model?.type === "line";
     const isRoadObject = Boolean(adapter?.capabilities?.roadObject);
     const isTrafficSign = Boolean(adapter?.capabilities?.trafficSign);
     const isCatalogObject = isCatalogObjectAdapter(adapter);
@@ -1164,11 +1185,17 @@
     controls?.vehicleOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isVehicleObject));
     controls?.calloutOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isCallout));
     controls?.sideIp?.classList.toggle("is-traffic-sign-ip", isTrafficSign);
+    controls?.sideIp?.classList.toggle("is-line-ip-pilot", isSimpleLine);
+    controls?.stylePanel?.classList.toggle("is-line-ip-pilot-panel", isSimpleLine);
+    controls?.lineAdvancedStyleControls?.classList.toggle("gizli", !isSimpleLine);
     controls?.colorButton?.classList.toggle("gizli", isRoadObject || isCatalogObject || isVehicleObject);
     controls?.textButton?.classList.toggle("gizli", noText);
+    controls?.textStyleButton?.classList.toggle("gizli", !isSimpleLine || noText);
     controls?.trafficSignTextFields?.classList.toggle("gizli", !trafficSignFieldText);
     controls?.textInput?.classList.toggle("gizli", trafficSignFieldText);
-    controls?.textAlign?.classList.toggle("gizli", noText || isCatalogObject);
+    controls?.textAlign?.classList.toggle("gizli", noText || isCatalogObject || isSimpleLine);
+    controls?.arrowStack?.classList.toggle("gizli", !hasArrows || isSimpleLine);
+    controls?.lineSnapButton?.classList.toggle("gizli", !hasArrows || isSimpleLine);
     if (isRoadObject || isVehicleObject) {
       cachedControl("strokeColorPanel", "#strokeColorPanel")?.classList.add("gizli");
       controls?.colorButton?.setAttribute("aria-expanded", "false");
@@ -1182,6 +1209,10 @@
       cachedControl("textPanel", "#lineTextPanel")?.classList.add("gizli");
       controls?.textButton?.setAttribute("aria-expanded", "false");
     }
+    if (!isSimpleLine || noText) {
+      cachedControl("textStylePanel", "#lineTextStylePanel")?.classList.add("gizli");
+      controls?.textStyleButton?.setAttribute("aria-expanded", "false");
+    }
     if (!hasFillPattern) {
       document.querySelector("#fillPatternPanel")?.classList.add("gizli");
       controls?.fillPatternButton?.setAttribute("aria-expanded", "false");
@@ -1192,7 +1223,7 @@
     }
     controls?.strokeStepper?.classList.toggle("gizli", isRoadObject || isCatalogObject || isVehicleObject);
     controls?.styleButton?.classList.toggle("gizli", isTextObject || isRoadObject || isCatalogObject || isVehicleObject);
-    controls?.lineCapButton?.classList.toggle("gizli", isTextObject || isCallout || isRoadObject || isCatalogObject || isVehicleObject);
+    controls?.lineCapButton?.classList.toggle("gizli", isSimpleLine || isTextObject || isCallout || isRoadObject || isCatalogObject || isVehicleObject);
   }
 
   function updateStyle(patch) {
@@ -1292,6 +1323,13 @@
     const entry = activeCalloutEntry();
     if (!entry || entry.multi) return;
     updateLabel({ size: normalizeLabelSize(value) });
+  }
+
+  function updateLineTextStyleSize(delta) {
+    const entry = activeEntry();
+    if (!entry || entry.multi || entry.model.type !== "line") return;
+    const label = normalizeLabel(entry.model.label, entry.model.type);
+    updateLabel({ size: normalizeLabelSize(label.size + delta) });
   }
 
   function activeRotatableEntry() {
@@ -1727,6 +1765,8 @@
     if (!entry || !controls) {
       hidePanels();
       controls?.sideIp?.classList.remove("is-traffic-sign-ip");
+      controls?.sideIp?.classList.remove("is-line-ip-pilot");
+      controls?.stylePanel?.classList.remove("is-line-ip-pilot-panel");
       Kroki.RoadInspector?.sync?.(null);
       return;
     }
@@ -1748,6 +1788,7 @@
     const fillPattern = choiceById(FILL_PATTERNS, style.fillPattern);
     const strokeOpacityValue = opacityPercent(style.strokeOpacity);
     const fillOpacityValue = opacityPercent(style.fillOpacity);
+    const labelOpacityValue = opacityPercent(label.opacity);
     const primaryOpacityValue = isTextObject ? opacityPercent(style.opacity) : strokeOpacityValue;
 
     setControlVisibility(adapter, model);
@@ -1767,6 +1808,9 @@
     controls.styleButton?.style.setProperty("--side-ip-stroke-color", style.stroke);
     controls.lineCapButton?.style.setProperty("--side-ip-stroke-color", style.stroke);
     controls.arrowStack?.style.setProperty("--side-ip-stroke-color", style.stroke);
+    controls.linePanelCapButton?.style.setProperty("--side-ip-stroke-color", style.stroke);
+    controls.linePanelArrowStack?.style.setProperty("--side-ip-stroke-color", style.stroke);
+    controls.linePanelToolRow?.style.setProperty("--side-ip-stroke-color", style.stroke);
     const primaryColorLabel = isTextObject ? "Metin rengi" : model.type === "callout" ? "Cizgi ve kutu rengi" : "Cizgi rengi";
     controls.colorButton?.setAttribute("title", primaryColorLabel);
     controls.colorButton?.setAttribute("aria-label", primaryColorLabel);
@@ -1799,12 +1843,16 @@
     renderLineStyleIcon(controls.styleIcon);
     renderLineCapIcon(controls.lineCapIcon);
     renderLineSnapIcon(controls.lineSnapIcon);
+    renderLineCapIcon(controls.linePanelCapIcon);
+    renderLineSnapIcon(controls.linePanelSnapIcon);
     const snapEnabled = Boolean(Kroki.LineSnap?.isEnabled?.());
     const snapLabel = snapEnabled ? "Yatay dikey cizim yardimcisi acik" : "Yatay dikey cizim yardimcisi kapali";
-    controls.lineSnapButton?.classList.toggle("is-active", snapEnabled);
-    controls.lineSnapButton?.setAttribute("aria-pressed", String(snapEnabled));
-    controls.lineSnapButton?.setAttribute("title", snapLabel);
-    controls.lineSnapButton?.setAttribute("aria-label", snapLabel);
+    [controls.lineSnapButton, controls.linePanelSnapButton].forEach((button) => {
+      button?.classList.toggle("is-active", snapEnabled);
+      button?.setAttribute("aria-pressed", String(snapEnabled));
+      button?.setAttribute("title", snapLabel);
+      button?.setAttribute("aria-label", snapLabel);
+    });
     controls.styleChoices.forEach((button) => {
       const isSelected = button.dataset.lineStyle === style.dash;
       button.classList.toggle("is-selected", isSelected);
@@ -1820,21 +1868,37 @@
     controls.styleControls?.classList.toggle("is-empty", !dashPattern.usesDashGap);
     controls.dashSizeControl?.classList.toggle("gizli", !dashPattern.usesDashSize);
     controls.dashGapControl?.classList.toggle("gizli", !dashPattern.usesDashGap);
-    controls.lineCapButton?.setAttribute("title", style.dash === "dot" ? "Noktali desende yuvarlak stroke ucu" : lineCap.title);
-    controls.lineCapButton?.setAttribute("aria-label", style.dash === "dot" ? "Noktali desende yuvarlak stroke ucu" : lineCap.title);
+    const lineCapLabel = style.dash === "dot" ? "Noktali desende yuvarlak stroke ucu" : lineCap.title;
+    [controls.lineCapButton, controls.linePanelCapButton].forEach((button) => {
+      button?.setAttribute("title", lineCapLabel);
+      button?.setAttribute("aria-label", lineCapLabel);
+    });
     renderArrowIcon(controls.startArrowIcon, style.arrowStart, true);
     renderArrowIcon(controls.endArrowIcon, style.arrowEnd, false);
+    renderArrowIcon(controls.linePanelStartArrowIcon, style.arrowStart, true);
+    renderArrowIcon(controls.linePanelEndArrowIcon, style.arrowEnd, false);
     const startArrowTitle = choiceById(ARROW_TYPES, style.arrowStart).title;
     const endArrowTitle = choiceById(ARROW_TYPES, style.arrowEnd).title;
     controls.startArrow?.setAttribute("title", `Baslangic: ${startArrowTitle}. Kaldirmak icin uzun bas.`);
     controls.startArrow?.setAttribute("aria-label", `Baslangic ok ucu: ${startArrowTitle}. Kaldirmak icin uzun bas.`);
     controls.endArrow?.setAttribute("title", `Bitis: ${endArrowTitle}. Kaldirmak icin uzun bas.`);
     controls.endArrow?.setAttribute("aria-label", `Bitis ok ucu: ${endArrowTitle}. Kaldirmak icin uzun bas.`);
+    controls.linePanelStartArrow?.setAttribute("title", `Baslangic: ${startArrowTitle}. Kaldirmak icin uzun bas.`);
+    controls.linePanelStartArrow?.setAttribute("aria-label", `Baslangic ok ucu: ${startArrowTitle}. Kaldirmak icin uzun bas.`);
+    controls.linePanelEndArrow?.setAttribute("title", `Bitis: ${endArrowTitle}. Kaldirmak icin uzun bas.`);
+    controls.linePanelEndArrow?.setAttribute("aria-label", `Bitis ok ucu: ${endArrowTitle}. Kaldirmak icin uzun bas.`);
     const pointEditActive = selection.getMode?.() === "edit" && Boolean(model.metadata?.pointEdit);
     controls.closedShapeEdit?.classList.toggle("is-active", pointEditActive);
     controls.closedShapeEdit?.setAttribute("aria-pressed", String(pointEditActive));
     if (controls.textInput && controls.textInput.value !== label.text) controls.textInput.value = label.text;
+    if (controls.textStyleSizeValue) controls.textStyleSizeValue.textContent = String(label.size);
+    if (controls.textStyleColorInput && controls.textStyleColorInput.value !== label.color) controls.textStyleColorInput.value = label.color;
+    if (controls.textStyleOpacityInput && controls.textStyleOpacityInput.value !== String(labelOpacityValue)) controls.textStyleOpacityInput.value = String(labelOpacityValue);
+    if (controls.textStyleOpacityValue) controls.textStyleOpacityValue.textContent = labelOpacityValue + "%";
     if (controls.calloutTextSizeInput && controls.calloutTextSizeInput.value !== String(label.size)) controls.calloutTextSizeInput.value = String(label.size);
+    setToggleButton(controls.textStyleBold, label.bold);
+    setToggleButton(controls.textStyleItalic, label.italic);
+    setToggleButton(controls.textStyleUnderline, label.underline);
     setToggleButton(controls.sideTextBold, label.bold);
     setToggleButton(controls.sideTextItalic, label.italic);
     setToggleButton(controls.sideTextUnderline, label.underline);
@@ -1857,10 +1921,17 @@
     }
 
     if (model.type === "line" || model.type === "arc" || model.type === "bezier") {
+      const textSide = choiceById(TEXT_SIDES, label.position.side);
       const textAnchor = choiceById(TEXT_ANCHORS, label.position.anchor);
       renderLineTextAlignIcon(controls.textAlignIcon, textAnchor.id);
+      renderLineTextAlignIcon(controls.textStyleAnchorIcon, textAnchor.id);
+      renderLineTextSideIcon(controls.textStyleSideIcon, textSide.id);
       controls.textAlign?.setAttribute("title", textAnchor.title);
       controls.textAlign?.setAttribute("aria-label", textAnchor.title);
+      controls.textStyleAnchor?.setAttribute("title", textAnchor.title);
+      controls.textStyleAnchor?.setAttribute("aria-label", textAnchor.title);
+      controls.textStyleSide?.setAttribute("title", textSide.title);
+      controls.textStyleSide?.setAttribute("aria-label", textSide.title);
       return;
     }
 
@@ -1872,6 +1943,13 @@
 
   function repositionPanel(panel, button) {
     window.krokiObjectEditCore?.positionOpenPanelNearButton?.(panel, button);
+  }
+
+  function repositionTextEntryPanel(panel, button) {
+    const textEntryActive = Boolean(Kroki.TextEntryGuard?.isActive?.())
+      || document.documentElement.classList.contains("kroki-text-entry-active");
+    if (textEntryActive) return;
+    repositionPanel(panel, button);
   }
 
   function showPanel(panel, button) {
@@ -1998,6 +2076,17 @@
       lineCapIcon: document.querySelector("#iconLineCap"),
       lineSnapButton: document.querySelector("#btnLineSnap"),
       lineSnapIcon: document.querySelector("#iconLineSnap"),
+      lineAdvancedStyleControls: document.querySelector("#lineAdvancedStyleControls"),
+      linePanelArrowStack: document.querySelector("#linePanelArrowStack"),
+      linePanelStartArrow: document.querySelector("#btnLinePanelStartArrow"),
+      linePanelStartArrowIcon: document.querySelector("#iconLinePanelStartArrow"),
+      linePanelEndArrow: document.querySelector("#btnLinePanelEndArrow"),
+      linePanelEndArrowIcon: document.querySelector("#iconLinePanelEndArrow"),
+      linePanelToolRow: document.querySelector("#btnLinePanelCap")?.closest(".line-style-tool-row"),
+      linePanelCapButton: document.querySelector("#btnLinePanelCap"),
+      linePanelCapIcon: document.querySelector("#iconLinePanelCap"),
+      linePanelSnapButton: document.querySelector("#btnLinePanelSnap"),
+      linePanelSnapIcon: document.querySelector("#iconLinePanelSnap"),
       closedShapeEdit: document.querySelector("#btnClosedShapeEdit"),
       styleChoices: Array.from(document.querySelectorAll("[data-line-style]")),
       styleControls: document.querySelector(".line-style-controls"),
@@ -2017,6 +2106,21 @@
       endArrowIcon: document.querySelector("#iconLineEndArrow"),
       textButton: document.querySelector("#btnLineText"),
       textPanel: document.querySelector("#lineTextPanel"),
+      textStyleButton: document.querySelector("#btnLineTextStyle"),
+      textStylePanel: document.querySelector("#lineTextStylePanel"),
+      textStyleSizeMinus: document.querySelector("#btnLineTextStyleSizeMinus"),
+      textStyleSizePlus: document.querySelector("#btnLineTextStyleSizePlus"),
+      textStyleSizeValue: document.querySelector("#valLineTextStyleSize"),
+      textStyleAnchor: document.querySelector("#btnLineTextStyleAnchor"),
+      textStyleAnchorIcon: document.querySelector("#iconLineTextStyleAnchor"),
+      textStyleSide: document.querySelector("#btnLineTextStyleSide"),
+      textStyleSideIcon: document.querySelector("#iconLineTextStyleSide"),
+      textStyleColorInput: document.querySelector("#lineTextStyleColorInput"),
+      textStyleOpacityInput: document.querySelector("#lineTextStyleOpacityInput"),
+      textStyleOpacityValue: document.querySelector("#lineTextStyleOpacityValue"),
+      textStyleBold: document.querySelector("#btnLineTextStyleBold"),
+      textStyleItalic: document.querySelector("#btnLineTextStyleItalic"),
+      textStyleUnderline: document.querySelector("#btnLineTextStyleUnderline"),
       trafficSignTextFields: document.querySelector("#trafficSignTextFields"),
       textInput: document.querySelector("#lineTextInput"),
       textAlign: document.querySelector("#btnLineTextAlign"),
@@ -2047,6 +2151,7 @@
     const bindHoldAction = core?.bindHoldAction || (() => {});
     const stylePanel = controls.stylePanel;
     const textPanel = controls.textPanel;
+    const textStylePanel = controls.textStylePanel;
     const vehicleLabelPanel = controls.vehicleLabelPanel;
     const strokeColorPanel = controls.strokeColorPanel;
     const fillColorPanel = controls.fillColorPanel;
@@ -2060,6 +2165,8 @@
     bindHoldAction(controls.dashSizePlus, () => updateStyle({ dashSize: steppedDashSize(activeEntry()?.model.style.dashSize, 1) }));
     bindHoldAction(controls.dashGapMinus, () => updateStyle({ dashGap: steppedDashGap(activeEntry()?.model.style.dashGap, -1) }));
     bindHoldAction(controls.dashGapPlus, () => updateStyle({ dashGap: steppedDashGap(activeEntry()?.model.style.dashGap, 1) }));
+    bindHoldAction(controls.textStyleSizeMinus, () => updateLineTextStyleSize(-1));
+    bindHoldAction(controls.textStyleSizePlus, () => updateLineTextStyleSize(1));
     bindHoldAction(controls.calloutTextSizeMinus, () => updateCalloutTextSize(-1));
     bindHoldAction(controls.calloutTextSizePlus, () => updateCalloutTextSize(1));
     bindHoldAction(controls.objectRotateMinus, () => updateObjectRotation(-1), { startDelay: 240, repeatDelay: 32 });
@@ -2266,14 +2373,20 @@
 
     bindArrowButton(controls.startArrow, "arrowStart");
     bindArrowButton(controls.endArrow, "arrowEnd");
-    controls.lineCapButton?.addEventListener("click", () => {
+    bindArrowButton(controls.linePanelStartArrow, "arrowStart");
+    bindArrowButton(controls.linePanelEndArrow, "arrowEnd");
+    const cycleLineCap = () => {
       const style = activeEntry()?.model.style;
       if (style) updateStyle({ lineCap: nextChoiceId(style.lineCap, LINE_CAPS) });
-    });
-    controls.lineSnapButton?.addEventListener("click", () => {
+    };
+    const toggleLineSnap = () => {
       Kroki.LineSnap?.toggle?.();
       syncControls();
-    });
+    };
+    controls.lineCapButton?.addEventListener("click", cycleLineCap);
+    controls.linePanelCapButton?.addEventListener("click", cycleLineCap);
+    controls.lineSnapButton?.addEventListener("click", toggleLineSnap);
+    controls.linePanelSnapButton?.addEventListener("click", toggleLineSnap);
     controls.closedShapeEdit?.addEventListener("click", () => {
       const entry = activeEntry();
       if (!entry?.adapter?.capabilities?.pointEdit) return;
@@ -2287,6 +2400,7 @@
       }));
     });
     controls.textButton?.addEventListener("click", () => showTextPanel(textPanel));
+    controls.textStyleButton?.addEventListener("click", () => togglePanel(textStylePanel, controls.textStyleButton));
     controls.textInput?.addEventListener("focus", beginTextInputHistory);
     controls.textInput?.addEventListener("input", () => {
       beginTextInputHistory();
@@ -2311,12 +2425,34 @@
         updateLabel({ position: { ...label.position, align: nextChoiceId(label.position.align, TEXT_ALIGNS) } });
       }
     });
+    controls.textStyleAnchor?.addEventListener("click", () => {
+      const entry = activeEntry();
+      if (!entry || entry.model.type !== "line") return;
+      const label = normalizeLabel(entry.model.label, entry.model.type);
+      updateLabel({ position: { ...label.position, anchor: nextChoiceId(label.position.anchor, TEXT_ANCHORS) } });
+    });
+    controls.textStyleSide?.addEventListener("click", () => {
+      const entry = activeEntry();
+      if (!entry || entry.model.type !== "line") return;
+      const label = normalizeLabel(entry.model.label, entry.model.type);
+      updateLabel({ position: { ...label.position, side: nextChoiceId(label.position.side, TEXT_SIDES) } });
+    });
+    controls.textStyleColorInput?.addEventListener("input", () => updateLabel({ color: controls.textStyleColorInput.value }));
+    controls.textStyleOpacityInput?.addEventListener("input", () => {
+      updateLabel({ opacity: normalizeOpacity(Number(controls.textStyleOpacityInput.value) / 100) });
+    });
+    controls.textStyleOpacityInput?.addEventListener("change", () => {
+      updateLabel({ opacity: normalizeOpacity(Number(controls.textStyleOpacityInput.value) / 100) });
+    });
     const toggleTextFlag = (flag) => {
       const entry = activeEntry();
       if (!entry) return;
       const label = normalizeLabel(entry.model.label, entry.model.type);
       updateLabel({ [flag]: !label[flag] });
     };
+    controls.textStyleBold?.addEventListener("click", () => toggleTextFlag("bold"));
+    controls.textStyleItalic?.addEventListener("click", () => toggleTextFlag("italic"));
+    controls.textStyleUnderline?.addEventListener("click", () => toggleTextFlag("underline"));
     controls.sideTextBold?.addEventListener("click", () => toggleTextFlag("bold"));
     controls.sideTextItalic?.addEventListener("click", () => toggleTextFlag("italic"));
     controls.sideTextUnderline?.addEventListener("click", () => toggleTextFlag("underline"));
@@ -2325,13 +2461,15 @@
     document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, fillColorPanel, controls.fillButton), true);
     document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, fillPatternPanel, controls.fillPatternButton), true);
     document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, textPanel, controls.textButton), true);
+    document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, textStylePanel, controls.textStyleButton), true);
     document.addEventListener("pointerdown", (event) => closePanelOnOutsideClick(event, vehicleLabelPanel, controls.vehicleLabelToggle), true);
     window.addEventListener("resize", () => {
       repositionPanel(stylePanel, controls.styleButton);
       repositionPanel(strokeColorPanel, controls.colorButton);
       repositionPanel(fillColorPanel, controls.fillButton);
       repositionPanel(fillPatternPanel, controls.fillPatternButton);
-      repositionPanel(textPanel, controls.textButton);
+      repositionTextEntryPanel(textPanel, controls.textButton);
+      repositionPanel(textStylePanel, controls.textStyleButton);
       repositionPanel(vehicleLabelPanel, controls.vehicleLabelToggle);
     });
   }
