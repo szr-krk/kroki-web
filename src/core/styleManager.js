@@ -1186,11 +1186,9 @@
     const supportsTextFormatting = isTextObject || Boolean(adapter?.capabilities?.textFormatting);
     const hasFill = Boolean(adapter?.capabilities?.fill);
     const hasFillPattern = supportsFillPatternTarget(adapter, model);
-    const hasArrows = Boolean(adapter?.capabilities?.arrows);
     const trafficSignFieldText = isTrafficSign && trafficSignEditableFields({ adapter, model }).length > 0;
     controls?.shapeOnlyControls?.forEach((control) => control.classList.toggle("gizli", !hasFill));
     controls?.fillPatternControls?.forEach((control) => control.classList.toggle("gizli", !hasFillPattern));
-    controls?.lineOnlyControls?.forEach((control) => control.classList.toggle("gizli", !hasArrows));
     controls?.textObjectControls?.forEach((control) => control.classList.toggle("gizli", !supportsTextFormatting));
     controls?.closedShapeControls?.forEach((control) => control.classList.toggle("gizli", !hasPointEdit));
     controls?.objectRotationControl?.classList.toggle("gizli", !hasRotationPicker);
@@ -1208,8 +1206,6 @@
     controls?.trafficSignTextFields?.classList.toggle("gizli", !trafficSignFieldText);
     controls?.textInput?.classList.toggle("gizli", trafficSignFieldText);
     controls?.textAlign?.classList.toggle("gizli", noText || isCatalogObject || isLineFamily);
-    controls?.arrowStack?.classList.toggle("gizli", !hasArrows || isLineFamily);
-    controls?.lineSnapButton?.classList.toggle("gizli", !hasArrows || isLineFamily);
     if (isRoadObject || isVehicleObject) {
       cachedControl("strokeColorPanel", "#strokeColorPanel")?.classList.add("gizli");
       controls?.colorButton?.setAttribute("aria-expanded", "false");
@@ -1831,7 +1827,6 @@
     controls.fillPatternButton?.style.setProperty("--side-ip-fill-color", style.fill === "none" ? "#ffffff" : style.fill);
     controls.styleButton?.style.setProperty("--side-ip-stroke-color", style.stroke);
     controls.lineCapButton?.style.setProperty("--side-ip-stroke-color", style.stroke);
-    controls.arrowStack?.style.setProperty("--side-ip-stroke-color", style.stroke);
     controls.linePanelCapButton?.style.setProperty("--side-ip-stroke-color", style.stroke);
     controls.linePanelArrowStack?.style.setProperty("--side-ip-stroke-color", style.stroke);
     controls.linePanelToolRow?.style.setProperty("--side-ip-stroke-color", style.stroke);
@@ -1866,17 +1861,14 @@
     if (controls.strokeInput && controls.strokeInput.value !== String(primarySize)) controls.strokeInput.value = String(primarySize);
     renderLineStyleIcon(controls.styleIcon);
     renderLineCapIcon(controls.lineCapIcon);
-    renderLineSnapIcon(controls.lineSnapIcon);
     renderLineCapIcon(controls.linePanelCapIcon);
     renderLineSnapIcon(controls.linePanelSnapIcon);
     const snapEnabled = Boolean(Kroki.LineSnap?.isEnabled?.());
     const snapLabel = snapEnabled ? "Yatay dikey cizim yardimcisi acik" : "Yatay dikey cizim yardimcisi kapali";
-    [controls.lineSnapButton, controls.linePanelSnapButton].forEach((button) => {
-      button?.classList.toggle("is-active", snapEnabled);
-      button?.setAttribute("aria-pressed", String(snapEnabled));
-      button?.setAttribute("title", snapLabel);
-      button?.setAttribute("aria-label", snapLabel);
-    });
+    controls.linePanelSnapButton?.classList.toggle("is-active", snapEnabled);
+    controls.linePanelSnapButton?.setAttribute("aria-pressed", String(snapEnabled));
+    controls.linePanelSnapButton?.setAttribute("title", snapLabel);
+    controls.linePanelSnapButton?.setAttribute("aria-label", snapLabel);
     controls.styleChoices.forEach((button) => {
       const isSelected = button.dataset.lineStyle === style.dash;
       button.classList.toggle("is-selected", isSelected);
@@ -1897,16 +1889,10 @@
       button?.setAttribute("title", lineCapLabel);
       button?.setAttribute("aria-label", lineCapLabel);
     });
-    renderArrowIcon(controls.startArrowIcon, style.arrowStart, true);
-    renderArrowIcon(controls.endArrowIcon, style.arrowEnd, false);
     renderArrowIcon(controls.linePanelStartArrowIcon, style.arrowStart, true);
     renderArrowIcon(controls.linePanelEndArrowIcon, style.arrowEnd, false);
     const startArrowTitle = choiceById(ARROW_TYPES, style.arrowStart).title;
     const endArrowTitle = choiceById(ARROW_TYPES, style.arrowEnd).title;
-    controls.startArrow?.setAttribute("title", `Baslangic: ${startArrowTitle}. Kaldirmak icin uzun bas.`);
-    controls.startArrow?.setAttribute("aria-label", `Baslangic ok ucu: ${startArrowTitle}. Kaldirmak icin uzun bas.`);
-    controls.endArrow?.setAttribute("title", `Bitis: ${endArrowTitle}. Kaldirmak icin uzun bas.`);
-    controls.endArrow?.setAttribute("aria-label", `Bitis ok ucu: ${endArrowTitle}. Kaldirmak icin uzun bas.`);
     controls.linePanelStartArrow?.setAttribute("title", `Baslangic: ${startArrowTitle}. Kaldirmak icin uzun bas.`);
     controls.linePanelStartArrow?.setAttribute("aria-label", `Baslangic ok ucu: ${startArrowTitle}. Kaldirmak icin uzun bas.`);
     controls.linePanelEndArrow?.setAttribute("title", `Bitis: ${endArrowTitle}. Kaldirmak icin uzun bas.`);
@@ -2098,8 +2084,6 @@
       styleIcon: document.querySelector("#iconLineStyle"),
       lineCapButton: document.querySelector("#btnLineCap"),
       lineCapIcon: document.querySelector("#iconLineCap"),
-      lineSnapButton: document.querySelector("#btnLineSnap"),
-      lineSnapIcon: document.querySelector("#iconLineSnap"),
       lineAdvancedStyleControls: document.querySelector("#lineAdvancedStyleControls"),
       linePanelArrowStack: document.querySelector("#linePanelArrowStack"),
       linePanelStartArrow: document.querySelector("#btnLinePanelStartArrow"),
@@ -2123,11 +2107,6 @@
       dashGapPlus: document.querySelector("#btnLineDashGapPlus"),
       dashGapValue: document.querySelector("#valLineDashGap"),
       sideIp: document.querySelector("#editorSideIp"),
-      arrowStack: document.querySelector(".side-ip-arrow-stack"),
-      startArrow: document.querySelector("#btnLineStartArrow"),
-      startArrowIcon: document.querySelector("#iconLineStartArrow"),
-      endArrow: document.querySelector("#btnLineEndArrow"),
-      endArrowIcon: document.querySelector("#iconLineEndArrow"),
       textButton: document.querySelector("#btnLineText"),
       textPanel: document.querySelector("#lineTextPanel"),
       textStyleButton: document.querySelector("#btnLineTextStyle"),
@@ -2162,7 +2141,6 @@
       stylePanel: document.querySelector("#lineStylePanel"),
       shapeOnlyControls: Array.from(document.querySelectorAll(".shape-only-control")),
       fillPatternControls: Array.from(document.querySelectorAll(".fill-pattern-control")),
-      lineOnlyControls: Array.from(document.querySelectorAll(".line-only-control")),
       textObjectControls: Array.from(document.querySelectorAll(".text-object-control")),
       closedShapeControls: Array.from(document.querySelectorAll(".closed-shape-control")),
       roadOnlyControls: Array.from(document.querySelectorAll(".road-only-control")),
@@ -2395,8 +2373,6 @@
       });
     };
 
-    bindArrowButton(controls.startArrow, "arrowStart");
-    bindArrowButton(controls.endArrow, "arrowEnd");
     bindArrowButton(controls.linePanelStartArrow, "arrowStart");
     bindArrowButton(controls.linePanelEndArrow, "arrowEnd");
     const cycleLineCap = () => {
@@ -2409,7 +2385,6 @@
     };
     controls.lineCapButton?.addEventListener("click", cycleLineCap);
     controls.linePanelCapButton?.addEventListener("click", cycleLineCap);
-    controls.lineSnapButton?.addEventListener("click", toggleLineSnap);
     controls.linePanelSnapButton?.addEventListener("click", toggleLineSnap);
     controls.closedShapeEdit?.addEventListener("click", () => {
       const entry = activeEntry();

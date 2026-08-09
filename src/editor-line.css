@@ -525,8 +525,7 @@
 }
 
 .side-ip-color-btn,
-.side-ip-pattern-btn,
-.side-ip-arrow-stack {
+.side-ip-pattern-btn {
   --side-ip-stroke-color: #111827;
   --side-ip-fill-color: #ffffff;
 }
@@ -836,7 +835,6 @@
 
 .side-ip-style-btn,
 .side-ip-cap-btn,
-.side-ip-snap-btn,
 .side-ip-shape-edit-btn,
 .side-ip-pattern-btn {
   --side-ip-stroke-color: #111827;
@@ -845,8 +843,6 @@
 
 .side-ip-style-icon path,
 .side-ip-cap-icon path,
-.side-ip-snap-icon path,
-.side-ip-snap-icon circle,
 .side-ip-shape-edit-btn path {
   vector-effect: none;
 }
@@ -874,58 +870,6 @@
   border-color: #059669;
   background: #dcfce7;
   color: #047857;
-}
-
-.side-ip-snap-btn.is-active {
-  border-color: #1d4ed8;
-  background: #dbeafe;
-  box-shadow: inset 0 0 0 0.1875rem rgba(29, 78, 216, .18);
-}
-
-.side-ip-arrow-stack {
-  width: var(--editor-rail-button-size);
-  min-height: calc((var(--editor-rail-button-size) * 2) + 0.5rem);
-  flex: 0 0 auto;
-  display: grid;
-  grid-template-rows: repeat(2, var(--editor-rail-button-size));
-  gap: 0.5rem;
-}
-
-.side-ip-arrow-btn {
-  width: var(--editor-rail-button-size);
-  min-width: var(--editor-rail-button-size);
-  height: var(--editor-rail-button-size);
-  min-height: var(--editor-rail-button-size);
-  padding: 0.25rem;
-  border: 0.1875rem solid #94a3b8;
-  border-radius: 0.5rem;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  background: #f8fafc;
-  color: var(--side-ip-stroke-color);
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-touch-callout: none;
-  user-select: none;
-}
-
-.side-ip-arrow-btn:active,
-.side-ip-arrow-btn.is-long-press {
-  border-color: #64748b;
-  background: #e2e8f0;
-}
-
-.side-ip-arrow-btn svg {
-  width: 3rem;
-  height: 1.75rem;
-  overflow: visible;
-  shape-rendering: geometricPrecision;
-}
-
-.side-ip-arrow-btn path,
-.side-ip-arrow-btn circle {
-  vector-effect: none;
 }
 
 .side-ip-text-format-stack {

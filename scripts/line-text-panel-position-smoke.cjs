@@ -51,7 +51,6 @@ assert.match(styleManager, /classList\.toggle\("is-line-family-ip", isLineFamily
 assert.match(styleManager, /classList\.toggle\("is-line-family-panel", isLineFamily\)/);
 assert.match(styleManager, /controls\?\.textStyleButton\?\.classList\.toggle\("gizli", !isLineFamily \|\| noText\)/);
 assert.match(styleManager, /controls\?\.textAlign\?\.classList\.toggle\("gizli", noText \|\| isCatalogObject \|\| isLineFamily\)/);
-assert.match(styleManager, /controls\?\.arrowStack\?\.classList\.toggle\("gizli", !hasArrows \|\| isLineFamily\)/);
 assert.match(styleManager, /controls\.textAlign\?\.addEventListener\("click",/);
 assert.match(styleManager, /anchor:\s*nextChoiceId\(label\.position\.anchor, TEXT_ANCHORS\)/);
 assert.match(styleManager, /align:\s*nextChoiceId\(label\.position\.align, TEXT_ALIGNS\)/);
@@ -89,6 +88,17 @@ for (const id of [
   "btnLinePanelSnap"
 ]) assert.match(lineStylePanel, new RegExp(`id="${id}"`), `${id} cizgi stil panelinde olmali`);
 
+for (const id of [
+  "btnLineStartArrow",
+  "iconLineStartArrow",
+  "btnLineEndArrow",
+  "iconLineEndArrow",
+  "btnLineSnap",
+  "iconLineSnap"
+]) assert.doesNotMatch(index, new RegExp(`id="${id}"`), `${id} eski dogrudan IP yolundan kaldirilmali`);
+assert.doesNotMatch(css, /\.side-ip-arrow-(?:stack|btn)|\.side-ip-snap-(?:btn|icon)/);
+assert.doesNotMatch(styleManager, /lineOnlyControls|lineSnapButton|lineSnapIcon|startArrowIcon|endArrowIcon|controls\.(?:arrowStack|startArrow|endArrow)/);
+
 assert.match(styleManager, /controls\.textStyleButton\?\.addEventListener\("click", \(\) => togglePanel\(textStylePanel/);
 assert.match(styleManager, /controls\.textStyleColorInput\?\.addEventListener\("input", \(\) => updateLineTextColor/);
 assert.match(styleManager, /controls\.textStyleOpacityInput\?\.addEventListener\("input",/);
@@ -112,7 +122,9 @@ assert.match(styleManager, /if \(textEntryActive\) return;\s*repositionPanel\(pa
 assert.match(styleManager, /repositionTextEntryPanel\(textPanel, controls\.textButton\)/);
 assert.match(responsiveScale, /activeTextEntryHost\?\.matches\?\.\("\.free-text-composer, \.line-text-panel"\)/);
 
-assert.match(index, /20260809-line-family-v1/);
+assert.match(index, /kroki-build" content="20260809-line-family-v2"/);
+assert.match(index, /editor-line\.css\?v=20260809-line-family-v2/);
+assert.match(index, /styleManager\.js\?v=20260809-line-family-v2/);
 
 global.window = { Kroki: { EditorUtils: {} } };
 require(path.join(__dirname, "..", "src", "editor-stroke-style.js"));
