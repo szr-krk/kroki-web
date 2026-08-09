@@ -606,23 +606,23 @@
   box-shadow: inset 0 0 0 0.125rem rgba(37, 99, 235, .18);
 }
 
-.editor-side-ip.is-line-ip-pilot #btnLineText {
+.editor-side-ip.is-line-family-ip #btnLineText {
   order: 10;
 }
 
-.editor-side-ip.is-line-ip-pilot #btnLineTextStyle {
+.editor-side-ip.is-line-family-ip #btnLineTextStyle {
   order: 20;
 }
 
-.editor-side-ip.is-line-ip-pilot #btnLineColor {
+.editor-side-ip.is-line-family-ip #btnLineColor {
   order: 30;
 }
 
-.editor-side-ip.is-line-ip-pilot #lineStrokeWidthStepper {
+.editor-side-ip.is-line-family-ip #lineStrokeWidthStepper {
   order: 40;
 }
 
-.editor-side-ip.is-line-ip-pilot #btnLineStyle {
+.editor-side-ip.is-line-family-ip #btnLineStyle {
   order: 50;
 }
 
@@ -1147,7 +1147,7 @@
   z-index: 9;
 }
 
-.line-style-panel.is-line-ip-pilot-panel {
+.line-style-panel.is-line-family-panel {
   width: min(17rem, calc(100vw - var(--editor-rail-width) - 1rem));
 }
 

@@ -41,12 +41,13 @@
     while (usedIds.has(id)) id = manager.generateId();
     usedIds.add(id);
     if (model?.id) idMap.set(String(model.id), id);
+    const style = styleManager.normalizeStyle(model?.style, type);
     return manager.normalizeModel({
       id,
       type,
       geometry: clonePlain(model?.geometry),
-      style: styleManager.normalizeStyle(model?.style, type),
-      label: styleManager.normalizeLabel(model?.label, type),
+      style,
+      label: styleManager.normalizeLabel(model?.label, type, style),
       metadata: cleanMetadata(model?.metadata)
     });
   }
@@ -103,14 +104,17 @@
       viewport: {
         viewBox: manager.canvas?.getAttribute("viewBox") || "0 0 1200 800"
       },
-      objects: sourceObjects.map((model) => ({
-        id: model.id,
-        type: model.type,
-        geometry: clonePlain(model.geometry),
-        style: styleManager.normalizeStyle(model.style, model.type),
-        label: styleManager.normalizeLabel(model.label, model.type),
-        metadata: cleanMetadata(model.metadata)
-      })),
+      objects: sourceObjects.map((model) => {
+        const style = styleManager.normalizeStyle(model.style, model.type);
+        return {
+          id: model.id,
+          type: model.type,
+          geometry: clonePlain(model.geometry),
+          style,
+          label: styleManager.normalizeLabel(model.label, model.type, style),
+          metadata: cleanMetadata(model.metadata)
+        };
+      }),
       photoBackground: Kroki.PhotoBackgroundManager?.exportState?.() || null,
       groups: Kroki.GroupManager?.getAll?.() || [],
       roadIntersection: Kroki.RoadIntersectionEngine?.exportState?.() || null

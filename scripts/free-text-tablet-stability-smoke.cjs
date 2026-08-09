@@ -11,7 +11,7 @@ const editorCss = read("src/editor-line.css");
 const homeCss = read("src/home.css");
 
 assert.match(index, /kroki-build" content="[^"]+"/);
-assert.match(index, /src\/responsive-scale\.js\?v=20260809-line-ip-pilot-v1/);
+assert.match(index, /src\/responsive-scale\.js\?v=20260809-line-family-v1/);
 assert.match(
   responsiveScale,
   /activeTextEntryHost\?\.matches\?\.\("\.free-text-composer, \.line-text-panel"\)/,

@@ -96,6 +96,8 @@ Araçlar: çizgi, arc, quadratic Bezier, cubic Bezier, daire, elips, dikdörtgen
 - Yol: Road Inspector kontrolleri; genel, kesit ve bariyer modları birbirini dışlar.
 - Trafik levhası ve diğer sembol: yüzde ölçek ve derece dönüş; varsa katalog art'ı içindeki metin alanı.
 
+Çizgi ailesi (`line`, `arc`, quadratic/cubic `bezier`) aynı sade özellik düzenini kullanır. Sağ ray sırası metin girişi, metin stili, çizgi rengi, çizgi kalınlığı ve gelişmiş çizgi stilidir. Metin boyutu/konumu/biçimi/renk-opaklığı metin stili panelinde; desen, oklar, uç ve snap gelişmiş çizgi panelindedir.
+
 Grup veya grup birimleri seçildiğinde sağ ray `is-empty` olur ve stil panelleri kapatılır. Saf çoklu nesne seçiminde ortak uygulanabilir stil, adapter yeteneklerine göre filtrelenerek uygulanabilir.
 
 ## Yüzen geçmiş çubuğu

@@ -49,12 +49,13 @@
 
   function normalizeModel(model) {
     const type = model?.type || "";
+    const style = styleManager.normalizeStyle(model?.style, type);
     return {
       id: model?.id || generateId(),
       type,
       geometry: utils.clonePlain(model?.geometry),
-      style: styleManager.normalizeStyle(model?.style, type),
-      label: styleManager.normalizeLabel(model?.label, type),
+      style,
+      label: styleManager.normalizeLabel(model?.label, type, style),
       metadata: utils.clonePlain(model?.metadata)
     };
   }
@@ -757,10 +758,15 @@
   }
 
   function updateStyle(id, patch, options = {}) {
-    return updateModel(id, (model) => ({
-      ...model,
-      style: styleManager.normalizeStyle({ ...model.style, ...(patch || {}) }, model.type)
-    }), { label: "Stil guncelle", ...options });
+    return updateModel(id, (model) => {
+      const style = styleManager.normalizeStyle({ ...model.style, ...(patch || {}) }, model.type);
+      const currentLabel = styleManager.normalizeLabel(model.label, model.type, model.style);
+      const shouldSyncLabelColor = Object.prototype.hasOwnProperty.call(patch || {}, "stroke") && currentLabel.colorLinked;
+      const label = shouldSyncLabelColor
+        ? styleManager.normalizeLabel({ ...currentLabel, color: style.stroke, colorLinked: true }, model.type, style)
+        : styleManager.normalizeLabel(currentLabel, model.type, style);
+      return { ...model, style, label };
+    }, { label: "Stil guncelle", ...options });
   }
 
   function updateLabel(id, patch, options = {}) {
@@ -770,7 +776,7 @@
         ...model.label,
         ...(patch || {}),
         position: { ...(model.label?.position || {}), ...((patch || {}).position || {}) }
-      }, model.type)
+      }, model.type, model.style)
     }), { label: "Metin guncelle", ...options });
   }
 

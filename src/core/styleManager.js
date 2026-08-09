@@ -518,19 +518,30 @@
     return normalized;
   }
 
-  function normalizeLabel(label, type) {
+  function normalizeLabel(label, type, style) {
     const source = label || {};
-    const defaultColor = type === "callout" ? "#000000" : "#111827";
-    return {
+    const isLineFamily = isLineToolType(type);
+    const strokeColor = colorOr(style?.stroke || style?.strokeColor, "#111827");
+    const sourceColor = source.color || source.labelColor;
+    const defaultColor = type === "callout" ? "#000000" : isLineFamily ? strokeColor : "#111827";
+    const color = colorOr(sourceColor, defaultColor);
+    const normalized = {
       text: normalizeLabelTextForType(source.text || source.labelText, type),
       size: normalizeLabelSize(source.size || source.labelSize),
-      color: colorOr(source.color || source.labelColor, defaultColor),
+      color,
       opacity: normalizeOpacity(source.opacity ?? source.labelOpacity ?? 1),
       position: normalizeLabelPosition(source.position || source, type),
       bold: normalizeLabelFlag(source.bold ?? source.labelBold),
       italic: normalizeLabelFlag(source.italic ?? source.labelItalic),
       underline: normalizeLabelFlag(source.underline ?? source.labelUnderline)
     };
+    if (isLineFamily) {
+      const explicitLink = source.colorLinked ?? source.labelColorLinked;
+      normalized.colorLinked = explicitLink == null
+        ? !sourceColor || color.toLowerCase() === strokeColor.toLowerCase()
+        : normalizeLabelFlag(explicitLink);
+    }
+    return normalized;
   }
 
   function readStyleFromElement(element, type) {
@@ -560,6 +571,7 @@
       text: element.dataset.labelText,
       size: element.dataset.labelSize,
       color: element.dataset.labelColor,
+      colorLinked: element.dataset.labelColorLinked,
       opacity: element.dataset.labelOpacity,
       side: element.dataset.labelSide,
       anchor: element.dataset.labelAnchor,
@@ -568,12 +580,12 @@
       bold: element.dataset.labelBold,
       italic: element.dataset.labelItalic,
       underline: element.dataset.labelUnderline
-    }, type);
+    }, type, isLineToolType(type) ? readStyleFromElement(element, type) : null);
   }
 
   function writeStyleDataset(element, model) {
     const style = normalizeStyle(model.style, model.type);
-    const label = normalizeLabel(model.label, model.type);
+    const label = normalizeLabel(model.label, model.type, style);
     element.dataset.strokeWidth = String(style.strokeWidth);
     element.dataset.strokeColor = style.stroke;
     element.dataset.strokeOpacity = String(style.strokeOpacity);
@@ -589,6 +601,8 @@
     element.dataset.labelSize = String(label.size);
     element.dataset.labelColor = label.color;
     element.dataset.labelOpacity = String(label.opacity);
+    if (isLineToolType(model.type)) element.dataset.labelColorLinked = label.colorLinked ? "1" : "0";
+    else delete element.dataset.labelColorLinked;
     delete element.dataset.dashScale;
 
     if (model.type === "text") {
@@ -1160,7 +1174,7 @@
   function setControlVisibility(adapter, model) {
     const isTextObject = Boolean(adapter?.capabilities?.textObject);
     const isCallout = adapter?.type === "callout";
-    const isSimpleLine = model?.type === "line";
+    const isLineFamily = isLineToolType(model?.type);
     const isRoadObject = Boolean(adapter?.capabilities?.roadObject);
     const isTrafficSign = Boolean(adapter?.capabilities?.trafficSign);
     const isCatalogObject = isCatalogObjectAdapter(adapter);
@@ -1185,17 +1199,17 @@
     controls?.vehicleOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isVehicleObject));
     controls?.calloutOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isCallout));
     controls?.sideIp?.classList.toggle("is-traffic-sign-ip", isTrafficSign);
-    controls?.sideIp?.classList.toggle("is-line-ip-pilot", isSimpleLine);
-    controls?.stylePanel?.classList.toggle("is-line-ip-pilot-panel", isSimpleLine);
-    controls?.lineAdvancedStyleControls?.classList.toggle("gizli", !isSimpleLine);
+    controls?.sideIp?.classList.toggle("is-line-family-ip", isLineFamily);
+    controls?.stylePanel?.classList.toggle("is-line-family-panel", isLineFamily);
+    controls?.lineAdvancedStyleControls?.classList.toggle("gizli", !isLineFamily);
     controls?.colorButton?.classList.toggle("gizli", isRoadObject || isCatalogObject || isVehicleObject);
     controls?.textButton?.classList.toggle("gizli", noText);
-    controls?.textStyleButton?.classList.toggle("gizli", !isSimpleLine || noText);
+    controls?.textStyleButton?.classList.toggle("gizli", !isLineFamily || noText);
     controls?.trafficSignTextFields?.classList.toggle("gizli", !trafficSignFieldText);
     controls?.textInput?.classList.toggle("gizli", trafficSignFieldText);
-    controls?.textAlign?.classList.toggle("gizli", noText || isCatalogObject || isSimpleLine);
-    controls?.arrowStack?.classList.toggle("gizli", !hasArrows || isSimpleLine);
-    controls?.lineSnapButton?.classList.toggle("gizli", !hasArrows || isSimpleLine);
+    controls?.textAlign?.classList.toggle("gizli", noText || isCatalogObject || isLineFamily);
+    controls?.arrowStack?.classList.toggle("gizli", !hasArrows || isLineFamily);
+    controls?.lineSnapButton?.classList.toggle("gizli", !hasArrows || isLineFamily);
     if (isRoadObject || isVehicleObject) {
       cachedControl("strokeColorPanel", "#strokeColorPanel")?.classList.add("gizli");
       controls?.colorButton?.setAttribute("aria-expanded", "false");
@@ -1209,7 +1223,7 @@
       cachedControl("textPanel", "#lineTextPanel")?.classList.add("gizli");
       controls?.textButton?.setAttribute("aria-expanded", "false");
     }
-    if (!isSimpleLine || noText) {
+    if (!isLineFamily || noText) {
       cachedControl("textStylePanel", "#lineTextStylePanel")?.classList.add("gizli");
       controls?.textStyleButton?.setAttribute("aria-expanded", "false");
     }
@@ -1223,7 +1237,7 @@
     }
     controls?.strokeStepper?.classList.toggle("gizli", isRoadObject || isCatalogObject || isVehicleObject);
     controls?.styleButton?.classList.toggle("gizli", isTextObject || isRoadObject || isCatalogObject || isVehicleObject);
-    controls?.lineCapButton?.classList.toggle("gizli", isSimpleLine || isTextObject || isCallout || isRoadObject || isCatalogObject || isVehicleObject);
+    controls?.lineCapButton?.classList.toggle("gizli", isLineFamily || isTextObject || isCallout || isRoadObject || isCatalogObject || isVehicleObject);
   }
 
   function updateStyle(patch) {
@@ -1327,9 +1341,19 @@
 
   function updateLineTextStyleSize(delta) {
     const entry = activeEntry();
-    if (!entry || entry.multi || entry.model.type !== "line") return;
+    if (!entry || entry.multi || !isLineToolType(entry.model.type)) return;
     const label = normalizeLabel(entry.model.label, entry.model.type);
     updateLabel({ size: normalizeLabelSize(label.size + delta) });
+  }
+
+  function updateLineTextColor(color) {
+    const entry = activeEntry();
+    if (!entry || entry.multi || !isLineToolType(entry.model.type)) return;
+    const style = normalizeStyle(entry.model.style, entry.model.type);
+    updateLabel({
+      color,
+      colorLinked: String(color).toLowerCase() === String(style.stroke).toLowerCase()
+    });
   }
 
   function activeRotatableEntry() {
@@ -1765,8 +1789,8 @@
     if (!entry || !controls) {
       hidePanels();
       controls?.sideIp?.classList.remove("is-traffic-sign-ip");
-      controls?.sideIp?.classList.remove("is-line-ip-pilot");
-      controls?.stylePanel?.classList.remove("is-line-ip-pilot-panel");
+      controls?.sideIp?.classList.remove("is-line-family-ip");
+      controls?.stylePanel?.classList.remove("is-line-family-panel");
       Kroki.RoadInspector?.sync?.(null);
       return;
     }
@@ -1920,7 +1944,7 @@
       return;
     }
 
-    if (model.type === "line" || model.type === "arc" || model.type === "bezier") {
+    if (isLineToolType(model.type)) {
       const textSide = choiceById(TEXT_SIDES, label.position.side);
       const textAnchor = choiceById(TEXT_ANCHORS, label.position.anchor);
       renderLineTextAlignIcon(controls.textAlignIcon, textAnchor.id);
@@ -2427,17 +2451,17 @@
     });
     controls.textStyleAnchor?.addEventListener("click", () => {
       const entry = activeEntry();
-      if (!entry || entry.model.type !== "line") return;
+      if (!entry || !isLineToolType(entry.model.type)) return;
       const label = normalizeLabel(entry.model.label, entry.model.type);
       updateLabel({ position: { ...label.position, anchor: nextChoiceId(label.position.anchor, TEXT_ANCHORS) } });
     });
     controls.textStyleSide?.addEventListener("click", () => {
       const entry = activeEntry();
-      if (!entry || entry.model.type !== "line") return;
+      if (!entry || !isLineToolType(entry.model.type)) return;
       const label = normalizeLabel(entry.model.label, entry.model.type);
       updateLabel({ position: { ...label.position, side: nextChoiceId(label.position.side, TEXT_SIDES) } });
     });
-    controls.textStyleColorInput?.addEventListener("input", () => updateLabel({ color: controls.textStyleColorInput.value }));
+    controls.textStyleColorInput?.addEventListener("input", () => updateLineTextColor(controls.textStyleColorInput.value));
     controls.textStyleOpacityInput?.addEventListener("input", () => {
       updateLabel({ opacity: normalizeOpacity(Number(controls.textStyleOpacityInput.value) / 100) });
     });

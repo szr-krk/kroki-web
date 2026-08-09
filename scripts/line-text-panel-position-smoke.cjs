@@ -7,6 +7,7 @@ const homeCss = fs.readFileSync(path.join(__dirname, "..", "src", "home.css"), "
 const index = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 const styleManager = fs.readFileSync(path.join(__dirname, "..", "src", "core", "styleManager.js"), "utf8");
 const editorObjectManager = fs.readFileSync(path.join(__dirname, "..", "src", "core", "editorObjectManager.js"), "utf8");
+const documentSerializer = fs.readFileSync(path.join(__dirname, "..", "src", "core", "documentSerializer.js"), "utf8");
 const responsiveScale = fs.readFileSync(path.join(__dirname, "..", "src", "responsive-scale.js"), "utf8");
 
 const baseRule = css.match(/\.line-text-panel\s*\{([^}]*)\}/)?.[1] || "";
@@ -40,14 +41,17 @@ assert.match(css, /\.line-text-icon-btn path,\s*\.line-text-icon-btn line,\s*\.l
 assert.match(sideIp, /id="btnLineTextStyle"/);
 assert.match(sideIp, /id="btnLineTextAlign"/);
 assert.match(sideIp, /id="iconLineTextAlign"/);
-assert.match(css, /\.editor-side-ip\.is-line-ip-pilot #btnLineText\s*\{\s*order:\s*10;/);
-assert.match(css, /\.editor-side-ip\.is-line-ip-pilot #btnLineTextStyle\s*\{\s*order:\s*20;/);
-assert.match(css, /\.editor-side-ip\.is-line-ip-pilot #btnLineColor\s*\{\s*order:\s*30;/);
-assert.match(css, /\.editor-side-ip\.is-line-ip-pilot #lineStrokeWidthStepper\s*\{\s*order:\s*40;/);
-assert.match(css, /\.editor-side-ip\.is-line-ip-pilot #btnLineStyle\s*\{\s*order:\s*50;/);
-assert.match(styleManager, /classList\.toggle\("is-line-ip-pilot", isSimpleLine\)/);
-assert.match(styleManager, /controls\?\.textAlign\?\.classList\.toggle\("gizli", noText \|\| isCatalogObject \|\| isSimpleLine\)/);
-assert.match(styleManager, /controls\?\.arrowStack\?\.classList\.toggle\("gizli", !hasArrows \|\| isSimpleLine\)/);
+assert.match(css, /\.editor-side-ip\.is-line-family-ip #btnLineText\s*\{\s*order:\s*10;/);
+assert.match(css, /\.editor-side-ip\.is-line-family-ip #btnLineTextStyle\s*\{\s*order:\s*20;/);
+assert.match(css, /\.editor-side-ip\.is-line-family-ip #btnLineColor\s*\{\s*order:\s*30;/);
+assert.match(css, /\.editor-side-ip\.is-line-family-ip #lineStrokeWidthStepper\s*\{\s*order:\s*40;/);
+assert.match(css, /\.editor-side-ip\.is-line-family-ip #btnLineStyle\s*\{\s*order:\s*50;/);
+assert.match(styleManager, /const isLineFamily = isLineToolType\(model\?\.type\);/);
+assert.match(styleManager, /classList\.toggle\("is-line-family-ip", isLineFamily\)/);
+assert.match(styleManager, /classList\.toggle\("is-line-family-panel", isLineFamily\)/);
+assert.match(styleManager, /controls\?\.textStyleButton\?\.classList\.toggle\("gizli", !isLineFamily \|\| noText\)/);
+assert.match(styleManager, /controls\?\.textAlign\?\.classList\.toggle\("gizli", noText \|\| isCatalogObject \|\| isLineFamily\)/);
+assert.match(styleManager, /controls\?\.arrowStack\?\.classList\.toggle\("gizli", !hasArrows \|\| isLineFamily\)/);
 assert.match(styleManager, /controls\.textAlign\?\.addEventListener\("click",/);
 assert.match(styleManager, /anchor:\s*nextChoiceId\(label\.position\.anchor, TEXT_ANCHORS\)/);
 assert.match(styleManager, /align:\s*nextChoiceId\(label\.position\.align, TEXT_ALIGNS\)/);
@@ -86,9 +90,18 @@ for (const id of [
 ]) assert.match(lineStylePanel, new RegExp(`id="${id}"`), `${id} cizgi stil panelinde olmali`);
 
 assert.match(styleManager, /controls\.textStyleButton\?\.addEventListener\("click", \(\) => togglePanel\(textStylePanel/);
-assert.match(styleManager, /controls\.textStyleColorInput\?\.addEventListener\("input",/);
+assert.match(styleManager, /controls\.textStyleColorInput\?\.addEventListener\("input", \(\) => updateLineTextColor/);
 assert.match(styleManager, /controls\.textStyleOpacityInput\?\.addEventListener\("input",/);
+assert.match(styleManager, /function updateLineTextStyleSize\(delta\) \{\s*const entry = activeEntry\(\);\s*if \(!entry \|\| entry\.multi \|\| !isLineToolType\(entry\.model\.type\)\) return;/);
+assert.match(styleManager, /function updateLineTextColor\(color\) \{\s*const entry = activeEntry\(\);\s*if \(!entry \|\| entry\.multi \|\| !isLineToolType\(entry\.model\.type\)\) return;/);
+assert.match(styleManager, /colorLinked:\s*String\(color\)\.toLowerCase\(\) === String\(style\.stroke\)\.toLowerCase\(\)/);
+assert.match(styleManager, /colorLinked:\s*element\.dataset\.labelColorLinked/);
+assert.match(styleManager, /element\.dataset\.labelColorLinked = label\.colorLinked \? "1" : "0"/);
 assert.match(styleManager, /if \(isLineToolType\(model\.type\)\) \{\s*element\.dataset\.labelBold = label\.bold \? "1" : "0";\s*element\.dataset\.labelItalic = label\.italic \? "1" : "0";\s*element\.dataset\.labelUnderline = label\.underline \? "1" : "0";/);
+assert.match(editorObjectManager, /const shouldSyncLabelColor = Object\.prototype\.hasOwnProperty\.call\(patch \|\| \{\}, "stroke"\) && currentLabel\.colorLinked;/);
+assert.match(editorObjectManager, /color:\s*style\.stroke, colorLinked:\s*true/);
+assert.match(documentSerializer, /label:\s*styleManager\.normalizeLabel\(model\?\.label, type, style\)/);
+assert.match(documentSerializer, /label:\s*styleManager\.normalizeLabel\(model\.label, model\.type, style\)/);
 assert.match(editorObjectManager, /label\.style\.fontWeight = model\.label\.bold \? "900" : "500";/);
 assert.match(editorObjectManager, /label\.style\.fontStyle = model\.label\.italic \? "italic" : "normal";/);
 assert.match(editorObjectManager, /label\.style\.textDecoration = model\.label\.underline \? "underline" : "none";/);
@@ -99,4 +112,22 @@ assert.match(styleManager, /if \(textEntryActive\) return;\s*repositionPanel\(pa
 assert.match(styleManager, /repositionTextEntryPanel\(textPanel, controls\.textButton\)/);
 assert.match(responsiveScale, /activeTextEntryHost\?\.matches\?\.\("\.free-text-composer, \.line-text-panel"\)/);
 
-console.log("line IP pilot and text panel stability smoke: ok");
+assert.match(index, /20260809-line-family-v1/);
+
+global.window = { Kroki: { EditorUtils: {} } };
+require(path.join(__dirname, "..", "src", "editor-stroke-style.js"));
+require(path.join(__dirname, "..", "src", "core", "styleManager.js"));
+const runtimeStyleManager = global.window.Kroki.StyleManager;
+for (const type of ["line", "arc", "bezier"]) {
+  const linked = runtimeStyleManager.normalizeLabel({}, type, { stroke: "#123456" });
+  assert.equal(linked.color, "#123456", `${type} varsayilan metin rengi stroke rengini izlemeli`);
+  assert.equal(linked.colorLinked, true, `${type} varsayilan renk bagini korumali`);
+  const legacyLinked = runtimeStyleManager.normalizeLabel({ color: "#123456" }, type, { stroke: "#123456" });
+  assert.equal(legacyLinked.colorLinked, true, `${type} eski esit renkleri bagli kabul etmeli`);
+  const detached = runtimeStyleManager.normalizeLabel({ color: "#654321" }, type, { stroke: "#123456" });
+  assert.equal(detached.colorLinked, false, `${type} farkli metin rengini bagimsiz kabul etmeli`);
+}
+assert.equal(Object.hasOwn(runtimeStyleManager.normalizeLabel({}, "text", { stroke: "#123456" }), "colorLinked"), false);
+delete global.window;
+
+console.log("line family IP and text panel stability smoke: ok");

@@ -94,10 +94,11 @@ Normalize edilen stil alanları:
 
 ## Ortak label sistemi
 
-Label alanları: `text`, `size`, `color`, `opacity`, `position`, `bold`, `italic`, `underline`.
+Label alanları: `text`, `size`, `color`, `opacity`, `position`, `bold`, `italic`, `underline`; çizgi ailesinde ayrıca `colorLinked`.
 
 - Trafik levhası ve diğer sembol dışındaki metinler Türkçe locale ile büyük harfe normalize edilir.
 - Line/arc/bezier label'ı çizgi üstü/üstünde/altında ve başlangıç/orta/son konum alır. Eğri label'lar gizli path üzerinde `textPath` kullanır.
+- Çizgi ailesi label rengi varsayılan olarak stroke rengini takip eder. Kullanıcı metin rengini farklı seçerse `colorLinked` kapanır; metin tekrar stroke rengine ayarlanırsa bağ yeniden kurulur. Bu durum `data-label-color-linked` ve belge modeliyle kalıcıdır.
 - Circle/ellipse/rectangle label'ları şekil içine satır kırarak, clip path ile taşmayı keserek yerleştirilir.
 - Circle label'ı şekille dönebilir veya yatay kalabilir.
 - `text`, `callout`, `trafficSign` ve `otherSymbol` kendi label render'ını adapter içinde yapar (`textObject` veya `ownsLabel`).
