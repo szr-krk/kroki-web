@@ -745,7 +745,6 @@
     });
     if (!initialData) return;
     const history = Kroki.HistoryManager;
-    const transaction = history?.begin?.("Ayrilan yol ekle");
     const branch = manager.create("road", initialData, {
       skipHistory: true,
       beforeNode: roadInsertBeforeNode()
@@ -753,7 +752,7 @@
     if (!branch) return;
     closeDeparturePanel();
     selection.edit(branch.id);
-    history?.commit?.(transaction, "Ayrilan yol ekle");
+    history?.pushObjectAdd?.(manager.get(branch.id), "Ayrilan yol ekle");
   }
 
   function makeSegmentButton(config, boundary, index) {

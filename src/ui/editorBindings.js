@@ -7,7 +7,6 @@
 
   let draft = null;
   let closedShapeDraftId = "";
-  let closedShapeHistory = null;
   let closedShapeTap = null;
   const closedShapeDraftStyle = { fill: "#d1d5db", fillOpacity: 0.45 };
   const TAP_MOVE_LIMIT_PX = 10;
@@ -85,7 +84,6 @@
     clearClosedShapeTap();
     const id = closedShapeDraftId;
     closedShapeDraftId = "";
-    closedShapeHistory = null;
     if (id) manager.remove(id, { skipHistory: true });
     syncClosedShapePanel();
     if (options.resetTool !== false) window.krokiEditorRail?.resetCizimAraci?.();
@@ -93,7 +91,6 @@
 
   function ensureClosedShapeDraft(point) {
     if (closedShapeDraftId && manager.get(closedShapeDraftId)) return closedShapeDraftId;
-    closedShapeHistory = Kroki.HistoryManager?.begin?.("Kapali sekil ekle") || null;
     const model = manager.create("closedShape", {
       points: [point],
       closed: false,
@@ -138,8 +135,7 @@
     syncClosedShapePanel();
     selection.edit(id);
     window.krokiEditorRail?.resetCizimAraci?.();
-    if (closedShapeHistory) Kroki.HistoryManager?.commit?.(closedShapeHistory, "Kapali sekil ekle");
-    closedShapeHistory = null;
+    Kroki.HistoryManager?.pushObjectAdd?.(manager.get(id), "Kapali sekil ekle");
   }
 
   function startClosedShapeTap(event) {
@@ -201,6 +197,36 @@
     }, { controlPoints: false, skipHistory: true });
   }
 
+  function cancelDraftFrame(draftState = draft) {
+    if (!draftState?.pendingFrame) return;
+    if (draftState.pendingFrameIsTimeout) window.clearTimeout(draftState.pendingFrame);
+    else window.cancelAnimationFrame?.(draftState.pendingFrame);
+    draftState.pendingFrame = 0;
+    draftState.pendingFrameIsTimeout = false;
+  }
+
+  function queueDraftPoint(event) {
+    if (!draft) return;
+    const draftState = draft;
+    draftState.pendingClientPoint = { clientX: event.clientX, clientY: event.clientY };
+    if (draftState.pendingFrame) return;
+    const run = () => {
+      if (draft !== draftState) return;
+      draftState.pendingFrame = 0;
+      draftState.pendingFrameIsTimeout = false;
+      const point = draftState.pendingClientPoint;
+      draftState.pendingClientPoint = null;
+      if (point) updateDraftGeometry(canvasPoint(point));
+    };
+    if (typeof window.requestAnimationFrame === "function") {
+      draftState.pendingFrame = window.requestAnimationFrame(run);
+      draftState.pendingFrameIsTimeout = false;
+    } else {
+      draftState.pendingFrame = window.setTimeout(run, 16);
+      draftState.pendingFrameIsTimeout = true;
+    }
+  }
+
   function releaseCapture(pointerId) {
     if (pointerId != null && manager.canvas.hasPointerCapture?.(pointerId)) {
       manager.canvas.releasePointerCapture(pointerId);
@@ -209,6 +235,8 @@
 
   function cancelDraft() {
     if (!draft) return;
+    cancelDraftFrame(draft);
+    draft.pendingClientPoint = null;
     const id = draft.model.id;
     releaseCapture(draft.pointerId);
     draft = null;
@@ -231,7 +259,6 @@
     }
 
     const start = canvasPoint(event);
-    const transaction = Kroki.HistoryManager?.begin?.("Nesne ekle") || null;
     const model = createDraftModel(type, start, tool);
     if (!model) return;
 
@@ -241,7 +268,9 @@
       start,
       model,
       pointerId: event.pointerId,
-      transaction
+      pendingClientPoint: null,
+      pendingFrame: 0,
+      pendingFrameIsTimeout: false
     };
     manager.canvas.setPointerCapture?.(event.pointerId);
     event.preventDefault();
@@ -254,7 +283,7 @@
       cancelDraft();
       return;
     }
-    updateDraftGeometry(canvasPoint(event));
+    queueDraftPoint(event);
     event.preventDefault();
   }
 
@@ -266,6 +295,8 @@
       return;
     }
 
+    cancelDraftFrame(draft);
+    draft.pendingClientPoint = null;
     const end = canvasPoint(event);
     updateDraftGeometry(end);
     releaseCapture(event.pointerId);
@@ -273,7 +304,6 @@
     const tooSmall = Math.hypot(end.x - draft.start.x, end.y - draft.start.y) < 2;
     const id = draft.model.id;
     const type = draft.type;
-    const transaction = draft.transaction;
     draft = null;
 
     if (tooSmall) {
@@ -289,7 +319,7 @@
     }
 
     selection.edit(id);
-    if (transaction) Kroki.HistoryManager?.commit?.(transaction, "Nesne ekle");
+    Kroki.HistoryManager?.pushObjectAdd?.(manager.get(id), "Nesne ekle");
     event.preventDefault();
   }
 

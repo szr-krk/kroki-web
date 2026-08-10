@@ -47,6 +47,29 @@
     return result;
   }
 
+  function withObjectHistory(id, options, label, operation) {
+    if (options?.skipHistory || Kroki.HistoryManager?.isSuspended?.()) return operation();
+    const history = Kroki.HistoryManager;
+    if (typeof history?.beginObjectChange !== "function" || typeof history?.commitObjectChange !== "function") {
+      return withHistory(options, label, operation);
+    }
+    const historyLabel = options?.historyLabel || options?.label || label;
+    const transaction = history.beginObjectChange(id, historyLabel);
+    const result = operation();
+    if (transaction) history.commitObjectChange(transaction, historyLabel);
+    return result;
+  }
+
+  function withObjectAddHistory(options, label, operation) {
+    if (options?.skipHistory || Kroki.HistoryManager?.isSuspended?.()) return operation();
+    const history = Kroki.HistoryManager;
+    if (typeof history?.pushObjectAdd !== "function") return withHistory(options, label, operation);
+    const historyLabel = options?.historyLabel || options?.label || label;
+    const result = operation();
+    if (result) history.pushObjectAdd(result, historyLabel);
+    return result;
+  }
+
   function normalizeModel(model) {
     const type = model?.type || "";
     const style = styleManager.normalizeStyle(model?.style, type);
@@ -687,19 +710,19 @@
       else parent.append(element);
     }
     renderObject(model.id);
-    keepRoadLayersAtBack();
+    if (model.type === "road") keepRoadLayersAtBack();
     markSceneChanged();
     return model;
   }
 
   function add(modelInput, options = {}) {
-    return withHistory(options, "Nesne ekle", () => addRaw(modelInput, options));
+    return withObjectAddHistory(options, "Nesne ekle", () => addRaw(modelInput, options));
   }
 
   function create(type, initialData = {}, options = {}) {
     const adapter = registry.get(type);
     if (!adapter) return null;
-    return withHistory(options, "Nesne ekle", () => {
+    return withObjectAddHistory(options, "Nesne ekle", () => {
       const model = adapter.create(initialData);
       return addRaw(model, { ...options, skipHistory: true });
     });
@@ -727,7 +750,7 @@
   }
 
   function updateModel(id, updater, options = {}) {
-    return withHistory(options, "Nesne guncelle", () => updateModelRaw(id, updater, options));
+    return withObjectHistory(id, options, "Nesne guncelle", () => updateModelRaw(id, updater, options));
   }
 
   function updateModelRaw(id, updater, options = {}) {
@@ -745,7 +768,7 @@
   }
 
   function updateGeometry(id, mutator, options = {}) {
-    return withHistory(options, "Geometri guncelle", () => updateGeometryRaw(id, mutator, options));
+    return withObjectHistory(id, options, "Geometri guncelle", () => updateGeometryRaw(id, mutator, options));
   }
 
   function updateGeometryRaw(id, mutator, options = {}) {

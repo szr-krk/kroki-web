@@ -12,6 +12,7 @@
   const selectedLabel = document.querySelector("#vehicleSelectedLabel");
   const addButton = document.querySelector("#btnVehicleAdd");
   const panel = document.querySelector("#railMenuArac");
+  const PREVIEW_CACHE_LIMIT = 96;
 
   let activeTypeId = "";
   let selectedKey = "";
@@ -53,10 +54,10 @@
 
   function renderVariantPreview(variant) {
     const cacheKey = variant?.key ? `${variant.key}:side` : "";
-    const cached = cacheKey ? previewCache.get(cacheKey) : null;
+    const cached = cacheKey ? utils.lruGet(previewCache, cacheKey) : null;
     if (cached) return cached.cloneNode(true);
     const svg = renderer.renderPreviewSvg(variant, { view: "side" });
-    if (cacheKey) previewCache.set(cacheKey, svg);
+    if (cacheKey) utils.lruSet(previewCache, cacheKey, svg, PREVIEW_CACHE_LIMIT);
     return svg.cloneNode(true);
   }
 
@@ -76,7 +77,6 @@
       const count = document.createElement("strong");
       count.textContent = String(type.variants.length);
       button.append(title, count);
-      button.addEventListener("click", () => setActiveType(type.id));
       fragment.append(button);
     });
     typeList.replaceChildren(fragment);
@@ -113,7 +113,6 @@
       const name = document.createElement("span");
       name.textContent = variant.name;
       tile.append(preview, name);
-      tile.addEventListener("click", () => setSelected(variant));
       fragment.append(tile);
     });
     grid.replaceChildren(fragment);
@@ -162,6 +161,16 @@
   }
 
   addButton?.addEventListener("click", addSelectedVehicle);
+  grid?.addEventListener("click", (event) => {
+    const tile = event.target.closest?.(".vehicle-variant-tile");
+    if (!tile || !grid.contains(tile)) return;
+    setSelected(catalog.findVariant(tile.dataset.vehicleVariantKey));
+  });
+  typeList?.addEventListener("click", (event) => {
+    const button = event.target.closest?.(".vehicle-type-button");
+    if (!button || !typeList.contains(button)) return;
+    setActiveType(button.dataset.vehicleTypeId);
+  });
   panel?.addEventListener("kroki:rail-menu-open", ensureRendered);
   if (panel && !panel.classList.contains("gizli")) ensureRendered();
 

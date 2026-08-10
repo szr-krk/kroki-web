@@ -16,6 +16,7 @@
   const searchClearButton = document.querySelector("#btnTrafficSignSearchClear");
   const panel = document.querySelector("#railMenuLevha");
   const browser = panel?.querySelector(".traffic-sign-browser");
+  const ART_CACHE_LIMIT = 128;
 
   let activeCategoryKey = "";
   let selectedKey = "";
@@ -85,7 +86,7 @@
 
   function renderSignArt(sign) {
     const cacheKey = sign?.key || "";
-    const cached = cacheKey ? artCache.get(cacheKey) : null;
+    const cached = cacheKey ? utils.lruGet(artCache, cacheKey) : null;
     if (cached) return cached.cloneNode(true);
     const svg = createSvgElement("svg", {
       viewBox: sign.viewBox,
@@ -93,7 +94,7 @@
       "aria-hidden": "true"
     });
     svg.innerHTML = sign.art;
-    if (cacheKey) artCache.set(cacheKey, svg);
+    if (cacheKey) utils.lruSet(artCache, cacheKey, svg, ART_CACHE_LIMIT);
     return svg.cloneNode(true);
   }
 
@@ -137,7 +138,6 @@
       tile.setAttribute("aria-label", tile.title);
       tile.setAttribute("aria-pressed", "false");
       tile.append(renderSignArt(sign));
-      tile.addEventListener("click", () => setSelected(sign));
       fragment.append(tile);
     });
     grid.replaceChildren(fragment);
@@ -190,7 +190,6 @@
       title.textContent = utils.turkishListLabel(categoryTitle);
       count.textContent = String(category.signs.length);
       button.append(title, count);
-      button.addEventListener("click", () => setActiveCategory(category.key));
       fragment.append(button);
     });
     categoryList.replaceChildren(fragment);
@@ -233,6 +232,16 @@
   }
 
   addButton?.addEventListener("click", addSelectedSign);
+  grid?.addEventListener("click", (event) => {
+    const tile = event.target.closest?.(".traffic-sign-tile");
+    if (!tile || !grid.contains(tile)) return;
+    setSelected(catalog.find(tile.dataset.signKey));
+  });
+  categoryList?.addEventListener("click", (event) => {
+    const button = event.target.closest?.(".traffic-sign-category");
+    if (!button || !categoryList.contains(button)) return;
+    setActiveCategory(button.dataset.categoryKey);
+  });
   searchInput?.addEventListener("input", () => {
     window.clearTimeout(searchTimer);
     searchTimer = window.setTimeout(() => setSearchValue(searchInput.value), 100);

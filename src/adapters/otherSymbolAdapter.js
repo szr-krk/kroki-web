@@ -34,8 +34,7 @@
       height: Number(metadata.symbolHeight) || 100,
       viewBox: metadata.symbolViewBox || `0 0 ${Number(metadata.symbolWidth) || 100} ${Number(metadata.symbolHeight) || 100}`,
       baseScale: Number(metadata.symbolBaseScale) || 0.5,
-      art: metadata.symbolArt || "",
-      svg: ""
+      art: metadata.symbolArt || ""
     };
   }
 

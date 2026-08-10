@@ -58,6 +58,26 @@
       .trim();
   }
 
+  function lruGet(cache, key) {
+    if (!cache?.has?.(key)) return undefined;
+    const value = cache.get(key);
+    cache.delete(key);
+    cache.set(key, value);
+    return value;
+  }
+
+  function lruSet(cache, key, value, maxEntries = 128) {
+    if (!cache?.set) return value;
+    if (cache.has(key)) cache.delete(key);
+    cache.set(key, value);
+    const limit = Math.max(1, Math.floor(numberOr(maxEntries, 128)));
+    while (cache.size > limit) {
+      const oldestKey = cache.keys().next().value;
+      cache.delete(oldestKey);
+    }
+    return value;
+  }
+
   function typeFromElement(element) {
     const shape = element?.dataset?.shape;
     if (shape === "arc" || shape === "bezier" || shape === "circle" || shape === "ellipse" || shape === "rectangle" || shape === "closedShape" || shape === "text" || shape === "callout" || shape === "road" || shape === "trafficSign" || shape === "otherSymbol" || shape === "vehicle") return shape;
@@ -85,6 +105,8 @@
     normalizeRotation,
     turkishListLabel,
     turkishSearchText,
+    lruGet,
+    lruSet,
     typeFromElement
   };
 

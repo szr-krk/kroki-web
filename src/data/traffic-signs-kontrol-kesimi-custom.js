@@ -62,14 +62,10 @@
     category: "6 PANELLER",
     categoryKey: "6-paneller",
     file: "KONTROL KESİMİ LEVHASI.svg",
-    relativePath: "KONTROL KESİMİ LEVHASI.svg",
     width: 500,
     height: 400,
     viewBox: "0 0 500 400",
     baseScale: 0.08,
-    svg: `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="400" viewBox="0 0 500 400">
-  ${art}
-</svg>`,
     art
   };
 

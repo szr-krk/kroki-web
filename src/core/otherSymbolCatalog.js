@@ -27,8 +27,7 @@
       height: Number(symbol?.height) || 0,
       viewBox: String(symbol?.viewBox || `0 0 ${Number(symbol?.width) || 100} ${Number(symbol?.height) || 100}`),
       baseScale: Number(symbol?.baseScale) || 0.5,
-      art: String(symbol?.art || ""),
-      svg: String(symbol?.svg || "")
+      art: String(symbol?.art || "")
     };
   }
 

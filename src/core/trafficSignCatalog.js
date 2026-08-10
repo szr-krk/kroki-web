@@ -87,8 +87,7 @@
       height: Number(sign?.height) || 0,
       viewBox: normalizedViewBox,
       baseScale: normalizedBaseScale(sign, normalizedCategoryKey, normalizedViewBox),
-      art: normalizeMarkup(sign?.art),
-      svg: normalizeMarkup(sign?.svg)
+      art: normalizeMarkup(sign?.art)
     };
   }
 

@@ -13,12 +13,10 @@
     "category": "7 KAPLAMA İŞARETLERİ",
     "categoryKey": "7-kaplama-isaretleri",
     "file": "BİSİKLET YOLU.svg",
-    "relativePath": "BİSİKLET YOLU.svg",
     "width": 47.44,
     "height": 53.8,
     "viewBox": "1.275 0.9 47.44 53.8",
     "baseScale": 0.08,
-    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"47.44\"\n  height=\"53.8\"\n  viewBox=\"1.275 0.9 47.44 53.8\"\n>\n  <g\n    data-sign-key=\"7-kaplama-isaretleri/bisiklet-yolu\"\n    data-sign-code=\"BİSİKLET\"\n    data-sign-name=\"YOLU\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 18 1 L 21.8 0.9 L 21.7 4.7 L 18.7 4.7 C 18.1 4.7 17.6 5.1 17.3 5.6 C 16.9 6.2 16.8 7 16.7 7.7 L 16.3 10.2 L 31.7 10.2 L 32.1 7.9 C 31.1 7.8 30.2 7.6 29.4 7 C 28.9 6.7 28.5 6.3 28.4 5.8 C 28.3 5.4 28.4 5 28.5 4.6 L 36.8 4.6 L 36.8 7.8 L 34.4 7.8 L 34.1 10.4 L 36.6 20.8 C 37.9 20 39.6 19.7 41.1 20.3 C 42.1 20.6 43 21.2 43.8 22 C 45.2 23.4 46.1 25.2 46.9 27 C 48.4 30.8 48.8 34.8 48.7 38.7 C 48.6 41.7 48 44.6 47 47.4 C 46.1 49.6 45 51.8 43.1 53.3 C 42.1 54.1 40.8 54.6 39.5 54.7 C 38.6 54.7 37.7 54.4 36.9 54.1 C 35.8 53.5 35 52.6 34.2 51.7 C 32.5 49.4 31.4 46.7 30.8 43.9 C 30.5 42.4 30.3 40.8 30.2 39.3 C 28.6 39.3 26.9 39.4 25.5 38.6 C 24.2 37.7 23.5 36.3 22.9 34.9 L 14.9 18 L 14.4 21.5 C 14.6 21.9 15 22.1 15.2 22.4 C 16.1 23.4 16.8 24.5 17.4 25.7 C 19.3 29.6 19.9 34.1 19.8 38.5 C 19.6 42.3 18.9 46.3 17 49.7 C 16.3 51.1 15.3 52.4 14.1 53.3 C 13.1 54.1 11.9 54.6 10.6 54.7 C 9.6 54.7 8.7 54.4 7.8 54 C 7 53.5 6.3 52.8 5.7 52.1 C 4.4 50.7 3.5 48.9 2.8 47.1 C 1.8 44.1 1.2 41 1.3 37.8 C 1.3 36.5 1.2 35.3 1.4 34.1 C 1.6 31.6 2.2 29.2 3 27 C 3.7 25.3 4.5 23.7 5.8 22.4 C 6.8 21.2 8.2 20.3 9.7 20.1 C 10.6 19.9 11.5 20.1 12.3 20.3 L 14.6 7 C 14.9 5.4 15.1 3.7 16.1 2.4 C 16.5 1.8 17.2 1.1 18 1 M 15.9 14 L 26.4 36.6 L 30.9 14 L 15.9 14 M 33 15.6 L 29.1 35.4 L 30.2 35.4 C 30.4 32.6 30.9 29.7 32 27 C 32.6 25.4 33.4 24 34.4 22.7 C 34.5 22.6 34.6 22.5 34.6 22.3 L 33 15.6 M 8.8 24.3 C 7.7 24.8 6.8 25.6 6.2 26.6 C 5.1 28.1 4.5 29.9 4 31.6 C 3.5 33.8 3.3 36.1 3.4 38.4 C 3.5 40.7 3.9 43.1 4.7 45.2 C 5.3 46.7 6.1 48.2 7.3 49.3 C 7.8 49.9 8.5 50.4 9.3 50.6 C 10.3 51 11.4 50.8 12.4 50.3 C 13.9 49.5 14.9 48.1 15.6 46.7 C 16.4 45.2 16.9 43.6 17.2 42 C 17.6 40 17.8 38 17.6 36 C 17.5 33.7 17 31.4 16.2 29.2 C 15.6 27.8 14.8 26.4 13.7 25.3 L 11.5 37.8 A 1 1 0 0 1 9.4 37.3 L 11.7 24 C 10.7 23.7 9.7 23.8 8.8 24.3 M 37.5 24.3 L 40 34.7 C 40.2 35.7 40.6 36.7 40.4 37.8 C 40.4 38.4 40.1 39.2 39.4 39.3 L 32.3 39.3 C 32.6 40.9 32.8 42.6 33.3 44.2 C 33.7 45.6 34.4 47 35.2 48.2 C 35.9 49.2 36.8 50.1 38 50.5 C 38.9 51 40.1 50.9 41.1 50.4 C 41.9 50 42.7 49.5 43.2 48.8 C 44.1 47.7 44.7 46.5 45.2 45.2 C 46.6 41.5 46.9 37.4 46.3 33.6 C 46 31.7 45.5 30 44.7 28.3 C 44.1 27 43.3 25.8 42.1 24.9 C 41.4 24.3 40.4 23.8 39.4 23.9 C 38.8 23.8 38.1 24.1 37.5 24.3 M 34 28.7 C 33 30.8 32.6 33.1 32.3 35.4 L 37.8 35.4 L 35.5 26.1 C 34.9 26.9 34.4 27.8 34 28.7 Z M 34 28.7\"\n      fill=\"#000000\"\n    />\n  </g>\n</svg>",
     "art": "<g\n    data-sign-key=\"7-kaplama-isaretleri/bisiklet-yolu\"\n    data-sign-code=\"BİSİKLET\"\n    data-sign-name=\"YOLU\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 18 1 L 21.8 0.9 L 21.7 4.7 L 18.7 4.7 C 18.1 4.7 17.6 5.1 17.3 5.6 C 16.9 6.2 16.8 7 16.7 7.7 L 16.3 10.2 L 31.7 10.2 L 32.1 7.9 C 31.1 7.8 30.2 7.6 29.4 7 C 28.9 6.7 28.5 6.3 28.4 5.8 C 28.3 5.4 28.4 5 28.5 4.6 L 36.8 4.6 L 36.8 7.8 L 34.4 7.8 L 34.1 10.4 L 36.6 20.8 C 37.9 20 39.6 19.7 41.1 20.3 C 42.1 20.6 43 21.2 43.8 22 C 45.2 23.4 46.1 25.2 46.9 27 C 48.4 30.8 48.8 34.8 48.7 38.7 C 48.6 41.7 48 44.6 47 47.4 C 46.1 49.6 45 51.8 43.1 53.3 C 42.1 54.1 40.8 54.6 39.5 54.7 C 38.6 54.7 37.7 54.4 36.9 54.1 C 35.8 53.5 35 52.6 34.2 51.7 C 32.5 49.4 31.4 46.7 30.8 43.9 C 30.5 42.4 30.3 40.8 30.2 39.3 C 28.6 39.3 26.9 39.4 25.5 38.6 C 24.2 37.7 23.5 36.3 22.9 34.9 L 14.9 18 L 14.4 21.5 C 14.6 21.9 15 22.1 15.2 22.4 C 16.1 23.4 16.8 24.5 17.4 25.7 C 19.3 29.6 19.9 34.1 19.8 38.5 C 19.6 42.3 18.9 46.3 17 49.7 C 16.3 51.1 15.3 52.4 14.1 53.3 C 13.1 54.1 11.9 54.6 10.6 54.7 C 9.6 54.7 8.7 54.4 7.8 54 C 7 53.5 6.3 52.8 5.7 52.1 C 4.4 50.7 3.5 48.9 2.8 47.1 C 1.8 44.1 1.2 41 1.3 37.8 C 1.3 36.5 1.2 35.3 1.4 34.1 C 1.6 31.6 2.2 29.2 3 27 C 3.7 25.3 4.5 23.7 5.8 22.4 C 6.8 21.2 8.2 20.3 9.7 20.1 C 10.6 19.9 11.5 20.1 12.3 20.3 L 14.6 7 C 14.9 5.4 15.1 3.7 16.1 2.4 C 16.5 1.8 17.2 1.1 18 1 M 15.9 14 L 26.4 36.6 L 30.9 14 L 15.9 14 M 33 15.6 L 29.1 35.4 L 30.2 35.4 C 30.4 32.6 30.9 29.7 32 27 C 32.6 25.4 33.4 24 34.4 22.7 C 34.5 22.6 34.6 22.5 34.6 22.3 L 33 15.6 M 8.8 24.3 C 7.7 24.8 6.8 25.6 6.2 26.6 C 5.1 28.1 4.5 29.9 4 31.6 C 3.5 33.8 3.3 36.1 3.4 38.4 C 3.5 40.7 3.9 43.1 4.7 45.2 C 5.3 46.7 6.1 48.2 7.3 49.3 C 7.8 49.9 8.5 50.4 9.3 50.6 C 10.3 51 11.4 50.8 12.4 50.3 C 13.9 49.5 14.9 48.1 15.6 46.7 C 16.4 45.2 16.9 43.6 17.2 42 C 17.6 40 17.8 38 17.6 36 C 17.5 33.7 17 31.4 16.2 29.2 C 15.6 27.8 14.8 26.4 13.7 25.3 L 11.5 37.8 A 1 1 0 0 1 9.4 37.3 L 11.7 24 C 10.7 23.7 9.7 23.8 8.8 24.3 M 37.5 24.3 L 40 34.7 C 40.2 35.7 40.6 36.7 40.4 37.8 C 40.4 38.4 40.1 39.2 39.4 39.3 L 32.3 39.3 C 32.6 40.9 32.8 42.6 33.3 44.2 C 33.7 45.6 34.4 47 35.2 48.2 C 35.9 49.2 36.8 50.1 38 50.5 C 38.9 51 40.1 50.9 41.1 50.4 C 41.9 50 42.7 49.5 43.2 48.8 C 44.1 47.7 44.7 46.5 45.2 45.2 C 46.6 41.5 46.9 37.4 46.3 33.6 C 46 31.7 45.5 30 44.7 28.3 C 44.1 27 43.3 25.8 42.1 24.9 C 41.4 24.3 40.4 23.8 39.4 23.9 C 38.8 23.8 38.1 24.1 37.5 24.3 M 34 28.7 C 33 30.8 32.6 33.1 32.3 35.4 L 37.8 35.4 L 35.5 26.1 C 34.9 26.9 34.4 27.8 34 28.7 Z M 34 28.7\"\n      fill=\"#000000\"\n    />\n</g>"
   },
   {
@@ -28,12 +26,10 @@
     "category": "7 KAPLAMA İŞARETLERİ",
     "categoryKey": "7-kaplama-isaretleri",
     "file": "DUR.svg",
-    "relativePath": "DUR.svg",
     "width": 36,
     "height": 89.25,
     "viewBox": "1 1 36 89.25",
     "baseScale": 0.08,
-    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"36\"\n  height=\"89.25\"\n  viewBox=\"1 1 36 89.25\"\n>\n  <g\n    data-sign-key=\"7-kaplama-isaretleri/dur-dur\"\n    data-sign-code=\"DUR\"\n    data-sign-name=\"DUR\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 1 1 L 7 1 C 12 1 12 90 7 90 L 1 90 L 1 1 Z M 3 14 L 3 77 L 7 77 C 10 74 10 17 7 14 Z M 14 1 L 16 1 L 16 70 C 16 88 22 88 22 70 L 22 1 C 22 1 22 1 22 1 L 24 1 L 24 70 C 24 97 14 97 14 70 Z M 27 1 L 32 1 C 38 1 36 54 34 54 L 37 90 L 35 90 L 32 54 L 29 54 L 29 90 C 29 90 29 90 29 90 L 27 90 L 27 1 M 29 14 L 29 46 L 32 46 C 34 46 34 14 32 14 Z\"\n      fill=\"#000000\"\n    />\n  </g>\n</svg>",
     "art": "<g\n    data-sign-key=\"7-kaplama-isaretleri/dur-dur\"\n    data-sign-code=\"DUR\"\n    data-sign-name=\"DUR\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 1 1 L 7 1 C 12 1 12 90 7 90 L 1 90 L 1 1 Z M 3 14 L 3 77 L 7 77 C 10 74 10 17 7 14 Z M 14 1 L 16 1 L 16 70 C 16 88 22 88 22 70 L 22 1 C 22 1 22 1 22 1 L 24 1 L 24 70 C 24 97 14 97 14 70 Z M 27 1 L 32 1 C 38 1 36 54 34 54 L 37 90 L 35 90 L 32 54 L 29 54 L 29 90 C 29 90 29 90 29 90 L 27 90 L 27 1 M 29 14 L 29 46 L 32 46 C 34 46 34 14 32 14 Z\"\n      fill=\"#000000\"\n    />\n</g>"
   },
   {
@@ -43,12 +39,10 @@
     "category": "7 KAPLAMA İŞARETLERİ",
     "categoryKey": "7-kaplama-isaretleri",
     "file": "EDS.svg",
-    "relativePath": "EDS.svg",
     "width": 31.27,
     "height": 33.85,
     "viewBox": "5 5 31.27 33.85",
     "baseScale": 0.08,
-    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"31.27\"\n  height=\"33.85\"\n  viewBox=\"5 5 31.27 33.85\"\n>\n  <g\n    data-sign-key=\"7-kaplama-isaretleri/eds-eds\"\n    data-sign-code=\"EDS\"\n    data-sign-name=\"EDS\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 5 5 L 13.7 5 L 13.7 11 L 7.4 11 L 7.4 17.9 L 13.3 17.9 L 13.3 23.7 L 7.4 23.7 L 7.4 32.5 L 13.9 32.5 L 13.9 38.2 L 5 38.2 Z M 29.3 5.6 C 29.3 5 33.2 5 33.2 5.6 C 33.8 6.3 35 8 35.1 8.5 C 35.8 10.5 36 12.6 36 14.9 L 33.4 15.4 C 33.5 14 33.4 12.6 32.9 11.5 C 32.4 10.5 31.6 10.1 30.8 10.5 C 30.3 10.8 30 11.2 29.8 12 C 29.5 13.1 29.5 14.4 30 15.6 C 30.5 16.8 31.4 17.3 32.3 17.7 C 33.4 18.6 34.7 19.7 35.3 21.6 C 36.4 24.6 36.4 28 36.1 31.2 C 36 33.4 35.7 35.5 34.7 37 C 34.4 37.5 33.9 38 33.4 38.4 C 32.4 39.1 31.1 38.9 30.2 38.4 C 29.7 38.2 29.4 37.8 29 37.3 C 27.9 35.7 27.4 33.1 27.1 30.8 C 27 29.7 26.8 28.6 26.8 27.3 L 29.2 26.7 C 29.4 28.4 29.5 29.7 29.8 31.1 C 30.2 32.5 31.3 33.4 32.3 32.9 C 33 32.6 33.4 31.6 33.7 30.6 C 34.1 29.3 34.1 27.8 33.5 26.4 C 33.2 25.8 32.9 25 32.3 24.8 C 31.9 24.4 31.4 24.4 31.1 23.9 C 30 23.2 28.9 22 28.2 20.2 C 27.9 19.1 27.6 17.9 27.4 16.5 C 27.3 14.7 27.3 13.1 27.4 11.2 C 27.7 9.4 28 7.3 29.3 5.6 Z M 15.8 5 L 21.4 5 C 27.4 9.1 26.1 36.4 21.4 38.2 L 15.8 38.2 L 15.8 5 M 18.2 11 L 18.2 32.5 L 21.3 32.5 C 23.7 26.7 23.7 16.3 21.3 11 L 18.2 11 Z\"\n      fill=\"#000000\"\n    />\n  </g>\n</svg>",
     "art": "<g\n    data-sign-key=\"7-kaplama-isaretleri/eds-eds\"\n    data-sign-code=\"EDS\"\n    data-sign-name=\"EDS\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 5 5 L 13.7 5 L 13.7 11 L 7.4 11 L 7.4 17.9 L 13.3 17.9 L 13.3 23.7 L 7.4 23.7 L 7.4 32.5 L 13.9 32.5 L 13.9 38.2 L 5 38.2 Z M 29.3 5.6 C 29.3 5 33.2 5 33.2 5.6 C 33.8 6.3 35 8 35.1 8.5 C 35.8 10.5 36 12.6 36 14.9 L 33.4 15.4 C 33.5 14 33.4 12.6 32.9 11.5 C 32.4 10.5 31.6 10.1 30.8 10.5 C 30.3 10.8 30 11.2 29.8 12 C 29.5 13.1 29.5 14.4 30 15.6 C 30.5 16.8 31.4 17.3 32.3 17.7 C 33.4 18.6 34.7 19.7 35.3 21.6 C 36.4 24.6 36.4 28 36.1 31.2 C 36 33.4 35.7 35.5 34.7 37 C 34.4 37.5 33.9 38 33.4 38.4 C 32.4 39.1 31.1 38.9 30.2 38.4 C 29.7 38.2 29.4 37.8 29 37.3 C 27.9 35.7 27.4 33.1 27.1 30.8 C 27 29.7 26.8 28.6 26.8 27.3 L 29.2 26.7 C 29.4 28.4 29.5 29.7 29.8 31.1 C 30.2 32.5 31.3 33.4 32.3 32.9 C 33 32.6 33.4 31.6 33.7 30.6 C 34.1 29.3 34.1 27.8 33.5 26.4 C 33.2 25.8 32.9 25 32.3 24.8 C 31.9 24.4 31.4 24.4 31.1 23.9 C 30 23.2 28.9 22 28.2 20.2 C 27.9 19.1 27.6 17.9 27.4 16.5 C 27.3 14.7 27.3 13.1 27.4 11.2 C 27.7 9.4 28 7.3 29.3 5.6 Z M 15.8 5 L 21.4 5 C 27.4 9.1 26.1 36.4 21.4 38.2 L 15.8 38.2 L 15.8 5 M 18.2 11 L 18.2 32.5 L 21.3 32.5 C 23.7 26.7 23.7 16.3 21.3 11 L 18.2 11 Z\"\n      fill=\"#000000\"\n    />\n</g>"
   },
   {
@@ -58,12 +52,10 @@
     "category": "7 KAPLAMA İŞARETLERİ",
     "categoryKey": "7-kaplama-isaretleri",
     "file": "ENGELLİ PARKI.svg",
-    "relativePath": "ENGELLİ PARKI.svg",
     "width": 40,
     "height": 59.5,
     "viewBox": "1 0.5 40 59.5",
     "baseScale": 0.08,
-    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"40\"\n  height=\"59.5\"\n  viewBox=\"1 0.5 40 59.5\"\n>\n  <g\n    data-sign-key=\"7-kaplama-isaretleri/engelli-parki\"\n    data-sign-code=\"ENGELLİ\"\n    data-sign-name=\"PARKI\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 10 5 A 1 1 0 0 1 19 5 A 1 1 0 0 1 10 5 Z M 10 17 A 1 1 0 0 1 19 17 L 19 25 L 30 25 C 30 25 30 25 30 25 A 1 1 0 0 1 30 28 L 19 28 L 19 32 L 32 32 C 34 32 35 37 35 37 L 41 57 L 37 57 L 30 38 C 30 38 30 37 29 37 L 14 37 Q 11 37 10 34 Z M 25 48 A 1 1 0 0 1 1 48 A 1 1 0 0 1 25 48 Z M 5 48 A 1 1 0 0 0 21 48 A 1 1 0 0 0 5 48 Z\"\n      fill=\"#000000\"\n    />\n  </g>\n</svg>",
     "art": "<g\n    data-sign-key=\"7-kaplama-isaretleri/engelli-parki\"\n    data-sign-code=\"ENGELLİ\"\n    data-sign-name=\"PARKI\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 10 5 A 1 1 0 0 1 19 5 A 1 1 0 0 1 10 5 Z M 10 17 A 1 1 0 0 1 19 17 L 19 25 L 30 25 C 30 25 30 25 30 25 A 1 1 0 0 1 30 28 L 19 28 L 19 32 L 32 32 C 34 32 35 37 35 37 L 41 57 L 37 57 L 30 38 C 30 38 30 37 29 37 L 14 37 Q 11 37 10 34 Z M 25 48 A 1 1 0 0 1 1 48 A 1 1 0 0 1 25 48 Z M 5 48 A 1 1 0 0 0 21 48 A 1 1 0 0 0 5 48 Z\"\n      fill=\"#000000\"\n    />\n</g>"
   },
   {
@@ -73,12 +65,10 @@
     "category": "7 KAPLAMA İŞARETLERİ",
     "categoryKey": "7-kaplama-isaretleri",
     "file": "HIZ KESİCİ BEŞLİ.svg",
-    "relativePath": "HIZ KESİCİ BEŞLİ.svg",
     "width": 46,
     "height": 20,
     "viewBox": "0 5 46 20",
     "baseScale": 0.08,
-    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"46\"\n  height=\"20\"\n  viewBox=\"0 5 46 20\"\n>\n  <g\n    data-sign-key=\"7-kaplama-isaretleri/hiz-kesici-besli\"\n    data-sign-code=\"HIZ\"\n    data-sign-name=\"KESİCİ BEŞLİ\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 0 5 L 46 5 M 0 10 L 46 10 M 0 15 L 46 15 M 0 20 L 46 20 M 0 25 L 46 25\"\n      stroke=\"#000000\"\n      stroke-width=\"2\"\n      fill=\"none\"\n    />\n  </g>\n</svg>",
     "art": "<g\n    data-sign-key=\"7-kaplama-isaretleri/hiz-kesici-besli\"\n    data-sign-code=\"HIZ\"\n    data-sign-name=\"KESİCİ BEŞLİ\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 0 5 L 46 5 M 0 10 L 46 10 M 0 15 L 46 15 M 0 20 L 46 20 M 0 25 L 46 25\"\n      stroke=\"#000000\"\n      stroke-width=\"2\"\n      fill=\"none\"\n    />\n</g>"
   },
   {
@@ -88,12 +78,10 @@
     "category": "7 KAPLAMA İŞARETLERİ",
     "categoryKey": "7-kaplama-isaretleri",
     "file": "HIZ KESİCİ İKİLİ.svg",
-    "relativePath": "HIZ KESİCİ İKİLİ.svg",
     "width": 50,
     "height": 9,
     "viewBox": "-2 3 50 9",
     "baseScale": 0.08,
-    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"50\"\n  height=\"9\"\n  viewBox=\"-2 3 50 9\"\n>\n  <g\n    data-sign-key=\"7-kaplama-isaretleri/hiz-kesici-ikili\"\n    data-sign-code=\"HIZ\"\n    data-sign-name=\"KESİCİ İKİLİ\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 0 5 L 46 5 M 0 10 L 46 10\"\n      stroke=\"#000000\"\n      stroke-width=\"2\"\n      fill=\"none\"\n    />\n  </g>\n</svg>",
     "art": "<g\n    data-sign-key=\"7-kaplama-isaretleri/hiz-kesici-ikili\"\n    data-sign-code=\"HIZ\"\n    data-sign-name=\"KESİCİ İKİLİ\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 0 5 L 46 5 M 0 10 L 46 10\"\n      stroke=\"#000000\"\n      stroke-width=\"2\"\n      fill=\"none\"\n    />\n</g>"
   },
   {
@@ -103,12 +91,10 @@
     "category": "7 KAPLAMA İŞARETLERİ",
     "categoryKey": "7-kaplama-isaretleri",
     "file": "HIZ TAHDİT ELLİ.svg",
-    "relativePath": "HIZ TAHDİT ELLİ.svg",
     "width": 29,
     "height": 96.75,
     "viewBox": "-1 -1.25 29 96.75",
     "baseScale": 0.08,
-    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"29\"\n  height=\"96.75\"\n  viewBox=\"-1 -1.25 29 96.75\"\n>\n  <g\n    data-sign-key=\"7-kaplama-isaretleri/hiz-tahdit-elli\"\n    data-sign-code=\"HIZ\"\n    data-sign-name=\"TAHDİT ELLİ\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 1 1 L 11 1 L 11 13 L 4 13 L 4 29 C 15 25 12 88 10 89 A 1 1 0 0 1 1 89 L 1 63 L 4 63 L 4 79 Q 5 81 7 79 C 8 79 11 31 1 37 Z M 14 33 C 14 -10 26 -10 26 33 L 26 59 C 26 105 14 105 14 59 Z M 17 33 L 17 59 C 17 82 23 82 23 59 L 23 33 C 23 8 17 8 17 33 Z\"\n      fill=\"#000000\"\n    />\n  </g>\n</svg>",
     "art": "<g\n    data-sign-key=\"7-kaplama-isaretleri/hiz-tahdit-elli\"\n    data-sign-code=\"HIZ\"\n    data-sign-name=\"TAHDİT ELLİ\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 1 1 L 11 1 L 11 13 L 4 13 L 4 29 C 15 25 12 88 10 89 A 1 1 0 0 1 1 89 L 1 63 L 4 63 L 4 79 Q 5 81 7 79 C 8 79 11 31 1 37 Z M 14 33 C 14 -10 26 -10 26 33 L 26 59 C 26 105 14 105 14 59 Z M 17 33 L 17 59 C 17 82 23 82 23 59 L 23 33 C 23 8 17 8 17 33 Z\"\n      fill=\"#000000\"\n    />\n</g>"
   },
   {
@@ -118,12 +104,10 @@
     "category": "7 KAPLAMA İŞARETLERİ",
     "categoryKey": "7-kaplama-isaretleri",
     "file": "İLERİ SAĞA.svg",
-    "relativePath": "İLERİ SAĞA.svg",
     "width": 15,
     "height": 62,
     "viewBox": "1 1 15 62",
     "baseScale": 0.08,
-    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"15\"\n  height=\"62\"\n  viewBox=\"1 1 15 62\"\n>\n  <g\n    data-sign-key=\"7-kaplama-isaretleri/ileri-saga\"\n    data-sign-code=\"İLERİ\"\n    data-sign-name=\"SAĞA\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 4 1 L 7 25 L 5 25 L 6 63 L 2 63 L 3 25 L 1 25 Z M 5 37 Q 7 35 11 35 L 11 29 L 16 38 L 11 46 L 11 40 Q 7 41 5 44 Z\"\n      fill=\"#000000\"\n    />\n  </g>\n</svg>",
     "art": "<g\n    data-sign-key=\"7-kaplama-isaretleri/ileri-saga\"\n    data-sign-code=\"İLERİ\"\n    data-sign-name=\"SAĞA\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 4 1 L 7 25 L 5 25 L 6 63 L 2 63 L 3 25 L 1 25 Z M 5 37 Q 7 35 11 35 L 11 29 L 16 38 L 11 46 L 11 40 Q 7 41 5 44 Z\"\n      fill=\"#000000\"\n    />\n</g>"
   },
   {
@@ -133,12 +117,10 @@
     "category": "7 KAPLAMA İŞARETLERİ",
     "categoryKey": "7-kaplama-isaretleri",
     "file": "İLERİ SOLA.svg",
-    "relativePath": "İLERİ SOLA.svg",
     "width": 15,
     "height": 62,
     "viewBox": "1 1 15 62",
     "baseScale": 0.08,
-    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"15\"\n  height=\"62\"\n  viewBox=\"1 1 15 62\"\n>\n  <g\n    data-sign-key=\"7-kaplama-isaretleri/ileri-sola\"\n    data-sign-code=\"İLERİ\"\n    data-sign-name=\"SOLA\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 12 44 Q 10 41 6 40 L 6 46 L 1 38 L 6 29 L 6 35 Q 10 35 12 37 Z M 13 1 L 16 25 L 14 25 L 15 63 L 11 63 L 12 25 L 10 25 Z\"\n      fill=\"#000000\"\n    />\n  </g>\n</svg>",
     "art": "<g\n    data-sign-key=\"7-kaplama-isaretleri/ileri-sola\"\n    data-sign-code=\"İLERİ\"\n    data-sign-name=\"SOLA\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 12 44 Q 10 41 6 40 L 6 46 L 1 38 L 6 29 L 6 35 Q 10 35 12 37 Z M 13 1 L 16 25 L 14 25 L 15 63 L 11 63 L 12 25 L 10 25 Z\"\n      fill=\"#000000\"\n    />\n</g>"
   },
   {
@@ -148,12 +130,10 @@
     "category": "7 KAPLAMA İŞARETLERİ",
     "categoryKey": "7-kaplama-isaretleri",
     "file": "İLERİ.svg",
-    "relativePath": "İLERİ.svg",
     "width": 6,
     "height": 62,
     "viewBox": "1 1 6 62",
     "baseScale": 0.08,
-    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"6\"\n  height=\"62\"\n  viewBox=\"1 1 6 62\"\n>\n  <g\n    data-sign-key=\"7-kaplama-isaretleri/ileri-ileri\"\n    data-sign-code=\"İLERİ\"\n    data-sign-name=\"İLERİ\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 4 1 L 7 25 L 5 25 L 6 63 L 2 63 L 3 25 L 1 25 Z\"\n      fill=\"#000000\"\n    />\n  </g>\n</svg>",
     "art": "<g\n    data-sign-key=\"7-kaplama-isaretleri/ileri-ileri\"\n    data-sign-code=\"İLERİ\"\n    data-sign-name=\"İLERİ\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 4 1 L 7 25 L 5 25 L 6 63 L 2 63 L 3 25 L 1 25 Z\"\n      fill=\"#000000\"\n    />\n</g>"
   },
   {
@@ -163,12 +143,10 @@
     "category": "7 KAPLAMA İŞARETLERİ",
     "categoryKey": "7-kaplama-isaretleri",
     "file": "ÖNCE YAYA.svg",
-    "relativePath": "ÖNCE YAYA.svg",
     "width": 48,
     "height": 48.17,
     "viewBox": "1 1 48 48.17",
     "baseScale": 0.08,
-    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"48\"\n  height=\"48.17\"\n  viewBox=\"1 1 48 48.17\"\n>\n  <g\n    data-sign-key=\"7-kaplama-isaretleri/once-yaya\"\n    data-sign-code=\"ÖNCE\"\n    data-sign-name=\"YAYA\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M5 1 5 19M15 1 15 19M25 1 25 19M35 1 35 19M45 1 45 19M1 23 49 23\"\n      fill=\"none\"\n      stroke=\"#000\"\n      stroke-width=\"5\"\n    />\n    <path\n      d=\"M21 31.8C22.8 30 23.8 31.8 23.8 33L23.8 38 22.4 38 22.4 34.2C22.4 32 21 32 21 34.2L21 38 19.6 38 19.6 31 21 31 21 31.8ZM14.2 29.2 15.4 29.2 15.4 30.4 14.2 30.4ZM16.6 29.2 18 29.2 18 30.4 16.6 30.4ZM7.2 31A1 1 90 0110.8 31 1 1 90 017.2 31ZM38.2 31.2A1 1 90 0141.8 31 1 1 90 0138.2 31.2ZM42.4 29.4C43 29.2 43.8 29.2 44.4 29.6 44.8 30 44.8 30.8 45 31.2 45.2 31.8 45.6 32.4 46 32.8 45.8 33.2 45.4 33.4 44.2 33.2 44.2 32.8 44.4 31.8 43.2 30.4 42.4 29.8 42.2 29.6 42.4 29.4ZM16 31C19 31 19 38 16 38 13 38 13 31 16 31ZM16 32.6C14.6 32.6 14.6 36.4 16 36.4 17.4 36.4 17.4 32.6 16 32.6ZM30 35.2C29.6 29.2 34.6 29.2 34.2 35.2L31.4 35.2C31.2 37.4 33.8 37.2 34 36.4L34.2 37.4C31 39 30 36.2 30 35.2ZM31.4 34.2 33 34.2C33 31.4 31.4 31.4 31.4 34.2ZM29 37.8C24.2 39.6 24.2 29.2 29 31L29 32.6C26 31.2 26 37.6 29 36.2ZM7.8 33.4C9 33.6 10.2 34.2 9.8 35.4L9 39.6C9 40.2 9 40.8 9.4 41.2 10.2 41.8 11.2 42.2 11.4 43.4L12.2 47.6A1 1 90 019.8 48.2L9.2 44.2C9.2 43.8 8.8 43.6 8.4 43.2L6.6 41.6C6.2 41.2 6 40.8 6 40.2 6 39 6.4 37.8 6.2 36.4L4.6 40.2A1 1 90 013 39.2C5.4 33.8 6.4 33.2 7.8 33.4ZM42 33.6C44.2 35 45 35.4 45.4 36.4L46.4 39A1 1 90 0145.2 39.8L44.2 37.6C43.6 36.4 43.4 36.6 43 36.6 43 37.8 43.6 39 43.4 40.4 43.4 41.4 42.6 42 42 42.4 40.2 43.8 40.2 44.2 40.2 44.6L40.2 47.8A1 1 90 0137.8 47.8L37.8 44.8C37.8 44 37.6 43.2 38.4 42.4L40 41C40.4 40.6 40.6 40.4 40.4 40L39.6 35.4C39.4 34.6 40 34 42 33.6ZM10 36.2 13 38.4A1 1 90 0112.2 40L9.6 38.4 10 36.2ZM36.6 38.4 39.4 36.4 39.8 38.6 38 39.8A1 1 90 0136.6 38.4ZM18 40.6 19.2 40.6 17.6 49 16.2 49 16.6 47 15.2 40.6 16.6 40.6 17.2 44.4ZM20.4 40.8C24 40.2 24 42 24 43.2L24 47.4 22.6 47.4 22.6 47.2C19.2 48.4 19.2 42.6 22.6 43.4 22.6 42.8 22.4 41.6 20.4 42.2L20.4 40.8M22.6 44.2C20.6 44 20.6 46.6 22.6 46.4L22.6 46.4 22.6 44.2ZM25.4 40.6 26.8 40.6 27.4 44.4 28.2 40.6 29.6 40.6 27.6 49 26.2 49 26.8 47 25.4 40.6ZM25.4 40.6M30.6 40.8C34 40.2 34 42 34 43.2L34 47.4 32.6 47.4 32.6 47.2C29.4 48.4 29.2 42.6 32.6 43.4 32.6 42.8 32.4 41.6 30.6 42.2L30.6 40.8M32.6 44.2C30.6 44 30.8 46.6 32.6 46.4L32.6 44.2ZM6 41.8 7.8 43.4 6.4 47.8A1 1 90 014.2 47.2L6 41.8ZM6 41.8M41.4 43.4 43.4 41.8 45.6 47.6A1 1 90 0143.4 48.4L41.4 43.4Z\"\n      fill=\"#000000\"\n    />\n  </g>\n</svg>",
     "art": "<g\n    data-sign-key=\"7-kaplama-isaretleri/once-yaya\"\n    data-sign-code=\"ÖNCE\"\n    data-sign-name=\"YAYA\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M5 1 5 19M15 1 15 19M25 1 25 19M35 1 35 19M45 1 45 19M1 23 49 23\"\n      fill=\"none\"\n      stroke=\"#000\"\n      stroke-width=\"5\"\n    />\n    <path\n      d=\"M21 31.8C22.8 30 23.8 31.8 23.8 33L23.8 38 22.4 38 22.4 34.2C22.4 32 21 32 21 34.2L21 38 19.6 38 19.6 31 21 31 21 31.8ZM14.2 29.2 15.4 29.2 15.4 30.4 14.2 30.4ZM16.6 29.2 18 29.2 18 30.4 16.6 30.4ZM7.2 31A1 1 90 0110.8 31 1 1 90 017.2 31ZM38.2 31.2A1 1 90 0141.8 31 1 1 90 0138.2 31.2ZM42.4 29.4C43 29.2 43.8 29.2 44.4 29.6 44.8 30 44.8 30.8 45 31.2 45.2 31.8 45.6 32.4 46 32.8 45.8 33.2 45.4 33.4 44.2 33.2 44.2 32.8 44.4 31.8 43.2 30.4 42.4 29.8 42.2 29.6 42.4 29.4ZM16 31C19 31 19 38 16 38 13 38 13 31 16 31ZM16 32.6C14.6 32.6 14.6 36.4 16 36.4 17.4 36.4 17.4 32.6 16 32.6ZM30 35.2C29.6 29.2 34.6 29.2 34.2 35.2L31.4 35.2C31.2 37.4 33.8 37.2 34 36.4L34.2 37.4C31 39 30 36.2 30 35.2ZM31.4 34.2 33 34.2C33 31.4 31.4 31.4 31.4 34.2ZM29 37.8C24.2 39.6 24.2 29.2 29 31L29 32.6C26 31.2 26 37.6 29 36.2ZM7.8 33.4C9 33.6 10.2 34.2 9.8 35.4L9 39.6C9 40.2 9 40.8 9.4 41.2 10.2 41.8 11.2 42.2 11.4 43.4L12.2 47.6A1 1 90 019.8 48.2L9.2 44.2C9.2 43.8 8.8 43.6 8.4 43.2L6.6 41.6C6.2 41.2 6 40.8 6 40.2 6 39 6.4 37.8 6.2 36.4L4.6 40.2A1 1 90 013 39.2C5.4 33.8 6.4 33.2 7.8 33.4ZM42 33.6C44.2 35 45 35.4 45.4 36.4L46.4 39A1 1 90 0145.2 39.8L44.2 37.6C43.6 36.4 43.4 36.6 43 36.6 43 37.8 43.6 39 43.4 40.4 43.4 41.4 42.6 42 42 42.4 40.2 43.8 40.2 44.2 40.2 44.6L40.2 47.8A1 1 90 0137.8 47.8L37.8 44.8C37.8 44 37.6 43.2 38.4 42.4L40 41C40.4 40.6 40.6 40.4 40.4 40L39.6 35.4C39.4 34.6 40 34 42 33.6ZM10 36.2 13 38.4A1 1 90 0112.2 40L9.6 38.4 10 36.2ZM36.6 38.4 39.4 36.4 39.8 38.6 38 39.8A1 1 90 0136.6 38.4ZM18 40.6 19.2 40.6 17.6 49 16.2 49 16.6 47 15.2 40.6 16.6 40.6 17.2 44.4ZM20.4 40.8C24 40.2 24 42 24 43.2L24 47.4 22.6 47.4 22.6 47.2C19.2 48.4 19.2 42.6 22.6 43.4 22.6 42.8 22.4 41.6 20.4 42.2L20.4 40.8M22.6 44.2C20.6 44 20.6 46.6 22.6 46.4L22.6 46.4 22.6 44.2ZM25.4 40.6 26.8 40.6 27.4 44.4 28.2 40.6 29.6 40.6 27.6 49 26.2 49 26.8 47 25.4 40.6ZM25.4 40.6M30.6 40.8C34 40.2 34 42 34 43.2L34 47.4 32.6 47.4 32.6 47.2C29.4 48.4 29.2 42.6 32.6 43.4 32.6 42.8 32.4 41.6 30.6 42.2L30.6 40.8M32.6 44.2C30.6 44 30.8 46.6 32.6 46.4L32.6 44.2ZM6 41.8 7.8 43.4 6.4 47.8A1 1 90 014.2 47.2L6 41.8ZM6 41.8M41.4 43.4 43.4 41.8 45.6 47.6A1 1 90 0143.4 48.4L41.4 43.4Z\"\n      fill=\"#000000\"\n    />\n</g>"
   },
   {
@@ -178,12 +156,10 @@
     "category": "7 KAPLAMA İŞARETLERİ",
     "categoryKey": "7-kaplama-isaretleri",
     "file": "SADECE SAĞA.svg",
-    "relativePath": "SADECE SAĞA.svg",
     "width": 12,
     "height": 59,
     "viewBox": "1 1 12 59",
     "baseScale": 0.08,
-    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"12\"\n  height=\"59\"\n  viewBox=\"1 1 12 59\"\n>\n  <g\n    data-sign-key=\"7-kaplama-isaretleri/sadece-saga\"\n    data-sign-code=\"SADECE\"\n    data-sign-name=\"SAĞA\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 8 1 L 13 14 L 8 27 L 8 18 Q 4 18 4 23 L 5 60 L 1 60 L 2 18 Q 3 12 8 11 Z\"\n      fill=\"#000000\"\n    />\n  </g>\n</svg>",
     "art": "<g\n    data-sign-key=\"7-kaplama-isaretleri/sadece-saga\"\n    data-sign-code=\"SADECE\"\n    data-sign-name=\"SAĞA\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 8 1 L 13 14 L 8 27 L 8 18 Q 4 18 4 23 L 5 60 L 1 60 L 2 18 Q 3 12 8 11 Z\"\n      fill=\"#000000\"\n    />\n</g>"
   },
   {
@@ -193,12 +169,10 @@
     "category": "7 KAPLAMA İŞARETLERİ",
     "categoryKey": "7-kaplama-isaretleri",
     "file": "SADECE SOLA.svg",
-    "relativePath": "SADECE SOLA.svg",
     "width": 12,
     "height": 59,
     "viewBox": "1 1 12 59",
     "baseScale": 0.08,
-    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"12\"\n  height=\"59\"\n  viewBox=\"1 1 12 59\"\n>\n  <g\n    data-sign-key=\"7-kaplama-isaretleri/sadece-sola\"\n    data-sign-code=\"SADECE\"\n    data-sign-name=\"SOLA\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 6 27 L 1 14 L 6 1 L 6 11 Q 11 12 12 18 L 13 60 L 9 60 L 10 23 Q 10 18 6 18 Z\"\n      fill=\"#000000\"\n    />\n  </g>\n</svg>",
     "art": "<g\n    data-sign-key=\"7-kaplama-isaretleri/sadece-sola\"\n    data-sign-code=\"SADECE\"\n    data-sign-name=\"SOLA\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 6 27 L 1 14 L 6 1 L 6 11 Q 11 12 12 18 L 13 60 L 9 60 L 10 23 Q 10 18 6 18 Z\"\n      fill=\"#000000\"\n    />\n</g>"
   },
   {
@@ -208,12 +182,10 @@
     "category": "7 KAPLAMA İŞARETLERİ",
     "categoryKey": "7-kaplama-isaretleri",
     "file": "SAĞA GEÇ.svg",
-    "relativePath": "SAĞA GEÇ.svg",
     "width": 18,
     "height": 62,
     "viewBox": "1 1 18 62",
     "baseScale": 0.08,
-    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"18\"\n  height=\"62\"\n  viewBox=\"1 1 18 62\"\n>\n  <g\n    data-sign-key=\"7-kaplama-isaretleri/saga-gec\"\n    data-sign-code=\"SAĞA\"\n    data-sign-name=\"GEÇ\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 19 1 L 15 29 L 12 23 Q 5 39 5 63 L 1 63 Q 2 33 11 21 L 8 16 Z\"\n      fill=\"#000000\"\n    />\n  </g>\n</svg>",
     "art": "<g\n    data-sign-key=\"7-kaplama-isaretleri/saga-gec\"\n    data-sign-code=\"SAĞA\"\n    data-sign-name=\"GEÇ\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 19 1 L 15 29 L 12 23 Q 5 39 5 63 L 1 63 Q 2 33 11 21 L 8 16 Z\"\n      fill=\"#000000\"\n    />\n</g>"
   },
   {
@@ -223,12 +195,10 @@
     "category": "7 KAPLAMA İŞARETLERİ",
     "categoryKey": "7-kaplama-isaretleri",
     "file": "YAYA GEÇİDİ.svg",
-    "relativePath": "YAYA GEÇİDİ.svg",
     "width": 48,
     "height": 22,
     "viewBox": "1 1 48 22",
     "baseScale": 0.08,
-    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"48\"\n  height=\"22\"\n  viewBox=\"1 1 48 22\"\n>\n  <g\n    data-sign-key=\"7-kaplama-isaretleri/yaya-gecidi\"\n    data-sign-code=\"YAYA\"\n    data-sign-name=\"GEÇİDİ\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 5 1 L 5 19 M 15 1 L 15 19 M 25 1 L 25 19 M 35 1 L 35 19 M 45 1 L 45 19 M 1 23 L 49 23\"\n      stroke=\"#000000\"\n      stroke-width=\"5\"\n      fill=\"none\"\n    />\n  </g>\n</svg>",
     "art": "<g\n    data-sign-key=\"7-kaplama-isaretleri/yaya-gecidi\"\n    data-sign-code=\"YAYA\"\n    data-sign-name=\"GEÇİDİ\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 5 1 L 5 19 M 15 1 L 15 19 M 25 1 L 25 19 M 35 1 L 35 19 M 45 1 L 45 19 M 1 23 L 49 23\"\n      stroke=\"#000000\"\n      stroke-width=\"5\"\n      fill=\"none\"\n    />\n</g>"
   },
   {
@@ -238,12 +208,10 @@
     "category": "7 KAPLAMA İŞARETLERİ",
     "categoryKey": "7-kaplama-isaretleri",
     "file": "YOL VER.svg",
-    "relativePath": "YOL VER.svg",
     "width": 36,
     "height": 99,
     "viewBox": "-4 -4 36 99",
     "baseScale": 0.08,
-    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"36\"\n  height=\"99\"\n  viewBox=\"-4 -4 36 99\"\n>\n  <g\n    data-sign-key=\"7-kaplama-isaretleri/yol-ver\"\n    data-sign-code=\"YOL\"\n    data-sign-name=\"VER\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 1 1 L 27 1 L 14 90 Z M 7 12 L 14 69 L 14 69 L 21 12 Z\"\n      fill=\"#000000\"\n    />\n  </g>\n</svg>",
     "art": "<g\n    data-sign-key=\"7-kaplama-isaretleri/yol-ver\"\n    data-sign-code=\"YOL\"\n    data-sign-name=\"VER\"\n    data-sign-category=\"7 KAPLAMA İŞARETLERİ\"\n    data-sign-base-scale=\"0.08\"\n    shape-rendering=\"geometricPrecision\"\n  >\n    <path\n      d=\"M 1 1 L 27 1 L 14 90 Z M 7 12 L 14 69 L 14 69 L 21 12 Z\"\n      fill=\"#000000\"\n    />\n</g>"
   }
 ];

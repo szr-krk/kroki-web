@@ -12,6 +12,7 @@
   const selectedLabel = document.querySelector("#otherSymbolSelectedLabel");
   const addButton = document.querySelector("#btnOtherSymbolAdd");
   const panel = document.querySelector("#railMenuDiger");
+  const ART_CACHE_LIMIT = 64;
 
   let activeCategoryKey = "";
   let selectedKey = "";
@@ -58,7 +59,7 @@
 
   function renderSymbolArt(symbol) {
     const cacheKey = symbol?.key || "";
-    const cached = cacheKey ? artCache.get(cacheKey) : null;
+    const cached = cacheKey ? utils.lruGet(artCache, cacheKey) : null;
     if (cached) return cached.cloneNode(true);
     const svg = createSvgElement("svg", {
       viewBox: symbol.viewBox,
@@ -66,7 +67,7 @@
       "aria-hidden": "true"
     });
     svg.innerHTML = symbol.art;
-    if (cacheKey) artCache.set(cacheKey, svg);
+    if (cacheKey) utils.lruSet(artCache, cacheKey, svg, ART_CACHE_LIMIT);
     return svg.cloneNode(true);
   }
 
@@ -92,7 +93,6 @@
       tile.setAttribute("aria-label", tile.title);
       tile.setAttribute("aria-pressed", "false");
       tile.append(renderSymbolArt(symbol));
-      tile.addEventListener("click", () => setSelected(symbol));
       fragment.append(tile);
     });
     grid.replaceChildren(fragment);
@@ -126,7 +126,6 @@
       title.textContent = utils.turkishListLabel(category.title);
       count.textContent = String(category.symbols.length);
       button.append(title, count);
-      button.addEventListener("click", () => setActiveCategory(category.key));
       fragment.append(button);
     });
     categoryList.replaceChildren(fragment);
@@ -177,6 +176,16 @@
   }
 
   addButton?.addEventListener("click", addSelectedSymbol);
+  grid?.addEventListener("click", (event) => {
+    const tile = event.target.closest?.(".catalog-tile");
+    if (!tile || !grid.contains(tile)) return;
+    setSelected(catalog.find(tile.dataset.symbolKey));
+  });
+  categoryList?.addEventListener("click", (event) => {
+    const button = event.target.closest?.(".catalog-category");
+    if (!button || !categoryList.contains(button)) return;
+    setActiveCategory(button.dataset.categoryKey);
+  });
   panel?.addEventListener("kroki:rail-menu-open", ensureRendered);
   if (panel && !panel.classList.contains("gizli")) ensureRendered();
 

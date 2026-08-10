@@ -63,6 +63,7 @@
     { id: "left", title: "Etiket solda" }
   ];
   const PAVER_LAYOUT_PATH = "M 0 0 L 2 0 L 3 1 L 7 1 L 8 0 L 10 0 L 10 6 L 8 6 L 7 5 L 3 5 L 2 6 L 0 6 Z M -5 5 L -3 5 L -2 6 L 2 6 L 3 5 L 5 5 L 5 11 L 3 11 L 2 10 L -2 10 L -3 11 L -5 11 Z M 5 5 L 7 5 L 8 6 L 12 6 L 13 5 L 15 5 L 15 11 L 13 11 L 12 10 L 8 10 L 7 11 L 5 11 Z M 10 0 L 12 0 L 13 1 L 17 1 L 18 0 L 20 0 L 20 6 L 18 6 L 17 5 L 13 5 L 12 6 L 10 6 Z M 15 5 L 17 5 L 18 6 L 22 6 L 23 5 L 25 5 L 25 11 L 23 11 L 22 10 L 18 10 L 17 11 L 15 11 Z";
+  const defsCleanupJobs = new WeakMap();
 
   const FILL_PATTERNS = [
     { id: "none", title: "Duz dolgu" },
@@ -845,6 +846,10 @@
 
     const width = Math.max(4, Number(patternChoice.width) || 24);
     const height = Math.max(4, Number(patternChoice.height) || width);
+    const baseColor = fillPatternBaseColor(style);
+    const renderKey = `${patternChoice.id}|${width}|${height}|${baseColor}`;
+    if (pattern.dataset.editorFillPatternKey === renderKey) return pattern;
+
     pattern.replaceChildren();
     pattern.setAttribute("patternUnits", "userSpaceOnUse");
     pattern.setAttribute("patternContentUnits", "userSpaceOnUse");
@@ -854,12 +859,13 @@
     pattern.setAttribute("height", String(height));
     pattern.setAttribute("data-fill-pattern-for", String(model?.id || ""));
     pattern.setAttribute("data-editor-fill-pattern", patternChoice.id);
+    pattern.setAttribute("data-editor-fill-pattern-key", renderKey);
     pattern.append(utils.createSvgElement("rect", {
       x: "0",
       y: "0",
       width: String(width),
       height: String(height),
-      fill: fillPatternBaseColor(style)
+      fill: baseColor
     }));
     patternChoice.draw?.(pattern);
     return pattern;
@@ -883,9 +889,33 @@
     });
   }
 
+  function cancelScheduledDefsCleanup(canvas) {
+    const job = canvas ? defsCleanupJobs.get(canvas) : null;
+    if (!job) return;
+    if (job.isTimeout) window.clearTimeout(job.handle);
+    else window.cancelAnimationFrame?.(job.handle);
+    defsCleanupJobs.delete(canvas);
+  }
+
   function cleanupDefs(canvas) {
+    cancelScheduledDefsCleanup(canvas);
     pruneUnusedFillPatterns(canvas);
     pruneUnusedMarkers(canvas);
+  }
+
+  function scheduleDefsCleanup(canvas) {
+    if (!canvas || defsCleanupJobs.has(canvas)) return;
+    if (!canvas.querySelector("#editorFillPatternDefs, #editorLineDefs")) return;
+    const run = () => {
+      defsCleanupJobs.delete(canvas);
+      pruneUnusedFillPatterns(canvas);
+      pruneUnusedMarkers(canvas);
+    };
+    if (typeof window.requestAnimationFrame === "function") {
+      defsCleanupJobs.set(canvas, { handle: window.requestAnimationFrame(run), isTimeout: false });
+    } else {
+      defsCleanupJobs.set(canvas, { handle: window.setTimeout(run, 16), isTimeout: true });
+    }
   }
 
   function collectMarkerId(element, attrName, usedIds) {
@@ -938,8 +968,7 @@
       element.removeAttribute("marker-end");
       element.removeAttribute("vector-effect");
       element.style.removeProperty("vector-effect");
-      pruneUnusedFillPatterns(canvas);
-      pruneUnusedMarkers(canvas);
+      scheduleDefsCleanup(canvas);
       return;
     }
 
@@ -964,8 +993,7 @@
       element.removeAttribute("marker-start");
       element.removeAttribute("marker-end");
       element.removeAttribute("vector-effect");
-      pruneUnusedFillPatterns(canvas);
-      pruneUnusedMarkers(canvas);
+      scheduleDefsCleanup(canvas);
       return;
     }
 
@@ -985,8 +1013,7 @@
     applyPaintOpacity(element, style, Boolean(adapter?.capabilities?.fill));
 
     applyMarkers(element, style, adapter, canvas);
-    pruneUnusedFillPatterns(canvas);
-    pruneUnusedMarkers(canvas);
+    scheduleDefsCleanup(canvas);
   }
 
   function renderArrowIcon(svg, type, isStart) {
@@ -1309,14 +1336,33 @@
     manager.updateLabel(entry.model.id, patch, options);
   }
 
+  function beginActiveObjectHistory(label) {
+    const history = Kroki.HistoryManager;
+    if (history?.isSuspended?.()) return null;
+    const entry = activeEntry();
+    if (!entry?.multi && entry?.model?.id && typeof history?.beginObjectChange === "function") {
+      return history.beginObjectChange(entry.model.id, label);
+    }
+    return history?.begin?.(label) || null;
+  }
+
+  function commitInputHistory(transaction, label) {
+    if (!transaction) return;
+    if (transaction.kind === "object-change" && typeof Kroki.HistoryManager?.commitObjectChange === "function") {
+      Kroki.HistoryManager.commitObjectChange(transaction, label);
+      return;
+    }
+    Kroki.HistoryManager?.commit?.(transaction, label);
+  }
+
   function beginTextInputHistory() {
     if (textInputTransaction || Kroki.HistoryManager?.isSuspended?.()) return;
-    textInputTransaction = Kroki.HistoryManager?.begin?.("Metin guncelle") || null;
+    textInputTransaction = beginActiveObjectHistory("Metin guncelle");
   }
 
   function commitTextInputHistory() {
     if (!textInputTransaction) return;
-    Kroki.HistoryManager?.commit?.(textInputTransaction, "Metin guncelle");
+    commitInputHistory(textInputTransaction, "Metin guncelle");
     textInputTransaction = null;
   }
 
@@ -1608,12 +1654,12 @@
 
   function beginVehicleLabelInputHistory() {
     if (vehicleLabelInputTransaction || Kroki.HistoryManager?.isSuspended?.()) return;
-    vehicleLabelInputTransaction = Kroki.HistoryManager?.begin?.("Arac etiketi") || null;
+    vehicleLabelInputTransaction = beginActiveObjectHistory("Arac etiketi");
   }
 
   function commitVehicleLabelInputHistory() {
     if (!vehicleLabelInputTransaction) return;
-    Kroki.HistoryManager?.commit?.(vehicleLabelInputTransaction, "Arac etiketi");
+    commitInputHistory(vehicleLabelInputTransaction, "Arac etiketi");
     vehicleLabelInputTransaction = null;
   }
 

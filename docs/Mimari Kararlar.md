@@ -113,6 +113,10 @@ Trafik levhaları, diğer semboller ve araçlar runtime'da dış dosya fetch etm
 
 `KrokiSignNarrow` sistemde kurulu yerel fontlardan değil, izlenen `src/arial-narrow.ttf` dosyasından yüklenir. Bu fontu kullanan bir kroki SVG/PNG veya önizlemeye dönüştürülürken aynı TTF verisi SVG içine gömülür ve export özel font ailesine bağlanır. Font hazırlanamazsa farklı fontla sessizce çıktı üretilmez.
 
+## 20. Etkileşim maliyeti belge boyutuyla gereksiz yere büyütülmez
+
+Tek nesne ekleme ve güncellemeleri tüm belge anlık görüntüsü yerine `HistoryManager` nesne deltalarını kullanır; çok nesneli işlemler tam belge geçmişini korumaya devam eder. İşaretçi hareketleri ekran karesi başına bir geometri güncellemesinde birleştirilir. SVG pattern/marker temizliği aynı kare içindeki stil işlemleri için ortaklaştırılır ve değişmeyen pattern DOM'u yeniden kurulmaz. Katalog kayıtları yalnız çalışma zamanında kullanılan `art` içeriğini taşır; kullanılmayan ikinci tam SVG kopyası üretilmez.
+
 ## Belirsiz
 
 - Bu kararlar için ayrı ADR/tarihçe bulunmadığından gerekçelerin bir kısmı kod davranışından çıkarımdır.

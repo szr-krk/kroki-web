@@ -114,8 +114,6 @@ function buildRecord({ svg, varName, categoryTitle, categoryKey, index }) {
     `shape-rendering="geometricPrecision"`
   ].join(" ");
   const art = `<g ${metadataAttrs}>\n${indented(parsed.inner, 4)}\n</g>`;
-  const fullSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${formatNumber(parsed.viewBox.width)}" height="${formatNumber(parsed.viewBox.height)}" viewBox="${attrEscape(parsed.viewBox.value)}">\n${indented(art, 2)}\n</svg>`;
-
   return {
     key,
     code,
@@ -123,12 +121,10 @@ function buildRecord({ svg, varName, categoryTitle, categoryKey, index }) {
     category: categoryTitle,
     categoryKey,
     file,
-    relativePath: `${categoryTitle}/${file}`,
     width: parsed.viewBox.width,
     height: parsed.viewBox.height,
     viewBox: parsed.viewBox.value,
     baseScale,
-    svg: fullSvg,
     art
   };
 }
