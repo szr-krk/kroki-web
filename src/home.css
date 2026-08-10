@@ -37,11 +37,7 @@ body {
 
 @font-face {
   font-family: "KrokiSignNarrow";
-  src:
-    local("Arial Narrow"),
-    local("ArialNarrow"),
-    local("Arial Narrow Regular"),
-    url("./arial-narrow.ttf") format("truetype");
+  src: url("./arial-narrow.ttf") format("truetype");
 }
 
 button,

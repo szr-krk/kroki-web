@@ -271,10 +271,9 @@
     return style.dashSize + " " + style.dashGap;
   }
 
-  function applyGeometryStrokeScaling(element, dashed) {
-    const vectorEffect = dashed ? "none" : "non-scaling-stroke";
-    element.setAttribute("vector-effect", vectorEffect);
-    element.style.setProperty("vector-effect", vectorEffect);
+  function applyGeometryStrokeScaling(element) {
+    element.setAttribute("vector-effect", "none");
+    element.style.setProperty("vector-effect", "none");
   }
 
   function tipControlPoint(model, metrics = {}) {
@@ -428,7 +427,7 @@
       "stroke-opacity": String(style.strokeOpacity),
       "stroke-width": String(style.strokeWidth)
     });
-    [leader, boxElement].forEach((item) => applyGeometryStrokeScaling(item, dashed));
+    [leader, boxElement].forEach(applyGeometryStrokeScaling);
 
     element.append(leader, arrow, boxElement);
 

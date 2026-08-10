@@ -27,10 +27,12 @@ assert.match(arrowFunction, /const leaderInset = Math\.min\(headLength \* 0\.48,
 assert.match(arrowFunction, /"M", baseX[\s\S]+?"L", tip\.x, tip\.y,[\s\S]+?"L", baseX[\s\S]+?"L", notchX, notchY,[\s\S]+?"Z"/);
 assert.match(adapterSource, /class: "editor-callout-arrow",[\s\S]+?fill: style\.stroke,[\s\S]+?stroke: "none"/);
 assert.match(adapterSource, /x2: String\(arrowGeometryData\.leaderEnd\.x\),\s*y2: String\(arrowGeometryData\.leaderEnd\.y\)/s);
-assert.match(adapterSource, /\[leader, boxElement\]\.forEach\(\(item\) => applyGeometryStrokeScaling\(item, dashed\)\);/);
+assert.match(adapterSource, /\[leader, boxElement\]\.forEach\(applyGeometryStrokeScaling\);/);
 assert.doesNotMatch(adapterSource, /applyGeometryStrokeScaling\(boxElement, true\)/);
 assert.doesNotMatch(adapterSource, /calloutRotation|setCalloutRotation|getRotation\(model\)|setRotation\(model, rotation\)/);
 assert.match(adapterSource, /strokeWidth:\s*2,\s*\.\.\.\(initialData\.style \|\| \{\}\),\s*fill:\s*DEFAULT_FILL/);
+assert.doesNotMatch(adapterSource, /non-scaling-stroke/);
+assert.match(adapterSource, /function applyGeometryStrokeScaling\(element\) \{\s*element\.setAttribute\("vector-effect", "none"\);/);
 
 const visibilityLine = styleManagerSource.match(/controls\?\.strokeStepper\?\.classList\.toggle\("gizli",[^;]+;/)?.[0] || "";
 assert.ok(visibilityLine, "stroke picker visibility rule must exist");
@@ -40,7 +42,7 @@ assert.match(indexSource, /id="calloutTextSizeStepper"/);
 assert.match(indexSource, /id="lineStrokeWidthStepper"/);
 assert.match(indexSource, /id="lineTextStyleSizeSection"/);
 assert.match(indexSource, /id="shapeAdvancedStyleLabel"/);
-assert.match(indexSource, /calloutAdapter\.js\?v=20260810-callout-ip-v3/);
+assert.match(indexSource, /calloutAdapter\.js\?v=20260810-export-fidelity-v1/);
 assert.match(styleManagerSource, /const isCallout = adapter\?\.type === "callout";/);
 assert.match(styleManagerSource, /return type === "text" \|\| isLineToolType\(type\) \|\| isBasicShapeToolType\(type\) \|\| type === "callout";/);
 assert.match(styleManagerSource, /controls\?\.fillButton\?\.classList\.toggle\("gizli", !hasFill \|\| isCallout\)/);

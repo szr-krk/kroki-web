@@ -1,7 +1,7 @@
 .editor-cizgi {
   fill: none;
   stroke-linecap: round;
-  vector-effect: non-scaling-stroke;
+  vector-effect: none;
 }
 
 .editor-circle,
@@ -9,7 +9,7 @@
 .editor-rectangle,
 .editor-closed-shape {
   stroke-linecap: round;
-  vector-effect: non-scaling-stroke;
+  vector-effect: none;
 }
 
 .editor-text {
@@ -20,16 +20,12 @@
 }
 
 .editor-callout {
-  vector-effect: non-scaling-stroke;
+  vector-effect: none;
 }
 
 .editor-callout-leader,
 .editor-callout-preview,
 .editor-callout-arrow,
-.editor-callout-box {
-  vector-effect: non-scaling-stroke;
-}
-
 .editor-callout-box {
   vector-effect: none;
 }
@@ -206,7 +202,7 @@
   stroke: #059669;
   stroke-width: 3;
   pointer-events: none;
-  vector-effect: non-scaling-stroke;
+  vector-effect: none;
 }
 
 .editor-object-cp.is-preselect .editor-object-cp-visual,

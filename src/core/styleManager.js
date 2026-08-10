@@ -730,12 +730,9 @@
     element.style.fillOpacity = "";
   }
 
-  function applyGeometryStrokeScaling(element, style, adapter) {
-    const vectorEffect = adapter?.capabilities?.arrows
-      ? "none"
-      : style.dash === "solid" ? "non-scaling-stroke" : "none";
-    element.setAttribute("vector-effect", vectorEffect);
-    element.style.setProperty("vector-effect", vectorEffect);
+  function applyGeometryStrokeScaling(element) {
+    element.setAttribute("vector-effect", "none");
+    element.style.setProperty("vector-effect", "none");
   }
 
   function markerStrokeUnitSizeForStroke(strokeWidth) {
@@ -974,7 +971,7 @@
 
     applyStroke(element, styleForStrokeHelpers(style));
     applyDash(element, styleForStrokeHelpers(style));
-    applyGeometryStrokeScaling(element, style, adapter);
+    applyGeometryStrokeScaling(element);
 
     if (adapter?.capabilities?.fill) {
       const pattern = supportsFillPattern(adapter) ? ensureFillPattern(canvas, model, style) : null;

@@ -105,6 +105,14 @@ Trafik levhaları, diğer semboller ve araçlar runtime'da dış dosya fetch etm
 
 İlgili: [[Sembol ve Asset Sistemi]], [[Trafik Levhası Sistemi]].
 
+## 18. Belge geometrisi krokiyle birlikte ölçeklenir
+
+`#editorObjects` içindeki gerçek kroki geometrisi `vector-effect: none` kullanır. `non-scaling-stroke` yalnız seçim, çoklu seçim, seçim alanı ve aktif yol kesiti gibi editör vurgularına ayrılmıştır. SVG/PNG ve Son Krokiler/Şablonlar önizlemeleri dışa aktarılırken bütün belge geometrisi ayrıca `none` değerine normalize edilir; böylece kalın stroke'lar küçük önizlemeyi bastırmaz.
+
+## 19. Levha fontu canlı görünüm ve çıktıda aynı dosyadır
+
+`KrokiSignNarrow` sistemde kurulu yerel fontlardan değil, izlenen `src/arial-narrow.ttf` dosyasından yüklenir. Bu fontu kullanan bir kroki SVG/PNG veya önizlemeye dönüştürülürken aynı TTF verisi SVG içine gömülür ve export özel font ailesine bağlanır. Font hazırlanamazsa farklı fontla sessizce çıktı üretilmez.
+
 ## Belirsiz
 
 - Bu kararlar için ayrı ADR/tarihçe bulunmadığından gerekçelerin bir kısmı kod davranışından çıkarımdır.

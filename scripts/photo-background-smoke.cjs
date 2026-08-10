@@ -135,9 +135,29 @@ const sourceFile = {
   assert.doesNotMatch(storageSource, /local(?:Storage)|LEGACY_|migrateLegacyStorage/);
 
   const mainMenuSource = fs.readFileSync(path.join(root, "src", "editor-main-menu.js"), "utf8");
+  const homeCss = fs.readFileSync(path.join(root, "src", "home.css"), "utf8");
   assert.doesNotMatch(mainMenuSource, /local(?:Storage)\./);
   assert.match(mainMenuSource, /documentStorage\.list\("recent", \{ summary: true \}\)/);
   assert.match(mainMenuSource, /documentStorage\.list\("template", \{ summary: true \}\)/);
+  assert.match(homeCss, /@font-face\s*\{[^}]*font-family:\s*"KrokiSignNarrow";[^}]*src:\s*url\("\.\/arial-narrow\.ttf"\) format\("truetype"\);/s);
+  assert.doesNotMatch(homeCss, /local\("Arial Narrow|local\("ArialNarrow/);
+  assert.match(mainMenuSource, /const DOCUMENT_GEOMETRY_STROKE_SELECTOR = \[/);
+  assert.match(mainMenuSource, /function normalizeDocumentStrokeScaling\(svgElement\)/);
+  assert.doesNotMatch(mainMenuSource, /ROAD_GEOMETRY_STROKE_SELECTOR|normalizeRoadPreviewStrokeScaling/);
+  assert.match(mainMenuSource, /async function exportedSvgString\(viewBox, options = \{\}\)/);
+  assert.match(mainMenuSource, /containsSignFont\(clone\) \? await prepareExportSignFont\(\) : ""/);
+  assert.match(mainMenuSource, /new Blob\(\[buffer\], \{ type: "font\/ttf" \}\)/);
+  assert.match(mainMenuSource, /@font-face\{font-family:"\$\{EXPORT_SIGN_FONT_FAMILY\}";src:url\("\$\{signFontDataUrl\}"\) format\("truetype"\);\}/);
+  assert.match(mainMenuSource, /const preview = await previewSnapshot\(\)/);
+  assert.match(mainMenuSource, /svg = await exportedSvgString\(viewBox, \{ background: true, includeMetadata: false \}\)/);
+  assert.match(mainMenuSource, /async function previewSvgForDisplay\(svg\)/);
+  assert.match(mainMenuSource, /signFontRequired = containsSignFont\(svgElement\);[^}]*await prepareExportSignFont\(\)/s);
+  assert.match(mainMenuSource, /if \(signFontRequired\) throw error/);
+  assert.match(mainMenuSource, /async function svgDataUrl\(svg, options = \{\}\)/);
+  assert.match(mainMenuSource, /async function renderPreviewInto\(target, entry\)/);
+  assert.match(mainMenuSource, /const source = await svgDataUrl\(entry\.previewSvg, \{/);
+  assert.match(mainMenuSource, /void renderPreviewInto\(preview, entry\)/);
+  assert.match(mainMenuSource, /void renderPreviewInto\(imageBox, entry\)/);
 
   const serializerSource = fs.readFileSync(path.join(root, "src", "core", "documentSerializer.js"), "utf8");
   let importedBackground = undefined;

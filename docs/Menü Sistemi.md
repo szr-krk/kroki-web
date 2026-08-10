@@ -56,6 +56,8 @@ DOM'da şu komutlar vardır ve `editor-main-menu.js` tarafından bağlanır:
 
 Kalıcılık formatı için [[Serializer]], Home listeleri için [[Home]].
 
+SVG/PNG ve kayıtlı önizleme üretiminde gerçek belge geometrisi `vector-effect: none` değerine normalize edilir. Seçim katmanı çıktıya alınmaz. `KrokiSignNarrow` kullanan trafik levhalarında canlı editörde kullanılan `src/arial-narrow.ttf` dosyasının aynısı çıktı SVG'sine gömülür; PNG bu bağımsız SVG üzerinden rasterize edilir.
+
 ## Çizim araçları paneli
 
 Araçlar: çizgi, arc, quadratic Bezier, cubic Bezier, daire, elips, dikdörtgen, kapalı quadratic şekil, callout ve metin. Seçilen aracın ikonu raydaki “Çizim Araçları” düğmesine taşınır ve aktif araç global state'e yazılır. Yeni araç seçimi mevcut tekli seçimi temizler.

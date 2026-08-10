@@ -12,17 +12,20 @@
   const PNG_MAX_BYTES = 995000;
   const PNG_SCALE_SEARCH_PASSES = 7;
   const DEFAULT_VIEWBOX = { x: 0, y: 0, width: 1200, height: 800 };
-  const ROAD_GEOMETRY_STROKE_SELECTOR = [
-    ".editor-road-edge",
-    ".editor-road-channel-line",
-    ".editor-road-marking",
-    ".road-intersection-outer-contour",
-    ".road-intersection-auxiliary-contour",
-    ".editor-road-barrier",
-    ".editor-road-barrier-top",
-    ".editor-road-barrier-posts",
-    ".editor-road-barrier-selected"
+  const DOCUMENT_GEOMETRY_STROKE_SELECTOR = [
+    "#editorObjects path",
+    "#editorObjects line",
+    "#editorObjects polyline",
+    "#editorObjects polygon",
+    "#editorObjects circle",
+    "#editorObjects ellipse",
+    "#editorObjects rect",
+    "#editorObjects use"
   ].join(",");
+  const SIGN_FONT_FAMILY = "KrokiSignNarrow";
+  const EXPORT_SIGN_FONT_FAMILY = "KrokiSignNarrowEmbedded";
+  const SIGN_FONT_URL = new URL("src/arial-narrow.ttf", document.baseURI).href;
+  const SIGN_FONT_FACE_PATTERN = /@font-face\s*\{[^{}]*font-family:\s*["']?KrokiSignNarrow["']?;?[^{}]*\}/gi;
 
   const homeScreen = document.querySelector("#home");
   const editorScreen = document.querySelector("#editor");
@@ -37,6 +40,7 @@
   let areaTool = null;
   let busyLayer = null;
   let storedListRenderVersion = 0;
+  let exportSignFontDataUrlPromise = null;
 
   function dialog() {
     return window.KrokiDialog || Kroki.Dialog;
@@ -52,6 +56,46 @@
       const raf = window.requestAnimationFrame || ((callback) => window.setTimeout(callback, 16));
       raf(() => raf(resolve));
     });
+  }
+
+  function blobDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.addEventListener("load", () => resolve(String(reader.result || "")), { once: true });
+      reader.addEventListener("error", () => reject(reader.error || new Error("Font verisi okunamadi.")), { once: true });
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  function loadExportSignFontDataUrl() {
+    if (!exportSignFontDataUrlPromise) {
+      exportSignFontDataUrlPromise = fetch(SIGN_FONT_URL, { cache: "force-cache" })
+        .then((response) => {
+          if (!response.ok) throw new Error(`Font dosyasi okunamadi (${response.status}).`);
+          return response.arrayBuffer();
+        })
+        .then((buffer) => blobDataUrl(new Blob([buffer], { type: "font/ttf" })))
+        .then((dataUrl) => {
+          if (!dataUrl.startsWith("data:font/ttf;base64,")) throw new Error("Font verisi gecersiz.");
+          return dataUrl;
+        })
+        .catch((error) => {
+          exportSignFontDataUrlPromise = null;
+          throw error;
+        });
+    }
+    return exportSignFontDataUrlPromise;
+  }
+
+  async function prepareExportSignFont() {
+    if (document.fonts?.load) {
+      await document.fonts.load(`400 16px "${SIGN_FONT_FAMILY}"`);
+      await document.fonts.ready;
+      if (document.fonts.check && !document.fonts.check(`400 16px "${SIGN_FONT_FAMILY}"`)) {
+        throw new Error("Canli kroki fontu yuklenemedi.");
+      }
+    }
+    return loadExportSignFontDataUrl();
   }
 
   function hideBusy() {
@@ -267,7 +311,7 @@
     return expandBounds(bounds, padding);
   }
 
-  function cssTextForExport() {
+  function cssTextForExport(signFontDataUrl = "") {
     const chunks = [];
     Array.from(document.styleSheets || []).forEach((sheet) => {
       try {
@@ -276,14 +320,21 @@
         // Cross-origin stylesheets are ignored; app styles are same-origin.
       }
     });
-    if (chunks.length) return chunks.join("\n");
-    return [
+    const source = chunks.length ? chunks.join("\n") : [
       ".editor-line-label,.editor-circle-label-text,.editor-ellipse-label-text,.editor-rectangle-label-text{font-family:Roboto,Arial,sans-serif;font-weight:800;paint-order:stroke fill;stroke-linejoin:round;stroke-width:.18em;}",
       ".editor-vehicle-label{font-family:Roboto,sans-serif;font-weight:400;paint-order:stroke fill;stroke:#fff;stroke-linejoin:round;stroke-width:.16em;}",
       ".editor-text,.editor-callout-text{font-family:Roboto,Arial,sans-serif;}",
-      ".editor-road-edge,.editor-road-channel-line,.editor-road-marking,.road-intersection-outer-contour,.road-intersection-auxiliary-contour{vector-effect:none;}",
+      "#editorObjects path,#editorObjects line,#editorObjects polyline,#editorObjects polygon,#editorObjects circle,#editorObjects ellipse,#editorObjects rect,#editorObjects use{vector-effect:none;}",
       ".editor-object-selection{vector-effect:non-scaling-stroke;}"
     ].join("\n");
+    const withoutLiveSignFont = source.replace(SIGN_FONT_FACE_PATTERN, "");
+    if (!signFontDataUrl) return withoutLiveSignFont;
+    const exportCss = withoutLiveSignFont.replace(/\bKrokiSignNarrow\b/g, EXPORT_SIGN_FONT_FAMILY);
+    return `${exportCss}\n${embeddedSignFontFaceCss(signFontDataUrl)}`;
+  }
+
+  function embeddedSignFontFaceCss(signFontDataUrl) {
+    return `@font-face{font-family:"${EXPORT_SIGN_FONT_FAMILY}";src:url("${signFontDataUrl}") format("truetype");}`;
   }
 
   function styleTextWithVectorEffect(styleText, value) {
@@ -302,13 +353,38 @@
     node.style?.setProperty?.("vector-effect", value);
   }
 
-  function normalizeRoadPreviewStrokeScaling(svgElement) {
-    svgElement?.querySelectorAll?.(ROAD_GEOMETRY_STROKE_SELECTOR).forEach((node) => {
+  function normalizeDocumentStrokeScaling(svgElement) {
+    svgElement?.querySelectorAll?.(DOCUMENT_GEOMETRY_STROKE_SELECTOR).forEach((node) => {
       setInlineVectorEffect(node, "none");
     });
   }
 
-  function exportedSvgString(viewBox, options = {}) {
+  function containsSignFont(svgElement) {
+    return Array.from(svgElement?.querySelectorAll?.("[font-family],[style],style") || []).some((node) => {
+      const value = String(node.getAttribute?.("font-family") || node.getAttribute?.("style") || node.textContent || "");
+      return /\bKrokiSignNarrow\b/.test(value);
+    });
+  }
+
+  function normalizeExportFontFamilies(svgElement) {
+    svgElement?.querySelectorAll?.("[font-family],[style]").forEach((node) => {
+      const fontFamily = node.getAttribute("font-family");
+      if (/\bKrokiSignNarrow\b/.test(fontFamily || "")) {
+        node.setAttribute("font-family", fontFamily.replace(/\bKrokiSignNarrow\b/g, EXPORT_SIGN_FONT_FAMILY));
+      }
+      const styleText = node.getAttribute("style");
+      if (/\bKrokiSignNarrow\b/.test(styleText || "")) {
+        node.setAttribute("style", styleText.replace(/\bKrokiSignNarrow\b/g, EXPORT_SIGN_FONT_FAMILY));
+      }
+    });
+    svgElement?.querySelectorAll?.("style").forEach((styleElement) => {
+      if (/\bKrokiSignNarrow\b/.test(styleElement.textContent || "")) {
+        styleElement.textContent = styleElement.textContent.replace(/\bKrokiSignNarrow\b/g, EXPORT_SIGN_FONT_FAMILY);
+      }
+    });
+  }
+
+  async function exportedSvgString(viewBox, options = {}) {
     const clone = canvas.cloneNode(true);
     clone.setAttribute("xmlns", SVG_NS);
     clone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
@@ -320,10 +396,13 @@
     clone.removeAttribute("class");
     clone.removeAttribute("aria-label");
     clone.querySelector("#editorEditLayer")?.remove();
-    normalizeRoadPreviewStrokeScaling(clone);
+    normalizeDocumentStrokeScaling(clone);
+
+    const signFontDataUrl = containsSignFont(clone) ? await prepareExportSignFont() : "";
+    if (signFontDataUrl) normalizeExportFontFamilies(clone);
 
     const style = document.createElementNS(SVG_NS, "style");
-    style.textContent = cssTextForExport();
+    style.textContent = cssTextForExport(signFontDataUrl);
     clone.insertBefore(style, clone.firstChild);
 
     if (options.includeMetadata) {
@@ -362,16 +441,17 @@
     return `<?xml version="1.0" encoding="UTF-8"?>\n${new XMLSerializer().serializeToString(clone)}`;
   }
 
-  function previewSnapshot() {
+  async function previewSnapshot() {
     const viewBox = contentViewBox(EXPORT_PADDING) || currentViewBox();
     return {
       viewBox: viewBoxString(viewBox),
-      svg: exportedSvgString(viewBox, { background: true, includeMetadata: false })
+      svg: await exportedSvgString(viewBox, { background: true, includeMetadata: false })
     };
   }
 
-  function previewSvgForDisplay(svg) {
+  async function previewSvgForDisplay(svg) {
     const source = String(svg || "");
+    let signFontRequired = false;
     try {
       const parsed = new DOMParser().parseFromString(source, "image/svg+xml");
       if (parsed.querySelector("parsererror")) return source;
@@ -392,15 +472,27 @@
       if (!svgElement.hasAttribute("preserveAspectRatio")) {
         svgElement.setAttribute("preserveAspectRatio", "xMidYMid meet");
       }
-      normalizeRoadPreviewStrokeScaling(svgElement);
+      normalizeDocumentStrokeScaling(svgElement);
+      signFontRequired = containsSignFont(svgElement);
+      if (signFontRequired) {
+        const signFontDataUrl = await prepareExportSignFont();
+        svgElement.querySelectorAll("style").forEach((styleElement) => {
+          styleElement.textContent = String(styleElement.textContent || "").replace(SIGN_FONT_FACE_PATTERN, "");
+        });
+        normalizeExportFontFamilies(svgElement);
+        const fontStyle = parsed.createElementNS(SVG_NS, "style");
+        fontStyle.textContent = embeddedSignFontFaceCss(signFontDataUrl);
+        svgElement.insertBefore(fontStyle, svgElement.firstChild);
+      }
       return new XMLSerializer().serializeToString(svgElement);
-    } catch {
+    } catch (error) {
+      if (signFontRequired) throw error;
       return source;
     }
   }
 
-  function svgDataUrl(svg, options = {}) {
-    const output = options.fitPreview ? previewSvgForDisplay(svg, options) : String(svg || "");
+  async function svgDataUrl(svg, options = {}) {
+    const output = options.fitPreview ? await previewSvgForDisplay(svg, options) : String(svg || "");
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(output)}`;
   }
 
@@ -411,7 +503,7 @@
       const existing = currentDocumentId
         ? await documentStorage.get("recent", currentDocumentId)
         : null;
-      const preview = previewSnapshot();
+      const preview = await previewSnapshot();
       const entry = {
         id: existing?.id || entryId("doc"),
         name: existing?.name || options.name || documentTitle("Kroki"),
@@ -438,18 +530,18 @@
       await notify("Boş kroki şablon olarak kaydedilmedi.");
       return null;
     }
-    const now = new Date().toISOString();
-    const preview = previewSnapshot();
-    const entry = {
-      id: entryId("tpl"),
-      name: options.name || documentTitle("Şablon"),
-      createdAt: now,
-      updatedAt: now,
-      document: captureDocument(),
-      previewSvg: preview.svg,
-      previewViewBox: preview.viewBox
-    };
     try {
+      const now = new Date().toISOString();
+      const preview = await previewSnapshot();
+      const entry = {
+        id: entryId("tpl"),
+        name: options.name || documentTitle("Şablon"),
+        createdAt: now,
+        updatedAt: now,
+        document: captureDocument(),
+        previewSvg: preview.svg,
+        previewViewBox: preview.viewBox
+      };
       await documentStorage.put("template", entry);
       await renderStoredLists();
       return entry;
@@ -552,14 +644,19 @@
     window.setTimeout(() => URL.revokeObjectURL(url), 800);
   }
 
-  function exportSvg() {
+  async function exportSvg() {
     if (!hasContent()) {
       void notify("Kaydedilecek kroki yok.");
       return;
     }
-    const viewBox = contentViewBox(EXPORT_PADDING) || currentViewBox();
-    const svg = exportedSvgString(viewBox, { includeMetadata: true, document: captureDocument() });
-    downloadBlob(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }), `kroki_${nowStamp()}.svg`);
+    try {
+      const viewBox = contentViewBox(EXPORT_PADDING) || currentViewBox();
+      const svg = await exportedSvgString(viewBox, { includeMetadata: true, document: captureDocument() });
+      downloadBlob(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }), `kroki_${nowStamp()}.svg`);
+    } catch (error) {
+      console.warn("Kroki SVG export failed", error);
+      await notify("Yazı tipi yüklenemedi. Farklı font kullanan bir SVG oluşturulmadı.");
+    }
   }
 
   function pngSizeForViewBox(viewBox) {
@@ -674,9 +771,16 @@
     return best;
   }
 
-  function exportPng(viewBox, filename, options = {}) {
+  async function exportPng(viewBox, filename, options = {}) {
+    let svg = "";
+    try {
+      svg = await exportedSvgString(viewBox, { background: true, includeMetadata: false });
+    } catch (error) {
+      console.warn("Kroki PNG export font preparation failed", error);
+      await notify("Yazı tipi yüklenemedi. Farklı font kullanan bir resim oluşturulmadı.");
+      return false;
+    }
     return new Promise((resolve) => {
-      const svg = exportedSvgString(viewBox, { background: true, includeMetadata: false });
       const svgBlob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
       const url = URL.createObjectURL(svgBlob);
       const image = new Image();
@@ -746,21 +850,31 @@
     }
   }
 
-  function renderPreviewInto(target, entry) {
+  function renderPreviewPlaceholder(target) {
+    const placeholder = document.createElement("span");
+    placeholder.textContent = "Önizleme";
+    target.replaceChildren(placeholder);
+  }
+
+  async function renderPreviewInto(target, entry) {
     target.replaceChildren();
     if (entry.previewSvg) {
       const image = document.createElement("img");
       image.alt = "";
       image.loading = "lazy";
-      image.src = svgDataUrl(entry.previewSvg, {
-        fitPreview: true
-      });
       target.append(image);
+      try {
+        const source = await svgDataUrl(entry.previewSvg, {
+          fitPreview: true
+        });
+        if (image.parentElement === target) image.src = source;
+      } catch (error) {
+        console.warn("Kayıt önizlemesi hazırlanamadı.", error);
+        if (image.parentElement === target) renderPreviewPlaceholder(target);
+      }
       return;
     }
-    const placeholder = document.createElement("span");
-    placeholder.textContent = "Önizleme";
-    target.append(placeholder);
+    renderPreviewPlaceholder(target);
   }
 
   function renderEntryButton(entry, options) {
@@ -773,7 +887,7 @@
 
     const preview = document.createElement("span");
     preview.className = "stored-doc-thumb";
-    renderPreviewInto(preview, entry);
+    void renderPreviewInto(preview, entry);
 
     const meta = document.createElement("span");
     meta.className = "stored-doc-meta";
@@ -874,7 +988,7 @@
     body.className = "kroki-preview-body";
     const imageBox = document.createElement("div");
     imageBox.className = "kroki-preview-image";
-    renderPreviewInto(imageBox, entry);
+    void renderPreviewInto(imageBox, entry);
     body.append(imageBox);
 
     const actions = document.createElement("div");
@@ -1236,7 +1350,7 @@
     else if (action === "save-exit") await saveAndExit();
     else if (action === "exit-nosave") await exitWithoutSave();
     else if (action === "save-template") await saveTemplateFlow();
-    else if (action === "export-svg") exportSvg();
+    else if (action === "export-svg") await exportSvg();
     else if (action === "new-document") await newDocument();
     else if (action === "back-home") await backHome();
   }
