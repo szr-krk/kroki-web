@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="45.857" height="21.143" viewBox="0 0 45.857 21.143">
+  <metadata>Piaggio Ape TM703; 3.210 m x 1.480 m x 1.780 m; 50 units = 3.5 m</metadata>
+  <g transform="matrix(0.140952 0 0 0.140952 0.024 0)">
+    <path d="M1 4H199V146H1Z" fill="#fff" stroke="#000" stroke-width="3"/>
+    <path d="M199 12H239Q270 12 288 30L319 61Q324 66 324 75Q324 84 319 89L288 120Q270 138 239 138H199Z" fill="#fff" stroke="#000" stroke-width="3"/>
+    <path d="M1 4 304 104M1 146 304 46" fill="none" stroke="#000" stroke-width="4" stroke-linecap="butt"/>
+    <path d="M50 8V142" fill="none" stroke="#000" stroke-width="5"/>
+    <path d="M34 1H66V11H34ZM34 139H66V149H34Z" fill="#000" stroke="#000" stroke-width="2"/>
+    <path d="M286 66H324V84H286Z" fill="#000" stroke="#000" stroke-width="2"/>
+    <path d="M211 5H225V15H211ZM211 135H225V145H211Z" fill="#000" stroke="#000" stroke-width="2"/>
+  </g>
+</svg>
