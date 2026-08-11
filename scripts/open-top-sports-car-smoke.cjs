@@ -19,7 +19,7 @@ assert.deepEqual(
   ["sedan", "ustu-acik-spor-otomobil"],
   "spor otomobil Sedan'ın hemen yanında değil"
 );
-assert.equal(sportsCar.name, "Dört Kişilik Üstü Açık Spor Otomobil");
+assert.equal(sportsCar.name, "Cabrio");
 assert.equal(sportsCar.previewView, "side");
 assert.equal(sportsCar.lengthM, 4.485);
 assert.equal(sportsCar.widthM, 2.072);

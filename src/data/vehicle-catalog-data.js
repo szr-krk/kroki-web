@@ -2782,7 +2782,7 @@
         },
         {
           id: "ustu-acik-spor-otomobil",
-          name: "Dört Kişilik Üstü Açık Spor Otomobil",
+          name: "Cabrio",
           kind: "box",
           lengthM: 4.485,
           widthM: 2.072,
