@@ -2352,6 +2352,59 @@
     };
   }
 
+  const AT_ARABASI_2_LENGTH_M = 6.5978;
+  const AT_ARABASI_2_WIDTH_M = 1.705;
+  const AT_ARABASI_2_HEIGHT_M = 1.6966;
+  const AT_ARABASI_2_SIDE_SCALE = 0.269297;
+
+  VEHICLE_SVG_VIEWS.v02_at_arabasi_2 = {
+    top: stretchVehicleView(
+      VEHICLE_SVG_VIEWS.v02_at_arabasi.top,
+      vehicleUnits(AT_ARABASI_2_LENGTH_M),
+      vehicleUnits(AT_ARABASI_2_WIDTH_M)
+    ),
+    side: {
+      viewBox: `0 0 ${vehicleUnits(AT_ARABASI_2_LENGTH_M)} ${vehicleUnits(AT_ARABASI_2_HEIGHT_M)}`,
+      paths: [
+        {
+          role: "body",
+          fill: "vehicle",
+          stroke: "none",
+          strokeWidth: 0,
+          paintable: true,
+          ghost: "auto",
+          transform: `matrix(${AT_ARABASI_2_SIDE_SCALE} 0 0 ${AT_ARABASI_2_SIDE_SCALE} 0 0)`,
+          d: "M1 1 199 1 199 49 1 49Z",
+        },
+        {
+          role: "wheel",
+          fill: "#ffffff",
+          stroke: "#000000",
+          strokeWidth: 10,
+          ghost: "preserve",
+          transform: `matrix(${AT_ARABASI_2_SIDE_SCALE} 0 0 ${AT_ARABASI_2_SIDE_SCALE} 0 0)`,
+          d: "M21 70A1 1 0 0051 70 1 1 0 0021 70ZM151 70A1 1 0 00181 70 1 1 0 00151 70Z",
+        },
+        {
+          role: "frame",
+          fill: "none",
+          stroke: "#000000",
+          strokeWidth: 8,
+          ghost: "preserve",
+          lineCap: "butt",
+          lineJoin: "miter",
+          transform: `matrix(${AT_ARABASI_2_SIDE_SCALE} 0 0 ${AT_ARABASI_2_SIDE_SCALE} 0 0)`,
+          d: "M181 70 220 70 350 20",
+        },
+      ],
+    },
+    upsideDown: stretchVehicleView(
+      VEHICLE_SVG_VIEWS.v02_at_arabasi.upsideDown,
+      vehicleUnits(AT_ARABASI_2_LENGTH_M),
+      vehicleUnits(AT_ARABASI_2_WIDTH_M)
+    ),
+  };
+
   function circlePath(cx, cy, radius) {
     const left = roundVehicleUnit(cx - radius);
     const right = roundVehicleUnit(cx + radius);
@@ -2722,6 +2775,20 @@
           nominalHeightM: 1.65,
           color: "#000000",
           views: VEHICLE_SVG_VIEWS.v02_at_arabasi,
+        },
+        {
+          id: "at-arabasi-2",
+          name: "At Arabası 2",
+          kind: "box",
+          lengthM: AT_ARABASI_2_LENGTH_M,
+          widthM: AT_ARABASI_2_WIDTH_M,
+          heightM: AT_ARABASI_2_HEIGHT_M,
+          nominalLengthM: 3.74,
+          nominalWidthM: AT_ARABASI_2_WIDTH_M,
+          nominalHeightM: AT_ARABASI_2_HEIGHT_M,
+          color: "#000000",
+          previewView: "side",
+          views: VEHICLE_SVG_VIEWS.v02_at_arabasi_2,
         },
       ],
     },
