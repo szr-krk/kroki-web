@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64.071429" height="29.6" viewBox="0 0 64.071429 29.6" preserveAspectRatio="xMidYMid meet" data-tag="renault_megane_cc_reverse" data-kroki-type="vehicle" data-kroki-view="upsideDown" data-kroki-source-base="renault-megane-coupe-cabriolet" data-kroki-length-m="4.485" data-kroki-width-m="2.072" data-kroki-height-m="1.434" data-kroki-scale="50/3.5" data-kroki-uniform-scale="0.069811">
+  <g transform="matrix(0.069811 0 0 0.069811 2.715 0)">
+    <path data-kroki-role="detail" data-kroki-fill="fixed" data-kroki-paintable="false" d="M1 213 1 134Q6 106 16 85 26 67 49 62 114 41 203 39 284 40 357 36L365 41 568 41 550 9Q546 1 555 1L562 1Q582 15 588 40 590 44 596 43 641 45 665 38L692 38Q754 41 793 74 825 101 834 151 841 186 841 213 841 240 834 275 825 324 793 352 754 384 692 388L665 388Q641 381 596 383 590 382 588 386 582 410 562 425L555 425Q546 425 550 417L568 384 365 384 357 390Q284 386 203 387 114 384 49 364 26 358 16 341 6 319 1 292ZM750 60 30 350M30 80 750 350" fill="#ffffff" stroke="#111827" stroke-width="2" stroke-linejoin="round" />
+    <path data-kroki-role="wheel" data-kroki-fill="fixed" data-kroki-paintable="false" d="M120 70 220 70M120 350 220 350M610 70 710 70M610 350 710 350" fill="none" stroke="#111827" stroke-width="30" stroke-linejoin="round" />
+    <path data-kroki-role="frame" data-kroki-fill="fixed" data-kroki-paintable="false" d="M170 70 170 350M660 70 660 350" fill="none" stroke="#111827" stroke-width="20" stroke-linejoin="round" />
+  </g>
+</svg>
