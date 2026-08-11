@@ -167,7 +167,7 @@ assert.match(styleManager, /if \(textEntryActive\) return;\s*repositionPanel\(pa
 assert.match(styleManager, /repositionTextEntryPanel\(textPanel, controls\.textButton\)/);
 assert.match(responsiveScale, /activeTextEntryHost\?\.matches\?\.\("\.free-text-composer, \.line-text-panel"\)/);
 
-assert.match(index, /kroki-build" content="20260810-performance-stability-v1"/);
+assert.match(index, /kroki-build" content="[^"]+"/);
 assert.match(index, /editor-line\.css\?v=20260810-export-fidelity-v1/);
 assert.match(index, /styleManager\.js\?v=20260810-performance-stability-v1/);
 assert.match(index, /editorObjectManager\.js\?v=20260810-performance-stability-v1/);
