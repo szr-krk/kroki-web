@@ -5,6 +5,7 @@ const vm = require("node:vm");
 
 const root = path.resolve(__dirname, "..");
 const source = fs.readFileSync(path.join(root, "src/core/multiSelectManager.js"), "utf8");
+const editorCss = fs.readFileSync(path.join(root, "src/editor.css"), "utf8");
 
 function classList(initial = []) {
   const names = new Set(initial);
@@ -86,11 +87,15 @@ vm.runInNewContext(source, {
 
 Kroki.MultiSelectManager.selectIds(["shape-1"], { mode: "preselect" });
 assert.equal(topIp.classList.contains("gizli"), false, "coklu secim islemleri gorunur kalmali");
-assert.equal(sideIp.classList.contains("gizli"), true, "tek nesne IP'si coklu secim baslar baslamaz kapanmali");
+assert.equal(sideIp.classList.contains("gizli"), false, "bos IP ray menusunu ortmek icin yerini korumali");
+assert.equal(sideIp.classList.contains("is-empty"), true, "nesne kontrolleri bos IP durumunda saklanmali");
 assert.ok(hiddenFloatingPanels > 0, "acik nesne alt panelleri de kapanmali");
 
 Kroki.MultiSelectManager.addIds(["vehicle-1"], { mode: "preselect" });
 assert.deepEqual(Array.from(Kroki.MultiSelectManager.getSelectedIds()), ["shape-1", "vehicle-1"]);
-assert.equal(sideIp.classList.contains("gizli"), true, "farkli IP tipleri secildiginde nesne IP'si kapali kalmali");
+assert.equal(sideIp.classList.contains("gizli"), false, "karma secimde bos IP yerini korumali");
+assert.equal(sideIp.classList.contains("is-empty"), true, "karma secimde nesne kontrolleri gizli kalmali");
+assert.match(editorCss, /\.editor-side-ip\.is-empty\s*\{[^}]*border:\s*0;[^}]*background:\s*#ffffff;[^}]*box-shadow:\s*none;/s);
+assert.match(editorCss, /\.editor-side-ip\.is-empty\s*>\s*\*\s*\{[^}]*display:\s*none\s*!important;/s);
 
 console.log("multi select IP smoke: ok");

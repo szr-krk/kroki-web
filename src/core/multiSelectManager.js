@@ -400,6 +400,10 @@
     marquee = null;
   }
 
+  function setSideIpEmpty(empty) {
+    window.krokiObjectEditCore?.sideIp?.classList.toggle("is-empty", Boolean(empty));
+  }
+
   function renderRect(rect, bounds) {
     rect.setAttribute("x", String(bounds.x));
     rect.setAttribute("y", String(bounds.y));
@@ -460,9 +464,11 @@
     }
     if (has) {
       window.krokiObjectEditCore?.topIp?.classList.remove("gizli");
-      window.krokiObjectEditCore?.sideIp?.classList.add("gizli");
+      window.krokiObjectEditCore?.sideIp?.classList.remove("gizli");
+      setSideIpEmpty(true);
       Kroki.StyleManager?.hidePanels?.();
     } else {
+      setSideIpEmpty(false);
       if (!Kroki.SelectionManager?.getActiveId?.()) {
         window.krokiObjectEditCore?.topIp?.classList.add("gizli");
         window.krokiObjectEditCore?.sideIp?.classList.add("gizli");
