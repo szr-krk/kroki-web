@@ -10,7 +10,7 @@
   <meta name="kroki-build" content="20260813-group-rotate-cp-v1" />
   <title>Kroki Pro</title>
   <link rel="stylesheet" href="src/home.css?v=20260813-preview-share-cp-v1" />
-  <link rel="stylesheet" href="src/editor.css?v=20260814-multi-ip-placeholder-v1" />
+  <link rel="stylesheet" href="src/editor.css?v=20260814-group-ip-pickers-v1" />
   <link rel="stylesheet" href="src/editor-line.css?v=20260813-group-rotate-cp-v1" />
 </head>
 
@@ -322,6 +322,33 @@
       </div>
 
       <div id="editorSideIp" class="editor-side-ip gizli" aria-label="Aktif nesne özellikleri">
+
+        <div id="groupIpStack" class="group-ip-stack side-ip-control gizli" aria-label="Grup özellikleri">
+          <div id="groupScaleStepper" class="side-ip-stepper-vertical" aria-label="Grup boyutu">
+            <button id="btnGroupScalePlus" class="side-ip-stepper-btn" type="button"
+              aria-label="Grup boyutunu yüzde 1 arttır">+</button>
+            <input id="groupScaleInput" class="side-ip-stepper-number" type="number" min="1" max="1000"
+              step="1" value="100" inputmode="numeric" aria-label="Grup boyutu">
+            <button id="btnGroupScaleMinus" class="side-ip-stepper-btn" type="button"
+              aria-label="Grup boyutunu yüzde 1 azalt">-</button>
+          </div>
+          <div id="groupRotateStepper" class="side-ip-stepper-vertical" aria-label="Grup açısı">
+            <button id="btnGroupRotatePlus" class="side-ip-stepper-btn" type="button"
+              aria-label="Grup açısını 1 derece arttır">
+              <svg class="side-ip-rotate-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M 12.48 3.43 A 9.09 9.09 0 0 1 18.3 5.55 L 18.3 2.35 L 19.94 2.35 L 19.94 8.85 L 13.44 8.85 L 13.44 7.21 L 17.7 7.21 A 7.46 7.46 0 1 0 19.17 15.86 L 20.63 16.59 A 9.11 9.11 0 1 1 12.48 3.43 Z" fill="currentColor"></path>
+              </svg>
+            </button>
+            <input id="groupRotateInput" class="side-ip-stepper-number" type="number" min="-180" max="180"
+              step="1" value="0" inputmode="numeric" aria-label="Grup açısı">
+            <button id="btnGroupRotateMinus" class="side-ip-stepper-btn" type="button"
+              aria-label="Grup açısını 1 derece azalt">
+              <svg class="side-ip-rotate-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M 12.48 20.57 A 9.09 9.09 0 0 0 18.3 18.45 L 18.3 21.65 L 19.94 21.65 L 19.94 15.15 L 13.44 15.15 L 13.44 16.79 L 17.7 16.79 A 7.46 7.46 0 1 1 19.17 8.14 L 20.63 7.41 A 9.11 9.11 0 1 0 12.48 20.57 Z" fill="currentColor"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
 
         <div id="roadIpControls" class="road-ip-stack side-ip-control road-only-control gizli" aria-label="Yol ozellikleri">
           <div class="road-ip-stepper road-global-control" aria-label="Serit sayisi">
@@ -1369,7 +1396,7 @@
   <script src="src/core/historyManager.js"></script>
   <script src="src/core/hitTestManager.js"></script>
   <script src="src/core/controlPointManager.js?v=20260813-group-rotate-cp-v1"></script>
-  <script src="src/core/multiSelectManager.js?v=20260814-multi-ip-placeholder-v1"></script>
+  <script src="src/core/multiSelectManager.js?v=20260814-group-ip-pickers-v1"></script>
   <script src="src/core/roadDragPreview.js?v=20260713-island-circle-preview"></script>
   <script src="src/core/selectionManager.js?v=20260808-rotation-live-sync-v1"></script>
   <script src="src/geometry/lineGeometry.js"></script>

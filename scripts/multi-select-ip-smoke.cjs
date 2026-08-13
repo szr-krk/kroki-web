@@ -6,6 +6,7 @@ const vm = require("node:vm");
 const root = path.resolve(__dirname, "..");
 const source = fs.readFileSync(path.join(root, "src/core/multiSelectManager.js"), "utf8");
 const editorCss = fs.readFileSync(path.join(root, "src/editor.css"), "utf8");
+const index = fs.readFileSync(path.join(root, "index.html"), "utf8");
 
 function classList(initial = []) {
   const names = new Set(initial);
@@ -97,5 +98,13 @@ assert.equal(sideIp.classList.contains("gizli"), false, "karma secimde bos IP ye
 assert.equal(sideIp.classList.contains("is-empty"), true, "karma secimde nesne kontrolleri gizli kalmali");
 assert.match(editorCss, /\.editor-side-ip\.is-empty\s*\{[^}]*border:\s*0;[^}]*background:\s*#ffffff;[^}]*box-shadow:\s*none;/s);
 assert.match(editorCss, /\.editor-side-ip\.is-empty\s*>\s*\*\s*\{[^}]*display:\s*none\s*!important;/s);
+for (const id of ["groupIpStack", "groupScaleInput", "groupRotateInput", "btnGroupScalePlus", "btnGroupScaleMinus", "btnGroupRotatePlus", "btnGroupRotateMinus"]) {
+  assert.match(index, new RegExp(`id="${id}"`), `grup IP kontrolu eksik: ${id}`);
+}
+assert.match(editorCss, /\.editor-side-ip\.is-group-ip\s*>\s*:not\(#groupIpStack\)\s*\{[^}]*display:\s*none\s*!important;/s);
+assert.match(source, /setSideIpMode\(hasActiveGroup \? "group" : "empty"\)/);
+assert.match(source, /function setGroupScalePercent\(value\)/);
+assert.match(source, /function setGroupRotation\(value\)/);
+assert.match(source, /startGroupScales:\s*groupTreeScalePercents\(activeGroupId\)/);
 
 console.log("multi select IP smoke: ok");

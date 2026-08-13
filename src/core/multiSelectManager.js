@@ -17,8 +17,19 @@
 
   const button = document.querySelector("#btnMultiSelectMode");
   const doneButton = document.querySelector("#btnEditTamam");
+  const groupIpControls = {
+    stack: document.querySelector("#groupIpStack"),
+    scaleMinus: document.querySelector("#btnGroupScaleMinus"),
+    scalePlus: document.querySelector("#btnGroupScalePlus"),
+    scaleInput: document.querySelector("#groupScaleInput"),
+    rotateMinus: document.querySelector("#btnGroupRotateMinus"),
+    rotatePlus: document.querySelector("#btnGroupRotatePlus"),
+    rotateInput: document.querySelector("#groupRotateInput")
+  };
   const DRAG_START_THRESHOLD_PX = 3;
   const GROUP_MIN_SIZE = 2;
+  const GROUP_SCALE_MIN = 1;
+  const GROUP_SCALE_MAX = 1000;
   const GROUP_CORNERS = [
     { id: "nw", sx: -1, sy: -1 },
     { id: "ne", sx: 1, sy: -1 },
@@ -237,16 +248,25 @@
     return groupFrame(activeGroupId);
   }
 
-  function saveGroupFrame(groupId, frame) {
+  function clampGroupScalePercent(value) {
+    const numeric = Number(value);
+    return Math.min(GROUP_SCALE_MAX, Math.max(GROUP_SCALE_MIN, Number.isFinite(numeric) ? numeric : 100));
+  }
+
+  function groupScalePercent(groupId) {
+    const group = groupId ? Kroki.GroupManager?.get?.(groupId) : null;
+    return clampGroupScalePercent(group?.metadata?.scalePercent ?? 100);
+  }
+
+  function saveGroupFrame(groupId, frame, options = {}) {
     if (!groupId || !frame) return;
     Kroki.GroupManager?.updateMetadata?.(groupId, (metadata = {}) => ({
       ...(metadata || {}),
-      frame: utils.clonePlain(frame)
+      frame: utils.clonePlain(frame),
+      ...(Number.isFinite(Number(options.scalePercent))
+        ? { scalePercent: clampGroupScalePercent(options.scalePercent) }
+        : {})
     }));
-  }
-
-  function saveActiveGroupFrame(frame) {
-    saveGroupFrame(activeGroupId, frame);
   }
 
   function groupTreeIds(groupId) {
@@ -257,6 +277,10 @@
     return new Map(groupTreeIds(groupId)
       .map((id) => [id, groupFrame(id)])
       .filter((entry) => entry[1]));
+  }
+
+  function groupTreeScalePercents(groupId) {
+    return new Map(groupTreeIds(groupId).map((id) => [id, groupScalePercent(id)]));
   }
 
   function shiftedFrame(frame, dx, dy) {
@@ -400,8 +424,22 @@
     marquee = null;
   }
 
-  function setSideIpEmpty(empty) {
-    window.krokiObjectEditCore?.sideIp?.classList.toggle("is-empty", Boolean(empty));
+  function setSideIpMode(nextMode = "normal") {
+    const sideIp = window.krokiObjectEditCore?.sideIp;
+    if (!sideIp) return;
+    sideIp.classList.toggle("is-empty", nextMode === "empty");
+    sideIp.classList.toggle("is-group-ip", nextMode === "group");
+    groupIpControls.stack?.classList.toggle("gizli", nextMode !== "group");
+  }
+
+  function syncGroupIpControls() {
+    if (!activeGroupId) return;
+    const frame = activeGroupFrame();
+    if (!frame) return;
+    const scale = Math.round(groupScalePercent(activeGroupId));
+    const rotation = Math.round(normalizeRotation(frame.rotation || 0));
+    if (groupIpControls.scaleInput?.value !== String(scale)) groupIpControls.scaleInput.value = String(scale);
+    if (groupIpControls.rotateInput?.value !== String(rotation)) groupIpControls.rotateInput.value = String(rotation);
   }
 
   function renderRect(rect, bounds) {
@@ -465,10 +503,11 @@
     if (has) {
       window.krokiObjectEditCore?.topIp?.classList.remove("gizli");
       window.krokiObjectEditCore?.sideIp?.classList.remove("gizli");
-      setSideIpEmpty(true);
+      setSideIpMode(hasActiveGroup ? "group" : "empty");
+      if (hasActiveGroup) syncGroupIpControls();
       Kroki.StyleManager?.hidePanels?.();
     } else {
-      setSideIpEmpty(false);
+      setSideIpMode("normal");
       if (!Kroki.SelectionManager?.getActiveId?.()) {
         window.krokiObjectEditCore?.topIp?.classList.add("gizli");
         window.krokiObjectEditCore?.sideIp?.classList.add("gizli");
@@ -784,7 +823,7 @@
     const transaction = Kroki.HistoryManager?.begin?.("Grupla");
     const group = Kroki.GroupManager?.createGroup?.(children, {
       skipHistory: true,
-      metadata: { frame: frameFromBounds(selectionBounds()) }
+      metadata: { frame: frameFromBounds(selectionBounds()), scalePercent: 100 }
     });
     if (group) {
       multiMode = false;
@@ -976,19 +1015,37 @@
     return draft;
   }
 
-  function updateGroupGeometry(nextFrame, mapper, options = {}) {
-    if (drag?.type === "group-control") drag.currentFrame = nextFrame;
-    drag.startModels.forEach((source, id) => {
+  function captureGroupTransformState() {
+    return {
+      startModels: new Map(Array.from(selectedIds).map((id) => [id, clonePlain(manager.get(id))])),
+      startGroupFrames: groupTreeFrames(activeGroupId),
+      startGroupScales: groupTreeScalePercents(activeGroupId)
+    };
+  }
+
+  function applyGroupGeometry(state, nextFrame, mapper, options = {}) {
+    state.startModels.forEach((source, id) => {
       manager.updateModel(id, (draft) => transformModelFromStart(draft, source, mapper, options), {
         skipHistory: true,
         controlPoints: false,
         styleControls: false
       });
     });
-    drag.startGroupFrames?.forEach((frame, groupId) => {
-      saveGroupFrame(groupId, groupId === activeGroupId ? nextFrame : transformGroupFrame(frame, mapper, options));
+    state.startGroupFrames?.forEach((frame, groupId) => {
+      const startScale = state.startGroupScales?.get(groupId) ?? groupScalePercent(groupId);
+      saveGroupFrame(
+        groupId,
+        groupId === activeGroupId ? nextFrame : transformGroupFrame(frame, mapper, options),
+        { scalePercent: options.scale ? startScale * options.scale : startScale }
+      );
     });
     sync();
+  }
+
+  function updateGroupGeometry(nextFrame, mapper, options = {}) {
+    if (!drag?.startModels) return;
+    if (drag.type === "group-control") drag.currentFrame = nextFrame;
+    applyGroupGeometry(drag, nextFrame, mapper, options);
   }
 
   function groupResizeScale(state, worldPoint) {
@@ -1038,6 +1095,71 @@
     };
   }
 
+  function scalePointAround(point, center, scale) {
+    return {
+      x: center.x + (point.x - center.x) * scale,
+      y: center.y + (point.y - center.y) * scale
+    };
+  }
+
+  function setGroupScalePercent(value) {
+    if (!activeGroupId) return false;
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return false;
+    const nextPercent = clampGroupScalePercent(Math.round(numeric));
+    const currentPercent = groupScalePercent(activeGroupId);
+    if (Math.abs(nextPercent - currentPercent) < 0.000001) return false;
+    const frame = activeGroupFrame();
+    if (!frame) return false;
+    const scale = nextPercent / currentPercent;
+    const center = { x: frame.cx, y: frame.cy };
+    const nextFrame = {
+      ...frame,
+      width: Math.max(GROUP_MIN_SIZE, frame.width * scale),
+      height: Math.max(GROUP_MIN_SIZE, frame.height * scale)
+    };
+    const transaction = Kroki.HistoryManager?.begin?.("Grup boyutlandir");
+    promoteToEdit();
+    applyGroupGeometry(
+      captureGroupTransformState(),
+      nextFrame,
+      (point) => scalePointAround(point, center, scale),
+      { scale }
+    );
+    if (transaction) Kroki.HistoryManager?.commit?.(transaction, "Grup boyutlandir");
+    return true;
+  }
+
+  function stepGroupScale(delta) {
+    return setGroupScalePercent(groupScalePercent(activeGroupId) + Number(delta || 0));
+  }
+
+  function setGroupRotation(value) {
+    if (!activeGroupId) return false;
+    const frame = activeGroupFrame();
+    if (!frame || !Number.isFinite(Number(value))) return false;
+    const nextRotation = normalizeRotation(Number(value));
+    const delta = normalizeRotation(nextRotation - Number(frame.rotation || 0));
+    if (Math.abs(delta) < 0.000001) return false;
+    const center = { x: frame.cx, y: frame.cy };
+    const nextFrame = { ...frame, rotation: nextRotation };
+    const transaction = Kroki.HistoryManager?.begin?.("Grup dondur");
+    promoteToEdit();
+    applyGroupGeometry(
+      captureGroupTransformState(),
+      nextFrame,
+      (point) => rotatePointAround(point, center, delta),
+      { rotationDelta: delta }
+    );
+    if (transaction) Kroki.HistoryManager?.commit?.(transaction, "Grup dondur");
+    return true;
+  }
+
+  function stepGroupRotation(delta) {
+    const frame = activeGroupFrame();
+    return frame ? setGroupRotation(Number(frame.rotation || 0) + Number(delta || 0)) : false;
+  }
+
   function startGroupControlDrag(event, cpId) {
     if (!activeGroupId) return;
     const frame = activeGroupFrame();
@@ -1047,6 +1169,7 @@
     const point = canvasPoint(event);
     promoteToEdit();
     drag = {
+      ...captureGroupTransformState(),
       type: "group-control",
       cpId,
       pointerId: event.pointerId,
@@ -1055,8 +1178,6 @@
       moved: false,
       frame,
       currentFrame: frame,
-      startModels: new Map(Array.from(selectedIds).map((id) => [id, clonePlain(manager.get(id))])),
-      startGroupFrames: groupTreeFrames(activeGroupId),
       transaction: Kroki.HistoryManager?.begin?.(cpId === "rotate" ? "Grup dondur" : "Grup boyutlandir")
     };
     if (cpId === "rotate") {
@@ -1274,6 +1395,32 @@
     return true;
   }
 
+  function bindGroupIpControls() {
+    const bindHold = window.krokiObjectEditCore?.bindHoldAction;
+    bindHold?.(groupIpControls.scaleMinus, () => stepGroupScale(-1), { startDelay: 240, repeatDelay: 32 });
+    bindHold?.(groupIpControls.scalePlus, () => stepGroupScale(1), { startDelay: 240, repeatDelay: 32 });
+    bindHold?.(groupIpControls.rotateMinus, () => stepGroupRotation(-1), { startDelay: 240, repeatDelay: 32 });
+    bindHold?.(groupIpControls.rotatePlus, () => stepGroupRotation(1), { startDelay: 240, repeatDelay: 32 });
+    groupIpControls.scaleInput?.addEventListener("input", () => {
+      if (groupIpControls.scaleInput.value === "") return;
+      setGroupScalePercent(groupIpControls.scaleInput.value);
+    });
+    groupIpControls.scaleInput?.addEventListener("change", () => {
+      setGroupScalePercent(groupIpControls.scaleInput.value);
+      syncControls();
+    });
+    groupIpControls.rotateInput?.addEventListener("input", () => {
+      if (groupIpControls.rotateInput.value === "" || groupIpControls.rotateInput.value === "-") return;
+      setGroupRotation(groupIpControls.rotateInput.value);
+    });
+    groupIpControls.rotateInput?.addEventListener("change", () => {
+      setGroupRotation(groupIpControls.rotateInput.value);
+      syncControls();
+    });
+  }
+
+  bindGroupIpControls();
+
   button?.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -1330,6 +1477,8 @@
     applyStyle,
     createGroup,
     ungroup,
+    setGroupScalePercent,
+    setGroupRotation,
     hasSelection() {
       return selectedIds.size > 0;
     },

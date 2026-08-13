@@ -356,6 +356,20 @@
   display: none !important;
 }
 
+.editor-side-ip.is-group-ip > :not(#groupIpStack) {
+  display: none !important;
+}
+
+.editor-side-ip.is-group-ip #groupIpStack {
+  display: grid !important;
+}
+
+.group-ip-stack {
+  width: var(--editor-rail-button-size);
+  display: grid;
+  gap: 0.5rem;
+}
+
 .editor-side-ip #btnLineText {
   order: -1;
 }
