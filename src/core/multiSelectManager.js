@@ -400,21 +400,6 @@
     marquee = null;
   }
 
-  function setSideIpEmpty(empty) {
-    const sideIp = window.krokiObjectEditCore?.sideIp;
-    if (!sideIp) return;
-    sideIp.classList.toggle("is-empty", Boolean(empty));
-    Array.from(sideIp.children).forEach((child) => {
-      if (empty) {
-        child.dataset.groupEmptyWasHidden = child.classList.contains("gizli") ? "1" : "0";
-        child.classList.add("gizli");
-        return;
-      }
-      if (child.dataset.groupEmptyWasHidden === "0") child.classList.remove("gizli");
-      delete child.dataset.groupEmptyWasHidden;
-    });
-  }
-
   function renderRect(rect, bounds) {
     rect.setAttribute("x", String(bounds.x));
     rect.setAttribute("y", String(bounds.y));
@@ -458,8 +443,6 @@
     const hasActiveGroup = Boolean(activeGroupId);
     const groupedSelectionChildren = hasActiveGroup ? [] : groupingChildrenFromSelection();
     const hasGroupUnits = groupedSelectionChildren.some((id) => Kroki.GroupManager?.has?.(id));
-    const hasStandaloneGroup = !hasActiveGroup && Boolean(selectedGroupMatch());
-    const groupLikeSelection = hasActiveGroup || hasStandaloneGroup || hasGroupUnits;
     const selectionUnitCount = hasActiveGroup ? 1 : hasGroupUnits ? groupedSelectionChildren.length : selectedIds.size;
     document.querySelectorAll(".multi-only-control").forEach((control) => control.classList.toggle("gizli", selectionUnitCount < 2 || Boolean(activeGroupId)));
     document.querySelectorAll(".group-only-control").forEach((control) => control.classList.toggle("gizli", !activeGroupId));
@@ -477,11 +460,9 @@
     }
     if (has) {
       window.krokiObjectEditCore?.topIp?.classList.remove("gizli");
-      window.krokiObjectEditCore?.sideIp?.classList.remove("gizli");
-      setSideIpEmpty(groupLikeSelection);
-      if (groupLikeSelection) Kroki.StyleManager?.hidePanels?.();
+      window.krokiObjectEditCore?.sideIp?.classList.add("gizli");
+      Kroki.StyleManager?.hidePanels?.();
     } else {
-      setSideIpEmpty(false);
       if (!Kroki.SelectionManager?.getActiveId?.()) {
         window.krokiObjectEditCore?.topIp?.classList.add("gizli");
         window.krokiObjectEditCore?.sideIp?.classList.add("gizli");
