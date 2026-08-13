@@ -2743,6 +2743,114 @@
     },
   };
 
+  const TANKER_SEMITRAILER_TOP_BODY = "M 17.857 0.15 A 17.707 17.707 0 0 0 17.857 35.564 L 125.643 35.564 A 17.707 17.707 0 0 0 125.643 0.15 Z";
+  const TANKER_SEMITRAILER_TOP_WHEELS = [
+    "M 11 0.15 L 20 0.15 L 20 4.55 L 11 4.55 Z M 11 31.164 L 20 31.164 L 20 35.564 L 11 35.564 Z",
+    "M 28 0.15 L 37 0.15 L 37 4.55 L 28 4.55 Z M 28 31.164 L 37 31.164 L 37 35.564 L 28 35.564 Z",
+    "M 45 0.15 L 54 0.15 L 54 4.55 L 45 4.55 Z M 45 31.164 L 54 31.164 L 54 35.564 L 45 35.564 Z",
+  ];
+  const TANKER_SEMITRAILER_SIDE_WHEELS = [
+    "M 8 48 A 1 1 90 0 0 23 48 A 1 1 90 0 0 8 48 Z",
+    "M 25 48 A 1 1 90 0 0 40 48 A 1 1 90 0 0 25 48 Z",
+    "M 42 48 A 1 1 90 0 0 57 48 A 1 1 90 0 0 42 48 Z",
+  ];
+
+  VEHICLE_SVG_VIEWS.v09_tanker_yari_romork = {
+    top: {
+      viewBox: "0 0 143.5 35.714",
+      paths: [
+        {
+          role: "body",
+          fill: "vehicle",
+          d: TANKER_SEMITRAILER_TOP_BODY,
+          stroke: "#000000",
+          strokeWidth: 0.3,
+          ghost: "auto",
+          lineCap: "round",
+          lineJoin: "round",
+          paintable: true,
+        },
+        ...TANKER_SEMITRAILER_TOP_WHEELS.map((d) => ({
+          ...threeAxleTrailerWheel(d),
+          stroke: "#ffffff",
+          strokeWidth: 0.45,
+        })),
+        {
+          role: "detail",
+          fill: "none",
+          d: "M 62 2.2 L 62 33.514 M 95 2.2 L 95 33.514 M 82.8 17.857 A 3.2 3.2 0 1 0 76.4 17.857 A 3.2 3.2 0 1 0 82.8 17.857 Z M 117.3 17.857 A 3.2 3.2 0 1 0 110.9 17.857 A 3.2 3.2 0 1 0 117.3 17.857 Z M 136.2 17.857 A 3.2 3.2 0 1 0 129.8 17.857 A 3.2 3.2 0 1 0 136.2 17.857 Z",
+          stroke: "#ffffff",
+          strokeWidth: 0.5,
+          ghost: "preserve",
+          lineCap: "round",
+          lineJoin: "round",
+        },
+      ],
+    },
+    side: {
+      viewBox: "0 0 143.5 55.714",
+      paths: [
+        {
+          role: "body",
+          fill: "vehicle",
+          d: "M 17 4 A 1 1 0 0 0 17 37 L 4 37 L 4 50 L 6 50 L 6 48 Q 6 39 15 39 L 50 39 Q 59 39 59 48 L 59 50 L 62 50 L 62 37 L 127 37 A 1 1 0 0 0 127 4 Z",
+          stroke: "#000000",
+          strokeWidth: 0.3,
+          ghost: "auto",
+          lineCap: "butt",
+          lineJoin: "round",
+          paintable: true,
+        },
+        ...TANKER_SEMITRAILER_SIDE_WHEELS.map(threeAxleTrailerWheel),
+        {
+          role: "hub",
+          fill: "#ffffff",
+          d: "M 12.5 48 A 3 3 0 1 0 18.5 48 A 3 3 0 1 0 12.5 48 Z M 29.5 48 A 3 3 0 1 0 35.5 48 A 3 3 0 1 0 29.5 48 Z M 46.5 48 A 3 3 0 1 0 52.5 48 A 3 3 0 1 0 46.5 48 Z",
+          stroke: "#000000",
+          strokeWidth: 0.3,
+          ghost: "preserve",
+          lineJoin: "round",
+        },
+      ],
+    },
+    upsideDown: {
+      viewBox: "0 0 143.5 35.714",
+      paths: [
+        {
+          role: "body",
+          fill: "#ffffff",
+          d: TANKER_SEMITRAILER_TOP_BODY,
+          stroke: "#000000",
+          strokeWidth: 0.3,
+          ghost: "auto",
+          lineCap: "round",
+          lineJoin: "round",
+        },
+        {
+          role: "damage-cross",
+          fill: "none",
+          d: "M 10 5 L 133.5 30.714 M 10 30.714 L 133.5 5",
+          stroke: "#000000",
+          strokeWidth: 0.3,
+          ghost: "auto",
+          lineCap: "butt",
+          lineJoin: "round",
+        },
+        {
+          role: "frame",
+          fill: "none",
+          d: "M 6 12.6 L 132 12.6 M 6 23.114 L 132 23.114 M 62 4 L 62 31.714 M 95 4 L 95 31.714 M 136.2 17.857 A 3.2 3.2 0 1 0 129.8 17.857 A 3.2 3.2 0 1 0 136.2 17.857 Z",
+          stroke: "#000000",
+          strokeWidth: 0.7,
+          ghost: "preserve",
+          lineCap: "round",
+          lineJoin: "round",
+        },
+        ...TANKER_SEMITRAILER_TOP_WHEELS.map(threeAxleTrailerWheel),
+      ],
+    },
+  };
+
   function roundVehicleUnit(value) {
     return Math.round(Number(value) * 1000) / 1000;
   }
@@ -3433,6 +3541,22 @@
           color: "#000000",
           source: "user-supplied-three-axle-trailer",
           views: VEHICLE_SVG_VIEWS.v09_uc_dingil_dorse,
+        },
+        {
+          id: "tanker-yari-romork",
+          name: "Tanker Yarı Römork",
+          kind: "box",
+          lengthM: 10.045,
+          widthM: 2.5,
+          heightM: 3.9,
+          nominalLengthM: 10.045,
+          nominalWidthM: 2.5,
+          nominalHeightM: 3.9,
+          axleCount: 3,
+          supportsUpsideDown: true,
+          color: "#000000",
+          source: "user-supplied-tanker-semitrailer",
+          views: VEHICLE_SVG_VIEWS.v09_tanker_yari_romork,
         },
         {
           id: "cekici-ve-dorse",
