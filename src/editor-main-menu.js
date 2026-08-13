@@ -384,6 +384,28 @@
     });
   }
 
+  function createDocumentMetadata(ownerDocument, documentData) {
+    const metadataDocument = documentData?.photoBackground
+      ? {
+        ...documentData,
+        photoBackground: {
+          ...documentData.photoBackground,
+          dataUrl: ""
+        }
+      }
+      : documentData;
+    const metadata = ownerDocument.createElementNS(SVG_NS, "metadata");
+    metadata.id = "krokiProDocument";
+    metadata.setAttribute("data-kroki-pro-signature", SVG_SIGNATURE);
+    metadata.textContent = JSON.stringify({
+      signature: SVG_SIGNATURE,
+      app: "Kroki Pro",
+      exportedAt: new Date().toISOString(),
+      document: metadataDocument
+    });
+    return metadata;
+  }
+
   async function exportedSvgString(viewBox, options = {}) {
     const clone = canvas.cloneNode(true);
     clone.setAttribute("xmlns", SVG_NS);
@@ -406,25 +428,8 @@
     clone.insertBefore(style, clone.firstChild);
 
     if (options.includeMetadata) {
-      const metadata = document.createElementNS(SVG_NS, "metadata");
-      metadata.id = "krokiProDocument";
-      metadata.setAttribute("data-kroki-pro-signature", SVG_SIGNATURE);
       const documentData = options.document || captureDocument();
-      const metadataDocument = documentData?.photoBackground
-        ? {
-          ...documentData,
-          photoBackground: {
-            ...documentData.photoBackground,
-            dataUrl: ""
-          }
-        }
-        : documentData;
-      metadata.textContent = JSON.stringify({
-        signature: SVG_SIGNATURE,
-        app: "Kroki Pro",
-        exportedAt: new Date().toISOString(),
-        document: metadataDocument
-      });
+      const metadata = createDocumentMetadata(document, documentData);
       clone.insertBefore(metadata, style.nextSibling);
     }
 
@@ -642,6 +647,82 @@
     link.click();
     link.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 800);
+  }
+
+  function safeFileStem(value, fallback = "kroki") {
+    const cleaned = String(value || "")
+      .normalize("NFKC")
+      .replace(/[<>:"/\\|?*\u0000-\u001f]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/[. ]+$/g, "")
+      .slice(0, 80);
+    return cleaned || fallback;
+  }
+
+  function shareableEntrySvg(entry) {
+    const source = String(entry?.previewSvg || "");
+    if (!source || !entry?.document) throw new Error("stored-document-share-data-missing");
+    const parsed = new DOMParser().parseFromString(source, "image/svg+xml");
+    if (parsed.querySelector("parsererror")) throw new Error("stored-document-preview-invalid");
+    const svgElement = parsed.documentElement?.localName?.toLowerCase?.() === "svg"
+      ? parsed.documentElement
+      : parsed.querySelector("svg");
+    if (!svgElement) throw new Error("stored-document-preview-svg-missing");
+
+    svgElement.setAttribute("xmlns", SVG_NS);
+    svgElement.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+    svgElement.setAttribute("data-kroki-pro-signature", SVG_SIGNATURE);
+    svgElement.setAttribute("data-kroki-pro-version", "1");
+    normalizeDocumentStrokeScaling(svgElement);
+    svgElement.querySelector("#krokiProDocument")?.remove();
+
+    const metadata = createDocumentMetadata(parsed, entry.document);
+    svgElement.insertBefore(metadata, svgElement.firstChild);
+    return `<?xml version="1.0" encoding="UTF-8"?>\n${new XMLSerializer().serializeToString(svgElement)}`;
+  }
+
+  async function shareStoredEntry(entry, kind) {
+    let svg = "";
+    try {
+      svg = shareableEntrySvg(entry);
+    } catch (error) {
+      console.warn("Stored document SVG share preparation failed", error);
+      await notify("Paylaşılacak SVG hazırlanamadı.", "Paylaş");
+      return false;
+    }
+
+    const fallback = kind === "template" ? "sablon" : "kroki";
+    const filename = `${safeFileStem(entry.name, fallback)}.svg`;
+    const mimeType = "image/svg+xml";
+    const blob = new Blob([svg], { type: mimeType });
+    const file = typeof File === "function" ? new File([blob], filename, { type: mimeType }) : null;
+    let canShareFile = Boolean(file && navigator.share);
+    if (canShareFile && typeof navigator.canShare === "function") {
+      try {
+        canShareFile = navigator.canShare({ files: [file] });
+      } catch {
+        canShareFile = false;
+      }
+    }
+
+    if (canShareFile) {
+      try {
+        await navigator.share({
+          title: entry.name || entryPrefix(kind),
+          text: "Kroki Pro SVG dosyası",
+          files: [file]
+        });
+        return true;
+      } catch (error) {
+        if (error?.name === "AbortError") return false;
+        console.warn("Stored document native share failed", error);
+      }
+    }
+
+    downloadBlob(blob, filename);
+    await notify("Cihaz doğrudan dosya paylaşımını desteklemediği için SVG kaydedildi.", "Paylaş");
+    return true;
   }
 
   async function exportSvg() {
@@ -963,8 +1044,40 @@
     previewLayer = null;
   }
 
+  async function renameTemplateEntry(entry, titleElement, dateElement) {
+    const nextName = await askText({
+      title: "Şablon adını değiştir",
+      message: "Şablon için yeni bir ad yazın.",
+      label: "Şablon adı",
+      value: entry.name || entryPrefix("template"),
+      placeholder: "Örn. Kaza kavşağı",
+      required: true
+    });
+    const normalizedName = String(nextName || "").trim();
+    if (!normalizedName || normalizedName === entry.name) return false;
+    try {
+      const updatedEntry = {
+        ...entry,
+        name: normalizedName,
+        updatedAt: new Date().toISOString()
+      };
+      await documentStorage.put("template", updatedEntry);
+      Object.assign(entry, updatedEntry);
+      titleElement.textContent = entry.name;
+      dateElement.textContent = `${relativeDate(entry.updatedAt)} - ${displayDate(entry.updatedAt)}`;
+      await renderStoredLists();
+      await notify("Şablon adı değiştirildi.");
+      return true;
+    } catch (error) {
+      console.warn("Template rename failed", error);
+      await notify("Şablon adı değiştirilemedi.");
+      return false;
+    }
+  }
+
   async function openEntryPreview(kind, id) {
-    const entry = await findEntry(kind, id);
+    const entryKind = normalizedEntryKind(kind);
+    const entry = await findEntry(entryKind, id);
     if (!entry) return;
     closePreview();
 
@@ -979,7 +1092,7 @@
     const header = document.createElement("div");
     header.className = "kroki-preview-header";
     const title = document.createElement("strong");
-    title.textContent = entry.name || entryPrefix(kind);
+    title.textContent = entry.name || entryPrefix(entryKind);
     const date = document.createElement("span");
     date.textContent = `${relativeDate(entry.updatedAt || entry.createdAt)} - ${displayDate(entry.updatedAt || entry.createdAt)}`;
     header.append(title, date);
@@ -998,6 +1111,15 @@
     deleteButton.className = "btn-danger";
     deleteButton.dataset.previewAction = "delete";
     deleteButton.textContent = "Sil";
+    const renameButton = document.createElement("button");
+    renameButton.type = "button";
+    renameButton.dataset.previewAction = "rename";
+    renameButton.textContent = "Adını Değiştir";
+    const shareButton = document.createElement("button");
+    shareButton.type = "button";
+    shareButton.className = "btn-share";
+    shareButton.dataset.previewAction = "share";
+    shareButton.textContent = "Paylaş";
     const editButton = document.createElement("button");
     editButton.type = "button";
     editButton.className = "btn-ok";
@@ -1007,7 +1129,9 @@
     cancelButton.type = "button";
     cancelButton.dataset.previewAction = "cancel";
     cancelButton.textContent = "İptal";
-    actions.append(deleteButton, editButton, cancelButton);
+    actions.append(deleteButton);
+    if (entryKind === "template") actions.append(renameButton);
+    actions.append(shareButton, editButton, cancelButton);
 
     modal.append(header, body, actions);
     previewLayer.append(modal);
@@ -1023,17 +1147,19 @@
       event.stopPropagation();
       const action = event.target?.closest?.("[data-preview-action]")?.dataset.previewAction || "";
       if (action === "cancel") closePreview();
+      else if (action === "share") await shareStoredEntry(entry, entryKind);
+      else if (action === "rename" && entryKind === "template") await renameTemplateEntry(entry, title, date);
       else if (action === "edit") {
         if (!(await confirmDiscard())) return;
         closePreview();
         loadDocument(entry.document, {
-          currentDocumentId: kind === "recent" ? entry.id : "",
-          fitToContent: kind === "template"
+          currentDocumentId: entryKind === "recent" ? entry.id : "",
+          fitToContent: entryKind === "template"
         });
       } else if (action === "delete") {
-        const ok = await ask(`${entry.name || entryPrefix(kind)} silinsin mi?`, "Sil");
+        const ok = await ask(`${entry.name || entryPrefix(entryKind)} silinsin mi?`, "Sil");
         if (!ok) return;
-        await deleteEntry(kind, entry.id);
+        await deleteEntry(entryKind, entry.id);
         closePreview();
       }
     });

@@ -199,8 +199,8 @@
 .editor-line-cp-visual {
   fill: #bbf7d0;
   fill-opacity: .5;
-  stroke: #059669;
-  stroke-width: 3;
+  stroke: none;
+  stroke-width: 0;
   pointer-events: none;
   vector-effect: none;
 }
@@ -208,27 +208,27 @@
 .editor-object-cp.is-preselect .editor-object-cp-visual,
 .editor-line-cp.is-preselect .editor-line-cp-visual {
   fill: #fecaca;
-  stroke: #dc2626;
+  stroke: none;
 }
 
 .editor-object-cp-rotate-icon {
   fill: #059669;
   fill-opacity: 1;
-  stroke: #ffffff;
-  stroke-width: 2.5;
+  stroke: none;
+  stroke-width: 0;
   stroke-linejoin: round;
   paint-order: stroke fill;
 }
 
 .editor-object-cp.is-preselect .editor-object-cp-rotate-icon {
   fill: #dc2626;
-  stroke: #ffffff;
+  stroke: none;
 }
 
 .editor-object-cp-role-road-segment-boundary .editor-object-cp-segment-visual {
   fill: #dbeafe;
-  stroke: #2563eb;
-  stroke-width: 3.2;
+  stroke: none;
+  stroke-width: 0;
 }
 
 .editor-object-cp-role-road-segment-boundary .editor-object-cp-hit {
@@ -238,8 +238,8 @@
 .editor-object-cp-role-road-barrier .editor-object-cp-visual,
 .editor-object-cp-role-road-barrier-free .editor-object-cp-visual {
   fill: #dbeafe;
-  stroke: #2563eb;
-  stroke-width: 3.2;
+  stroke: none;
+  stroke-width: 0;
 }
 
 .editor-object-cp:active,

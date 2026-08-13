@@ -158,6 +158,21 @@ const sourceFile = {
   assert.match(mainMenuSource, /const source = await svgDataUrl\(entry\.previewSvg, \{/);
   assert.match(mainMenuSource, /void renderPreviewInto\(preview, entry\)/);
   assert.match(mainMenuSource, /void renderPreviewInto\(imageBox, entry\)/);
+  assert.match(mainMenuSource, /function shareableEntrySvg\(entry\)/);
+  assert.match(mainMenuSource, /metadata\.setAttribute\("data-kroki-pro-signature", SVG_SIGNATURE\)/);
+  assert.match(mainMenuSource, /new File\(\[blob\], filename, \{ type: mimeType \}\)/);
+  assert.match(mainMenuSource, /navigator\.canShare\(\{ files: \[file\] \}\)/);
+  assert.match(mainMenuSource, /await navigator\.share\(\{/);
+  assert.match(mainMenuSource, /downloadBlob\(blob, filename\)/);
+  assert.match(mainMenuSource, /if \(entryKind === "template"\) actions\.append\(renameButton\)/);
+  assert.match(mainMenuSource, /actions\.append\(shareButton, editButton, cancelButton\)/);
+  assert.match(mainMenuSource, /await documentStorage\.put\("template", updatedEntry\)/);
+  assert.match(homeCss, /\.kroki-preview-actions\s*\{[^}]*flex-wrap:\s*wrap;/s);
+  assert.match(homeCss, /\.kroki-preview-actions \.btn-share\s*\{/);
+
+  const editorLineCss = fs.readFileSync(path.join(root, "src", "editor-line.css"), "utf8");
+  assert.match(editorLineCss, /\.editor-object-cp-visual,\s*\.editor-line-cp-visual\s*\{[^}]*stroke:\s*none;[^}]*stroke-width:\s*0;[^}]*vector-effect:\s*none;/s);
+  assert.match(editorLineCss, /\.editor-object-cp-rotate-icon\s*\{[^}]*stroke:\s*none;[^}]*stroke-width:\s*0;/s);
 
   const serializerSource = fs.readFileSync(path.join(root, "src", "core", "documentSerializer.js"), "utf8");
   let importedBackground = undefined;

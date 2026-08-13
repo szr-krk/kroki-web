@@ -842,8 +842,15 @@ select {
 
 .kroki-preview-actions {
   padding: 0.75rem 1rem;
+  flex-wrap: wrap;
   border-top: 0.0625rem solid #cbd5e1;
   background: #f8fafc;
+}
+
+.kroki-preview-actions .btn-share {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1e3a8a;
 }
 
 .area-export-layer {

@@ -60,7 +60,7 @@ assert.match(controlPointManager, /const ROTATE_ICON_PATH = "M12 6V3L8 7L12 11V8
 assert.match(controlPointManager, /utils\.createSvgElement\("path",\s*\{\s*class: "editor-object-cp-visual editor-object-cp-rotate-icon"/s);
 assert.match(controlPointManager, /handle\.append\(\s*utils\.createSvgElement\("circle", \{ class: "editor-object-cp-hit" \}\),\s*visual\s*\)/s);
 assert.match(controlPointManager, /const rotation = !isRotate && Number\.isFinite\(cp\.angle\)/);
-assert.match(editorCss, /\.editor-object-cp-rotate-icon\s*\{[^}]*fill:\s*#059669;[^}]*stroke:\s*#ffffff;/s);
+assert.match(editorCss, /\.editor-object-cp-rotate-icon\s*\{[^}]*fill:\s*#059669;[^}]*stroke:\s*none;[^}]*stroke-width:\s*0;/s);
 assert.match(editorCss, /\.editor-object-cp\.is-preselect \.editor-object-cp-rotate-icon\s*\{[^}]*fill:\s*#dc2626;/s);
 
 for (const file of [
