@@ -178,6 +178,7 @@ function buildCatalog() {
       const nominalWidthM = Number(parsedViews.top.svgAttrs["data-kroki-width-m"]) || legacy?.widthM || 0;
       const nominalHeightM = Number(parsedViews.top.svgAttrs["data-kroki-height-m"]) || legacy?.heightM || 0;
       const color = parsedViews.top.svgAttrs["data-kroki-default-color"] || DEFAULT_COLOR;
+      const source = parsedViews.top.svgAttrs["data-kroki-source"] || "";
       const viewParts = [];
       for (const view of ["top", "side", "upsideDown"]) {
         if (!parsedViews[view]) continue;
@@ -197,6 +198,7 @@ ${viewParts.join(",\n")}
         nominalWidthM: Number(formatNumber(nominalWidthM)),
         nominalHeightM: Number(formatNumber(nominalHeightM)),
         color,
+        source,
         viewKey
       });
     }
@@ -220,6 +222,7 @@ function variantCode(variant) {
     `nominalWidthM: ${formatNumber(variant.nominalWidthM)}`,
     `nominalHeightM: ${formatNumber(variant.nominalHeightM)}`,
     `color: ${escapeString(variant.color)}`,
+    ...(variant.source ? [`source: ${escapeString(variant.source)}`] : []),
     `views: VEHICLE_SVG_VIEWS.${variant.viewKey}`
   ];
   return `{ ${fields.join(", ")} }`;

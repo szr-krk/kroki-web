@@ -2514,6 +2514,118 @@
     },
   };
 
+  const THREE_AXLE_TRACTOR_TOP_BODY = "M 0 24 L 0 12 L 55 12 L 55 4 A 1 1 0 0 1 50 4 A 1 1 0 0 1 55 4 L 55 1 Q 55 0 56 0 L 80 0 Q 81 0 82 3 L 86 15 Q 87 18 86 21 L 82 33 Q 81 36 80 36 L 56 36 Q 55 36 55 35 L 55 32 A 1 1 0 0 1 50 32 A 1 1 0 0 1 55 32 L 55 24 Z";
+  const THREE_AXLE_TRACTOR_TOP_WHEELS = [
+    "M 4.9 1 L 13.7 1 Q 14.6 1 14.6 1.9 L 14.6 3.7 Q 14.6 4.6 13.7 4.6 L 10.2 4.6 L 10.2 5.5 L 13.7 5.5 Q 14.6 5.5 14.6 6.3 L 14.6 8.1 Q 14.6 9 13.7 9 L 10.2 9 L 10.2 26.7 L 13.7 26.7 Q 14.6 26.7 14.6 27.6 L 14.6 29.4 Q 14.6 30.3 13.7 30.3 L 10.2 30.3 L 10.2 31.1 L 13.7 31.1 Q 14.6 31.1 14.6 32 L 14.6 33.8 Q 14.6 34.7 13.7 34.7 L 4.9 34.7 Q 4 34.7 4 33.8 L 4 32 Q 4 31.1 4.9 31.1 L 8.4 31.1 L 8.4 30.3 L 4.9 30.3 Q 4 30.3 4 29.4 L 4 27.6 Q 4 26.7 4.9 26.7 L 8.4 26.7 L 8.4 9 L 4.9 9 Q 4 9 4 8.1 L 4 6.3 Q 4 5.5 4.9 5.5 L 8.4 5.5 L 8.4 4.6 L 4.9 4.6 Q 4 4.6 4 3.7 L 4 1.9 Q 4 1 4.9 1 Z",
+    "M 17.6 1 L 26.4 1 Q 27.3 1 27.3 1.9 L 27.3 3.7 Q 27.3 4.6 26.4 4.6 L 22.9 4.6 L 22.9 5.5 L 26.4 5.5 Q 27.3 5.5 27.3 6.3 L 27.3 8.1 Q 27.3 9 26.4 9 L 22.9 9 L 22.9 26.7 L 26.4 26.7 Q 27.3 26.7 27.3 27.6 L 27.3 29.4 Q 27.3 30.3 26.4 30.3 L 22.9 30.3 L 22.9 31.1 L 26.4 31.1 Q 27.3 31.1 27.3 32 L 27.3 33.8 Q 27.3 34.7 26.4 34.7 L 17.6 34.7 Q 16.7 34.7 16.7 33.8 L 16.7 32 Q 16.7 31.1 17.6 31.1 L 21.1 31.1 L 21.1 30.3 L 17.6 30.3 Q 16.7 30.3 16.7 29.4 L 16.7 27.6 Q 16.7 26.7 17.6 26.7 L 21.1 26.7 L 21.1 9 L 17.6 9 Q 16.7 9 16.7 8.1 L 16.7 6.3 Q 16.7 5.5 17.6 5.5 L 21.1 5.5 L 21.1 4.6 L 17.6 4.6 Q 16.7 4.6 16.7 3.7 L 16.7 1.9 Q 16.7 1 17.6 1 Z",
+    "M 68.9 1 L 77.8 1 Q 78.7 1 78.7 1.9 L 78.7 3.7 Q 78.7 4.6 77.8 4.6 L 74.2 4.6 L 74.2 31.1 L 77.8 31.1 Q 78.7 31.1 78.7 32 L 78.7 33.8 Q 78.7 34.7 77.8 34.7 L 68.9 34.7 Q 68 34.7 68 33.8 L 68 32 Q 68 31.1 68.9 31.1 L 72.5 31.1 L 72.5 4.6 L 68.9 4.6 Q 68 4.6 68 3.7 L 68 1.9 Q 68 1 68.9 1 Z",
+  ];
+  const THREE_AXLE_TRACTOR_SIDE_BODY = "M 54 0 L 54 17 Q 53 17 53 19 L 53 33 L 54 33 L 54 35 L 0 35 L 0 44 L 1 44 A 1 1 0 0 1 15 44 L 16 44 A 1 1 0 0 1 30 44 L 61 44 A 1 1 90 0 1 75 44 L 80 44 Q 83 44 83 42 L 84 37 Q 84 36 83 36 L 82 22 L 77 15 L 79 15 Q 79 9 70 7 Q 64 5 57 5 Q 57 5 57 6 L 57 17 L 56 17 L 56 0 Z";
+  const THREE_AXLE_TRACTOR_SIDE_WHEELS = [
+    "M 2 44 A 1 1 0 0 0 14 44 A 1 1 0 0 0 2 44 Z",
+    "M 17 44 A 1 1 90 0 0 29 44 A 1 1 90 0 0 17 44 Z",
+    "M 62 44 A 1 1 90 0 0 74 44 A 1 1 90 0 0 62 44 Z",
+  ];
+  const threeAxleTractorWheel = (d) => ({
+    role: "wheel",
+    fill: "#000000",
+    d,
+    stroke: "#000000",
+    strokeWidth: 0.3,
+    ghost: "preserve",
+    lineJoin: "round",
+  });
+
+  VEHICLE_SVG_VIEWS.v09_uc_dingil_cekici = {
+    top: {
+      viewBox: "0 0 87 36",
+      paths: [
+        {
+          role: "body",
+          fill: "vehicle",
+          d: THREE_AXLE_TRACTOR_TOP_BODY,
+          stroke: "#000000",
+          strokeWidth: 0.3,
+          ghost: "auto",
+          lineCap: "butt",
+          lineJoin: "round",
+          paintable: true,
+        },
+        ...THREE_AXLE_TRACTOR_TOP_WHEELS.map(threeAxleTractorWheel),
+        {
+          role: "detail",
+          fill: "#ffffff",
+          d: "M 72 1 Q 80 8 80 17 L 84 17 Q 83 10 80 4 Q 78 1 72 1 Z M 80 19 Q 80 28 72 35 Q 78 35 80 32 Q 83 26 84 19 Z",
+          stroke: "#000000",
+          strokeWidth: 0.3,
+          ghost: "preserve",
+          lineJoin: "round",
+        },
+      ],
+    },
+    side: {
+      viewBox: "0 0 87 50.2",
+      paths: [
+        {
+          role: "body",
+          fill: "vehicle",
+          d: THREE_AXLE_TRACTOR_SIDE_BODY,
+          stroke: "#000000",
+          strokeWidth: 0.3,
+          ghost: "auto",
+          lineCap: "butt",
+          lineJoin: "round",
+          paintable: true,
+        },
+        ...THREE_AXLE_TRACTOR_SIDE_WHEELS.map(threeAxleTractorWheel),
+        {
+          role: "window",
+          fill: "#ffffff",
+          d: "M 82 22 L 78 22 L 73 15 L 76 15 Z M 64 15 L 69 15 Q 70 15 70 16 L 70 20 Q 70 21 69 21 L 64 21 Q 63 21 63 20 L 63 16 Q 63 15 64 15 Z M 77 21 L 72 21 Q 71 21 71 20 L 71 16 Q 71 15 72 15 L 74 15 Z M 81 29 Q 82 29 82 30 L 82 35 Q 80 29 76 29 Z",
+          stroke: "#000000",
+          strokeWidth: 0.3,
+          ghost: "preserve",
+          lineJoin: "round",
+        },
+        {
+          role: "hub",
+          fill: "#ffffff",
+          d: "M 5 44 A 3 3 0 1 0 11 44 A 3 3 0 1 0 5 44 Z M 20 44 A 3 3 0 1 0 26 44 A 3 3 0 1 0 20 44 Z M 65 44 A 3 3 0 1 0 71 44 A 3 3 0 1 0 65 44 Z",
+          stroke: "#000000",
+          strokeWidth: 0.3,
+          ghost: "preserve",
+          lineJoin: "round",
+        },
+      ],
+    },
+    upsideDown: {
+      viewBox: "0 0 87 36",
+      paths: [
+        {
+          role: "body",
+          fill: "#ffffff",
+          d: THREE_AXLE_TRACTOR_TOP_BODY,
+          stroke: "#000000",
+          strokeWidth: 0.3,
+          ghost: "auto",
+          lineCap: "butt",
+          lineJoin: "round",
+        },
+        {
+          role: "damage-cross",
+          fill: "none",
+          d: "M 1 24 L 82 4 M 1 12 L 82 32",
+          stroke: "#000000",
+          strokeWidth: 0.3,
+          ghost: "auto",
+          lineCap: "butt",
+          lineJoin: "round",
+        },
+        ...THREE_AXLE_TRACTOR_TOP_WHEELS.map(threeAxleTractorWheel),
+      ],
+    },
+  };
+
   function roundVehicleUnit(value) {
     return Math.round(Number(value) * 1000) / 1000;
   }
@@ -3172,6 +3284,22 @@
           nominalHeightM: 3.3,
           color: "#000000",
           views: VEHICLE_SVG_VIEWS.v09_cekici,
+        },
+        {
+          id: "uc-dingil-cekici",
+          name: "Üç Dingil Çekici",
+          kind: "box",
+          lengthM: 6.09,
+          widthM: 2.52,
+          heightM: 3.514,
+          nominalLengthM: 6.09,
+          nominalWidthM: 2.52,
+          nominalHeightM: 3.514,
+          axleCount: 3,
+          supportsUpsideDown: true,
+          color: "#000000",
+          source: "user-supplied-tandem-rear-tractor",
+          views: VEHICLE_SVG_VIEWS.v09_uc_dingil_cekici,
         },
         {
           id: "cekici-ve-dorse",
