@@ -13,6 +13,7 @@ const styleManager = read("src/core/styleManager.js");
 const selectionManager = read("src/core/selectionManager.js");
 const vehicleAdapter = read("src/adapters/vehicleAdapter.js");
 const controlPointManager = read("src/core/controlPointManager.js");
+const multiSelectManager = read("src/core/multiSelectManager.js");
 
 const rotateRightPath = "M 12.48 3.43 A 9.09 9.09 0 0 1 18.3 5.55 L 18.3 2.35 L 19.94 2.35 L 19.94 8.85 L 13.44 8.85 L 13.44 7.21 L 17.7 7.21 A 7.46 7.46 0 1 0 19.17 15.86 L 20.63 16.59 A 9.11 9.11 0 1 1 12.48 3.43 Z";
 const rotateLeftPath = "M 12.48 20.57 A 9.09 9.09 0 0 0 18.3 18.45 L 18.3 21.65 L 19.94 21.65 L 19.94 15.15 L 13.44 15.15 L 13.44 16.79 L 17.7 16.79 A 7.46 7.46 0 1 1 19.17 8.14 L 20.63 7.41 A 9.11 9.11 0 1 0 12.48 20.57 Z";
@@ -60,8 +61,15 @@ assert.match(controlPointManager, /const ROTATE_ICON_PATH = "M12 6V3L8 7L12 11V8
 assert.match(controlPointManager, /utils\.createSvgElement\("path",\s*\{\s*class: "editor-object-cp-visual editor-object-cp-rotate-icon"/s);
 assert.match(controlPointManager, /handle\.append\(\s*utils\.createSvgElement\("circle", \{ class: "editor-object-cp-hit" \}\),\s*visual\s*\)/s);
 assert.match(controlPointManager, /const rotation = !isRotate && Number\.isFinite\(cp\.angle\)/);
-assert.match(editorCss, /\.editor-object-cp-rotate-icon\s*\{[^}]*fill:\s*#059669;[^}]*stroke:\s*none;[^}]*stroke-width:\s*0;/s);
-assert.match(editorCss, /\.editor-object-cp\.is-preselect \.editor-object-cp-rotate-icon\s*\{[^}]*fill:\s*#dc2626;/s);
+assert.match(editorCss, /\.editor-object-cp-visual,\s*\.editor-line-cp-visual\s*\{[^}]*fill:\s*#22c55e;[^}]*fill-opacity:\s*\.5;/s);
+assert.match(editorCss, /\.editor-object-cp\.is-preselect \.editor-object-cp-visual,[^}]*fill:\s*#ef4444;[^}]*fill-opacity:\s*\.5;/s);
+assert.match(editorCss, /\.editor-object-cp-rotate-icon\s*\{[^}]*fill:\s*#22c55e;[^}]*fill-opacity:\s*\.5;[^}]*stroke:\s*none;[^}]*stroke-width:\s*0;/s);
+assert.match(editorCss, /\.editor-object-cp\.is-preselect \.editor-object-cp-rotate-icon\s*\{[^}]*fill:\s*#ef4444;[^}]*fill-opacity:\s*\.5;/s);
+assert.match(controlPointManager, /createVisual:\s*createControlPointVisual/);
+assert.match(controlPointManager, /resizeHandle,/);
+assert.match(multiSelectManager, /Kroki\.ControlPointManager\?\.createVisual\?\.\(cp\)/);
+assert.match(multiSelectManager, /Kroki\.ControlPointManager\.resizeHandle\(handle, metrics, cp\)/);
+assert.match(multiSelectManager, /"data-cp-role": cp\.id === "rotate" \? "rotate" : "resize"/);
 
 for (const file of [
   "src/adapters/circleAdapter.js",

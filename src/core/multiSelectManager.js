@@ -324,9 +324,13 @@
     return groupFrameElement;
   }
 
-  function resizeGroupHandle(handle, metrics) {
+  function resizeGroupHandle(handle, metrics, cp) {
+    if (Kroki.ControlPointManager?.resizeHandle) {
+      Kroki.ControlPointManager.resizeHandle(handle, metrics, cp);
+      return;
+    }
     handle.querySelector(".editor-object-cp-hit")?.setAttribute("r", String(metrics.touchRadius));
-    handle.querySelector(".editor-object-cp-visual")?.setAttribute("r", String(metrics.visibleRadius));
+    handle.querySelector("circle.editor-object-cp-visual")?.setAttribute("r", String(metrics.visibleRadius));
   }
 
   function groupControlPoints(frame, metrics) {
@@ -353,20 +357,23 @@
     let handle = groupHandles.get(cp.id);
     if (!handle?.isConnected) {
       handle?.remove();
+      const visual = Kroki.ControlPointManager?.createVisual?.(cp)
+        || utils.createSvgElement("circle", { class: "editor-object-cp-visual" });
       handle = utils.createSvgElement("g", {
         class: "editor-object-cp editor-group-cp",
         "data-point": cp.id,
+        "data-cp-role": cp.id === "rotate" ? "rotate" : "resize",
         cursor: "grab"
       });
       handle.append(
         utils.createSvgElement("circle", { class: "editor-object-cp-hit" }),
-        utils.createSvgElement("circle", { class: "editor-object-cp-visual" })
+        visual
       );
       handle.addEventListener("pointerdown", (event) => startGroupControlDrag(event, cp.id));
       groupHandles.set(cp.id, handle);
       editLayer.append(handle);
     }
-    resizeGroupHandle(handle, metrics);
+    resizeGroupHandle(handle, metrics, cp);
     handle.setAttribute("transform", `translate(${cp.x} ${cp.y})`);
     handle.classList.toggle("is-preselect", mode !== "edit");
     return handle;

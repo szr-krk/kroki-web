@@ -197,7 +197,7 @@
 
 .editor-object-cp-visual,
 .editor-line-cp-visual {
-  fill: #bbf7d0;
+  fill: #22c55e;
   fill-opacity: .5;
   stroke: none;
   stroke-width: 0;
@@ -207,13 +207,14 @@
 
 .editor-object-cp.is-preselect .editor-object-cp-visual,
 .editor-line-cp.is-preselect .editor-line-cp-visual {
-  fill: #fecaca;
+  fill: #ef4444;
+  fill-opacity: .5;
   stroke: none;
 }
 
 .editor-object-cp-rotate-icon {
-  fill: #059669;
-  fill-opacity: 1;
+  fill: #22c55e;
+  fill-opacity: .5;
   stroke: none;
   stroke-width: 0;
   stroke-linejoin: round;
@@ -221,7 +222,8 @@
 }
 
 .editor-object-cp.is-preselect .editor-object-cp-rotate-icon {
-  fill: #dc2626;
+  fill: #ef4444;
+  fill-opacity: .5;
   stroke: none;
 }
 

@@ -314,6 +314,8 @@
 
   Kroki.ControlPointManager = {
     metrics,
+    createVisual: createControlPointVisual,
+    resizeHandle,
     clear,
     sync,
     show(id, nextMode, callbacks = {}) {

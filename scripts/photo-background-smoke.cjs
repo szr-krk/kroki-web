@@ -172,7 +172,7 @@ const sourceFile = {
 
   const editorLineCss = fs.readFileSync(path.join(root, "src", "editor-line.css"), "utf8");
   assert.match(editorLineCss, /\.editor-object-cp-visual,\s*\.editor-line-cp-visual\s*\{[^}]*stroke:\s*none;[^}]*stroke-width:\s*0;[^}]*vector-effect:\s*none;/s);
-  assert.match(editorLineCss, /\.editor-object-cp-rotate-icon\s*\{[^}]*stroke:\s*none;[^}]*stroke-width:\s*0;/s);
+  assert.match(editorLineCss, /\.editor-object-cp-rotate-icon\s*\{[^}]*fill:\s*#22c55e;[^}]*fill-opacity:\s*\.5;[^}]*stroke:\s*none;[^}]*stroke-width:\s*0;/s);
 
   const serializerSource = fs.readFileSync(path.join(root, "src", "core", "documentSerializer.js"), "utf8");
   let importedBackground = undefined;
