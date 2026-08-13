@@ -2626,6 +2626,123 @@
     },
   };
 
+  const THREE_AXLE_TRAILER_TOP_BODY = "M 0.1 0.15 L 143.4 0.15 L 143.4 10.3 L 141.7 10.3 L 141.7 25.414 L 143.4 25.414 L 143.4 35.564 L 0.1 35.564 Z";
+  const THREE_AXLE_TRAILER_TOP_WHEELS = [
+    "M 11.1 0.15 L 20.1 0.15 L 20.1 4.55 L 11.1 4.55 Z M 11.1 31.164 L 20.1 31.164 L 20.1 35.564 L 11.1 35.564 Z",
+    "M 28.3 0.15 L 37.3 0.15 L 37.3 4.55 L 28.3 4.55 Z M 28.3 31.164 L 37.3 31.164 L 37.3 35.564 L 28.3 35.564 Z",
+    "M 45.4 0.15 L 54.4 0.15 L 54.4 4.55 L 45.4 4.55 Z M 45.4 31.164 L 54.4 31.164 L 54.4 35.564 L 45.4 35.564 Z",
+  ];
+  const THREE_AXLE_TRAILER_SIDE_WHEELS = [
+    "M 8.1 48.1 A 0.7 0.7 90 0 0 23.1 48.1 A 0.7 0.7 90 0 0 8.1 48.1 Z",
+    "M 25.3 48.1 A 0.7 0.7 90 0 0 40.3 48.1 A 0.7 0.7 90 0 0 25.3 48.1 Z",
+    "M 42.4 48.1 A 0.7 0.7 90 0 0 57.4 48.1 A 0.7 0.7 90 0 0 42.4 48.1 Z",
+  ];
+  const threeAxleTrailerWheel = (d) => ({
+    role: "wheel",
+    fill: "#000000",
+    d,
+    stroke: "#000000",
+    strokeWidth: 0.3,
+    ghost: "preserve",
+    lineJoin: "round",
+  });
+
+  VEHICLE_SVG_VIEWS.v09_uc_dingil_dorse = {
+    top: {
+      viewBox: "0 0 143.5 35.714",
+      paths: [
+        {
+          role: "body",
+          fill: "vehicle",
+          d: THREE_AXLE_TRAILER_TOP_BODY,
+          stroke: "#000000",
+          strokeWidth: 0.3,
+          ghost: "auto",
+          lineCap: "butt",
+          lineJoin: "round",
+          paintable: true,
+        },
+        ...THREE_AXLE_TRAILER_TOP_WHEELS.map((d) => ({
+          ...threeAxleTrailerWheel(d),
+          stroke: "#ffffff",
+          strokeWidth: 0.45,
+        })),
+        {
+          role: "detail",
+          fill: "none",
+          d: "M 63.2 0.15 L 63.2 35.564 M 120 0.15 L 120 35.564 M 136.5 17.857 A 3.2 3.2 0 1 0 130.1 17.857 A 3.2 3.2 0 1 0 136.5 17.857 Z",
+          stroke: "#ffffff",
+          strokeWidth: 0.5,
+          ghost: "preserve",
+          lineCap: "round",
+          lineJoin: "round",
+        },
+      ],
+    },
+    side: {
+      viewBox: "0 0 143.5 55.714",
+      paths: [
+        {
+          role: "body",
+          fill: "vehicle",
+          d: "M 0.1 3.7 L 0.1 39.5 L 3 39.5 L 3 50.3 L 6.6 50.3 L 6.6 48.1 Q 6.6 39.5 15.2 39.5 L 50.3 39.5 Q 59.6 39.5 59.6 48.1 L 59.6 50.3 L 63.2 50.3 L 63.2 37.4 L 143.4 37.4 L 143.4 3.7 Z",
+          stroke: "#000000",
+          strokeWidth: 0.3,
+          ghost: "auto",
+          lineCap: "butt",
+          lineJoin: "round",
+          paintable: true,
+        },
+        ...THREE_AXLE_TRAILER_SIDE_WHEELS.map(threeAxleTrailerWheel),
+        {
+          role: "hub",
+          fill: "#ffffff",
+          d: "M 12.6 48.1 A 3 3 0 1 0 18.6 48.1 A 3 3 0 1 0 12.6 48.1 Z M 29.8 48.1 A 3 3 0 1 0 35.8 48.1 A 3 3 0 1 0 29.8 48.1 Z M 46.9 48.1 A 3 3 0 1 0 52.9 48.1 A 3 3 0 1 0 46.9 48.1 Z",
+          stroke: "#000000",
+          strokeWidth: 0.3,
+          ghost: "preserve",
+          lineJoin: "round",
+        },
+      ],
+    },
+    upsideDown: {
+      viewBox: "0 0 143.5 35.714",
+      paths: [
+        {
+          role: "body",
+          fill: "#ffffff",
+          d: THREE_AXLE_TRAILER_TOP_BODY,
+          stroke: "#000000",
+          strokeWidth: 0.3,
+          ghost: "auto",
+          lineCap: "butt",
+          lineJoin: "round",
+        },
+        {
+          role: "damage-cross",
+          fill: "none",
+          d: "M 0.1 0.15 L 143.4 35.564 M 0.1 35.564 L 143.4 0.15",
+          stroke: "#000000",
+          strokeWidth: 0.3,
+          ghost: "auto",
+          lineCap: "butt",
+          lineJoin: "round",
+        },
+        {
+          role: "frame",
+          fill: "none",
+          d: "M 5 12.6 L 132 12.6 M 5 23.114 L 132 23.114 M 63.2 4 L 63.2 31.714 M 120 4 L 120 31.714 M 136.5 17.857 A 3.2 3.2 0 1 0 130.1 17.857 A 3.2 3.2 0 1 0 136.5 17.857 Z",
+          stroke: "#000000",
+          strokeWidth: 0.7,
+          ghost: "preserve",
+          lineCap: "round",
+          lineJoin: "round",
+        },
+        ...THREE_AXLE_TRAILER_TOP_WHEELS.map(threeAxleTrailerWheel),
+      ],
+    },
+  };
+
   function roundVehicleUnit(value) {
     return Math.round(Number(value) * 1000) / 1000;
   }
@@ -3300,6 +3417,22 @@
           color: "#000000",
           source: "user-supplied-tandem-rear-tractor",
           views: VEHICLE_SVG_VIEWS.v09_uc_dingil_cekici,
+        },
+        {
+          id: "uc-dingil-dorse",
+          name: "3 Dingil Dorse",
+          kind: "box",
+          lengthM: 10.045,
+          widthM: 2.5,
+          heightM: 3.9,
+          nominalLengthM: 10.045,
+          nominalWidthM: 2.5,
+          nominalHeightM: 3.9,
+          axleCount: 3,
+          supportsUpsideDown: true,
+          color: "#000000",
+          source: "user-supplied-three-axle-trailer",
+          views: VEHICLE_SVG_VIEWS.v09_uc_dingil_dorse,
         },
         {
           id: "cekici-ve-dorse",
