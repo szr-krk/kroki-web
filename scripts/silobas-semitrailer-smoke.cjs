@@ -42,8 +42,10 @@ for (const viewName of ["top", "side", "upsideDown"]) {
   }
 }
 
-assert.match(silobas.views.side.paths[0].d, /^M 17\.938 21\.888/);
-assert.match(silobas.views.side.paths[1].d, /^M 17\.938 3\.98/);
+assert.equal(silobas.views.side.paths.filter((item) => item.role === "body").length, 1);
+assert.equal(silobas.views.side.paths.length, 2);
+assert.match(silobas.views.side.paths[0].d, /^M 17\.938 3\.98 L 134\.004 3\.98/);
+assert.equal(silobas.views.side.paths[0].stroke, "#000000");
 assert.match(silobas.views.side.paths.find((item) => item.role === "wheel").d, /M 10\.551 47\.755[\s\S]*M 28\.489 47\.755[\s\S]*M 46\.426 47\.755/);
 assert.ok(silobas.views.top.paths.some((item) => item.role === "detail"), "ust silobas ayrintilari eksik");
 assert.ok(silobas.views.upsideDown.paths.some((item) => item.role === "damage-cross"), "ters hasar isareti eksik");
