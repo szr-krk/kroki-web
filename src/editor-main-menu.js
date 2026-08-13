@@ -1114,7 +1114,7 @@
     const renameButton = document.createElement("button");
     renameButton.type = "button";
     renameButton.dataset.previewAction = "rename";
-    renameButton.textContent = "Adını Değiştir";
+    renameButton.textContent = "Yeniden Adlandır";
     const shareButton = document.createElement("button");
     shareButton.type = "button";
     shareButton.className = "btn-share";
