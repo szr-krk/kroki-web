@@ -40,6 +40,12 @@ const topWheel = truck.views.top.paths.find((item) => item.role === "wheel");
 assert.match(topWheel.d, /M44 1H73V10/);
 assert.equal(topWheel.ghost, "hide", "temsili top görünüşte lastikler gizlenmeli");
 assert.match(truck.views.top.paths.find((item) => item.role === "detail").d, /^M5 5H188/);
+assert.equal(truck.views.top.paths.find((item) => item.role === "body").ghost, "preserve");
+assert.ok(
+  truck.views.top.paths.filter((item) => item.role !== "body").every((item) => item.ghost === "hide"),
+  "temsili top görünüşte top ayrıntıları gizlenmeli"
+);
+assert.equal(truck.views.top.paths.some((item) => item.role === "damage-cross"), false);
 assert.ok(truck.views.upsideDown.paths.some((item) => item.role === "damage-cross"));
 assert.equal(truck.source, "user-supplied-harfiyat-reverse");
 
