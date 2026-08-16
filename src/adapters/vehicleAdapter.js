@@ -13,6 +13,11 @@
   const VEHICLE_LABEL_MAX_LENGTH = 24;
   const VEHICLE_LABEL_FONT_SIZE = 16;
   const VEHICLE_LABEL_EDGE_CLEARANCE = 2;
+  const REPRESENTATIVE_DASH = "1 1";
+  const REPRESENTATIVE_SMALL_DASH = "0.8 0.8";
+  const REPRESENTATIVE_SMALL_SIZE_THRESHOLD = 50;
+  const REPRESENTATIVE_STROKE = "#111827";
+  const REPRESENTATIVE_STROKE_WIDTH = 0.3;
   const metricsCache = new WeakMap();
 
   function clampScale(value) {
@@ -143,7 +148,7 @@
       "stroke-width": path.strokeWidth || 3,
       "stroke-linecap": path.lineCap || (style.dash ? "butt" : "round"),
       "stroke-linejoin": path.lineJoin || "round",
-      "stroke-dasharray": metadata?.vehicleGhost && path.ghostDash ? path.ghostDash : style.dash
+      "stroke-dasharray": style.dash
     };
 
     if (cleanRole === "body") {
@@ -166,8 +171,40 @@
 
     if (path.fill) attrs.fill = path.fill === "vehicle" ? style.fill : path.fill;
     if (path.stroke) attrs.stroke = path.stroke === "vehicle" ? (metadata?.vehicleGhost ? style.stroke : color) : path.stroke;
-    if (metadata?.vehicleGhost && path.ghost === "preserve") attrs["stroke-dasharray"] = null;
     return attrs;
+  }
+
+  function representativeDashFor(metrics = {}) {
+    const longestSide = Math.max(Number(metrics.baseWidth) || 0, Number(metrics.baseHeight) || 0);
+    return longestSide > 0 && longestSide < REPRESENTATIVE_SMALL_SIZE_THRESHOLD
+      ? REPRESENTATIVE_SMALL_DASH
+      : REPRESENTATIVE_DASH;
+  }
+
+  function hasVisiblePaint(value) {
+    const paint = String(value || "").trim().toLowerCase();
+    return Boolean(paint) && paint !== "none" && paint !== "transparent";
+  }
+
+  function applyRepresentativeStyle(group, metrics, metadata = {}) {
+    if (!metadata.vehicleGhost) return;
+    const dash = representativeDashFor(metrics);
+    group.querySelectorAll("path, rect, circle, ellipse, line, polyline, polygon").forEach((element) => {
+      if (hasVisiblePaint(element.getAttribute("fill"))) {
+        element.setAttribute("fill", "#ffffff");
+      }
+
+      if (!hasVisiblePaint(element.getAttribute("stroke"))) {
+        element.removeAttribute("stroke-dasharray");
+        return;
+      }
+
+      element.setAttribute("stroke", REPRESENTATIVE_STROKE);
+      element.setAttribute("stroke-width", String(REPRESENTATIVE_STROKE_WIDTH));
+      element.setAttribute("stroke-dasharray", dash);
+      element.setAttribute("stroke-linecap", "butt");
+      element.setAttribute("vector-effect", "non-scaling-stroke");
+    });
   }
 
   function drawCustomVehicleArt(group, metrics, metadata = {}) {
@@ -341,21 +378,19 @@
   }
 
   function drawVehicleArt(group, metrics, metadata = {}) {
-    if (drawCustomVehicleArt(group, metrics, metadata)) return;
-    const { baseWidth: w, baseHeight: h, kind, view } = metrics;
-    if (kind === "narrow" && view !== "side") {
-      drawNarrowTop(group, w, h, metadata);
-      return;
+    if (!drawCustomVehicleArt(group, metrics, metadata)) {
+      const { baseWidth: w, baseHeight: h, kind, view } = metrics;
+      if (kind === "narrow" && view !== "side") {
+        drawNarrowTop(group, w, h, metadata);
+      } else if (view === "side") {
+        drawSideBody(group, w, h, metadata, kind);
+      } else if (view === "upsideDown") {
+        drawUpsideDown(group, w, h, metadata, kind);
+      } else {
+        drawTopBody(group, w, h, metadata, kind);
+      }
     }
-    if (view === "side") {
-      drawSideBody(group, w, h, metadata, kind);
-      return;
-    }
-    if (view === "upsideDown") {
-      drawUpsideDown(group, w, h, metadata, kind);
-      return;
-    }
-    drawTopBody(group, w, h, metadata, kind);
+    applyRepresentativeStyle(group, metrics, metadata);
   }
 
   function vehicleBodyFor(element) {
@@ -428,7 +463,7 @@
       baseHeight: dimensions.height
     }, {
       vehicleColor: options.color || variant?.color || "#000000",
-      vehicleGhost: false
+      vehicleGhost: Boolean(options.ghost)
     });
     return svg;
   }

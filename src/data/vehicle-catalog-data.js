@@ -1082,7 +1082,6 @@
             stroke: "#000000",
             strokeWidth: 0.722,
             ghost: "auto",
-            ghostDash: "2.408 2.408",
             lineJoin: "round",
             paintable: true,
           },
