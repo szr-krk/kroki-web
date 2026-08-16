@@ -16,6 +16,7 @@ class FakeElement {
 
   append(child) {
     this.children.push(child);
+    child.parentNode = this;
   }
 
   setAttribute(name, value) {
@@ -52,6 +53,29 @@ function createSvgElement(tagName, attrs = {}) {
   return element;
 }
 
+function transformScale(transform) {
+  let determinant = 1;
+  const pattern = /([a-z]+)\s*\(([^)]*)\)/gi;
+  let match;
+  while ((match = pattern.exec(String(transform || "")))) {
+    const values = match[2].trim().split(/[\s,]+/).map(Number);
+    if (match[1].toLowerCase() === "matrix" && values.length >= 4) {
+      determinant *= Math.abs(values[0] * values[3] - values[1] * values[2]);
+    } else if (match[1].toLowerCase() === "scale" && values.length) {
+      determinant *= Math.abs(values[0] * (Number.isFinite(values[1]) ? values[1] : values[0]));
+    }
+  }
+  return Math.sqrt(determinant);
+}
+
+function internalScaleFor(element, rootElement) {
+  let scale = 1;
+  for (let current = element; current && current !== rootElement; current = current.parentNode) {
+    scale *= transformScale(current.getAttribute("transform"));
+  }
+  return scale;
+}
+
 const context = { window: {} };
 vm.runInNewContext(read("src/data/vehicle-catalog-data.js"), context);
 const expansionFile = path.join(root, "src", "data", "vehicle-catalog-expansion.js");
@@ -81,7 +105,7 @@ for (const variant of catalog.allVariants()) {
     const preview = renderer.renderPreviewSvg(variant, { view, ghost: true });
     const shapes = preview.querySelectorAll(Array.from(GRAPHIC_TAGS).join(", "));
     const dimensions = catalog.dimensionsForView(variant, view);
-    const expectedDash = Math.max(dimensions.width, dimensions.height) < 50 ? "0.8 0.8" : "1 1";
+    const expectedDash = Math.max(dimensions.width, dimensions.height) < 50 ? 0.8 : 1;
     assert.ok(shapes.length, `${variant.key}/${view}: temsili geometri yok`);
 
     for (const shape of shapes) {
@@ -91,11 +115,13 @@ for (const variant of catalog.allVariants()) {
         assert.equal(fill, "#ffffff", `${variant.key}/${view}: beyaz dışında dolgu var`);
       }
       if (stroke && stroke !== "none" && stroke !== "transparent") {
+        const internalScale = internalScaleFor(shape, preview);
+        const dash = shape.getAttribute("stroke-dasharray").split(/\s+/).map(Number);
         assert.equal(stroke, "#111827", `${variant.key}/${view}: standart dışı stroke rengi var`);
-        assert.equal(shape.getAttribute("stroke-width"), "0.3", `${variant.key}/${view}: stroke kalınlığı farklı`);
-        assert.equal(shape.getAttribute("stroke-dasharray"), expectedDash, `${variant.key}/${view}: dash ritmi farklı`);
+        assert.ok(Math.abs(Number(shape.getAttribute("stroke-width")) * internalScale - 0.3) < 0.0001, `${variant.key}/${view}: stroke kalınlığı farklı`);
+        assert.ok(dash.length === 2 && dash.every((value) => Math.abs(value * internalScale - expectedDash) < 0.0001), `${variant.key}/${view}: dash ritmi farklı`);
         assert.equal(shape.getAttribute("stroke-linecap"), "butt", `${variant.key}/${view}: dash uç biçimi farklı`);
-        assert.equal(shape.getAttribute("vector-effect"), "non-scaling-stroke", `${variant.key}/${view}: dash ölçekleniyor`);
+        assert.equal(shape.getAttribute("vector-effect"), null, `${variant.key}/${view}: zoom sırasında dash sabitlenmiş`);
       }
     }
     auditedViews += 1;

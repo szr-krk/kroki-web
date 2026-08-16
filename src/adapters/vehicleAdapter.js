@@ -186,9 +186,42 @@
     return Boolean(paint) && paint !== "none" && paint !== "transparent";
   }
 
+  function transformScale(transform) {
+    let determinant = 1;
+    const pattern = /([a-z]+)\s*\(([^)]*)\)/gi;
+    let match;
+    while ((match = pattern.exec(String(transform || "")))) {
+      const values = match[2].trim().split(/[\s,]+/).map(Number);
+      if (match[1].toLowerCase() === "matrix" && values.length >= 4 && values.slice(0, 4).every(Number.isFinite)) {
+        determinant *= Math.abs(values[0] * values[3] - values[1] * values[2]);
+      } else if (match[1].toLowerCase() === "scale" && values.length && Number.isFinite(values[0])) {
+        const scaleY = Number.isFinite(values[1]) ? values[1] : values[0];
+        determinant *= Math.abs(values[0] * scaleY);
+      }
+    }
+    const scale = Math.sqrt(determinant);
+    return Number.isFinite(scale) && scale > 0 ? scale : 1;
+  }
+
+  function internalScaleFor(element, root) {
+    let scale = 1;
+    for (let current = element; current && current !== root; current = current.parentNode) {
+      scale *= transformScale(current.getAttribute?.("transform"));
+    }
+    return Number.isFinite(scale) && scale > 0 ? scale : 1;
+  }
+
+  function svgNumber(value) {
+    return String(Number(Number(value).toFixed(6)));
+  }
+
+  function sourceDashFor(targetDash, internalScale) {
+    return targetDash.split(/\s+/).map((value) => svgNumber(Number(value) / internalScale)).join(" ");
+  }
+
   function applyRepresentativeStyle(group, metrics, metadata = {}) {
     if (!metadata.vehicleGhost) return;
-    const dash = representativeDashFor(metrics);
+    const targetDash = representativeDashFor(metrics);
     group.querySelectorAll("path, rect, circle, ellipse, line, polyline, polygon").forEach((element) => {
       if (hasVisiblePaint(element.getAttribute("fill"))) {
         element.setAttribute("fill", "#ffffff");
@@ -199,11 +232,12 @@
         return;
       }
 
+      const internalScale = internalScaleFor(element, group);
       element.setAttribute("stroke", REPRESENTATIVE_STROKE);
-      element.setAttribute("stroke-width", String(REPRESENTATIVE_STROKE_WIDTH));
-      element.setAttribute("stroke-dasharray", dash);
+      element.setAttribute("stroke-width", svgNumber(REPRESENTATIVE_STROKE_WIDTH / internalScale));
+      element.setAttribute("stroke-dasharray", sourceDashFor(targetDash, internalScale));
       element.setAttribute("stroke-linecap", "butt");
-      element.setAttribute("vector-effect", "non-scaling-stroke");
+      element.removeAttribute("vector-effect");
     });
   }
 
