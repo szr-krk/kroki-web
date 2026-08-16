@@ -111,6 +111,7 @@ function parseSvg(file) {
     if (attrs["data-kroki-ghost"]) item.ghost = attrs["data-kroki-ghost"];
     if (attrs["stroke-linecap"]) item.lineCap = attrs["stroke-linecap"];
     if (attrs["stroke-linejoin"]) item.lineJoin = attrs["stroke-linejoin"];
+    if (attrs.transform) item.transform = attrs.transform;
     if (attrs["data-kroki-paintable"] === "true") item.paintable = true;
     return item;
   }).filter(Boolean);
