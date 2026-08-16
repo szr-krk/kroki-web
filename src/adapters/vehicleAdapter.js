@@ -191,6 +191,7 @@
 
     custom.paths.forEach((path) => {
       if (!path?.d) return;
+      if (metadata?.vehicleGhost && path.ghost === "hide") return;
       append(art, "path", {
         d: path.d,
         transform: path.transform || null,
