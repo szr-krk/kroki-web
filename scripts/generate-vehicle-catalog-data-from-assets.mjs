@@ -109,6 +109,7 @@ function parseSvg(file) {
     if (attrs.stroke && attrs.stroke.toLowerCase() !== "none") item.stroke = attrs.stroke;
     if (attrs["stroke-width"] != null) item.strokeWidth = Number(attrs["stroke-width"]);
     if (attrs["data-kroki-ghost"]) item.ghost = attrs["data-kroki-ghost"];
+    if (attrs["data-kroki-ghost-dash"]) item.ghostDash = attrs["data-kroki-ghost-dash"];
     if (attrs["stroke-linecap"]) item.lineCap = attrs["stroke-linecap"];
     if (attrs["stroke-linejoin"]) item.lineJoin = attrs["stroke-linejoin"];
     if (attrs.transform) item.transform = attrs.transform;

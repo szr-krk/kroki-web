@@ -143,7 +143,7 @@
       "stroke-width": path.strokeWidth || 3,
       "stroke-linecap": path.lineCap || (style.dash ? "butt" : "round"),
       "stroke-linejoin": path.lineJoin || "round",
-      "stroke-dasharray": style.dash
+      "stroke-dasharray": metadata?.vehicleGhost && path.ghostDash ? path.ghostDash : style.dash
     };
 
     if (cleanRole === "body") {
