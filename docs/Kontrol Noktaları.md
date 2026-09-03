@@ -36,7 +36,7 @@ Kontrol noktalarının görünürlüğü normal seçim, edit, yeniden render vey
 
 ## Tip bazında kontrol noktaları
 
-- **Line:** başlangıç ve bitiş; handle çizgi ucunun dışındadır, hareket snap sistemine gider.
+- **Line:** başlangıç ve bitiş; handle çizgi ucunun dışındadır; ekran mesafesi çıkarıldıktan sonra gerçek uç ortak grid snap sistemine gider.
 - **Arc:** başlangıç, bitiş ve sagitta/arc kontrolü.
 - **Bezier:** başlangıç, bitiş; quadratic için `q`, cubic için `c1/c2`.
 - **Circle:** tek radius/rotation handle'ı; merkeze mesafe radius, açı rotation olur.

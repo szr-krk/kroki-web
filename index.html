@@ -7,11 +7,11 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <meta name="kroki-build" content="20260903-home-pro-v1" />
+  <meta name="kroki-build" content="20260903-grid-v1" />
   <title>Kroki Pro</title>
   <link rel="stylesheet" href="src/home.css?v=20260903-home-pro-v1" />
-  <link rel="stylesheet" href="src/editor.css?v=20260814-group-ip-pickers-v1" />
-  <link rel="stylesheet" href="src/editor-line.css?v=20260813-group-rotate-cp-v1" />
+  <link rel="stylesheet" href="src/editor.css?v=20260903-grid-v1" />
+  <link rel="stylesheet" href="src/editor-line.css?v=20260903-grid-v1" />
 </head>
 
 <body>
@@ -175,7 +175,22 @@
     </section>
 
     <section id="editor" class="ekran gizli" aria-label="Kroki editörü">
+      <div class="editor-ruler-corner" aria-hidden="true">x/y</div>
+      <svg id="editorRulerX" class="editor-ruler editor-ruler-x" aria-hidden="true"></svg>
+      <svg id="editorRulerY" class="editor-ruler editor-ruler-y" aria-hidden="true"></svg>
+      <div class="editor-grid-controls" role="group" aria-label="Cetvel ve ızgara">
+        <button id="btnEditorRulers" type="button" aria-label="Cetvelleri gizle" title="Cetvelleri gizle" aria-pressed="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 3h18v7H10v11H3Z M7 3v4m5-4v4m5-4v4M3 12h4m-4 5h4"/></svg>
+        </button>
+        <button id="btnEditorGrid" type="button" aria-label="Izgarayı gizle" title="Izgarayı gizle" aria-pressed="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M9 3v18m6-18v18M3 9h18M3 15h18"/></svg>
+        </button>
+        <button id="btnEditorSnap" type="button" aria-label="Izgaraya yapışma açık" title="Izgaraya yapışma açık" aria-pressed="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 3v10a8 8 0 0 0 16 0V3h-5v10a3 3 0 0 1-6 0V3ZM4 8h5m6 0h5"/></svg>
+        </button>
+      </div>
       <main class="editor-calisma-alani">
+        <svg id="editorGrid" class="editor-grid" aria-hidden="true"></svg>
         <svg id="editorCanvas" class="editor-canvas" viewBox="0 0 1200 800" aria-label="Boş kroki alanı">
           <g id="editorBackground" pointer-events="none" aria-hidden="true"></g>
           <g id="editorObjects"></g>
@@ -888,16 +903,11 @@
             </div>
           </div>
           <div class="line-secondary-panel-section">
-            <span class="line-secondary-panel-label">Cizgi davranisi</span>
+            <span class="line-secondary-panel-label">Çizgi ucu</span>
             <div class="line-style-tool-row">
               <button id="btnLinePanelCap" class="line-style-tool-btn" type="button"
                 aria-label="Cizgi ucu" title="Cizgi ucu">
                 <svg id="iconLinePanelCap" viewBox="0 0 48 48" fill="none" aria-hidden="true"></svg>
-              </button>
-              <button id="btnLinePanelSnap" class="line-style-tool-btn is-active" type="button"
-                aria-label="Yatay dikey cizim yardimcisi acik" title="Yatay dikey cizim yardimcisi acik"
-                aria-pressed="true">
-                <svg id="iconLinePanelSnap" viewBox="0 0 48 48" fill="none" aria-hidden="true"></svg>
               </button>
             </div>
           </div>
@@ -1391,7 +1401,8 @@
   <script src="src/editor-framing.js"></script>
   <script src="src/editor-rail.js?v=20260801-cp-fit-preselect-v1"></script>
   <script src="src/editor-camera.js?v=20260730-road-departure-geometry-v4"></script>
-  <script src="src/editor-object-edit.js?v=20260803-proportional-responsive-v1"></script>
+  <script src="src/editor-grid.js?v=20260903-grid-v1"></script>
+  <script src="src/editor-object-edit.js?v=20260903-grid-v1"></script>
   <script src="src/editor-stroke-style.js?v=20260807-adaptive-dash-stepper-v1"></script>
   <script src="src/data/traffic-signs-1-tanzim-levhalari.generated.js?v=20260810-performance-stability-v1"></script>
   <script src="src/data/traffic-signs-2-uyari-levhalari.generated.js?v=20260810-performance-stability-v1"></script>
@@ -1407,7 +1418,7 @@
   <script src="src/core/otherSymbolCatalog.js?v=20260810-performance-stability-v1"></script>
   <script src="src/core/vehicleCatalog.js?v=20260807-web-sync-v1"></script>
   <script src="src/core/shapeRegistry.js?v=20260810-performance-stability-v1"></script>
-  <script src="src/core/styleManager.js?v=20260810-performance-stability-v1"></script>
+  <script src="src/core/styleManager.js?v=20260903-grid-v1"></script>
   <script src="src/core/editorObjectManager.js?v=20260810-performance-stability-v1"></script>
   <script src="src/core/photoBackgroundManager.js?v=20260809-photo-background-v1"></script>
   <script src="src/core/documentStorage.js?v=20260809-indexeddb-library-v1"></script>
@@ -1416,29 +1427,29 @@
   <script src="src/core/historyManager.js"></script>
   <script src="src/core/hitTestManager.js"></script>
   <script src="src/core/controlPointManager.js?v=20260813-group-rotate-cp-v1"></script>
-  <script src="src/core/multiSelectManager.js?v=20260814-group-ip-pickers-v1"></script>
+  <script src="src/core/multiSelectManager.js?v=20260903-grid-v1"></script>
   <script src="src/core/roadDragPreview.js?v=20260713-island-circle-preview"></script>
-  <script src="src/core/selectionManager.js?v=20260808-rotation-live-sync-v1"></script>
-  <script src="src/geometry/lineGeometry.js"></script>
+  <script src="src/core/selectionManager.js?v=20260903-grid-v1"></script>
+  <script src="src/geometry/lineGeometry.js?v=20260903-grid-v1"></script>
   <script src="src/geometry/circleGeometry.js"></script>
   <script src="src/geometry/ellipseGeometry.js"></script>
   <script src="src/geometry/rectangleGeometry.js"></script>
-  <script src="src/adapters/lineAdapter.js"></script>
-  <script src="src/adapters/arcAdapter.js"></script>
-  <script src="src/adapters/bezierAdapter.js"></script>
+  <script src="src/adapters/lineAdapter.js?v=20260903-grid-v1"></script>
+  <script src="src/adapters/arcAdapter.js?v=20260903-grid-v1"></script>
+  <script src="src/adapters/bezierAdapter.js?v=20260903-grid-v1"></script>
   <script src="src/adapters/circleAdapter.js?v=20260808-rotation-panel-stable-v1"></script>
   <script src="src/adapters/ellipseAdapter.js?v=20260808-rotation-panel-stable-v1"></script>
   <script src="src/adapters/rectangleAdapter.js?v=20260808-rotation-panel-stable-v1"></script>
-  <script src="src/adapters/closedShapeAdapter.js?v=20260808-rotation-panel-stable-v1"></script>
-  <script src="src/adapters/calloutAdapter.js?v=20260810-export-fidelity-v1"></script>
-  <script src="src/adapters/roadAdapter.js?v=20260808-pocket-attached-v1"></script>
+  <script src="src/adapters/closedShapeAdapter.js?v=20260903-grid-v1"></script>
+  <script src="src/adapters/calloutAdapter.js?v=20260903-grid-v1"></script>
+  <script src="src/adapters/roadAdapter.js?v=20260903-grid-v1"></script>
   <script src="src/core/roadIntersectionEngine.js?v=20260730-road-departure-geometry-v4"></script>
   <script src="src/adapters/textAdapter.js?v=20260808-rotation-panel-stable-v1"></script>
   <script src="src/adapters/trafficSignAdapter.js?v=20260727-all-sign-text-v2"></script>
   <script src="src/adapters/otherSymbolAdapter.js?v=20260810-performance-stability-v1"></script>
   <script src="src/adapters/vehicleAdapter.js?v=20260817-representative-zoom-v2"></script>
   <script src="src/ui/editorTextComposer.js?v=20260810-free-text-ip-v2"></script>
-  <script src="src/ui/editorBindings.js?v=20260810-performance-stability-v1"></script>
+  <script src="src/ui/editorBindings.js?v=20260903-grid-v1"></script>
   <script src="src/ui/roadBuilder.js?v=20260710-numberpicker"></script>
   <script src="src/ui/roadInspector.js?v=20260810-performance-stability-v1"></script>
   <script src="src/ui/vehicleLibrary.js?v=20260810-performance-stability-v1"></script>

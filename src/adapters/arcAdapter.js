@@ -257,14 +257,14 @@
           x: startState.geometry.start.x + dx,
           y: startState.geometry.start.y + dy
         };
-        model.geometry.start = lineGeometry.snapEndpoint(model.geometry.end, start);
+        model.geometry.start = Kroki.EditorGrid?.snapPoint(start, modifiers) || start;
       }
       if (cpId === "end") {
         const end = {
           x: startState.geometry.end.x + dx,
           y: startState.geometry.end.y + dy
         };
-        model.geometry.end = lineGeometry.snapEndpoint(model.geometry.start, end);
+        model.geometry.end = Kroki.EditorGrid?.snapPoint(end, modifiers) || end;
       }
       model.geometry.ratio = startState.geometry.ratio;
     },

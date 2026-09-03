@@ -39,7 +39,7 @@ Yol da ortak nesne modelidir:
 
 ### Düz (`straight`)
 
-`start` ve `end` arasında doğrusal enterpolasyon yapılır. Başlangıç/bitiş kontrol noktaları çizgi snap sistemini kullanır.
+`start` ve `end` arasında doğrusal enterpolasyon yapılır. Başlangıç/bitiş kontrol noktaları ortak ızgara snap sistemini kullanır. Bağlı ayrılma yolunun ana yola tutunan başlangıcı mevcut bağlantı kısıtını korur.
 
 ### Viraj (`arc`)
 

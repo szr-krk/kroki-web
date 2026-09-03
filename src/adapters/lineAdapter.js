@@ -92,11 +92,11 @@
       const metrics = modifiers.metrics || { endpointOffset: 0, minGap: 0 };
       if (cpId === "start") {
         const start = lineGeometry.endpointFromControl(model.geometry.start, model.geometry.end, "start", worldPoint, metrics);
-        model.geometry.start = lineGeometry.snapEndpoint(model.geometry.end, start);
+        model.geometry.start = Kroki.EditorGrid?.snapPoint(start, modifiers) || start;
       }
       if (cpId === "end") {
         const end = lineGeometry.endpointFromControl(model.geometry.start, model.geometry.end, "end", worldPoint, metrics);
-        model.geometry.end = lineGeometry.snapEndpoint(model.geometry.start, end);
+        model.geometry.end = Kroki.EditorGrid?.snapPoint(end, modifiers) || end;
       }
     },
 

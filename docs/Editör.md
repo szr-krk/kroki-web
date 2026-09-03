@@ -7,6 +7,7 @@ Editör, tek bir SVG canvas üzerinde çizim, seçim, kamera hareketi, nesne dü
 - `index.html`: `#editor`, `#editorCanvas`, bütün araç çubukları ve paneller.
 - `src/editor-state.js`: aktif çizim aracı, düzenlenen DOM nesnesi ve düzenleme modu.
 - `src/editor-camera.js`: pan, zoom, pinch ve viewBox dönüşümleri.
+- `src/editor-grid.js`: ortak dinamik cetvel/ızgara ölçeği ve grid snap.
 - `src/editor-object-edit.js`: üst/yan araç çubuğu referansları ve ortak UI yardımcıları.
 - `src/editor-main-menu.js`: kayıt, export, yeni belge, Home dönüşü ve alan export akışları.
 - `src/ui/editorBindings.js`: çizim araçlarını pointer taslağına ve nesne oluşturmaya bağlar.
@@ -33,6 +34,18 @@ Canvas başlangıç viewBox'ı `0 0 1200 800` değeridir.
 - Kamera değişimi `kroki:viewboxchange` olayı üretir; kontrol noktaları, seçim ve viewport'a bağlı metin etiketleri bu olayla yeniden senkronize edilir.
 - Sağ raydaki ekrana sığdır düğmesi önce `EditorObjectManager.getContentBounds()` ile belge içeriğine fit eder; içerik yoksa başlangıç viewBox'ına döner.
 - Kamera hareketi başladığında aktif nesne çizim taslağı veya seçim sürüklemesi sonlandırılır.
+
+## Cetvel, ızgara ve snap
+
+Üst ve sol cetvel, ızgara ve snap aynı 1–2–5 ölçeğini kullanır. Ana aralık yaklaşık 85 ekran pikseli hedefler; snap görünen küçük ızgara aralığına oturur. Ölçek gerçek SVG/piksel oranından hesaplanır; pan, pinch, mouse zoom, ekrana sığdırma ve dikey tablette `xMidYMid` boşlukları hesaba katılır. Gösterilen sayılar SVG birimidir, metre değildir.
+
+Sol altta üç bağımsız düğme vardır: cetvel görünürlüğü, ızgara görünürlüğü ve mıknatıs simgeli snap. Başlangıçta üçü de açıktır. Izgara gizlenince snap kapanır; ızgarayı geri açmak snap'i açmaz. Snap açılırsa ızgara da görünür olur. Cetvel gizlemek snap durumunu değiştirmez. Ctrl/Cmd basılı çizim veya sürükleme geçici olarak snap'i atlar.
+
+Yeni çizim noktaları, çizgi/arc/Bezier uçları, Bezier kontrol noktaları, kapalı şeklin düzenlenebilir noktaları ve callout uç/merkezi grid'e oturur. Uç tutamacının ekrandaki mesafesi çıkarıldıktan sonra gerçek uç koordinatı snap edilir. Tekli taşımada başlangıç/merkez veya bounds köşesi; çoklu/grup taşımada ortak bounds köşesi referanstır. Bütün nesne aynı miktarda taşınır; boyut ve iç mesafeler korunur. Dönüş, oransal boyutlandırma ve yola bağlı geometrik kısıtlar kendi kurallarını korur.
+
+Eski yatay/dikey çizim yardımcısı, API'si, Inspector düğmesi, ikonu, dinleyicisi ve CSS'i kaldırılmıştır. Mevcut Inspector sistemi korunur.
+
+Izgara ve cetveller belge SVG'sinin kardeş elemanlarıdır; SVG/PNG çıktısına, kayıtlı önizlemeye veya IndexedDB şemasına dahil olmaz. Görünüm tercihleri yalnız oturum belleğindedir. Izgara sekiz SVG düğümüyle çizilir; cetvel yalnız görünür işaretleri üretir. Kamera yazımıyla aynı karede güncellenir, imleç hareketi cetvel işaretlerini yeniden oluşturmaz. Chrome 90 hedefiyle kütüphanesiz çalışır.
 
 ## Çizim akışı
 

@@ -15,7 +15,8 @@
   const closedShapeCancelButton = document.querySelector("#btnClosedShapeDraftCancel");
 
   function canvasPoint(event) {
-    return utils.pointFromEvent(manager.canvas, event);
+    const point = utils.pointFromEvent(manager.canvas, event);
+    return Kroki.EditorGrid?.snapPoint(point, event) || point;
   }
 
   function toolToType(tool) {
@@ -28,11 +29,6 @@
     if (tool === "kapali") return "closedShape";
     if (tool === "olcu") return "callout";
     return "";
-  }
-
-  function snapEnd(start, point, type) {
-    if (type === "circle" || type === "ellipse" || type === "rectangle" || type === "closedShape" || type === "callout") return point;
-    return Kroki.LineSnap?.snapPoint?.(start, point) || point;
   }
 
   function defaultBezierControls(start, end, bezierType) {
@@ -176,7 +172,7 @@
 
   function updateDraftGeometry(point) {
     if (!draft) return;
-    const end = snapEnd(draft.start, point, draft.type);
+    const end = point;
 
     manager.updateGeometry(draft.model.id, (model) => {
       if (draft.type === "line" || draft.type === "arc") {
@@ -208,7 +204,7 @@
   function queueDraftPoint(event) {
     if (!draft) return;
     const draftState = draft;
-    draftState.pendingClientPoint = { clientX: event.clientX, clientY: event.clientY };
+    draftState.pendingClientPoint = { clientX: event.clientX, clientY: event.clientY, ctrlKey: event.ctrlKey, metaKey: event.metaKey };
     if (draftState.pendingFrame) return;
     const run = () => {
       if (draft !== draftState) return;

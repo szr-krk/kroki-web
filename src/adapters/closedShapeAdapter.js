@@ -460,6 +460,9 @@
     },
 
     moveControlPoint(model, cpId, worldPoint, modifiers = {}) {
+      if (cpId.startsWith("p") || cpId.startsWith("q")) {
+        worldPoint = Kroki.EditorGrid?.snapPoint(worldPoint, modifiers) || worldPoint;
+      }
       if (cpId.startsWith("p")) {
         const index = Number(cpId.slice(1));
         if (Number.isInteger(index) && model.geometry.points[index]) model.geometry.points[index] = clonePoint(worldPoint);

@@ -231,7 +231,8 @@
 
     moveControlPoint(model, cpId, worldPoint, modifiers = {}) {
       if (cpId === "q" || cpId === "c1" || cpId === "c2") {
-        model.geometry[cpId] = { x: worldPoint.x, y: worldPoint.y };
+        const point = Kroki.EditorGrid?.snapPoint(worldPoint, modifiers) || worldPoint;
+        model.geometry[cpId] = { x: point.x, y: point.y };
         return;
       }
 
@@ -241,11 +242,11 @@
       const dy = worldPoint.y - startState.point.y;
       if (cpId === "start") {
         const start = { x: startState.geometry.start.x + dx, y: startState.geometry.start.y + dy };
-        model.geometry.start = lineGeometry.snapEndpoint(model.geometry.end, start);
+        model.geometry.start = Kroki.EditorGrid?.snapPoint(start, modifiers) || start;
       }
       if (cpId === "end") {
         const end = { x: startState.geometry.end.x + dx, y: startState.geometry.end.y + dy };
-        model.geometry.end = lineGeometry.snapEndpoint(model.geometry.start, end);
+        model.geometry.end = Kroki.EditorGrid?.snapPoint(end, modifiers) || end;
       }
       if (model.geometry.bezierType === CUBIC) {
         model.geometry.c1 = startState.geometry.c1;

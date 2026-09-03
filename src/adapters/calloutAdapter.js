@@ -514,8 +514,14 @@
 
     moveControlPoint(model, cpId, worldPoint, modifiers = {}) {
       const metrics = modifiers.metrics || {};
-      if (cpId === "text") model.geometry.center = textCenterFromControlPoint(model, worldPoint, metrics);
-      if (cpId === "tip") model.geometry.tip = tipFromControlPoint(model.geometry.center, worldPoint, metrics);
+      if (cpId === "text") {
+        const center = textCenterFromControlPoint(model, worldPoint, metrics);
+        model.geometry.center = Kroki.EditorGrid?.snapPoint(center, modifiers) || center;
+      }
+      if (cpId === "tip") {
+        const tip = tipFromControlPoint(model.geometry.center, worldPoint, metrics);
+        model.geometry.tip = Kroki.EditorGrid?.snapPoint(tip, modifiers) || tip;
+      }
     },
 
     move(model, dx, dy) {

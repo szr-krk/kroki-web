@@ -3590,12 +3590,12 @@
           roadDeparture: departure
         };
       } else {
-        model.geometry.start = lineGeometry.snapEndpoint(model.geometry.end, nextStart);
+        model.geometry.start = Kroki.EditorGrid?.snapPoint(nextStart, modifiers) || nextStart;
       }
     }
     if (pointId === "end") {
       const nextEnd = { x: startState.geometry.end.x + dx, y: startState.geometry.end.y + dy };
-      model.geometry.end = lineGeometry.snapEndpoint(model.geometry.start, nextEnd);
+      model.geometry.end = Kroki.EditorGrid?.snapPoint(nextEnd, modifiers) || nextEnd;
       if (departure?.version >= DEPARTURE_VERSION) {
         departure.curveRatio = departureRatio;
         syncDepartureArcControl(model, departure);

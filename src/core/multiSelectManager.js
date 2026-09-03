@@ -1202,6 +1202,8 @@
       type: "move",
       pointerId: event.pointerId,
       lastPoint: point,
+      startPoint: point,
+      gridAnchor: selectionBounds() || { x: 0, y: 0 },
       startClientX: event.clientX,
       startClientY: event.clientY,
       moved: false,
@@ -1338,10 +1340,11 @@
         drag.transaction = Kroki.HistoryManager?.begin?.(activeGroupId ? "Grup tasi" : "Coklu tasi");
         drag.moved = true;
       }
-      const dx = point.x - drag.lastPoint.x;
-      const dy = point.y - drag.lastPoint.y;
+      const target = Kroki.EditorGrid?.movePoint(drag.startPoint, drag.gridAnchor, point, event) || point;
+      const dx = target.x - drag.lastPoint.x;
+      const dy = target.y - drag.lastPoint.y;
       moveSelected(dx, dy, { skipHistory: true });
-      drag.lastPoint = point;
+      drag.lastPoint = target;
       event.preventDefault();
       return true;
     }

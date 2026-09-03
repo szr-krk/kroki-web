@@ -92,13 +92,13 @@ Araçlar: çizgi, arc, quadratic Bezier, cubic Bezier, daire, elips, dikdörtgen
 
 - Çizgi/şekil: stroke rengi, kalınlık, opaklık ve çizgi stili.
 - Dolgulu şekil: dolgu rengi, dolgu opaklığı ve pattern.
-- Ok destekleyen tip: başlangıç/bitiş oku ve snap düğmesi.
+- Ok destekleyen tip: başlangıç/bitiş oku. Snap, sol alttaki ortak ızgara kontrolünden yönetilir.
 - Metin destekleyen tip: metin paneli ve hizalama/biçim kontrolleri.
 - Kapalı şekil: nokta düzenleme modu.
 - Yol: Road Inspector kontrolleri; genel, kesit ve bariyer modları birbirini dışlar.
 - Trafik levhası ve diğer sembol: yüzde ölçek ve derece dönüş; varsa katalog art'ı içindeki metin alanı.
 
-Çizgi ailesi (`line`, `arc`, quadratic/cubic `bezier`) aynı sade özellik düzenini kullanır. Sağ ray sırası metin girişi, metin stili, çizgi rengi, çizgi kalınlığı ve gelişmiş çizgi stilidir. Metin boyutu/konumu/biçimi/renk-opaklığı metin stili panelinde; desen, oklar, uç ve snap gelişmiş çizgi panelindedir.
+Çizgi ailesi (`line`, `arc`, quadratic/cubic `bezier`) aynı sade özellik düzenini kullanır. Sağ ray sırası metin girişi, metin stili, çizgi rengi, çizgi kalınlığı ve gelişmiş çizgi stilidir. Metin boyutu/konumu/biçimi/renk-opaklığı metin stili panelinde; desen, oklar ve çizgi ucu gelişmiş çizgi panelindedir.
 
 Daire, elips ve dikdörtgen aynı sade düzeni genişletir. Sağ ray sırası metin girişi, metin stili, stroke rengi, dolgu rengi, stroke kalınlığı, dönüş ve gelişmiş stildir. Metin hizalaması ile biçim kontrolleri metin stili panelinde; dolgu deseni ile yuvarlak/küt çizgi ucu gelişmiş stil panelinde aynı satırdadır. Bu üç şekil için doğrudan hizalama, dolgu deseni ve çizgi ucu düğmeleri gösterilmez. Dolgu deseni “düz dolgu”ya çevrildiğinde desenin bıraktığı fill rengi beyaza sıfırlanır.
 
@@ -109,6 +109,10 @@ Oklu metin (callout) sağ rayda metin girişi, metin özellikleri, stroke rengi,
 Serbest metin (`text`) sağ rayda metin girişi, metin özellikleri, metin boyutu ve dönüş sırasını kullanır. Ortadaki `FreeTextComposer` yalnızca metin alanını içerir; boyut, hizalama, biçim, renk ve opaklık için ikinci bir kontrol takımı taşımaz. Metin özellikleri paneli hizalama/biçim/renk-opaklığı yönetir, boyut doğrudan sağ raydaki picker'dan değiştirilir.
 
 Grup veya grup birimleri seçildiğinde sağ ray `is-empty` olur ve stil panelleri kapatılır. Saf çoklu nesne seçiminde ortak uygulanabilir stil, adapter yeteneklerine göre filtrelenerek uygulanabilir.
+
+## Cetvel ve ızgara kontrolleri
+
+Sol alttaki üç dokunma düğmesi cetvelleri, ızgarayı ve snap durumunu yönetir. Izgarayı gizlemek snap'i de kapatır. Cetvel görünürlüğü bağımsızdır; ayrıntı: [[Editör#Cetvel, ızgara ve snap]]. Sağ özellik rayı aynı şekilde çalışır.
 
 ## Yüzen geçmiş çubuğu
 

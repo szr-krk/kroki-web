@@ -1,11 +1,5 @@
 (() => {
   const Kroki = window.Kroki = window.Kroki || {};
-  const utils = Kroki.EditorUtils;
-  if (!utils) return;
-
-  const ORTHO_SNAP_TOLERANCE_PX = 10;
-  const ORTHO_SNAP_DEAD_ZONE_PX = 0.5;
-  let snapEnabled = true;
 
   function normalizedVector(from, to) {
     const dx = to.x - from.x;
@@ -65,56 +59,12 @@
     return reverse ? pathData(b, a) : pathData(a, b);
   }
 
-  function snapPoint(canvas, anchor, point) {
-    if (!snapEnabled || !anchor || !point) return point;
-    const dx = point.x - anchor.x;
-    const dy = point.y - anchor.y;
-    if (!Number.isFinite(dx) || !Number.isFinite(dy)) return point;
-    const screenUnit = utils.svgUnitsPerScreenPx(canvas);
-    const deadZone = ORTHO_SNAP_DEAD_ZONE_PX * screenUnit;
-    if (Math.hypot(dx, dy) <= deadZone) return point;
-    const absDx = Math.abs(dx);
-    const absDy = Math.abs(dy);
-    const tolerance = ORTHO_SNAP_TOLERANCE_PX * screenUnit;
-    const nearHorizontal = absDy <= tolerance;
-    const nearVertical = absDx <= tolerance;
-    if (nearHorizontal && nearVertical) {
-      return absDy <= absDx ? { x: point.x, y: anchor.y } : { x: anchor.x, y: point.y };
-    }
-    if (nearHorizontal) return { x: point.x, y: anchor.y };
-    if (nearVertical) return { x: anchor.x, y: point.y };
-    return point;
-  }
-
-  function snapEndpoint(anchor, point) {
-    return snapPoint(Kroki.EditorObjectManager?.canvas || document.querySelector("#editorCanvas"), anchor, point);
-  }
-
   Kroki.LineGeometry = {
     normalizedVector,
     distanceToSegment,
     lineEndpointControlPoint,
     endpointFromControl,
     pathData,
-    offsetPathData,
-    snapEndpoint
-  };
-
-  Kroki.LineSnap = {
-    isEnabled() {
-      return snapEnabled;
-    },
-    toggle() {
-      snapEnabled = !snapEnabled;
-      return snapEnabled;
-    },
-    snapPoint(anchor, point) {
-      return snapEndpoint(anchor, point);
-    }
-  };
-
-  window.krokiLineSnap = {
-    isEnabled: Kroki.LineSnap.isEnabled,
-    snapPoint: Kroki.LineSnap.snapPoint
+    offsetPathData
   };
 })();

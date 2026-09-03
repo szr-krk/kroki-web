@@ -196,7 +196,8 @@ function positionPanelNearButton(panel, button) {
   const buttonRect = button.getBoundingClientRect();
   const edgeGap = objectEditUiPx(8);
   const panelHeight = panel.offsetHeight || objectEditUiPx(94);
-  const top = Math.max(edgeGap, Math.min(buttonRect.top, window.innerHeight - panelHeight - edgeGap));
+  const toolbarBottom = isPanelOpen(editorTopIp) ? editorTopIp.getBoundingClientRect().bottom + edgeGap : edgeGap;
+  const top = Math.max(edgeGap, Math.min(Math.max(toolbarBottom, buttonRect.top), window.innerHeight - panelHeight - edgeGap));
   panel.style.top = Math.round(top) + "px";
 }
 

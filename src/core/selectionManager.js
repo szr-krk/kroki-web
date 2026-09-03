@@ -21,7 +21,8 @@
     const point = manager.canvas.createSVGPoint();
     point.x = event.clientX;
     point.y = event.clientY;
-    return point.matrixTransform(matrix);
+    const world = point.matrixTransform(matrix);
+    return { x: world.x, y: world.y, ctrlKey: event.ctrlKey, metaKey: event.metaKey };
   }
 
   function setEditorState() {
@@ -88,6 +89,7 @@
     if (!model || !adapter) return false;
 
     if (dragState.type === "object") {
+      point = Kroki.EditorGrid?.movePoint(dragState.startPoint, dragState.gridAnchor, point) || point;
       const dx = point.x - dragState.lastPoint.x;
       const dy = point.y - dragState.lastPoint.y;
       if (Math.hypot(dx, dy) <= 0.0001) return true;
@@ -120,12 +122,14 @@
       if (!moved) return true;
       if (dragState.liveRoadControlPreview && dragState.previewModel) {
         const usedPreviewMove = adapter.previewMoveControlPoint?.(dragState.previewModel, dragState.cpId, point, {
+          ctrlKey: point.ctrlKey, metaKey: point.metaKey,
           startState: dragState.startState,
           lastPoint: dragState.lastPoint,
           metrics: dragState.metrics || controlPoints.metrics()
         }) === true;
         if (!usedPreviewMove) {
           adapter.moveControlPoint(dragState.previewModel, dragState.cpId, point, {
+            ctrlKey: point.ctrlKey, metaKey: point.metaKey,
             startState: dragState.startState,
             lastPoint: dragState.lastPoint,
             metrics: dragState.metrics || controlPoints.metrics()
@@ -139,6 +143,7 @@
       }
       if (dragState.liveLineControlPreview && dragState.previewModel) {
         adapter.moveControlPoint(dragState.previewModel, dragState.cpId, point, {
+          ctrlKey: point.ctrlKey, metaKey: point.metaKey,
           startState: dragState.startState,
           lastPoint: dragState.lastPoint,
           metrics: dragState.metrics || controlPoints.metrics()
@@ -150,6 +155,7 @@
       ensureDragTransaction(dragState);
       manager.updateGeometry(model.id, (draft) => {
         adapter.moveControlPoint(draft, dragState.cpId, point, {
+          ctrlKey: point.ctrlKey, metaKey: point.metaKey,
           startState: dragState.startState,
           lastPoint: dragState.lastPoint,
           metrics: dragState.metrics || controlPoints.metrics()
@@ -193,7 +199,7 @@
   function queueDragPoint(point) {
     if (!drag) return;
     const dragState = drag;
-    dragState.pendingPoint = { x: point.x, y: point.y };
+    dragState.pendingPoint = { x: point.x, y: point.y, ctrlKey: point.ctrlKey, metaKey: point.metaKey };
     if (dragState.pendingFrame) return;
     const run = () => {
       if (drag !== dragState) return;
@@ -633,6 +639,8 @@
       screenMatrix: matrix,
       metrics: metricSnapshot,
       lastPoint: point,
+      startPoint: point,
+      gridAnchor: type === "object" ? Kroki.EditorGrid?.anchorForModel(model, adapter) : null,
       startClientX: event.clientX,
       startClientY: event.clientY,
       moved: !(extra.clearOnTap || extra.editTapPoint),

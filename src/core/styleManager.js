@@ -1073,31 +1073,6 @@
     }
   }
 
-  function renderLineSnapIcon(svg) {
-    if (!svg) return;
-    svg.replaceChildren(
-      utils.createSvgElement("path", {
-        d: "M11 37H37V11",
-        fill: "none",
-        stroke: "currentColor",
-        "stroke-linecap": "round",
-        "stroke-linejoin": "round",
-        "stroke-width": "4.2"
-      }),
-      utils.createSvgElement("path", {
-        d: "M12 12L36 36",
-        fill: "none",
-        stroke: "currentColor",
-        "stroke-dasharray": "4 4",
-        "stroke-linecap": "round",
-        "stroke-width": "2.1",
-        opacity: ".44"
-      }),
-      utils.createSvgElement("circle", { cx: "11", cy: "37", r: "2.4", fill: "currentColor" }),
-      utils.createSvgElement("circle", { cx: "37", cy: "11", r: "2.4", fill: "currentColor" })
-    );
-  }
-
   function renderLineTextAlignIcon(svg, anchorId) {
     if (!svg) return;
     const anchor = choiceById(TEXT_ANCHORS, anchorId);
@@ -1961,13 +1936,6 @@
     renderLineStyleIcon(controls.styleIcon);
     renderLineCapIcon(controls.shapePanelCapIcon);
     renderLineCapIcon(controls.linePanelCapIcon);
-    renderLineSnapIcon(controls.linePanelSnapIcon);
-    const snapEnabled = Boolean(Kroki.LineSnap?.isEnabled?.());
-    const snapLabel = snapEnabled ? "Yatay dikey cizim yardimcisi acik" : "Yatay dikey cizim yardimcisi kapali";
-    controls.linePanelSnapButton?.classList.toggle("is-active", snapEnabled);
-    controls.linePanelSnapButton?.setAttribute("aria-pressed", String(snapEnabled));
-    controls.linePanelSnapButton?.setAttribute("title", snapLabel);
-    controls.linePanelSnapButton?.setAttribute("aria-label", snapLabel);
     controls.styleChoices.forEach((button) => {
       const isSelected = button.dataset.lineStyle === style.dash;
       button.classList.toggle("is-selected", isSelected);
@@ -2223,8 +2191,6 @@
       linePanelToolRow: document.querySelector("#btnLinePanelCap")?.closest(".line-style-tool-row"),
       linePanelCapButton: document.querySelector("#btnLinePanelCap"),
       linePanelCapIcon: document.querySelector("#iconLinePanelCap"),
-      linePanelSnapButton: document.querySelector("#btnLinePanelSnap"),
-      linePanelSnapIcon: document.querySelector("#iconLinePanelSnap"),
       closedShapeEdit: document.querySelector("#btnClosedShapeEdit"),
       styleChoices: Array.from(document.querySelectorAll("[data-line-style]")),
       styleControls: document.querySelector(".line-style-controls"),
@@ -2506,13 +2472,8 @@
       const style = activeEntry()?.model.style;
       if (style) updateStyle({ lineCap: nextChoiceId(style.lineCap, LINE_CAPS) });
     };
-    const toggleLineSnap = () => {
-      Kroki.LineSnap?.toggle?.();
-      syncControls();
-    };
     controls.shapePanelCapButton?.addEventListener("click", cycleLineCap);
     controls.linePanelCapButton?.addEventListener("click", cycleLineCap);
-    controls.linePanelSnapButton?.addEventListener("click", toggleLineSnap);
     controls.closedShapeEdit?.addEventListener("click", () => {
       const entry = activeEntry();
       if (!entry?.adapter?.capabilities?.pointEdit) return;
