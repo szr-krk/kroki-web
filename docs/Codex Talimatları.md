@@ -2,6 +2,15 @@
 
 Bu proje üzerinde çalışacak Codex önce mevcut davranışı korumalı, sonra görev kapsamındaki en küçük modül kümesini değiştirmelidir. Kodda olmayan özelliği varmış gibi kabul etme; bağlı olmayan UI'ları [[Açık Hatalar]] ve [[Yeni Özellikler]] ile karşılaştır.
 
+## Kullanıcının geçerli koşulları
+
+- Saf HTML, CSS ve JavaScript kullan; React veya başka bir çalışma zamanı kütüphanesi ekleme.
+- En düşük tarayıcı hedefi Chrome 90'dır. Yeni API ve CSS için bu sürümü esas al.
+- Düşük donanımlı Android tablette performansı koru; kullanılmayan önizlemeleri başlangıçta hazırlama.
+- IndexedDB kayıt düzenini koru; bu ana ekran değişikliği için veritabanı adı, sürümü, şeması veya kayıt akışını değiştirme.
+- Deneme dosyası, kurulum artığı, geçici kopya ve gereksiz bağımlılıkları teslim edilen projede bırakma.
+- Yereldeki temiz geri dönüş kopyasını değiştirme; geliştirmeyi ayrı çalışma kopyasında yap ve doğrulanan değişiklikleri mevcut GitHub Pages yayınına aktar.
+
 ## Zorunlu ilk okuma sırası
 
 1. [[AI Devralma Notu]] — projenin devralma özeti ve kırmızı çizgileri.

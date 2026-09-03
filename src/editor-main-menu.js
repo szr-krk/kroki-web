@@ -37,10 +37,22 @@
   let currentDocumentId = "";
   let lastSavedSnapshot = "";
   let previewLayer = null;
+  let previewFocus = null;
+  let previewRequestVersion = 0;
   let areaTool = null;
   let busyLayer = null;
   let storedListRenderVersion = 0;
   let exportSignFontDataUrlPromise = null;
+  const pendingPreviews = new WeakMap();
+  const previewObserver = typeof IntersectionObserver === "function" ? new IntersectionObserver((entries) => {
+    entries.forEach((item) => {
+      if (!item.isIntersecting) return;
+      previewObserver.unobserve(item.target);
+      const entry = pendingPreviews.get(item.target);
+      pendingPreviews.delete(item.target);
+      if (entry && item.target.isConnected) void renderPreviewInto(item.target, entry);
+    });
+  }, { rootMargin: "120px" }) : null;
 
   function dialog() {
     return window.KrokiDialog || Kroki.Dialog;
@@ -219,7 +231,7 @@
   }
 
   function closeHomeModals() {
-    document.querySelectorAll(".modal-panel").forEach((modal) => modal.classList.add("gizli"));
+    Kroki.Home?.closeModals(false);
   }
 
   function showHome() {
@@ -229,6 +241,7 @@
     window.krokiEditorRail?.closeRailMenus?.();
     editorScreen?.classList.add("gizli");
     homeScreen?.classList.remove("gizli");
+    Kroki.Home?.selectTab("recent");
     void renderStoredLists();
   }
 
@@ -943,6 +956,7 @@
       const image = document.createElement("img");
       image.alt = "";
       image.loading = "lazy";
+      image.decoding = "async";
       target.append(image);
       try {
         const source = await svgDataUrl(entry.previewSvg, {
@@ -968,7 +982,12 @@
 
     const preview = document.createElement("span");
     preview.className = "stored-doc-thumb";
-    void renderPreviewInto(preview, entry);
+    if (previewObserver) {
+      pendingPreviews.set(preview, entry);
+      previewObserver.observe(preview);
+    } else {
+      void renderPreviewInto(preview, entry);
+    }
 
     const meta = document.createElement("span");
     meta.className = "stored-doc-meta";
@@ -980,19 +999,34 @@
     date.className = "stored-doc-date";
     date.textContent = relativeDate(entry.updatedAt || entry.createdAt);
 
-    if (options.kind === "recent") meta.append(date);
-    else meta.append(title, date);
+    meta.append(title, date);
     button.append(preview, meta);
     return button;
   }
 
   function renderList(target, entries, options) {
     if (!target) return;
+    target.querySelectorAll(".stored-doc-thumb").forEach((preview) => {
+      previewObserver?.unobserve(preview);
+      pendingPreviews.delete(preview);
+    });
     target.replaceChildren();
+    target.dataset.count = String(entries.length);
+    window.dispatchEvent(new CustomEvent("kroki:home-lists-rendered"));
     if (!entries.length) {
-      const empty = document.createElement("p");
+      const empty = document.createElement("div");
       empty.className = "stored-doc-empty";
-      empty.textContent = options.emptyText;
+      empty.innerHTML = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6M9 16h3" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+      const title = document.createElement("strong");
+      title.textContent = options.emptyText;
+      empty.append(title);
+      if (!options.failed) {
+        const hint = document.createElement("span");
+        hint.textContent = options.kind === "recent"
+          ? "Yeni Kroki ile başlayın. Kaydettiğiniz çizimler burada görünür."
+          : "Bir krokinin önizlemesindeki Şablon Yap düğmesiyle kendi şablonunuzu oluşturun.";
+        empty.append(hint);
+      }
       target.append(empty);
       return;
     }
@@ -1013,12 +1047,12 @@
       renderList(recentList, recents, {
         kind: "recent",
         prefix: "Kroki",
-        emptyText: "Henüz kayıt yok."
+        emptyText: "Henüz kroki bulunmuyor"
       });
       renderList(templateList, templates, {
         kind: "template",
         prefix: "Şablon",
-        emptyText: "Şablon kaydı yok."
+        emptyText: "Henüz şablon bulunmuyor"
       });
       return true;
     } catch (error) {
@@ -1027,12 +1061,14 @@
         renderList(recentList, [], {
           kind: "recent",
           prefix: "Kroki",
-          emptyText: "Kayıtlar okunamadı."
+          emptyText: "Kayıtlar okunamadı.",
+          failed: true
         });
         renderList(templateList, [], {
           kind: "template",
           prefix: "Şablon",
-          emptyText: "Şablonlar okunamadı."
+          emptyText: "Şablonlar okunamadı.",
+          failed: true
         });
       }
       return false;
@@ -1042,6 +1078,8 @@
   function closePreview() {
     previewLayer?.remove();
     previewLayer = null;
+    if (previewFocus?.isConnected && previewFocus.getClientRects().length) previewFocus.focus({ preventScroll: true });
+    previewFocus = null;
   }
 
   async function renameTemplateEntry(entry, titleElement, dateElement) {
@@ -1075,27 +1113,105 @@
     }
   }
 
-  async function openEntryPreview(kind, id) {
-    const entryKind = normalizedEntryKind(kind);
-    const entry = await findEntry(entryKind, id);
-    if (!entry) return;
-    closePreview();
+  function readyEntry(id) {
+    const item = (Kroki.ReadyDrawings || []).find((drawing) => drawing.id === id);
+    if (!item) return null;
+    try {
+      const svg = new DOMParser().parseFromString(item.svg, "image/svg+xml");
+      const metadata = svg.querySelector('metadata[data-kroki-pro-signature="' + SVG_SIGNATURE + '"]');
+      const payload = JSON.parse(metadata?.textContent || "{}");
+      if (payload.signature !== SVG_SIGNATURE || !payload.document) return null;
+      return { id: item.id, name: item.title, category: item.category, previewSvg: item.svg, document: payload.document };
+    } catch { return null; }
+  }
 
+  async function savePreviewAsTemplate(entry) {
+    const name = await askText({
+      title: "Şablon adı",
+      message: "Bu çizimin bir kopyası Şablonlarım listesine eklenecek.",
+      label: "Şablon adı",
+      value: entry.name || "Yeni şablon",
+      required: true
+    });
+    if (!name) return false;
+    try {
+      const now = new Date().toISOString();
+      await documentStorage.put("template", {
+        id: entryId("tpl"),
+        name,
+        createdAt: now,
+        updatedAt: now,
+        document: entry.document,
+        previewSvg: entry.previewSvg,
+        previewViewBox: entry.previewViewBox
+      });
+      await renderStoredLists();
+      closePreview();
+      Kroki.Home?.selectTab("template");
+      await notify("Şablon kaydedildi.");
+      return true;
+    } catch (error) {
+      console.warn("Preview template save failed", error);
+      await notify("Şablon cihaz depolamasına kaydedilemedi.");
+      return false;
+    }
+  }
+
+  async function copyStoredEntry(entry) {
+    try {
+      const svg = shareableEntrySvg(entry);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(svg);
+      } else {
+        const field = document.createElement("textarea");
+        field.value = svg;
+        field.style.cssText = "position:fixed;left:-9999px;top:0";
+        document.body.append(field);
+        try {
+          field.select();
+          if (!document.execCommand("copy")) throw new Error("clipboard-unavailable");
+        } finally { field.remove(); }
+      }
+      await notify("SVG kodu kopyalandı.");
+    } catch {
+      await notify("Kod kopyalanamadı. SVG Dosyası İndir seçeneğini kullanabilirsiniz.", "Paylaş");
+    }
+  }
+
+  async function openEntryPreview(kind, id) {
+    const version = ++previewRequestVersion;
+    const entryKind = kind === "ready" ? "ready" : normalizedEntryKind(kind);
+    const entry = entryKind === "ready" ? readyEntry(id) : await findEntry(entryKind, id);
+    if (version !== previewRequestVersion || !entry) return;
+    closePreview();
+    previewFocus = document.activeElement;
     previewLayer = document.createElement("div");
     previewLayer.className = "kroki-preview-layer";
-
+    const layer = previewLayer;
     const modal = document.createElement("div");
     modal.className = "kroki-preview-modal";
     modal.setAttribute("role", "dialog");
     modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-labelledby", "krokiPreviewTitle");
 
     const header = document.createElement("div");
     header.className = "kroki-preview-header";
+    const heading = document.createElement("div");
+    heading.className = "kroki-preview-heading";
     const title = document.createElement("strong");
+    title.id = "krokiPreviewTitle";
     title.textContent = entry.name || entryPrefix(entryKind);
     const date = document.createElement("span");
-    date.textContent = `${relativeDate(entry.updatedAt || entry.createdAt)} - ${displayDate(entry.updatedAt || entry.createdAt)}`;
-    header.append(title, date);
+    date.textContent = entryKind === "ready" ? (entry.category || "Hazır çizim")
+      : relativeDate(entry.updatedAt || entry.createdAt) + " · " + displayDate(entry.updatedAt || entry.createdAt);
+    heading.append(title, date);
+    const closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.className = "home-icon-btn";
+    closeButton.dataset.previewAction = "cancel";
+    closeButton.setAttribute("aria-label", "Önizlemeyi kapat");
+    closeButton.textContent = "✕";
+    header.append(heading, closeButton);
 
     const body = document.createElement("div");
     body.className = "kroki-preview-body";
@@ -1106,61 +1222,95 @@
 
     const actions = document.createElement("div");
     actions.className = "kroki-preview-actions";
-    const deleteButton = document.createElement("button");
-    deleteButton.type = "button";
-    deleteButton.className = "btn-danger";
-    deleteButton.dataset.previewAction = "delete";
-    deleteButton.textContent = "Sil";
-    const renameButton = document.createElement("button");
-    renameButton.type = "button";
-    renameButton.dataset.previewAction = "rename";
-    renameButton.textContent = "Yeniden Adlandır";
-    const shareButton = document.createElement("button");
-    shareButton.type = "button";
-    shareButton.className = "btn-share";
-    shareButton.dataset.previewAction = "share";
-    shareButton.textContent = "Paylaş";
-    const editButton = document.createElement("button");
-    editButton.type = "button";
-    editButton.className = "btn-ok";
-    editButton.dataset.previewAction = "edit";
-    editButton.textContent = "Düzenle";
-    const cancelButton = document.createElement("button");
-    cancelButton.type = "button";
-    cancelButton.dataset.previewAction = "cancel";
-    cancelButton.textContent = "İptal";
-    actions.append(deleteButton);
-    if (entryKind === "template") actions.append(renameButton);
-    actions.append(shareButton, editButton, cancelButton);
-
+    const left = document.createElement("div");
+    const right = document.createElement("div");
+    left.className = right.className = "kroki-preview-action-group";
+    function actionButton(label, action, className = "") {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = className;
+      button.dataset.previewAction = action;
+      button.textContent = label;
+      return button;
+    }
+    if (entryKind !== "ready") left.append(actionButton(entryKind === "template" ? "Şablonu Sil" : "Sil", "delete", "btn-danger"));
+    if (entryKind === "template") left.append(actionButton("Yeniden Adlandır", "rename"));
+    else left.append(actionButton("Şablon Yap", "template"));
+    const shareBox = document.createElement("div");
+    shareBox.className = "kroki-preview-share";
+    const shareButton = actionButton("Paylaş", "share-menu", "btn-share");
+    shareButton.setAttribute("aria-expanded", "false");
+    shareButton.setAttribute("aria-controls", "krokiPreviewShareMenu");
+    const shareMenu = document.createElement("div");
+    shareMenu.id = "krokiPreviewShareMenu";
+    shareMenu.className = "kroki-preview-share-menu gizli";
+    shareMenu.append(actionButton("Paylaş (Sistem)", "share"), actionButton("SVG Dosyası İndir", "download"), actionButton("SVG Kodunu Kopyala", "copy"));
+    shareBox.append(shareButton, shareMenu);
+    right.append(shareBox, actionButton("Düzenle", "edit", "btn-ok"), actionButton("Kapat", "cancel"));
+    actions.append(left, right);
     modal.append(header, body, actions);
-    previewLayer.append(modal);
-    document.body.append(previewLayer);
-    cancelButton.focus({ preventScroll: true });
+    layer.append(modal);
+    document.body.append(layer);
+    closeButton.focus({ preventScroll: true });
+    let actionBusy = false;
 
-    previewLayer.addEventListener("pointerdown", (event) => {
-      if (event.target === previewLayer) closePreview();
+    function closeShare() {
+      shareMenu.classList.add("gizli");
+      shareButton.setAttribute("aria-expanded", "false");
+    }
+    layer.addEventListener("click", (event) => {
+      if (event.target === layer && !actionBusy) closePreview();
     });
-    modal.addEventListener("pointerdown", (event) => event.stopPropagation());
+    modal.addEventListener("keydown", (event) => {
+      if (document.querySelector(".kroki-dialog-layer:not(.gizli)")) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!shareMenu.classList.contains("gizli")) {
+          closeShare();
+          shareButton.focus();
+        } else if (!actionBusy) closePreview();
+      } else Kroki.Home?.trapFocus(event, modal);
+    });
     modal.addEventListener("click", async (event) => {
+      const button = event.target.closest("[data-preview-action]");
+      if (!button) { closeShare(); return; }
       event.preventDefault();
       event.stopPropagation();
-      const action = event.target?.closest?.("[data-preview-action]")?.dataset.previewAction || "";
-      if (action === "cancel") closePreview();
-      else if (action === "share") await shareStoredEntry(entry, entryKind);
-      else if (action === "rename" && entryKind === "template") await renameTemplateEntry(entry, title, date);
-      else if (action === "edit") {
-        if (!(await confirmDiscard())) return;
-        closePreview();
-        loadDocument(entry.document, {
-          currentDocumentId: entryKind === "recent" ? entry.id : "",
-          fitToContent: entryKind === "template"
-        });
-      } else if (action === "delete") {
-        const ok = await ask(`${entry.name || entryPrefix(entryKind)} silinsin mi?`, "Sil");
-        if (!ok) return;
-        await deleteEntry(entryKind, entry.id);
-        closePreview();
+      if (actionBusy) return;
+      const action = button.dataset.previewAction;
+      if (action === "cancel") { closePreview(); return; }
+      if (action === "share-menu") {
+        const opening = shareMenu.classList.contains("gizli");
+        shareMenu.classList.toggle("gizli", !opening);
+        shareButton.setAttribute("aria-expanded", String(opening));
+        if (opening) shareMenu.querySelector("button").focus();
+        return;
+      }
+      closeShare();
+      actionBusy = true;
+      button.disabled = true;
+      try {
+        if (action === "share") await shareStoredEntry(entry, entryKind);
+        else if (action === "copy") await copyStoredEntry(entry);
+        else if (action === "download") downloadBlob(new Blob([shareableEntrySvg(entry)], { type: "image/svg+xml" }), safeFileStem(entry.name, "kroki") + ".svg");
+        else if (action === "rename" && entryKind === "template") await renameTemplateEntry(entry, title, date);
+        else if (action === "template" && entryKind !== "template") await savePreviewAsTemplate(entry);
+        else if (action === "edit") {
+          Kroki.Home?.restoreFullscreen();
+          if (!(await confirmDiscard())) return;
+          closePreview();
+          loadDocument(entry.document, { currentDocumentId: entryKind === "recent" ? entry.id : "", fitToContent: entryKind !== "recent" });
+        } else if (action === "delete" && entryKind !== "ready") {
+          const ok = await ask((entry.name || entryPrefix(entryKind)) + " silinsin mi?", "Sil");
+          if (ok && await deleteEntry(entryKind, entry.id)) closePreview();
+        }
+      } catch (error) {
+        console.warn("Preview action failed", error);
+        await notify("İşlem tamamlanamadı. Yeniden deneyin.");
+      } finally {
+        actionBusy = false;
+        button.disabled = false;
       }
     });
   }
@@ -1201,6 +1351,7 @@
     if (!entry) return;
     resetDocument();
     showHome();
+    Kroki.Home?.selectTab("template");
     await notify("Şablon kaydedildi.");
   }
 
@@ -1430,42 +1581,36 @@
     input.click();
   }
 
+  async function importPhoto(file) {
+    if (!file) return false;
+    showBusy("Fotoğraf kopyalanıyor...");
+    try {
+      const photoBackground = await Kroki.PhotoBackgroundManager?.stateFromFile?.(file);
+      if (!photoBackground) throw new Error("photo-background-unavailable");
+      hideBusy();
+      const ok = await confirmDiscard("Mevcut kroki kapatılıp fotoğraf altlık olarak açılacak. Devam edilsin mi?");
+      if (!ok) return false;
+      loadDocument({
+        schemaVersion: 1,
+        app: "Kroki Pro",
+        viewport: { viewBox: viewBoxString(DEFAULT_VIEWBOX) },
+        objects: [],
+        photoBackground,
+        groups: [],
+        roadIntersection: null
+      }, { currentDocumentId: "", markSaved: false });
+      return true;
+    } catch {
+      await notify("Fotoğraf okunamadı. JPEG, PNG, WebP, GIF, BMP veya AVIF dosyası seçin.", "Fotoğraf Yükle");
+      return false;
+    } finally { hideBusy(); }
+  }
+
   function importPhotoFile() {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = ".jpg,.jpeg,.png,.webp,.gif,.bmp,.avif,image/jpeg,image/png,image/webp,image/gif,image/bmp,image/avif";
-    input.hidden = true;
-    input.addEventListener("cancel", () => input.remove(), { once: true });
-    input.addEventListener("change", async () => {
-      const file = input.files?.[0];
-      if (!file) {
-        input.remove();
-        return;
-      }
-      showBusy("Fotoğraf kopyalanıyor...");
-      try {
-        const photoBackground = await Kroki.PhotoBackgroundManager?.stateFromFile?.(file);
-        if (!photoBackground) throw new Error("photo-background-unavailable");
-        hideBusy();
-        const ok = await confirmDiscard("Mevcut kroki kapatılıp fotoğraf altlık olarak açılacak. Devam edilsin mi?");
-        if (!ok) return;
-        loadDocument({
-          schemaVersion: 1,
-          app: "Kroki Pro",
-          viewport: { viewBox: viewBoxString(DEFAULT_VIEWBOX) },
-          objects: [],
-          photoBackground,
-          groups: [],
-          roadIntersection: null
-        }, { currentDocumentId: "", markSaved: false });
-      } catch {
-        await notify("Fotoğraf okunamadı. JPEG, PNG, WebP, GIF, BMP veya AVIF dosyası seçin.", "Fotoğraf Yükle");
-      } finally {
-        hideBusy();
-        input.remove();
-      }
-    }, { once: true });
-    document.body.append(input);
+    input.addEventListener("change", () => { void importPhoto(input.files?.[0]); }, { once: true });
     input.click();
   }
 
@@ -1507,6 +1652,7 @@
   });
 
   document.addEventListener("keydown", (event) => {
+    if (event.defaultPrevented) return;
     if (event.key === "Escape") {
       if (areaTool) {
         stopAreaTool();
@@ -1523,6 +1669,8 @@
     resetDocument,
     importSvgFile,
     importPhotoFile,
+    importPhoto,
+    openEntryPreview,
     importKrokiSvgText
   };
 

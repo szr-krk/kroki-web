@@ -7,9 +7,9 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <meta name="kroki-build" content="20260817-representative-zoom-v2" />
+  <meta name="kroki-build" content="20260903-home-pro-v1" />
   <title>Kroki Pro</title>
-  <link rel="stylesheet" href="src/home.css?v=20260813-preview-share-cp-v1" />
+  <link rel="stylesheet" href="src/home.css?v=20260903-home-pro-v1" />
   <link rel="stylesheet" href="src/editor.css?v=20260814-group-ip-pickers-v1" />
   <link rel="stylesheet" href="src/editor-line.css?v=20260813-group-rotate-cp-v1" />
 </head>
@@ -17,8 +17,15 @@
 <body>
   <div id="uygulama">
     <section id="home" class="ekran" aria-label="Kroki Pro ana sayfa">
-      <div class="home-ust">
-        <div class="home-ust-baslik">Kroki Pro</div>
+      <header class="home-ust">
+        <div class="home-marka">
+          <span class="home-logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m5 7 1.5-4h11L19 7M5 7h14l2 5v7h-3v-3H6v3H3v-7l2-5ZM3 12h18M7 9h.01M17 9h.01"/>
+            </svg>
+          </span>
+          <div><h1 class="home-ust-baslik">Kroki Pro</h1><p class="home-alt-baslik">Trafik Kaza Krokisi Çizim Sistemi</p></div>
+        </div>
         <div class="home-ust-aksiyonlar">
           <button id="btnHomeTamEkran" class="home-ust-btn" type="button" aria-pressed="false" aria-label="Tam ekran aç"
             title="Tam ekran aç">
@@ -26,7 +33,7 @@
               <path d="M8 4H4v4M16 4h4v4M20 16v4h-4M4 16v4h4" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round"></path>
             </svg>
-            <span id="lblHomeTamEkran">Tam Ekran Aç</span>
+            <span id="lblHomeTamEkran">Tam Ekran</span>
           </button>
 
           <button id="btnKlavuz" class="home-ust-btn" type="button" aria-label="Kullanım kılavuzu"
@@ -39,11 +46,11 @@
             <span>Kılavuz</span>
           </button>
         </div>
-      </div>
+      </header>
 
-      <div class="home-icerik">
-        <div class="home-sol">
-          <button id="btnYeniKroki" class="home-ana-buton" type="button">
+      <main class="home-icerik">
+        <nav class="home-sol" aria-label="Kroki işlemleri">
+          <button id="btnYeniKroki" class="home-nav-btn home-ana-buton" type="button">
             <span class="mini-ikon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
                 <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z" stroke="currentColor"
@@ -52,12 +59,14 @@
               </svg>
             </span>
             <span>Yeni Kroki</span>
+            <span class="home-bos-etiket" aria-hidden="true">Boş</span>
           </button>
 
-          <div class="kart kart-hizli">
-            <h3>Hızlı Başlangıç</h3>
-            <div class="hizli-grid">
-              <button id="btnSablonlarim" type="button" data-modal-target="modalSablonlarim">
+              <button id="btnSonKrokiler" class="home-nav-btn is-active" type="button" data-home-tab="recent" aria-controls="homeRecentPanel" aria-pressed="true">
+                <span class="mini-ikon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M3 11a9 9 0 1 1 2.7 7M3 4v7h7M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                <span>Son Krokiler</span>
+              </button>
+              <button id="btnSablonlarim" class="home-nav-btn" type="button" data-home-tab="template" aria-controls="homeTemplatePanel" aria-pressed="false">
                 <span class="mini-ikon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none">
                     <path d="M6 4h8l4 4v12H6z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
@@ -68,7 +77,7 @@
                 <span>Şablonlarım</span>
               </button>
 
-              <button id="btnHazirKavsaklar" type="button" data-modal-target="modalHazirKavsaklar">
+              <button id="btnHazirKavsaklar" class="home-nav-btn" type="button" data-home-tab="ready" aria-controls="homeReadyPanel" aria-pressed="false">
                 <span class="mini-ikon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none">
                     <path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path>
@@ -76,10 +85,10 @@
                     </path>
                   </svg>
                 </span>
-                <span>Hazır Kavşaklar</span>
+                <span>Hazır Çizimler</span>
               </button>
 
-              <button id="btnSvgYukle" type="button">
+              <button id="btnSvgYukle" class="home-nav-btn" type="button">
                 <span class="mini-ikon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none">
                     <path d="M12 3v11M8.5 6.5 12 3l3.5 3.5" stroke="currentColor" stroke-width="2"
@@ -91,7 +100,7 @@
                 <span>SVG Yükle</span>
               </button>
 
-              <button id="btnFotografYukle" type="button">
+              <button id="btnFotografYukle" class="home-nav-btn" type="button">
                 <span class="mini-ikon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none">
                     <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"></rect>
@@ -102,56 +111,67 @@
                 </span>
                 <span>Fotoğraf Yükle</span>
               </button>
-            </div>
+        </nav>
+        <section class="home-kutuphane" aria-labelledby="homeListeBaslik">
+          <div class="home-liste-ust">
+            <h2 id="homeListeBaslik">Son Krokiler</h2>
+            <span id="homeListeAdet" class="home-liste-adet" aria-label="Kayıt sayısı">0</span>
           </div>
-        </div>
+          <div id="homeRecentPanel" class="home-liste-panel" data-home-panel="recent" aria-labelledby="btnSonKrokiler">
+            <div id="sonKrokilerListesi" class="home-liste"><p class="stored-doc-empty">Krokiler yükleniyor…</p></div>
+          </div>
+          <div id="homeTemplatePanel" class="home-liste-panel gizli" data-home-panel="template" aria-labelledby="btnSablonlarim">
+            <div id="sablonlarimListesi" class="home-liste"><p class="stored-doc-empty">Şablonlar yükleniyor…</p></div>
+          </div>
+          <div id="homeReadyPanel" class="home-liste-panel gizli" data-home-panel="ready" aria-labelledby="btnHazirKavsaklar">
+            <div id="hazirKavsaklarListesi" class="home-liste"></div>
+          </div>
+        </section>
+      </main>
 
-        <div class="kart kart-son">
-          <h3>Son Krokiler</h3>
-          <div class="son-kroki-scroll" id="sonKrokilerListesi">
-            <p>Henüz kayıt yok.</p>
+      <div id="homeUploadModal" class="modal-panel gizli" role="dialog" aria-modal="true" aria-labelledby="homeUploadTitle">
+        <div class="home-modal">
+          <header class="home-modal-header">
+            <div><h2 id="homeUploadTitle">SVG Dosyası Yükle</h2><p id="homeUploadHint">Kroki Pro ile kaydedilmiş çiziminizi açın.</p></div>
+            <button class="home-icon-btn" type="button" data-modal-close aria-label="Yükleme penceresini kapat">✕</button>
+          </header>
+          <div id="homeUploadTabs" class="home-upload-tabs" role="tablist" aria-label="SVG yükleme yöntemi">
+            <button id="homeUploadFileTab" type="button" role="tab" data-upload-tab="file" aria-selected="true" aria-controls="homeUploadFilePanel">Dosya Seç / Sürükle</button>
+            <button id="homeUploadPasteTab" type="button" role="tab" data-upload-tab="paste" aria-selected="false" aria-controls="homeUploadPastePanel" tabindex="-1">SVG Kodu Yapıştır</button>
           </div>
+          <div class="home-modal-body">
+            <input id="homeUploadInput" type="file" accept=".svg,image/svg+xml" hidden />
+            <div id="homeUploadFilePanel" role="tabpanel" aria-labelledby="homeUploadFileTab">
+              <button id="homeUploadPick" class="home-upload-drop" type="button">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M4 15v6h16v-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <strong>Dosya seçmek için dokunun</strong>
+                <span>veya dosyanızı buraya sürükleyip bırakın</span>
+                <small id="homeUploadFormats">SVG</small>
+              </button>
+              <div id="homeUploadSelected" class="home-upload-selected gizli">
+                <strong id="homeUploadFilename"></strong><span id="homeUploadFilesize"></span>
+                <button id="homeUploadConfirm" class="home-primary-btn" type="button">Aç ve Düzenle</button>
+                <button id="homeUploadChange" class="home-text-btn" type="button">Farklı Dosya Seç</button>
+              </div>
+            </div>
+            <div id="homeUploadPastePanel" class="gizli" role="tabpanel" aria-labelledby="homeUploadPasteTab">
+              <label for="homeUploadCode">SVG kodunu yapıştırın</label>
+              <textarea id="homeUploadCode" rows="7" spellcheck="false" placeholder="&lt;svg …&gt;…&lt;/svg&gt;"></textarea>
+              <button id="homeUploadPasteConfirm" class="home-primary-btn" type="button">Kodu İçe Aktar ve Düzenle</button>
+            </div>
+            <p id="homeUploadError" class="home-upload-error gizli" role="alert"></p>
+          </div>
+          <footer class="home-modal-footer"><button class="home-secondary-btn" type="button" data-modal-close>Vazgeç</button></footer>
         </div>
       </div>
 
-      <div id="modalSablonlarim" class="modal-panel gizli" role="dialog" aria-modal="true"
-        aria-labelledby="modalSablonlarimBaslik">
-        <div class="modal">
-          <div class="modal-ust">
-            <span id="modalSablonlarimBaslik">Şablonlarım</span>
-            <div class="modal-ust-sag">
-              <button class="btn-ok btn-tamam gizli" type="button">
-                <span class="btn-ikon">✓</span> Tamam
-              </button>
-              <button class="btn-danger btn-kapat" type="button" data-modal-close>
-                <span class="btn-ikon">✕</span> Kapat
-              </button>
-            </div>
-          </div>
-          <div class="modal-icerik" id="sablonlarimListesi">(Boş) - Daha sonra doldurulacak.</div>
-          <div class="modal-alt">Şablon seçildiğinde kopyası yeni kroki olarak açılır.</div>
+      <div id="homeGuideModal" class="modal-panel gizli" role="dialog" aria-modal="true" aria-labelledby="homeGuideTitle">
+        <div class="home-modal home-guide-modal">
+          <header class="home-modal-header"><h2 id="homeGuideTitle">Kullanım Kılavuzu</h2><button class="home-icon-btn" type="button" data-modal-close aria-label="Kılavuzu kapat">✕</button></header>
+          <iframe id="homeGuideFrame" title="Kroki Pro kullanım kılavuzu"></iframe>
         </div>
       </div>
-
-      <div id="modalHazirKavsaklar" class="modal-panel gizli" role="dialog" aria-modal="true"
-        aria-labelledby="modalHazirKavsaklarBaslik">
-        <div class="modal">
-          <div class="modal-ust">
-            <span id="modalHazirKavsaklarBaslik">Hazır Kavşaklar</span>
-            <div class="modal-ust-sag">
-              <button class="btn-ok btn-tamam gizli" type="button">
-                <span class="btn-ikon">✓</span> Tamam
-              </button>
-              <button class="btn-danger btn-kapat" type="button" data-modal-close>
-                <span class="btn-ikon">✕</span> Kapat
-              </button>
-            </div>
-          </div>
-          <div class="modal-icerik" id="hazirKavsaklarListesi">(Boş) - Hazır kavşaklar daha sonra doldurulacak.</div>
-          <div class="modal-alt">Seçilen kavşak yeni krokiye eklenecek.</div>
-        </div>
-      </div>
-
+      <div id="homeDropOverlay" class="home-drop-overlay gizli" aria-hidden="true"><strong>SVG veya fotoğrafı buraya bırakın</strong></div>
     </section>
 
     <section id="editor" class="ekran gizli" aria-label="Kroki editörü">
@@ -1366,7 +1386,7 @@
   <script src="src/responsive-scale.js?v=20260809-line-family-v1"></script>
   <script src="src/kroki-dialog.js?v=20260803-proportional-responsive-v1"></script>
   <script src="src/data/ready-drawings.js"></script>
-  <script src="src/home.js?v=20260809-photo-background-v1"></script>
+  <script src="src/home.js?v=20260903-home-pro-v1"></script>
   <script src="src/editor-state.js"></script>
   <script src="src/editor-framing.js"></script>
   <script src="src/editor-rail.js?v=20260801-cp-fit-preselect-v1"></script>
@@ -1424,7 +1444,7 @@
   <script src="src/ui/vehicleLibrary.js?v=20260810-performance-stability-v1"></script>
   <script src="src/ui/trafficSignLibrary.js?v=20260810-performance-stability-v1"></script>
   <script src="src/ui/otherSymbolLibrary.js?v=20260810-performance-stability-v1"></script>
-  <script src="src/editor-main-menu.js?v=20260814-rename-label-v1"></script>
+  <script src="src/editor-main-menu.js?v=20260903-home-pro-v1"></script>
 </body>
 
 </html>

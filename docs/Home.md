@@ -1,51 +1,59 @@
 # Home
 
-Home, uygulamanın başlangıç ekranıdır. Görevi editöre geçiş, tam ekran kontrolü, yerel son krokiler/şablonlar, Kroki imzalı SVG yükleme ve hızlı başlangıç girişlerini göstermektir.
+Home, Kroki Pro'nun başlangıç ve belge kitaplığı ekranıdır. Görünüm ve gezinme düzeni `kroki-pro` referansından uyarlanmıştır; uygulama saf HTML, CSS ve JavaScript ile çalışır.
 
-## İlgili kod dosyaları
+## İlgili dosyalar
 
-- `index.html`: `#home` DOM'u, hızlı başlangıç düğmeleri ve üç modal.
-- `src/home.js`: modal açma/kapama, tam ekran ve Home düğmelerinin ilk bağları.
-- `src/editor-main-menu.js`: yeni belge, son krokiler, şablonlar, IndexedDB kayıtları, SVG import/export ve Home liste renderı.
-- `src/core/documentStorage.js`: son kroki/şablon kayıtları ile fotoğraf Blob'larını yöneten IndexedDB katmanı.
-- `src/home.css`: Home yerleşimi, kartlar ve modal görünümü.
-- Editöre geçişin devamı: [[Editör]].
+- `index.html`: başlık, sol menü, liste panelleri, yükleme ve kılavuz pencereleri.
+- `src/home.css`: ana ekran, kartlar, önizleme ve pencereler.
+- `src/home.js`: sekme seçimi, sayaç, hazır çizimler, dosya/kod yükleme arayüzü, kılavuz ve tam ekran.
+- `src/editor-main-menu.js`: mevcut editör geçişleri, kayıt listeleri, önizleme işlemleri ve import.
+- `src/core/documentStorage.js`: değiştirilmeden korunan IndexedDB katmanı.
 
-## Mevcut davranışlar
+## Ekran ve gezinme
 
-- “Yeni Kroki” artık `editor-main-menu.js` tarafından capture fazında devralınır; mevcut içerik varsa onay ister, belgeyi sıfırlar ve editörü gösterir.
-- Home tam ekran düğmesi `document.documentElement.requestFullscreen()` ve `document.exitFullscreen()` kullanır. `fullscreenchange` ile etiket ve `aria-pressed` senkronize edilir.
-- `data-modal-target` taşıyan düğmeler hedef paneli açar; yeni modal açılırken diğerleri kapanır.
-- `data-modal-close` düğmeleri ve `Escape` tüm Home modallarını kapatır.
-- “Kılavuz” özel dialog ile “sonraki aşamada bağlanacak” mesajı verir.
-- “SVG Yükle”, `KrokiMainMenu.importSvgFile()` varsa dosya seçici açar; yalnız Kroki Pro imzalı SVG içindeki belge metadata'sını import eder.
-- “Fotoğraf Yükle”, seçilen görselin bir kopyasını etkileşimsiz SVG altlığı olarak belgeye ekler; kaynak dosyayı değiştirmez.
+Üstte uygulama adı, Tam Ekran ve Kılavuz bulunur. Sol menü sırasıyla Yeni Kroki, Son Krokiler, Şablonlarım, Hazır Çizimler, SVG Yükle ve Fotoğraf Yükle işlemlerini içerir.
 
-## Hızlı başlangıç alanları
+Son Krokiler, Şablonlarım ve Hazır Çizimler aynı sağ panelde açılır. Seçili düğme ve kayıt sayacı birlikte güncellenir. Listenin ve sol menünün kendi düşey kaydırması vardır; bütün ekran kaydırılmaz. İlk açılış ve editörden dönüş Son Krokiler'e gider. Şablon kaydetme tamamlandığında Şablonlarım seçilir.
 
-- **Şablonlarım:** IndexedDB `documents` deposundaki şablon kayıtlarından kartlar render edilir.
-- **Hazır Kavşaklar:** modal var, içerik boş yer tutucudur.
-- **Hazır Yollar:** modal var, içerik boş yer tutucudur.
-- **SVG Yükle:** Kroki Pro export metadata'sı taşıyan SVG dosyasını belge olarak açar; genel SVG parser değildir.
-- **Fotoğraf Yükle:** JPEG, PNG, WebP, GIF, BMP veya AVIF görselini SVG altlığı olarak açar.
-- **Son Krokiler:** IndexedDB `documents` deposundan en fazla 10 kayıt gösterilir.
+Ana ekran, editörün orantılı `rem` ölçeğinden bağımsız okunabilir boyutlar kullanır. Yatay tablette üç, daha dar ekranda iki kart sütunu vardır. Telefon boyutunda menü üstte iki satıra geçer.
 
-Bu eksikler [[Açık Hatalar]] ve [[Yeni Özellikler]] içinde izlenir.
+## Kart ve önizleme akışı
 
-## Bağlı modüller
+- Kartta çizim, ad ve son güncelleme zamanı gösterilir.
+- Kart seçimi büyük önizleme açar; tek başına editördeki belgeyi değiştirmez.
+- **Düzenle:** son krokiyi kendi kayıt kimliğiyle açar. Şablon/hazır çizim boş kayıt kimliğiyle açılır; daha sonraki normal kayıt kaynak şablonu değiştirmez.
+- **Şablon Yap:** son kroki veya hazır çizimin kopyasını, istenen adla mevcut şablon deposuna yazar.
+- **Yeniden Adlandır:** yalnız kullanıcı şablonları için vardır.
+- **Sil:** yalnız kullanıcı kayıtları için vardır ve onay ister. Hazır çizimler silinemez.
+- **Paylaş:** cihazın dosya paylaşımı, imzalı SVG indirme veya SVG kodunu kopyalama seçenekleri sunar. Yerel kayda erişmeyen bir URL paylaşılmaz.
+- Kapat, pencere dışına dokunma ve Escape önizlemeyi kapatır. Odak açan karta döner; Tab pencerede tutulur.
 
-- [[Editör]]: Home'un tek çalışan ana geçiş hedefi.
-- [[Menü Sistemi]]: editördeki kayıt, export, çıkış ve yeni belge komutları Home listeleriyle aynı IndexedDB akışına bağlıdır.
-- [[Serializer]]: IndexedDB kayıtları, şablonlar ve imzalı SVG import/export için belge formatını sağlar.
+## Yükleme ve kılavuz
 
-## Geliştirici notları
+SVG Yükle, dosya seç/sürükle ve SVG kodu yapıştır seçeneklerini açar. Fotoğraf Yükle desteklenen görselleri seçtirir. Dosya seçildikten sonra Aç ve Düzenle ile mevcut import akışına geçilir. Ana ekrana dosya bırakmak da aynı seçili dosya onayını açar.
 
-- Yeni krokiye geçiş `resetDocument()` ile manager, seçim, kavşak state'i, kamera ve history'yi temizler.
-- Home ve editör aynı sayfada yaşar; route veya ayrı HTML sayfası yoktur.
-- Fullscreen başarısızlığı yakalanır fakat kullanıcıya hata verilmez; yalnız düğme etiketi yeniden senkronize edilir.
-- Fotoğraf altlığı IndexedDB `assets` deposunda tek Blob olarak saklanır. Belge ve önizleme kayıtları aynı veriyi tekrar etmez; okuma sırasında altlık yeniden bağlanır.
+SVG kodu ve dosyası aynı `importKrokiSvgText` doğrulamasını kullanır: yalnız Kroki Pro imzalı belge metadata'sı içeren SVG açılır. Genel SVG parser eklenmemiştir; dış SVG markup'ı doğrudan sayfaya yerleştirilmez.
 
-## Belirsiz
+Fotoğraf mevcut `PhotoBackgroundManager.stateFromFile` üzerinden etkileşimsiz altlığa dönüştürülür. Kaynak dosya değiştirilmez. Kaydetme mevcut editör akışında kullanıcı komutuyla yapılır.
 
-- “Hazır Yol/Kavşak” için veri formatı ve yerleştirme akışı hâlâ tanımlı değildir.
-- Genel SVG import yoktur; mevcut SVG yükleme yalnız Kroki Pro imzalı export'u belgeye geri çevirir.
+Kılavuz, mevcut `kilavuz.html` içeriğini aynı sayfadaki pencerede gösterir. İçerik ilk açılışta yüklenir. Tam ekran düğmesi mevcut tarayıcı API'leriyle çalışır; desteklenmeyen cihazda uygulama kullanılabilir kalır.
+
+## Değişmeyen kayıt sözleşmesi
+
+- IndexedDB adı: `krokiPro.documents.v1`; sürüm: `1`.
+- Depolar: `documents` ve `assets`.
+- Kayıt türleri: `recent` ve `template`.
+- Son krokiler sınırı: `10`.
+- Fotoğraf verisi aynı Blob/asset düzeninde saklanır.
+- `saveRecent`, `saveTemplate`, serializer, depolama çekirdeği ve fotoğraf çekirdeği korunur.
+- Yeni kroki açmak veya bir şablonu düzenlemek kendiliğinden yeni kalıcı kayıt oluşturmaz.
+- Yayın aynı GitHub Pages adresinde kalır; tarayıcının mevcut kayıtlarının origin'i değiştirilmez.
+
+## Performans ve uyumluluk
+
+Hazır çizim kartları ilk kez ilgili sekme açılınca hazırlanır. Kayıtlı kartların SVG önizlemesi `IntersectionObserver` ile görünür alana yaklaştığında üretilir; resim çözümü `loading="lazy"` ve `decoding="async"` kullanır. Liste yenilenirken eski gözlemler bırakılır. Önizleme SVG'leri `img` içinde gösterilir.
+
+React, paket yöneticisi, derleme adımı, CDN veya başka bir çalışma zamanı kütüphanesi yoktur. Yeni kod Chrome 90 tabanına uygun API ve CSS kullanır. Kart oranı için Chrome 88'den beri desteklenen `aspect-ratio` kullanılır; Chrome 90 sonrası API'lere bağımlılık eklenmez.
+
+Bağlantılar: [[Editör]], [[Menü Sistemi]], [[Serializer]], [[Performans Kriterleri]].
