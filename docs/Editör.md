@@ -28,6 +28,7 @@ Canvas başlangıç viewBox'ı `0 0 1200 800` değeridir.
 ## Kamera davranışları
 
 - Mouse tekerleği pointer konumunu sabit tutarak üstel zoom yapar.
+- Kamera viewport ölçüsü pencere/canvas boyutu değişene kadar önbellekte kalır; pan/pinch sırasında her pointer hareketinde layout ölçülmez.
 - Orta mouse veya `Space` + sol mouse pan başlatır.
 - Boş canvas üzerinde tek parmak pan; iki pointer pinch-zoom yapar.
 - Ölçek sınırı `0.05`–`64` arasındadır.
@@ -37,15 +38,17 @@ Canvas başlangıç viewBox'ı `0 0 1200 800` değeridir.
 
 ## Cetvel, ızgara ve snap
 
-Üst ve sol cetvel, ızgara ve snap aynı 1–2–5 ölçeğini kullanır. Ana aralık yaklaşık 85 ekran pikseli hedefler; snap görünen küçük ızgara aralığına oturur. Ölçek gerçek SVG/piksel oranından hesaplanır; pan, pinch, mouse zoom, ekrana sığdırma ve dikey tablette `xMidYMid` boşlukları hesaba katılır. Gösterilen sayılar SVG birimidir, metre değildir.
+Üst ve sol cetvel, ızgara ve snap aynı 1–2–5 ölçeğini kullanır. Ana aralık yaklaşık 85 ekran pikseli hedefler; snap öncelikle yakındaki mevcut uç noktasına, uygun uç yoksa görünen küçük ızgara aralığına oturur. Ölçek gerçek SVG/piksel oranından hesaplanır; pan, pinch, mouse zoom, ekrana sığdırma ve dikey tablette `xMidYMid` boşlukları hesaba katılır. Gösterilen sayılar SVG birimidir, metre değildir.
 
 Sol altta üç bağımsız düğme vardır: cetvel görünürlüğü, ızgara görünürlüğü ve mıknatıs simgeli snap. Başlangıçta üçü de açıktır. Izgara gizlenince snap kapanır; ızgarayı geri açmak snap'i açmaz. Snap açılırsa ızgara da görünür olur. Cetvel gizlemek snap durumunu değiştirmez. Ctrl/Cmd basılı çizim veya sürükleme geçici olarak snap'i atlar.
 
-Yeni çizim noktaları, çizgi/arc/Bezier uçları, Bezier kontrol noktaları, kapalı şeklin düzenlenebilir noktaları ve callout uç/merkezi grid'e oturur. Uç tutamacının ekrandaki mesafesi çıkarıldıktan sonra gerçek uç koordinatı snap edilir. Tekli taşımada başlangıç/merkez veya bounds köşesi; çoklu/grup taşımada ortak bounds köşesi referanstır. Bütün nesne aynı miktarda taşınır; boyut ve iç mesafeler korunur. Dönüş, oransal boyutlandırma ve yola bağlı geometrik kısıtlar kendi kurallarını korur.
+Yeni çizim noktaları, çizgi/arc/Bezier uçları, Bezier kontrol noktaları, kapalı şeklin düzenlenebilir noktaları ve callout uç/merkezi grid'e oturur. Çizgi uç tutamacı sürüklenirken başlangıç geometrisi ve parmağın tutamacı kavradığı konum saklanır; bu konuma göre gerçek uç taşınır ve snap edilir. Tekli taşımada başlangıç/merkez veya bounds köşesi; çoklu/grup taşımada ortak bounds köşesi referanstır. Bütün nesne aynı miktarda taşınır; boyut ve iç mesafeler korunur. Dönüş, oransal boyutlandırma ve yola bağlı geometrik kısıtlar kendi kurallarını korur.
+
+Mevcut uçlar, zoom nedeniyle yeni grid aralığının dışında kalsalar bile birleştirilebilir. Uç yakalama mesafesi mouse/kalemde 12, dokunmada 18 CSS pikselidir. Hedefler sürükleme başında yalnız koordinatlarıyla bir uzamsal indekse alınır; hareket eden nesne(ler) dışarıda tutulur. Pointer move sırasında sahne taranmaz veya modeller kopyalanmaz. Yeni çizim aynı snapped noktada kaldıysa gereksiz geometri güncellemesi atlanır.
 
 Eski yatay/dikey çizim yardımcısı, API'si, Inspector düğmesi, ikonu, dinleyicisi ve CSS'i kaldırılmıştır. Mevcut Inspector sistemi korunur.
 
-Izgara ve cetveller belge SVG'sinin kardeş elemanlarıdır; SVG/PNG çıktısına, kayıtlı önizlemeye veya IndexedDB şemasına dahil olmaz. Görünüm tercihleri yalnız oturum belleğindedir. Izgara sekiz SVG düğümüyle çizilir; cetvel yalnız görünür işaretleri üretir. Kamera yazımıyla aynı karede güncellenir, imleç hareketi cetvel işaretlerini yeniden oluşturmaz. Chrome 90 hedefiyle kütüphanesiz çalışır.
+Izgara ve cetveller belge SVG'sinin kardeş elemanlarıdır; SVG/PNG çıktısına, kayıtlı önizlemeye veya IndexedDB şemasına dahil olmaz. Görünüm tercihleri yalnız oturum belleğindedir. Izgara ayrı bir Canvas 2D katmanında tutulur; backing store 1 CSS pikseli ölçeğiyle sınırlıdır ve yalnız kamera/boyut/görünürlük değiştiğinde boyanır. Cetvel görünür işaretleri üretir; etiket düğümleri zoom/pan sırasında yeniden kullanılır. Ekran ölçüsü yalnız workspace boyutu değişince okunur. Dokunma hareketi cetvel imlecini güncellemez; mouse/kalem takibi değişen konumla sınırlıdır. Kamera yazımıyla aynı karede güncellenir. Chrome 90 hedefiyle kütüphanesiz çalışır.
 
 ## Çizim akışı
 

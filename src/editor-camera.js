@@ -21,6 +21,15 @@
   let activePinch = null;
   let gestureActive = false;
   let spacePressed = false;
+  let viewportRect = null;
+
+  function invalidateViewportRect() { viewportRect = null; }
+
+  function readViewportRect(svg) {
+    if (svg !== canvas) return svg.getBoundingClientRect();
+    if (!viewportRect || !viewportRect.width || !viewportRect.height) viewportRect = canvas.getBoundingClientRect();
+    return viewportRect;
+  }
 
   function viewBoxString(viewBox) {
     return `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`;
@@ -329,7 +338,7 @@
   }
 
   function getViewportMetrics(svg = canvas, viewBox = readViewBox(svg)) {
-    const rect = svg.getBoundingClientRect();
+    const rect = readViewportRect(svg);
     const scale = Math.min(rect.width / viewBox.width, rect.height / viewBox.height);
     const viewportWidth = viewBox.width * scale;
     const viewportHeight = viewBox.height * scale;
@@ -653,6 +662,8 @@
   canvas.addEventListener("kroki:viewboxchange", syncExternalViewBox);
   document.addEventListener("keydown", handleKeyDown);
   document.addEventListener("keyup", handleKeyUp);
+  new ResizeObserver(invalidateViewportRect).observe(canvas);
+  window.addEventListener("resize", invalidateViewportRect);
   window.addEventListener("blur", () => {
     spacePressed = false;
     canvas.classList.remove("is-camera-pan-ready");

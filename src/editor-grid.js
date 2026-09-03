@@ -17,7 +17,12 @@
   let frame = 0;
   let viewportDirty = true;
   let viewport = null;
+  let rectDirty = true;
+  let canvasRect = null;
+  let viewBox = camera.readViewBox(canvas);
   let cursor = null;
+  let snapTargets = null;
+  const gridContext = grid.getContext("2d", { alpha: false });
 
   function svg(tag, attrs = {}) {
     const node = document.createElementNS(NS, tag);
@@ -38,27 +43,107 @@
   }
 
   function currentViewport() {
-    // Read the displayed viewBox, including xMidYMid letterboxing on tablets.
-    const viewBox = canvas.viewBox.baseVal;
-    const metrics = camera.getViewportMetrics(canvas, viewBox);
+    // Layout is read only when the workspace size changes, never per move/zoom.
+    if (rectDirty || !canvasRect) {
+      canvasRect = canvas.getBoundingClientRect();
+      rectDirty = false;
+    }
+    const scale = Math.min(canvasRect.width / viewBox.width, canvasRect.height / viewBox.height);
     return {
-      ...scaleForZoom(metrics.scale),
-      zoom: metrics.scale,
-      width: metrics.rect.width,
-      height: metrics.rect.height,
-      left: metrics.rect.left,
-      top: metrics.rect.top,
-      x: metrics.left - metrics.rect.left - viewBox.x * metrics.scale,
-      y: metrics.top - metrics.rect.top - viewBox.y * metrics.scale
+      ...scaleForZoom(scale),
+      zoom: scale,
+      width: canvasRect.width,
+      height: canvasRect.height,
+      left: canvasRect.left,
+      top: canvasRect.top,
+      x: (canvasRect.width - viewBox.width * scale) / 2 - viewBox.x * scale,
+      y: (canvasRect.height - viewBox.height * scale) / 2 - viewBox.y * scale
     };
+  }
+
+  function getViewport() {
+    if (rectDirty || !viewport) viewport = currentViewport();
+    return viewport;
+  }
+
+  function pointFromEvent(event) {
+    const state = getViewport();
+    if (!(state.zoom > 0)) return { x: viewBox.x, y: viewBox.y };
+    return {
+      x: (event.clientX - state.left - state.x) / state.zoom,
+      y: (event.clientY - state.top - state.y) / state.zoom
+    };
+  }
+
+  function endGesture() { snapTargets = null; }
+
+  function beginGesture(excludedIds = [], pointerType = "mouse") {
+    endGesture();
+    const state = getViewport();
+    if (!gridVisible || !snapEnabled || !(state.zoom > 0)) return;
+    const radius = (pointerType === "touch" ? 18 : 12) / state.zoom;
+    const excluded = new Set(excludedIds);
+    const cells = new Map();
+    const seen = new Set();
+    const add = (point) => {
+      if (!Number.isFinite(point?.x) || !Number.isFinite(point?.y)) return;
+      const identity = point.x + "," + point.y;
+      if (seen.has(identity)) return;
+      seen.add(identity);
+      const key = Math.floor(point.x / radius) + "," + Math.floor(point.y / radius);
+      let cell = cells.get(key);
+      if (!cell) { cell = []; cells.set(key, cell); }
+      cell.push({ x: point.x, y: point.y });
+    };
+    // Read model references once. Never clone artwork or scan the scene on move.
+    const models = Kroki.EditorObjectManager?.getObjectsInDomOrder() || [];
+    models.forEach((model) => {
+      if (excluded.has(model.id)) return;
+      const geometry = model.geometry || {};
+      if (model.type === "line" || model.type === "arc" || model.type === "bezier" || model.type === "road") {
+        add(geometry.start);
+        add(geometry.end);
+      } else if (model.type === "closedShape") {
+        (geometry.points || []).forEach(add);
+      } else if (model.type === "callout") add(geometry.tip);
+    });
+    snapTargets = { cells, radius };
+  }
+
+  function nearbyEndpoint(point) {
+    if (!snapTargets) return null;
+    const { cells, radius } = snapTargets;
+    const cx = Math.floor(point.x / radius);
+    const cy = Math.floor(point.y / radius);
+    let distance = radius * radius;
+    let closest = null;
+    for (let x = cx - 1; x <= cx + 1; x++) {
+      for (let y = cy - 1; y <= cy + 1; y++) {
+        const cell = cells.get(x + "," + y);
+        if (!cell) continue;
+        for (let i = 0; i < cell.length; i++) {
+          const candidate = cell[i];
+          const dx = point.x - candidate.x;
+          const dy = point.y - candidate.y;
+          const nextDistance = dx * dx + dy * dy;
+          if (nextDistance > distance) continue;
+          closest = candidate;
+          distance = nextDistance;
+          if (distance === 0) return closest;
+        }
+      }
+    }
+    return closest;
   }
 
   function snapPoint(point, modifiers = {}) {
     if (!point || !gridVisible || !snapEnabled || modifiers.ctrlKey || modifiers.metaKey) return point;
-    if (viewportDirty || !viewport) viewport = currentViewport();
-    if (!(viewport.zoom > 0)) return point;
-    const step = viewport.minorStep;
-    const round = (value) => Number((Math.round(value / step) * step).toPrecision(12));
+    const state = getViewport();
+    if (!(state.zoom > 0)) return point;
+    const endpoint = nearbyEndpoint(point);
+    if (endpoint) return { x: endpoint.x, y: endpoint.y };
+    const step = state.minorStep;
+    const round = (value) => Math.round(Math.round(value / step) * step * 1e8) / 1e8;
     return { x: round(point.x), y: round(point.y) };
   }
 
@@ -77,20 +162,41 @@
     return { x: point.x + snapped.x - target.x, y: point.y + snapped.y - target.y };
   }
 
-  const defs = svg("defs");
-  function pattern(id, stroke, width) {
-    const node = svg("pattern", { id, patternUnits: "userSpaceOnUse" });
-    const path = svg("path", { fill: "none", stroke, "stroke-width": width });
-    node.append(path);
-    defs.append(node);
-    return { node, path };
+  function renderGrid(state) {
+    if (!gridContext) return;
+    // One CSS-pixel backing store bounds tablet memory, regardless of device DPR.
+    const width = Math.ceil(state.width);
+    const height = Math.ceil(state.height);
+    if (grid.width !== width) { grid.width = width; grid.style.width = width + "px"; }
+    if (grid.height !== height) { grid.height = height; grid.style.height = height + "px"; }
+    gridContext.fillStyle = "#ffffff";
+    gridContext.fillRect(0, 0, width, height);
+    const draw = (spacing, color) => {
+      gridContext.beginPath();
+      gridContext.strokeStyle = color;
+      gridContext.lineWidth = 1;
+      for (let x = ((state.x % spacing) + spacing) % spacing; x < width; x += spacing) {
+        const px = Math.floor(x) + 0.5;
+        gridContext.moveTo(px, 0); gridContext.lineTo(px, height);
+      }
+      for (let y = ((state.y % spacing) + spacing) % spacing; y < height; y += spacing) {
+        const py = Math.floor(y) + 0.5;
+        gridContext.moveTo(0, py); gridContext.lineTo(width, py);
+      }
+      gridContext.stroke();
+    };
+    draw(state.minorStep * state.zoom, "#e2e8f0");
+    draw(state.majorStep * state.zoom, "#b8c4d2");
+    gridContext.beginPath();
+    gridContext.strokeStyle = "#93b4e8";
+    if (state.x >= 0 && state.x < width) {
+      gridContext.moveTo(Math.floor(state.x) + 0.5, 0); gridContext.lineTo(Math.floor(state.x) + 0.5, height);
+    }
+    if (state.y >= 0 && state.y < height) {
+      gridContext.moveTo(0, Math.floor(state.y) + 0.5); gridContext.lineTo(width, Math.floor(state.y) + 0.5);
+    }
+    gridContext.stroke();
   }
-  const minor = pattern("editorGridMinor", "#e2e8f0", 0.75);
-  const major = pattern("editorGridMajor", "#b8c4d2", 1);
-  const axes = svg("path", { fill: "none", stroke: "#93b4e8", "stroke-width": 1 });
-  grid.append(defs,
-    svg("rect", { width: "100%", height: "100%", fill: "url(#editorGridMinor)" }),
-    svg("rect", { width: "100%", height: "100%", fill: "url(#editorGridMajor)" }), axes);
 
   function ruler(id, horizontal) {
     const root = document.querySelector(id);
@@ -102,7 +208,7 @@
     marker.setAttribute("d", horizontal ? "M0 0V32 M-3 32L0 27L3 32Z" : "M0 0H32 M32 -3L27 0L32 3Z");
     marker.style.display = "none";
     root.append(ticks, majorTicks, labels, zero, marker);
-    return { root, ticks, majorTicks, labels, zero, marker, horizontal };
+    return { root, ticks, majorTicks, labels, zero, marker, horizontal, labelPool: [] };
   }
   const horizontal = ruler("#editorRulerX", true);
   const vertical = ruler("#editorRulerY", false);
@@ -115,7 +221,7 @@
     let smallPath = "";
     let largePath = "";
     let zeroPath = "";
-    const fragment = document.createDocumentFragment();
+    let labelIndex = 0;
     for (let i = first; i <= last; i++) {
       const position = origin + i * spacing;
       const isMajor = i % state.subdivisions === 0;
@@ -126,35 +232,33 @@
       else smallPath += path;
       if (!isMajor) continue;
       const value = i * state.minorStep;
-      const label = svg("text", isHorizontal
-        ? { x: position + 3, y: 11 }
-        : { x: SIZE - 3, y: position - 4, "text-anchor": "end" });
-      label.textContent = Math.abs(value) < 1e-9 ? "0" : value.toFixed(state.precision);
-      if (i === 0) label.setAttribute("fill", "#2563eb");
-      fragment.append(label);
+      let label = rulerState.labelPool[labelIndex++];
+      if (!label) {
+        label = svg("text", isHorizontal ? { y: 11 } : { x: SIZE - 3, "text-anchor": "end" });
+        rulerState.labelPool.push(label);
+        labels.append(label);
+      }
+      if (label.style.display === "none") label.style.display = "";
+      label.setAttribute(isHorizontal ? "x" : "y", isHorizontal ? position + 3 : position - 4);
+      const text = Math.abs(value) < 1e-9 ? "0" : value.toFixed(state.precision);
+      if (label.textContent !== text) label.textContent = text;
+      const fill = i === 0 ? "#2563eb" : "#475569";
+      if (label.getAttribute("fill") !== fill) label.setAttribute("fill", fill);
     }
     ticks.setAttribute("d", smallPath);
     majorTicks.setAttribute("d", largePath);
     zero.setAttribute("d", zeroPath);
-    labels.replaceChildren(fragment);
+    for (let i = labelIndex; i < rulerState.labelPool.length; i++) {
+      if (rulerState.labelPool[i].style.display !== "none") rulerState.labelPool[i].style.display = "none";
+    }
   }
 
   function renderViewport() {
-    viewport = currentViewport();
+    viewport = getViewport();
     viewportDirty = false;
     if (!(viewport.zoom > 0) || !viewport.width || !viewport.height) return;
-    const { x, y, width, height, zoom } = viewport;
-    if (gridVisible) {
-      [[minor, viewport.minorStep], [major, viewport.majorStep]].forEach(([item, step]) => {
-        const spacing = step * zoom;
-        item.node.setAttribute("width", spacing);
-        item.node.setAttribute("height", spacing);
-        item.node.setAttribute("x", ((x % spacing) + spacing) % spacing);
-        item.node.setAttribute("y", ((y % spacing) + spacing) % spacing);
-        item.path.setAttribute("d", `M${spacing} 0H0V${spacing}`);
-      });
-      axes.setAttribute("d", `M${x} 0V${height}M0 ${y}H${width}`);
-    }
+    const { x, y, width, height } = viewport;
+    if (gridVisible) renderGrid(viewport);
     if (rulersVisible) {
       renderRuler(horizontal, width, x, viewport);
       renderRuler(vertical, height, y, viewport);
@@ -175,8 +279,16 @@
       y = point.y * viewport.zoom + viewport.y;
     }
     [[horizontal, x, viewport?.width], [vertical, y, viewport?.height]].forEach(([r, position, limit]) => {
-      r.marker.style.display = active && position >= 0 && position <= limit ? "" : "none";
-      if (active) r.marker.setAttribute("transform", r.horizontal ? `translate(${position} 0)` : `translate(0 ${position})`);
+      const visible = Boolean(active && position >= 0 && position <= limit);
+      if (r.markerVisible !== visible) {
+        r.marker.style.display = visible ? "" : "none";
+        r.markerVisible = visible;
+      }
+      const pixel = Math.round(position);
+      if (visible && r.markerPosition !== pixel) {
+        r.marker.setAttribute("transform", r.horizontal ? `translate(${pixel} 0)` : `translate(0 ${pixel})`);
+        r.markerPosition = pixel;
+      }
     });
   }
 
@@ -188,7 +300,7 @@
   }
 
   function schedule(viewChanged = false) {
-    if (viewChanged) viewportDirty = true;
+    if (viewChanged) { viewportDirty = true; viewport = null; }
     if (!frame) frame = requestAnimationFrame(render);
   }
 
@@ -218,6 +330,7 @@
   rulerButton.addEventListener("click", () => {
     rulersVisible = !rulersVisible;
     cursor = null;
+    rectDirty = true;
     syncButtons();
     // Reuse the editor's existing viewport resize handlers for its handles and
     // open inspector panels when the ruler changes the available canvas area.
@@ -225,22 +338,29 @@
   });
   // Camera writes are already limited to one per frame. Update in that same
   // frame so the grid cannot trail the drawing during pan or pinch.
-  canvas.addEventListener("kroki:viewboxchange", () => {
+  canvas.addEventListener("kroki:viewboxchange", (event) => {
+    viewBox = event.detail || camera.readViewBox(canvas);
     viewportDirty = true;
+    viewport = null;
     if (editor.classList.contains("gizli")) return;
     renderViewport();
     renderCursor();
   });
   canvas.addEventListener("pointermove", (event) => {
+    if (event.pointerType === "touch" || camera.isGestureActive() || !rulersVisible) return;
     cursor = { clientX: event.clientX, clientY: event.clientY, ctrlKey: event.ctrlKey, metaKey: event.metaKey };
     if (rulersVisible) schedule();
   }, { capture: true, passive: true });
-  function clearCursor() { cursor = null; schedule(); }
+  function clearCursor() { if (cursor) { cursor = null; schedule(); } }
+  canvas.addEventListener("pointerdown", (event) => { if (event.pointerType === "touch") clearCursor(); }, { capture: true, passive: true });
   canvas.addEventListener("pointerleave", clearCursor, { passive: true });
   canvas.addEventListener("pointercancel", clearCursor, { passive: true });
   canvas.addEventListener("pointerup", (event) => { if (event.pointerType !== "mouse") clearCursor(); }, { passive: true });
-  new ResizeObserver(() => schedule(true)).observe(canvas);
+  function resize() { rectDirty = true; schedule(true); }
+  new ResizeObserver(resize).observe(canvas);
+  window.addEventListener("resize", resize);
+  window.addEventListener("kroki:camera-gesture-start", () => { clearCursor(); endGesture(); });
 
-  Kroki.EditorGrid = Object.freeze({ scaleForZoom, snapPoint, anchorForModel, movePoint });
+  Kroki.EditorGrid = Object.freeze({ scaleForZoom, snapPoint, anchorForModel, movePoint, pointFromEvent, beginGesture, endGesture });
   syncButtons();
 })();

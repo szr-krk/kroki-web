@@ -88,7 +88,23 @@
       ];
     },
 
+    beginControlPointMove(model, cpId, point) {
+      return {
+        point: { x: point.x, y: point.y },
+        geometry: { start: { ...model.geometry.start }, end: { ...model.geometry.end } }
+      };
+    },
+
     moveControlPoint(model, cpId, worldPoint, modifiers = {}) {
+      const state = modifiers.startState;
+      if (state && (cpId === "start" || cpId === "end")) {
+        const point = {
+          x: state.geometry[cpId].x + worldPoint.x - state.point.x,
+          y: state.geometry[cpId].y + worldPoint.y - state.point.y
+        };
+        model.geometry[cpId] = Kroki.EditorGrid?.snapPoint(point, modifiers) || point;
+        return;
+      }
       const metrics = modifiers.metrics || { endpointOffset: 0, minGap: 0 };
       if (cpId === "start") {
         const start = lineGeometry.endpointFromControl(model.geometry.start, model.geometry.end, "start", worldPoint, metrics);

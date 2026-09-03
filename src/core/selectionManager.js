@@ -254,6 +254,7 @@
     activeId = "";
     mode = "";
     cancelQueuedDragFrame(drag);
+    if (drag) Kroki.EditorGrid?.endGesture();
     drag = null;
     if (options.silent) {
       setEditorState();
@@ -626,6 +627,7 @@
     const point = pointFromEvent(event, matrix);
     const model = getActiveModel();
     const adapter = manager.getAdapter(model);
+    Kroki.EditorGrid?.beginGesture([model.id], event.pointerType);
     const metricSnapshot = type === "control" ? controlPoints.metrics() : null;
     const liveRoadObjectPreview = false;
     const liveTransform = type === "object" && typeof adapter?.move === "function";
@@ -883,6 +885,7 @@
       Kroki.HistoryManager?.commit?.(drag.transaction, drag.historyLabel, { assumeChanged: true, ownSnapshots: true });
     }
     cancelQueuedDragFrame(drag);
+    Kroki.EditorGrid?.endGesture();
     drag = null;
     if (shouldClear) clear();
     if (wasRoadDrag) {

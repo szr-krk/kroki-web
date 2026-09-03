@@ -15,7 +15,7 @@
   const closedShapeCancelButton = document.querySelector("#btnClosedShapeDraftCancel");
 
   function canvasPoint(event) {
-    const point = utils.pointFromEvent(manager.canvas, event);
+    const point = Kroki.EditorGrid?.pointFromEvent(event) || utils.pointFromEvent(manager.canvas, event);
     return Kroki.EditorGrid?.snapPoint(point, event) || point;
   }
 
@@ -77,6 +77,7 @@
   }
 
   function cancelClosedShapeDraft(options = {}) {
+    Kroki.EditorGrid?.endGesture();
     clearClosedShapeTap();
     const id = closedShapeDraftId;
     closedShapeDraftId = "";
@@ -138,6 +139,7 @@
     if (event.button !== 0 && event.pointerType === "mouse") return;
     if (window.krokiEditorCamera?.isGestureActive?.() || window.krokiEditorCamera?.isPanRequested?.()) return;
     if (window.krokiEditorState?.isBlockingOverlayOpen?.()) return;
+    Kroki.EditorGrid?.beginGesture(closedShapeDraftId ? [closedShapeDraftId] : [], event.pointerType);
     closedShapeTap = {
       pointerId: event.pointerId,
       startClientX: event.clientX,
@@ -166,12 +168,15 @@
       if (closedShapeDraftId) addClosedShapePoint(point);
       else ensureClosedShapeDraft(point);
     }
+    Kroki.EditorGrid?.endGesture();
     event.preventDefault();
     return true;
   }
 
   function updateDraftGeometry(point) {
     if (!draft) return;
+    if (draft.lastPoint?.x === point.x && draft.lastPoint?.y === point.y) return;
+    draft.lastPoint = { x: point.x, y: point.y };
     const end = point;
 
     manager.updateGeometry(draft.model.id, (model) => {
@@ -230,6 +235,7 @@
   }
 
   function cancelDraft() {
+    Kroki.EditorGrid?.endGesture();
     if (!draft) return;
     cancelDraftFrame(draft);
     draft.pendingClientPoint = null;
@@ -254,14 +260,16 @@
       return;
     }
 
+    Kroki.EditorGrid?.beginGesture([], event.pointerType);
     const start = canvasPoint(event);
     const model = createDraftModel(type, start, tool);
-    if (!model) return;
+    if (!model) { Kroki.EditorGrid?.endGesture(); return; }
 
     draft = {
       type,
       tool,
       start,
+      lastPoint: start,
       model,
       pointerId: event.pointerId,
       pendingClientPoint: null,
@@ -295,6 +303,7 @@
     draft.pendingClientPoint = null;
     const end = canvasPoint(event);
     updateDraftGeometry(end);
+    Kroki.EditorGrid?.endGesture();
     releaseCapture(event.pointerId);
 
     const tooSmall = Math.hypot(end.x - draft.start.x, end.y - draft.start.y) < 2;
@@ -335,7 +344,7 @@
   manager.canvas.addEventListener("pointerdown", startDraft);
   manager.canvas.addEventListener("pointermove", moveDraft);
   manager.canvas.addEventListener("pointerup", finishDraft);
-  manager.canvas.addEventListener("pointercancel", cancelDraft);
+  manager.canvas.addEventListener("pointercancel", () => { cancelDraft(); clearClosedShapeTap(); });
 
   manager.syncFromDom();
   Kroki.StyleManager.init({ manager, selection });

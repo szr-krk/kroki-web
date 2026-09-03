@@ -38,7 +38,7 @@
   ];
 
   function canvasPoint(event) {
-    return utils.pointFromEvent(manager.canvas, event);
+    return Kroki.EditorGrid?.pointFromEvent(event) || utils.pointFromEvent(manager.canvas, event);
   }
 
   function adapterFor(id) {
@@ -583,7 +583,7 @@
   }
 
   function clear(options = {}) {
-    if (drag && !options.keepDrag) drag = null;
+    if (drag && !options.keepDrag) { Kroki.EditorGrid?.endGesture(); drag = null; }
     selectedIds.clear();
     activeGroupId = "";
     mode = "";
@@ -1198,6 +1198,7 @@
 
   function beginMove(event) {
     const point = canvasPoint(event);
+    Kroki.EditorGrid?.beginGesture(Array.from(selectedIds), event.pointerType);
     drag = {
       type: "move",
       pointerId: event.pointerId,
@@ -1364,6 +1365,7 @@
 
   function stopDrag(event) {
     if (!drag || (event?.pointerId != null && drag.pointerId !== event.pointerId)) return false;
+    Kroki.EditorGrid?.endGesture();
     if (drag.pointerId != null && manager.canvas.hasPointerCapture?.(drag.pointerId)) manager.canvas.releasePointerCapture(drag.pointerId);
     if (drag.type === "group-control") {
       if (drag.moved) Kroki.HistoryManager?.commit?.(drag.transaction, drag.cpId === "rotate" ? "Grup dondur" : "Grup boyutlandir");

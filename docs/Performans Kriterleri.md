@@ -113,3 +113,22 @@ Resmi test altyapısı yoksa bile `.tmp` altında geçici benchmark HTML'i ile �
 - IndexedDB `documents` ve `assets` depolarının kayıt boyutu.
 
 Bu ölçümler depoya kalıcı test olarak eklenecekse [[Codex Talimatları]] güncellenmelidir.
+
+## Cetvel / snap düzeltmesinin doğrulaması (03.09.2026)
+
+Aynı kaynak modüllerini çalıştıran geçici Node/DOM sayacıyla `9db965a` sürümü ve düzeltme karşılaştırıldı. Bunlar işlem sayılarıdır; gerçek Android cihazda FPS veya giriş gecikmesi ölçümü değildir.
+
+| Senaryo | Önce | Sonra |
+| --- | --- | --- |
+| 600 dokunma hareketinde cetvel DOM yazımı | 2400 | 0 |
+| 600 çizim hareketinde `getScreenCTM` okuması | 602 | 0 |
+| Aynı ızgara hücrelerinden geçen çizimde geometri güncellemesi | 601 | 24 |
+| 100 pan adımında cetvel için oluşturulan DOM düğümü | 2353 | 1 |
+| 100 pan adımında grid/cetvel için layout ölçümü | 100 | 0 |
+| Kamera çekirdeğinde 100 pan adımının layout ölçümü | 100 | 1 |
+
+Kamera viewport ölçüsü de pencere/canvas boyutu değişene kadar saklanır; wheel ve hareketli pinch merkezinin aynı dünya noktasını koruması, cetvel aç/kapat ve resize sonrası geçersizleştirme doğrulandı.
+
+Izgara, ayrı opak Canvas 2D/compositor katmanında önbelleklenir; nesne taşımak grid'i yeniden çizmez. Cetvel etiketleri tekrar kullanılır. Hareketli canvas arkasını örnekleyen geçmiş çubuğu `backdrop-filter` efekti kaldırılmıştır. Uç yakalama indeksi gesture başında bir kez hazırlanır; pointer move sırasında belge taraması veya artwork kopyalaması yoktur.
+
+Altı zoom seviyesinde ızgara dışındaki mevcut uca tam birleştirme, self-exclusion ve Ctrl/gizli ızgara bypass kontrolleri geçti. Karşılaştırma betiği ve eski kaynak kopyaları teslim edilen depoda tutulmaz.
