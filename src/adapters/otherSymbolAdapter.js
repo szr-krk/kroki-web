@@ -226,7 +226,7 @@
   const adapter = {
     elementTag: "g",
     className: "editor-other-symbol",
-    capabilities: { arrows: false, fill: false, curvedLabel: false, ownsLabel: true, otherSymbol: true, catalogObject: true },
+    capabilities: { arrows: false, fill: false, curvedLabel: false, ownsLabel: true, otherSymbol: true, catalogObject: true, gridSnap: false },
 
     create(initialData = {}) {
       const symbol = initialData.symbol || catalog.find(initialData.symbolKey);

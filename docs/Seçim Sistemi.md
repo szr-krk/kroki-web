@@ -36,6 +36,7 @@ Başka nesne seçilince önceki nesnenin `pointEdit`, `roadSelection`, `roadBoun
 - Edit modunda pointerdown aktif nesne drag adayını başlatır; 3 ekran pikseli aşılınca geometri taşınır.
 - Hareket olmadıysa adapter `handleEditTap` çağrılabilir; yol kesit/bariyer seçimi bunu kullanır.
 - Drag sırasında canlı değişiklikler geçmişi atlar, pointer up'ta tek “Nesne tasi” işlemi commit edilir.
+- Araç, trafik levhası ve diğer semboller `gridSnap: false` adapter izniyle serbest taşınır. Çoklu seçim/grup içinde bu tiplerden biri varsa bütün seçim serbest taşınır; iç mesafeler korunur. Snap izni gesture başında belirlenir; serbest seçimlerde hedef taraması yapılmaz ve global snap düğmesinin durumu değişmez.
 
 ## Çoklu seçim
 

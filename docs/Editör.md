@@ -46,6 +46,8 @@ Yeni çizim noktaları, çizgi/arc/Bezier uçları, Bezier kontrol noktaları, k
 
 Mevcut uçlar, zoom nedeniyle yeni grid aralığının dışında kalsalar bile birleştirilebilir. Uç yakalama mesafesi mouse/kalemde 12, dokunmada 18 CSS pikselidir. Hedefler sürükleme başında yalnız koordinatlarıyla bir uzamsal indekse alınır; hareket eden nesne(ler) dışarıda tutulur. Pointer move sırasında sahne taranmaz veya modeller kopyalanmaz. Yeni çizim aynı snapped noktada kaldıysa gereksiz geometri güncellemesi atlanır.
 
+Araç, trafik levhası ve diğer sembol adapter'ları `gridSnap: false` bildirir; snap düğmesi açıkken de serbest taşınırlar ve uç noktalara yapışmazlar. Bu tiplerden biri çoklu seçime veya gruba dahilse bütün seçim serbest taşınır; göreli konumlar korunur. İzin kontrolü yalnız gesture başında yapılır; bu seçimler için snap hedef indeksi hazırlanmaz. Sonraki çizim/taşıma kendi adapter izinleriyle yeniden değerlendirilir, genel snap düğmesinin durumu değişmez.
+
 Eski yatay/dikey çizim yardımcısı, API'si, Inspector düğmesi, ikonu, dinleyicisi ve CSS'i kaldırılmıştır. Mevcut Inspector sistemi korunur.
 
 Izgara ve cetveller belge SVG'sinin kardeş elemanlarıdır; SVG/PNG çıktısına, kayıtlı önizlemeye veya IndexedDB şemasına dahil olmaz. Görünüm tercihleri yalnız oturum belleğindedir. Izgara ayrı bir Canvas 2D katmanında tutulur; backing store 1 CSS pikseli ölçeğiyle sınırlıdır ve yalnız kamera/boyut/görünürlük değiştiğinde boyanır. Cetvel görünür işaretleri üretir; etiket düğümleri zoom/pan sırasında yeniden kullanılır. Ekran ölçüsü yalnız workspace boyutu değişince okunur. Dokunma hareketi cetvel imlecini güncellemez; mouse/kalem takibi değişen konumla sınırlıdır. Kamera yazımıyla aynı karede güncellenir. Chrome 90 hedefiyle kütüphanesiz çalışır.

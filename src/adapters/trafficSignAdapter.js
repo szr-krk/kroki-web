@@ -1391,7 +1391,7 @@
   const adapter = {
     elementTag: "g",
     className: "editor-traffic-sign",
-    capabilities: { arrows: false, fill: false, curvedLabel: false, ownsLabel: true, trafficSign: true },
+    capabilities: { arrows: false, fill: false, curvedLabel: false, ownsLabel: true, trafficSign: true, gridSnap: false },
 
     create(initialData = {}) {
       const sign = initialData.sign || catalog.find(initialData.signKey);

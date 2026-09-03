@@ -47,6 +47,8 @@ Adapter'ların fiilî ortak yüzeyi:
 
 `capabilities`, sağ rayın davranışını belirler: `arrows`, `fill`, `curvedLabel`, `ownsLabel`, `textObject`, `textFormatting`, `noText`, `pointEdit`, `roadObject`, `trafficSign`, `otherSymbol`, `catalogObject`.
 
+`capabilities.gridSnap: false`, nesnenin taşınırken ızgaraya veya yakındaki uçlara yapışmasını engeller. Araç, trafik levhası ve diğer sembol adapter'ları bu izni kapatır; belirtilmeyen tipler mevcut snap davranışını korur. Seçimin herhangi bir üyesi snap'i kapatırsa bütün seçim aynı serbest öteleme ile taşınır.
+
 ## Manager davranışları
 
 - `objectMap` modelin, `elementMap` ana SVG elementinin canlı referansını tutar.

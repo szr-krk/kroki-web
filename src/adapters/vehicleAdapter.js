@@ -652,7 +652,7 @@
   const adapter = {
     elementTag: "g",
     className: "editor-vehicle",
-    capabilities: { arrows: false, fill: false, curvedLabel: false, ownsLabel: true, noText: true, vehicleObject: true },
+    capabilities: { arrows: false, fill: false, curvedLabel: false, ownsLabel: true, noText: true, vehicleObject: true, gridSnap: false },
 
     create(initialData = {}) {
       const variant = initialData.variant || catalog.findVariant(initialData.vehicleVariantKey) || catalog.allVariants()[0];
