@@ -482,22 +482,25 @@
 
       if (cpId === "rotate" && state.center) {
         const angle = Math.atan2(worldPoint.y - state.center.y, worldPoint.x - state.center.x) * 180 / Math.PI;
-        const delta = angle - state.startAngle;
+        const rawRotation = utils.normalizeRotation(state.frame.rotation + angle - state.startAngle);
+        const rotation = Kroki.EditorGrid?.snapAngle(rawRotation, modifiers) ?? rawRotation;
+        const delta = rotation - state.frame.rotation;
         model.geometry = utils.clonePlain(state.geometry);
         transformGeometry(model, (item) => rotatePointAround(item, state.center, delta));
         model.geometry.frame = {
           ...state.frame,
-          rotation: utils.normalizeRotation(state.frame.rotation + delta)
+          rotation: utils.normalizeRotation(rotation)
         };
         return;
       }
 
       if (!state.frame || !state.fixedLocal || !state.movingLocal) return;
-      const dragged = offsetResizePoint(
+      let dragged = offsetResizePoint(
         worldPoint,
         state,
         utils.numberOr(state.cornerHandleOffset, cornerHandleOffset(modifiers.metrics))
       );
+      dragged = Kroki.EditorGrid?.snapPoint(dragged, modifiers) || dragged;
       const draggedLocal = framePointToLocal(state.frame, dragged);
       const spanX = state.movingLocal.x - state.fixedLocal.x;
       const spanY = state.movingLocal.y - state.fixedLocal.y;

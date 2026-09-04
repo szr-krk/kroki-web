@@ -245,7 +245,8 @@
     moveControlPoint(model, cpId, worldPoint, modifiers = {}) {
       if (cpId === "control") {
         const arcBasis = basis(model.geometry.start, model.geometry.end);
-        model.geometry.ratio = arcBasis ? ratioFromPoint(arcBasis, worldPoint) : DEFAULT_RATIO;
+        const point = Kroki.EditorGrid?.snapPoint(worldPoint, modifiers) || worldPoint;
+        model.geometry.ratio = arcBasis ? ratioFromPoint(arcBasis, point) : DEFAULT_RATIO;
         return;
       }
       const startState = modifiers.startState;

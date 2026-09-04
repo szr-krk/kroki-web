@@ -100,8 +100,26 @@
       if (cpId !== "radius") return;
       const dx = worldPoint.x - model.geometry.cx;
       const dy = worldPoint.y - model.geometry.cy;
-      model.geometry.r = Math.max(1, Math.hypot(dx, dy) - (modifiers.metrics?.handleGap || 0));
-      model.geometry.rotation = Math.atan2(dy, dx) * 180 / Math.PI;
+      const pointerDistance = Math.hypot(dx, dy);
+      if (pointerDistance < 0.000001) return;
+      const radius = Math.max(1, pointerDistance - (modifiers.metrics?.handleGap || 0));
+      const boundary = {
+        x: model.geometry.cx + dx / pointerDistance * radius,
+        y: model.geometry.cy + dy / pointerDistance * radius
+      };
+      const point = Kroki.EditorGrid?.snapPoint(boundary, modifiers) || boundary;
+      const pointDx = point.x - model.geometry.cx;
+      const pointDy = point.y - model.geometry.cy;
+      const rawAngle = Math.atan2(pointDy, pointDx) * 180 / Math.PI;
+      const angle = Kroki.EditorGrid?.snapAngle(rawAngle, modifiers) ?? rawAngle;
+      const angleAdjusted = Math.abs(angle - rawAngle) > 0.000001;
+      if (angleAdjusted) {
+        const radians = angle * Math.PI / 180;
+        model.geometry.r = Math.max(1, Math.abs(pointDx * Math.cos(radians) + pointDy * Math.sin(radians)));
+      } else {
+        model.geometry.r = Math.max(1, Math.hypot(pointDx, pointDy));
+      }
+      model.geometry.rotation = utils.normalizeRotation(angle);
     },
 
     move(model, dx, dy) {

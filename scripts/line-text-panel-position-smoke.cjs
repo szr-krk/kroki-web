@@ -83,7 +83,6 @@ assert.match(css, /\.line-text-style-panel\.is-shape-family-panel \.line-text-st
 assert.match(css, /\.line-text-style-tool-row\.is-format\s*\{\s*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
 assert.match(css, /\.line-style-tool-btn\s*\{[^}]*width:\s*100%/s);
 assert.match(css, /#iconLinePanelCap path:nth-child\(-n \+ 2\)\s*\{\s*stroke-width:\s*5/);
-assert.match(css, /#iconLinePanelSnap path:first-child\s*\{\s*stroke-width:\s*3\.2/);
 
 for (const id of [
   "btnLineTextStyleSizeMinus",
@@ -102,8 +101,7 @@ for (const id of [
   "lineAdvancedStyleControls",
   "btnLinePanelStartArrow",
   "btnLinePanelEndArrow",
-  "btnLinePanelCap",
-  "btnLinePanelSnap"
+  "btnLinePanelCap"
 ]) assert.match(lineStylePanel, new RegExp(`id="${id}"`), `${id} cizgi stil panelinde olmali`);
 
 for (const id of ["shapeAdvancedStyleControls", "btnLinePanelFillPattern", "btnLineCap", "iconLineCap"]) {
@@ -168,9 +166,6 @@ assert.match(styleManager, /repositionTextEntryPanel\(textPanel, controls\.textB
 assert.match(responsiveScale, /activeTextEntryHost\?\.matches\?\.\("\.free-text-composer, \.line-text-panel"\)/);
 
 assert.match(index, /kroki-build" content="[^"]+"/);
-assert.match(index, /editor-line\.css\?v=20260810-export-fidelity-v1/);
-assert.match(index, /styleManager\.js\?v=20260810-performance-stability-v1/);
-assert.match(index, /editorObjectManager\.js\?v=20260810-performance-stability-v1/);
 
 global.window = { Kroki: { EditorUtils: {} } };
 require(path.join(__dirname, "..", "src", "editor-stroke-style.js"));

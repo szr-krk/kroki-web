@@ -8,6 +8,8 @@
 
   const NS = "http://www.w3.org/2000/svg";
   const SIZE = 32;
+  const ROTATION_SNAP_STEP = 90;
+  const ROTATION_SNAP_TOLERANCE = 5;
   const gridButton = document.querySelector("#btnEditorGrid");
   const snapButton = document.querySelector("#btnEditorSnap");
   const rulerButton = document.querySelector("#btnEditorRulers");
@@ -150,6 +152,17 @@
     const step = state.minorStep;
     const round = (value) => Math.round(Math.round(value / step) * step * 1e8) / 1e8;
     return { x: round(point.x), y: round(point.y) };
+  }
+
+  function snapAngle(angle, modifiers = {}) {
+    const value = Number(angle);
+    if (!Number.isFinite(value) || !gestureSnapEnabled || !gridVisible || !snapEnabled || modifiers.ctrlKey || modifiers.metaKey) {
+      return angle;
+    }
+    const normalized = ((value % 360) + 360) % 360;
+    const candidate = Math.round(normalized / ROTATION_SNAP_STEP) * ROTATION_SNAP_STEP;
+    if (Math.abs(normalized - candidate) > ROTATION_SNAP_TOLERANCE) return angle;
+    return candidate === 360 ? 0 : candidate;
   }
 
   function anchorForModel(model, adapter) {
@@ -367,6 +380,6 @@
   window.addEventListener("resize", resize);
   window.addEventListener("kroki:camera-gesture-start", () => { clearCursor(); endGesture(); });
 
-  Kroki.EditorGrid = Object.freeze({ scaleForZoom, snapPoint, anchorForModel, movePoint, pointFromEvent, beginGesture, endGesture });
+  Kroki.EditorGrid = Object.freeze({ scaleForZoom, snapPoint, snapAngle, anchorForModel, movePoint, pointFromEvent, beginGesture, endGesture });
   syncButtons();
 })();

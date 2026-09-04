@@ -144,12 +144,14 @@
 
     moveControlPoint(model, cpId, worldPoint, modifiers = {}) {
       if (cpId === "rotate") {
-        model.geometry.rotation = Math.atan2(worldPoint.y - model.geometry.cy, worldPoint.x - model.geometry.cx) * 180 / Math.PI;
+        const angle = Math.atan2(worldPoint.y - model.geometry.cy, worldPoint.x - model.geometry.cx) * 180 / Math.PI;
+        model.geometry.rotation = utils.normalizeRotation(Kroki.EditorGrid?.snapAngle(angle, modifiers) ?? angle);
         return;
       }
 
       const state = modifiers.startState;
       if (!state?.fixedPoint) return;
+      worldPoint = Kroki.EditorGrid?.snapPoint(worldPoint, modifiers) || worldPoint;
       const axes = ellipseGeometry.rotationAxes(state.rotation);
       const dx = worldPoint.x - state.fixedPoint.x;
       const dy = worldPoint.y - state.fixedPoint.y;

@@ -68,8 +68,8 @@ Yeni grup `metadata.frame` alanına seçim bounds'undan türetilen frame yazar v
 ## Grup dönüşümleri
 
 - Grup taşıma bütün leaf modelleri ve iç grup frame'lerini taşır.
-- Dört köşe resize **uniform** scale hesaplar; en-boy ayrı ölçeklenmez.
-- Rotate handle bütün nesne noktalarını frame merkezi çevresinde döndürür.
+- Dört köşe resize **uniform** scale hesaplar; çizim nesnelerinden oluşan grupta sürüklenen gerçek köşe ortak snap'i kullanır, en-boy ayrı ölçeklenmez.
+- Rotate handle bütün nesne noktalarını frame merkezi çevresinde döndürür ve ana açılara ±5° yardım uygular. IP grup döndürme picker'ı 1° serbest adımını korur.
 - Line/arc/bezier noktaları doğrudan map edilir.
 - Circle radius, ellipse/rectangle yarıçapları ve traffic sign scale büyütülür.
 - Text/callout label boyutu scale edilir.

@@ -164,8 +164,8 @@ const sourceFile = {
   assert.match(mainMenuSource, /navigator\.canShare\(\{ files: \[file\] \}\)/);
   assert.match(mainMenuSource, /await navigator\.share\(\{/);
   assert.match(mainMenuSource, /downloadBlob\(blob, filename\)/);
-  assert.match(mainMenuSource, /if \(entryKind === "template"\) actions\.append\(renameButton\)/);
-  assert.match(mainMenuSource, /actions\.append\(shareButton, editButton, cancelButton\)/);
+  assert.match(mainMenuSource, /if \(entryKind === "template"\) left\.append\(actionButton\("Yeniden Adlandır", "rename"\)\)/);
+  assert.match(mainMenuSource, /right\.append\(shareBox, actionButton\("Düzenle", "edit", "btn-ok"\), actionButton\("Kapat", "cancel"\)\)/);
   assert.match(mainMenuSource, /await documentStorage\.put\("template", updatedEntry\)/);
   assert.match(homeCss, /\.kroki-preview-actions\s*\{[^}]*flex-wrap:\s*wrap;/s);
   assert.match(homeCss, /\.kroki-preview-actions \.btn-share\s*\{/);

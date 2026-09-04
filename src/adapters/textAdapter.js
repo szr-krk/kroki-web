@@ -212,10 +212,11 @@
       }];
     },
 
-    moveControlPoint(model, cpId, worldPoint) {
+    moveControlPoint(model, cpId, worldPoint, modifiers = {}) {
       if (cpId !== "rotate") return;
       const pivot = centerWorld(model);
-      model.geometry.rotation = Math.atan2(worldPoint.y - pivot.y, worldPoint.x - pivot.x) * 180 / Math.PI;
+      const angle = Math.atan2(worldPoint.y - pivot.y, worldPoint.x - pivot.x) * 180 / Math.PI;
+      model.geometry.rotation = utils.normalizeRotation(Kroki.EditorGrid?.snapAngle(angle, modifiers) ?? angle);
     },
 
     move(model, dx, dy) {

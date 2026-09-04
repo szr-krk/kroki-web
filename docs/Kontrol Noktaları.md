@@ -31,21 +31,23 @@ Kontrol noktalarının görünürlüğü normal seçim, edit, yeniden render vey
 1. Handle `pointerdown` ile `SelectionManager.startControlPointDrag` çağırır.
 2. Seçim `edit` moduna yükseltilir.
 3. Adapter varsa başlangıç snapshot'ı için `beginControlPointMove` çağrılır.
-4. Pointer hareketinde manager `updateGeometry(..., { skipHistory: true })` ile adapter'ın `moveControlPoint` metodunu çalıştırır.
-5. Pointer up'ta tek “Geometri duzenle” geçmiş kaydı commit edilir.
+4. Pointer hareketinde döndürme dışındaki gerçek geometri noktası ortak grid/uç snap'inden geçirilir; ekranda offsetli gösterilen tutamaçların offset'i önce çıkarılır.
+5. Döndürme tutamacı 0°/90°/180°/270° açılarına ±5° içinde yardım uygular. IP döndürme picker'ı bu yoldan geçmez ve 1° serbest adımını korur.
+6. Manager `updateGeometry(..., { skipHistory: true })` ile adapter'ın `moveControlPoint` metodunu çalıştırır.
+7. Pointer up'ta tek “Geometri duzenle” geçmiş kaydı commit edilir.
 
 ## Tip bazında kontrol noktaları
 
 - **Line:** başlangıç ve bitiş; handle çizgi ucunun dışındadır; kavrama noktası ile başlangıç geometrisi saklanır ve gerçek uç bu farkla taşınır. Yakındaki mevcut uç grid'den önceliklidir; bu nedenle zoom değiştirmeden tam birleştirme yapılabilir.
-- **Arc:** başlangıç, bitiş ve sagitta/arc kontrolü.
+- **Arc:** başlangıç, bitiş ve sagitta/arc kontrolü; üçü de ortak snap'i kullanır.
 - **Bezier:** başlangıç, bitiş; quadratic için `q`, cubic için `c1/c2`.
-- **Circle:** tek radius/rotation handle'ı; merkeze mesafe radius, açı rotation olur.
-- **Ellipse:** dört köşe resize ve bir rotate.
-- **Rectangle:** şekil dışına taşınmış dört köşe resize ve bir rotate.
-- **Text:** metin bounding box'ının sağındaki rotate.
+- **Circle:** tek radius/rotation handle'ı; gerçek çember noktası grid'e, yönü ana açılara snap edilir.
+- **Ellipse:** dört köşe resize grid'e, rotate ana açılara snap edilir.
+- **Rectangle:** şekil dışına taşınmış dört köşenin gerçek geometri noktası grid'e, rotate ana açılara snap edilir.
+- **Text:** metin bounding box'ının sağındaki rotate ana açılara snap edilir.
 - **Callout:** kutu/metin merkezi ve ok ucu.
 - **Traffic sign:** rotate; ölçek yan Inspector'dan değiştirilir.
-- **Closed shape:** normal modda dört resize + rotate; `pointEdit` modunda her köşe `pN` ve her quadratic kontrol `qN`.
+- **Closed shape:** normal modda dört resize grid'e ve rotate ana açılara; `pointEdit` modunda her köşe `pN` ve her quadratic kontrol `qN` ortak snap'e bağlıdır.
 - **Road:** profile göre başlangıç/bitiş, arc kontrolü veya 2–5 S kontrolü; ada iç/dış çap; ayrıca aktif boundary segment ayırıcıları ve seçili bariyer noktaları.
 
 ## Yol özel noktaları
@@ -59,7 +61,7 @@ Kontrol noktalarının görünürlüğü normal seçim, edit, yeniden render vey
 
 ## Grup ve kavşak noktaları
 
-Grup tutamaçları `ControlPointManager` içinde değildir. `MultiSelectManager` döndürülmüş bir frame, dört köşe ve rotate handle üretir; resize uniform scale uygular. [[Seçim Sistemi#Grup dönüşümleri]].
+Grup tutamaçları `ControlPointManager` içinde değildir. `MultiSelectManager` döndürülmüş bir frame, dört köşe ve rotate handle üretir; resize uniform scale uygular. Çizim nesnelerinden oluşan grubun gerçek resize köşesi grid'e, rotate tutamacı ana açılara snap edilir. İçinde `gridSnap: false` bildiren katalog nesnesi bulunan karma grup mevcut serbest dönüşüm kuralını korur. [[Seçim Sistemi#Grup dönüşümleri]].
 
 Kavşak Q tutamaçları da engine tarafından `roadIntersectionContourLayer` içine doğrudan eklenir. Görsel/hit yarıçapları viewBox değişiminde ayrıca senkronize edilir. [[Kavşak Sistemi#Q düzenleme davranışı]].
 

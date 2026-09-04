@@ -42,7 +42,6 @@ assert.match(indexSource, /id="calloutTextSizeStepper"/);
 assert.match(indexSource, /id="lineStrokeWidthStepper"/);
 assert.match(indexSource, /id="lineTextStyleSizeSection"/);
 assert.match(indexSource, /id="shapeAdvancedStyleLabel"/);
-assert.match(indexSource, /calloutAdapter\.js\?v=20260810-export-fidelity-v1/);
 assert.match(styleManagerSource, /const isCallout = adapter\?\.type === "callout";/);
 assert.match(styleManagerSource, /return type === "text" \|\| isLineToolType\(type\) \|\| isBasicShapeToolType\(type\) \|\| type === "callout";/);
 assert.match(styleManagerSource, /controls\?\.fillButton\?\.classList\.toggle\("gizli", !hasFill \|\| isCallout\)/);

@@ -1048,12 +1048,13 @@
     applyGroupGeometry(drag, nextFrame, mapper, options);
   }
 
-  function groupResizeScale(state, worldPoint) {
+  function groupResizeScale(state, worldPoint, modifiers = {}) {
     const axes = frameAxes(state.frame);
-    const offsetPoint = {
+    let offsetPoint = {
       x: worldPoint.x - axes.xAxis.x * state.sx * state.handleOffset - axes.yAxis.x * state.sy * state.handleOffset,
       y: worldPoint.y - axes.xAxis.y * state.sx * state.handleOffset - axes.yAxis.y * state.sy * state.handleOffset
     };
+    offsetPoint = Kroki.EditorGrid?.snapPoint(offsetPoint, modifiers) || offsetPoint;
     const draggedLocal = framePointToLocal(state.frame, offsetPoint);
     const vx = state.movingLocal.x - state.fixedLocal.x;
     const vy = state.movingLocal.y - state.fixedLocal.y;
@@ -1167,6 +1168,7 @@
     const metrics = groupControlMetrics();
     const corner = GROUP_CORNERS.find((item) => item.id === cpId);
     const point = canvasPoint(event);
+    Kroki.EditorGrid?.beginGesture(Array.from(selectedIds), event.pointerType);
     promoteToEdit();
     drag = {
       ...captureGroupTransformState(),
@@ -1317,14 +1319,16 @@
       }
       if (drag.cpId === "rotate") {
         const angle = Math.atan2(point.y - drag.center.y, point.x - drag.center.x) * 180 / Math.PI;
-        const delta = angle - drag.startAngle;
+        const rawRotation = normalizeRotation(drag.frame.rotation + angle - drag.startAngle);
+        const rotation = Kroki.EditorGrid?.snapAngle(rawRotation, event) ?? rawRotation;
+        const delta = rotation - drag.frame.rotation;
         const nextFrame = {
           ...drag.frame,
-          rotation: normalizeRotation(drag.frame.rotation + delta)
+          rotation: normalizeRotation(rotation)
         };
         updateGroupGeometry(nextFrame, (item) => rotatePointAround(item, drag.center, delta), { rotationDelta: delta });
       } else {
-        const scale = groupResizeScale(drag, point);
+        const scale = groupResizeScale(drag, point, event);
         updateGroupGeometry(frameForScale(drag, scale), resizeMapper(drag, scale), { scale });
       }
       event.preventDefault();

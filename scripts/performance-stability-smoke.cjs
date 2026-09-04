@@ -52,7 +52,7 @@ assert.match(manager, /if \(model\.type === "road"\) keepRoadLayersAtBack\(\)/);
 
 const bindings = read("src/ui/editorBindings.js");
 assert.match(bindings, /function queueDraftPoint\(event\)/);
-assert.match(bindings, /draftState\.pendingClientPoint = \{ clientX: event\.clientX, clientY: event\.clientY \}/);
+assert.match(bindings, /draftState\.pendingClientPoint = \{ clientX: event\.clientX, clientY: event\.clientY, ctrlKey: event\.ctrlKey, metaKey: event\.metaKey \}/);
 assert.match(bindings, /window\.requestAnimationFrame\(run\)/);
 assert.match(bindings, /cancelDraftFrame\(draft\)/);
 assert.match(bindings, /pushObjectAdd\?\.\(manager\.get\(id\), "Nesne ekle"\)/);
