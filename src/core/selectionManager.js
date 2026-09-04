@@ -627,7 +627,10 @@
     const point = pointFromEvent(event, matrix);
     const model = getActiveModel();
     const adapter = manager.getAdapter(model);
-    Kroki.EditorGrid?.beginGesture([model.id], event.pointerType);
+    const positionSnap = type === "object"
+      ? adapter?.capabilities?.gridSnap !== false
+      : extra.cpId !== "rotate";
+    Kroki.EditorGrid?.beginGesture([model.id], event.pointerType, { positionSnap });
     const metricSnapshot = type === "control" ? controlPoints.metrics() : null;
     const liveRoadObjectPreview = false;
     const liveTransform = type === "object" && typeof adapter?.move === "function";

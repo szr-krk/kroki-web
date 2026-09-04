@@ -36,7 +36,7 @@ Başka nesne seçilince önceki nesnenin `pointEdit`, `roadSelection`, `roadBoun
 - Edit modunda pointerdown aktif nesne drag adayını başlatır; 3 ekran pikseli aşılınca geometri taşınır.
 - Hareket olmadıysa adapter `handleEditTap` çağrılabilir; yol kesit/bariyer seçimi bunu kullanır.
 - Drag sırasında canlı değişiklikler geçmişi atlar, pointer up'ta tek “Nesne tasi” işlemi commit edilir.
-- Araç, trafik levhası ve diğer semboller `gridSnap: false` adapter izniyle serbest taşınır. Çoklu seçim/grup içinde bu tiplerden biri varsa bütün seçim serbest taşınır; iç mesafeler korunur. Snap izni gesture başında belirlenir; serbest seçimlerde hedef taraması yapılmaz ve global snap düğmesinin durumu değişmez.
+- Araç, trafik levhası ve diğer semboller `gridSnap: false` adapter izniyle tekil veya henüz gruplanmamış çoklu seçim içinde serbest taşınır. Semantic grup içeriğinden bağımsız bir dönüşüm birimidir ve grup taşımasında snap kullanır. Snap izni gesture başında etkileşim türüne göre belirlenir; snap gerekmeyen işlemlerde hedef taraması yapılmaz ve global snap düğmesinin durumu değişmez.
 
 ## Çoklu seçim
 
@@ -68,7 +68,7 @@ Yeni grup `metadata.frame` alanına seçim bounds'undan türetilen frame yazar v
 ## Grup dönüşümleri
 
 - Grup taşıma bütün leaf modelleri ve iç grup frame'lerini taşır.
-- Dört köşe resize **uniform** scale hesaplar; çizim nesnelerinden oluşan grupta sürüklenen gerçek köşe ortak snap'i kullanır, en-boy ayrı ölçeklenmez.
+- Dört köşe resize **uniform** scale hesaplar; sürüklenen gerçek köşe grubun içerdiği nesne tiplerinden bağımsız olarak ortak snap'i kullanır, en-boy ayrı ölçeklenmez.
 - Rotate handle bütün nesne noktalarını frame merkezi çevresinde döndürür ve ana açılara ±10° yardım uygular. IP grup döndürme picker'ı 1° serbest adımını korur.
 - Line/arc/bezier noktaları doğrudan map edilir.
 - Circle radius, ellipse/rectangle yarıçapları ve traffic sign scale büyütülür.

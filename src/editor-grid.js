@@ -24,7 +24,7 @@
   let viewBox = camera.readViewBox(canvas);
   let cursor = null;
   let snapTargets = null;
-  let gestureSnapEnabled = true;
+  let gesturePositionSnapEnabled = true;
   const gridContext = grid.getContext("2d", { alpha: false });
 
   function svg(tag, attrs = {}) {
@@ -78,14 +78,14 @@
     };
   }
 
-  function endGesture() { snapTargets = null; gestureSnapEnabled = true; }
+  function endGesture() { snapTargets = null; gesturePositionSnapEnabled = true; }
 
-  function beginGesture(excludedIds = [], pointerType = "mouse") {
+  function beginGesture(excludedIds = [], pointerType = "mouse", options = {}) {
     endGesture();
+    // Interaction owners decide positional policy; member capabilities must not leak into group transforms.
+    gesturePositionSnapEnabled = options.positionSnap !== false;
+    if (!gesturePositionSnapEnabled || !gridVisible || !snapEnabled) return;
     const manager = Kroki.EditorObjectManager;
-    // Keep a mixed selection rigid and free when any member opts out of snapping.
-    gestureSnapEnabled = excludedIds.every((id) => manager?.getAdapter(id)?.capabilities?.gridSnap !== false);
-    if (!gestureSnapEnabled || !gridVisible || !snapEnabled) return;
     const state = getViewport();
     if (!(state.zoom > 0)) return;
     const radius = (pointerType === "touch" ? 18 : 12) / state.zoom;
@@ -144,7 +144,7 @@
   }
 
   function snapPoint(point, modifiers = {}) {
-    if (!point || !gestureSnapEnabled || !gridVisible || !snapEnabled || modifiers.ctrlKey || modifiers.metaKey) return point;
+    if (!point || !gesturePositionSnapEnabled || !gridVisible || !snapEnabled || modifiers.ctrlKey || modifiers.metaKey) return point;
     const state = getViewport();
     if (!(state.zoom > 0)) return point;
     const endpoint = nearbyEndpoint(point);
@@ -176,7 +176,7 @@
 
   // Snap one anchor; translate the complete object/selection without distorting it.
   function movePoint(start, anchor, point, modifiers = point) {
-    if (!gestureSnapEnabled) return point;
+    if (!gesturePositionSnapEnabled) return point;
     const target = { x: anchor.x + point.x - start.x, y: anchor.y + point.y - start.y };
     const snapped = snapPoint(target, modifiers);
     return { x: point.x + snapped.x - target.x, y: point.y + snapped.y - target.y };

@@ -47,7 +47,7 @@ Adapter'ların fiilî ortak yüzeyi:
 
 `capabilities`, sağ rayın davranışını belirler: `arrows`, `fill`, `curvedLabel`, `ownsLabel`, `textObject`, `textFormatting`, `noText`, `pointEdit`, `roadObject`, `trafficSign`, `otherSymbol`, `catalogObject`.
 
-`capabilities.gridSnap: false`, nesnenin taşınırken ızgaraya veya yakındaki uçlara yapışmasını engeller. Araç, trafik levhası ve diğer sembol adapter'ları bu izni kapatır; belirtilmeyen tipler mevcut snap davranışını korur. Seçimin herhangi bir üyesi snap'i kapatırsa bütün seçim aynı serbest öteleme ile taşınır.
+`capabilities.gridSnap: false`, nesnenin tekil veya henüz gruplanmamış çoklu seçim içinde taşınırken ızgaraya ya da yakındaki uçlara yapışmasını engeller. Araç, trafik levhası ve diğer sembol adapter'ları bu izni kapatır; belirtilmeyen tipler mevcut snap davranışını korur. Semantic grup ise kendi dönüşüm birimidir: üye izinlerinden bağımsız olarak grup taşıma ve CP resize snap'i kullanır.
 
 ## Manager davranışları
 

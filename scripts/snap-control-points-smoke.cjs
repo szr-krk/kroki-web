@@ -77,8 +77,7 @@ function loadEditorGrid() {
   const windowObject = {
     Kroki: {
       EditorObjectManager: {
-        getObjectsInDomOrder() { return []; },
-        getAdapter(id) { return { capabilities: { gridSnap: id === "catalog-object" ? false : undefined } }; }
+        getObjectsInDomOrder() { return []; }
       }
     },
     krokiEditorCamera: {
@@ -102,6 +101,9 @@ function loadEditorGrid() {
 
 const grid = loadEditorGrid();
 assert.ok(grid, "EditorGrid should initialize");
+const editorGridSource = read("src/editor-grid.js");
+assert.match(editorGridSource, /gesturePositionSnapEnabled = options\.positionSnap !== false/);
+assert.doesNotMatch(editorGridSource, /excludedIds\.every\([\s\S]+?capabilities\?\.gridSnap/, "Grid should not infer group policy from member adapters");
 grid.beginGesture([], "mouse");
 assert.equal(grid.snapAngle(9.99), 0);
 assert.equal(grid.snapAngle(10), 0);
@@ -116,9 +118,11 @@ const snappedPoint = grid.snapPoint({ x: 23, y: 38 });
 assert.equal(snappedPoint.x, 20);
 assert.equal(snappedPoint.y, 40);
 
-grid.beginGesture(["catalog-object"], "touch");
+grid.beginGesture(["catalog-object"], "touch", { positionSnap: false });
 assert.equal(grid.snapPoint({ x: 23, y: 38 }).x, 23, "Catalog object position should remain free");
 assert.equal(grid.snapAngle(87), 90, "Catalog object rotation should keep cardinal assistance");
+grid.beginGesture(["catalog-object"], "touch", { positionSnap: true });
+assert.equal(grid.snapPoint({ x: 23, y: 38 }).x, 20, "Group position and resize should override member opt-outs");
 
 function controlPointMethod(file) {
   const source = read(file);
@@ -159,11 +163,14 @@ Object.entries(drawingAdapters).forEach(([file, helpers]) => {
 
 const selection = read("src/core/selectionManager.js");
 assert.match(selection, /EditorGrid\?\.movePoint\(dragState\.startPoint, dragState\.gridAnchor, point\)/);
+assert.match(selection, /const positionSnap = type === "object"[\s\S]+?capabilities\?\.gridSnap !== false[\s\S]+?extra\.cpId !== "rotate"/);
+assert.match(selection, /beginGesture\(\[model\.id\], event\.pointerType, \{ positionSnap \}\)/);
 
 const multi = read("src/core/multiSelectManager.js");
 assert.match(multi, /EditorGrid\?\.movePoint\(drag\.startPoint, drag\.gridAnchor, point, event\)/);
 assert.match(multi, /function groupResizeScale[\s\S]+?EditorGrid\?\.snapPoint\(offsetPoint, modifiers\)/);
-assert.match(multi, /function startGroupControlDrag[\s\S]+?EditorGrid\?\.beginGesture\(Array\.from\(selectedIds\), event\.pointerType\)/);
+assert.match(multi, /function startGroupControlDrag[\s\S]+?beginGesture\(Array\.from\(selectedIds\), event\.pointerType, \{ positionSnap: cpId !== "rotate" \}\)/);
+assert.match(multi, /function beginMove[\s\S]+?const positionSnap = Boolean\(activeGroupId\)[\s\S]+?ids\.every\([\s\S]+?gridSnap !== false[\s\S]+?beginGesture\(ids, event\.pointerType, \{ positionSnap \}\)/);
 assert.match(multi, /if \(drag\.cpId === "rotate"\)[\s\S]+?EditorGrid\?\.snapAngle\(rawRotation, event\)/);
 
 const styleManager = read("src/core/styleManager.js");

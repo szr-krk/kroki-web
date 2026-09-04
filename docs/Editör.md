@@ -48,7 +48,7 @@ Döndürme kontrol noktaları, çizim nesnelerinin yanında levha, araç ve diğ
 
 Mevcut uçlar, zoom nedeniyle yeni grid aralığının dışında kalsalar bile birleştirilebilir. Uç yakalama mesafesi mouse/kalemde 12, dokunmada 18 CSS pikselidir. Hedefler sürükleme başında yalnız koordinatlarıyla bir uzamsal indekse alınır; hareket eden nesne(ler) dışarıda tutulur. Pointer move sırasında sahne taranmaz veya modeller kopyalanmaz. Yeni çizim aynı snapped noktada kaldıysa gereksiz geometri güncellemesi atlanır.
 
-Araç, trafik levhası ve diğer sembol adapter'ları `gridSnap: false` bildirir; snap düğmesi açıkken de serbest taşınırlar ve uç noktalara yapışmazlar. Bu tiplerden biri çoklu seçime veya gruba dahilse bütün seçim serbest taşınır; göreli konumlar korunur. İzin kontrolü yalnız gesture başında yapılır; bu seçimler için snap hedef indeksi hazırlanmaz. Sonraki çizim/taşıma kendi adapter izinleriyle yeniden değerlendirilir, genel snap düğmesinin durumu değişmez.
+Araç, trafik levhası ve diğer sembol adapter'ları `gridSnap: false` bildirir; tek başına veya henüz gruplanmamış çoklu seçim içinde taşınırken serbest kalır ve uç noktalara yapışmazlar. Semantic grup kendi dönüşüm politikasıyla çalışır: içeriğindeki nesne tiplerinden bağımsız olarak grup taşıma ve kontrol noktasıyla resize ortak snap'i kullanır. Snap izni gesture başında etkileşim türüne göre açıkça verilir; snap gerekmeyen dönüşlerde hedef indeksi hazırlanmaz. Sonraki işlem kendi politikasıyla yeniden değerlendirilir, genel snap düğmesinin durumu değişmez.
 
 Eski yatay/dikey çizim yardımcısı, API'si, Inspector düğmesi, ikonu, dinleyicisi ve CSS'i kaldırılmıştır. Mevcut Inspector sistemi korunur.
 

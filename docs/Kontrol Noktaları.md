@@ -61,7 +61,7 @@ Kontrol noktalarının görünürlüğü normal seçim, edit, yeniden render vey
 
 ## Grup ve kavşak noktaları
 
-Grup tutamaçları `ControlPointManager` içinde değildir. `MultiSelectManager` döndürülmüş bir frame, dört köşe ve rotate handle üretir; resize uniform scale uygular. Çizim nesnelerinden oluşan grubun gerçek resize köşesi grid'e, rotate tutamacı ana açılara snap edilir. İçinde `gridSnap: false` bildiren katalog nesnesi bulunan karma grup mevcut serbest dönüşüm kuralını korur. [[Seçim Sistemi#Grup dönüşümleri]].
+Grup tutamaçları `ControlPointManager` içinde değildir. `MultiSelectManager` döndürülmüş bir frame, dört köşe ve rotate handle üretir; resize uniform scale uygular. Grubun gerçek resize köşesi, içerdiği nesne tiplerinden ve üyelerin tekil `gridSnap` tercihinden bağımsız olarak grid'e snap edilir; rotate tutamacı ana açılara snap edilir. [[Seçim Sistemi#Grup dönüşümleri]].
 
 Kavşak Q tutamaçları da engine tarafından `roadIntersectionContourLayer` içine doğrudan eklenir. Görsel/hit yarıçapları viewBox değişiminde ayrıca senkronize edilir. [[Kavşak Sistemi#Q düzenleme davranışı]].
 

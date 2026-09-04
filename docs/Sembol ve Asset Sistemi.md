@@ -18,7 +18,7 @@ Katalog tabanlı nesneler canvas'a ham SVG olarak değil, ortak model olarak ekl
 
 `trafficSign` ve `otherSymbol` adapter'ları SVG art'ı metadata içinde taşır. `vehicle` ise generated JS içindeki path tanımlarını variant metadata'sı ile eşleştirir.
 
-Üç katalog tipi de adapter'da `gridSnap: false` bildirir. Snap açık olsa da tekli, çoklu veya grup taşımasında serbest hareket ederler; aynı seçimdeki çizim öğeleriyle göreli konumları korunur. Bu izin belge modeline veya kayıt formatına eklenmez.
+Üç katalog tipi de adapter'da `gridSnap: false` bildirir. Snap açık olsa da tekil veya henüz gruplanmamış çoklu seçim içinde serbest hareket ederler. Semantic gruba alındıklarında grup bağımsız bir dönüşüm birimidir; grup taşıma ve CP resize snap'i kullanırken üyelerin göreli konumları korunur. Bu izin belge modeline veya kayıt formatına eklenmez.
 
 ## Trafik levhaları
 

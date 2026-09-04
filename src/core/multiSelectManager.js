@@ -1168,7 +1168,7 @@
     const metrics = groupControlMetrics();
     const corner = GROUP_CORNERS.find((item) => item.id === cpId);
     const point = canvasPoint(event);
-    Kroki.EditorGrid?.beginGesture(Array.from(selectedIds), event.pointerType);
+    Kroki.EditorGrid?.beginGesture(Array.from(selectedIds), event.pointerType, { positionSnap: cpId !== "rotate" });
     promoteToEdit();
     drag = {
       ...captureGroupTransformState(),
@@ -1200,7 +1200,10 @@
 
   function beginMove(event) {
     const point = canvasPoint(event);
-    Kroki.EditorGrid?.beginGesture(Array.from(selectedIds), event.pointerType);
+    const ids = Array.from(selectedIds);
+    const positionSnap = Boolean(activeGroupId)
+      || ids.every((id) => manager.getAdapter(id)?.capabilities?.gridSnap !== false);
+    Kroki.EditorGrid?.beginGesture(ids, event.pointerType, { positionSnap });
     drag = {
       type: "move",
       pointerId: event.pointerId,
