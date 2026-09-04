@@ -1173,6 +1173,8 @@
     controls?.colorButton?.setAttribute("aria-expanded", "false");
     controls?.fillButton?.setAttribute("aria-expanded", "false");
     controls?.fillPatternButtons?.forEach((button) => button.setAttribute("aria-expanded", "false"));
+    const entry = activeEntry();
+    Kroki.ShapeConversionManager?.syncButton?.(entry && !entry.multi ? entry.model : null);
     commitVehicleLabelInputHistory();
     if (!options.keepTextComposer) Kroki.FreeTextComposer?.hideEdit?.();
   }
@@ -1857,6 +1859,7 @@
     }
 
     const { model, adapter } = entry;
+    Kroki.ShapeConversionManager?.syncButton?.(entry.multi ? null : model);
     const isTextObject = isTextObjectEntry(entry);
     const isCallout = adapter?.type === "callout";
     const isTrafficSign = Boolean(adapter?.capabilities?.trafficSign);

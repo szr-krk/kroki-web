@@ -567,6 +567,12 @@
   line-height: 1;
 }
 
+.side-ip-text-mark.shape-convert-mark {
+  max-width: calc(var(--editor-rail-button-size) - 0.75rem);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
 .side-ip-text-style-mark {
   display: grid;
   place-items: center;

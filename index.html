@@ -11,7 +11,7 @@
   <title>Kroki Pro</title>
   <link rel="stylesheet" href="src/home.css?v=20260903-home-pro-v1" />
   <link rel="stylesheet" href="src/editor.css?v=20260903-grid-fast-v2" />
-  <link rel="stylesheet" href="src/editor-line.css?v=20260903-grid-v1" />
+  <link rel="stylesheet" href="src/editor-line.css?v=20260905-shape-family-conversion-v1" />
 </head>
 
 <body>
@@ -673,6 +673,11 @@
               aria-label="Arac boyutunu yuzde 1 azalt">-</button>
           </div>
         </div>
+
+        <button id="btnShapeConvert" class="side-ip-btn side-ip-tool shape-convert-control gizli"
+          type="button" aria-label="Çizim türünü dönüştür" title="Çizim türünü dönüştür">
+          <span id="lblShapeConvert" class="side-ip-text-mark shape-convert-mark" aria-hidden="true">Yay</span>
+        </button>
 
         <button id="btnLineColor" class="side-ip-btn side-ip-tool side-ip-color-btn is-stroke" type="button"
           aria-label="Cizgi rengi" title="Cizgi rengi" aria-controls="strokeColorPanel"
@@ -1418,8 +1423,8 @@
   <script src="src/core/otherSymbolCatalog.js?v=20260810-performance-stability-v1"></script>
   <script src="src/core/vehicleCatalog.js?v=20260807-web-sync-v1"></script>
   <script src="src/core/shapeRegistry.js?v=20260810-performance-stability-v1"></script>
-  <script src="src/core/styleManager.js?v=20260903-grid-v1"></script>
-  <script src="src/core/editorObjectManager.js?v=20260810-performance-stability-v1"></script>
+  <script src="src/core/styleManager.js?v=20260905-shape-family-conversion-v1"></script>
+  <script src="src/core/editorObjectManager.js?v=20260905-shape-family-conversion-v1"></script>
   <script src="src/core/photoBackgroundManager.js?v=20260809-photo-background-v1"></script>
   <script src="src/core/documentStorage.js?v=20260809-indexeddb-library-v1"></script>
   <script src="src/core/groupManager.js"></script>
@@ -1448,6 +1453,7 @@
   <script src="src/adapters/trafficSignAdapter.js?v=20260904-catalog-rotate-snap-v1"></script>
   <script src="src/adapters/otherSymbolAdapter.js?v=20260904-catalog-rotate-snap-v1"></script>
   <script src="src/adapters/vehicleAdapter.js?v=20260904-catalog-rotate-snap-v1"></script>
+  <script src="src/core/shapeConversionManager.js?v=20260905-shape-family-conversion-v1"></script>
   <script src="src/ui/editorTextComposer.js?v=20260810-free-text-ip-v2"></script>
   <script src="src/ui/editorBindings.js?v=20260903-grid-fast-v2"></script>
   <script src="src/ui/roadBuilder.js?v=20260710-numberpicker"></script>

@@ -767,6 +767,31 @@
     return normalized;
   }
 
+  function replaceObjectType(id, nextModelInput, options = {}) {
+    return withHistory(options, "Nesne turunu degistir", () => {
+      const current = objectMap.get(id);
+      const currentElement = elementMap.get(id);
+      const nextType = String(nextModelInput?.type || "");
+      const nextAdapter = adapterFor(nextType);
+      if (!current || !currentElement || !nextAdapter) return null;
+
+      const nextModel = normalizeModel({ ...nextModelInput, id: current.id, type: nextType });
+      const nextElement = createElementFor(nextModel);
+      const parent = currentElement.parentNode || objectLayer;
+
+      parent.insertBefore(nextElement, currentElement);
+      removeLabelArtifacts(id);
+      currentElement.remove();
+      objectMap.set(id, nextModel);
+      elementMap.set(id, nextElement);
+      renderObject(id);
+      styleManager.cleanupDefs?.(canvas);
+      markSceneChanged();
+      syncDependents(options);
+      return nextModel;
+    });
+  }
+
   function updateGeometry(id, mutator, options = {}) {
     return withObjectHistory(id, options, "Geometri guncelle", () => updateGeometryRaw(id, mutator, options));
   }
@@ -1028,6 +1053,7 @@
     syncLinkedRoadDepartures,
     renderViewportDependentLabels,
     updateModel,
+    replaceObjectType,
     updateGeometry,
     updateStyle,
     updateLabel,
