@@ -156,7 +156,8 @@
 
   function snapAngle(angle, modifiers = {}) {
     const value = Number(angle);
-    if (!Number.isFinite(value) || !gestureSnapEnabled || !gridVisible || !snapEnabled || modifiers.ctrlKey || modifiers.metaKey) {
+    // Positional snap opt-outs (catalog objects) must not disable the rotation helper.
+    if (!Number.isFinite(value) || !gridVisible || !snapEnabled || modifiers.ctrlKey || modifiers.metaKey) {
       return angle;
     }
     const normalized = ((value % 360) + 360) % 360;

@@ -78,7 +78,7 @@ function loadEditorGrid() {
     Kroki: {
       EditorObjectManager: {
         getObjectsInDomOrder() { return []; },
-        getAdapter() { return { capabilities: {} }; }
+        getAdapter(id) { return { capabilities: { gridSnap: id === "catalog-object" ? false : undefined } }; }
       }
     },
     krokiEditorCamera: {
@@ -116,6 +116,10 @@ const snappedPoint = grid.snapPoint({ x: 23, y: 38 });
 assert.equal(snappedPoint.x, 20);
 assert.equal(snappedPoint.y, 40);
 
+grid.beginGesture(["catalog-object"], "touch");
+assert.equal(grid.snapPoint({ x: 23, y: 38 }).x, 23, "Catalog object position should remain free");
+assert.equal(grid.snapAngle(87), 90, "Catalog object rotation should keep cardinal assistance");
+
 function controlPointMethod(file) {
   const source = read(file);
   const start = source.indexOf("moveControlPoint(");
@@ -140,6 +144,17 @@ Object.entries(drawingAdapters).forEach(([file, helpers]) => {
   const { source, method } = controlPointMethod(file);
   helpers.forEach((helper) => assert.ok(method.includes(helper), `${file}: control points should use ${helper}`));
   assert.doesNotMatch(source, /gridSnap:\s*false/, `${file}: drawing tools should allow move snapping`);
+});
+
+[
+  "src/adapters/trafficSignAdapter.js",
+  "src/adapters/vehicleAdapter.js",
+  "src/adapters/otherSymbolAdapter.js"
+].forEach((file) => {
+  const { source, method } = controlPointMethod(file);
+  assert.ok(method.includes("snapAngle"), `${file}: rotate control point should use snapAngle`);
+  assert.match(source, /gridSnap:\s*false/, `${file}: positional movement should remain free`);
+  assert.match(method, /modifiers\s*=\s*\{\}/, `${file}: control point should receive modifier keys`);
 });
 
 const selection = read("src/core/selectionManager.js");

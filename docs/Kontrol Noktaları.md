@@ -32,7 +32,7 @@ Kontrol noktalarının görünürlüğü normal seçim, edit, yeniden render vey
 2. Seçim `edit` moduna yükseltilir.
 3. Adapter varsa başlangıç snapshot'ı için `beginControlPointMove` çağrılır.
 4. Pointer hareketinde döndürme dışındaki gerçek geometri noktası ortak grid/uç snap'inden geçirilir; ekranda offsetli gösterilen tutamaçların offset'i önce çıkarılır.
-5. Döndürme tutamacı 0°/90°/180°/270° açılarına ±5° içinde yardım uygular. IP döndürme picker'ı bu yoldan geçmez ve 1° serbest adımını korur.
+5. Döndürme tutamacı çizim nesnesi, levha, araç ve diğer sembollerde 0°/90°/180°/270° açılarına ±5° içinde yardım uygular. Bu açı yardımı katalog nesnelerinin serbest taşıma kuralından bağımsızdır. IP döndürme picker'ı bu yoldan geçmez ve 1° serbest adımını korur.
 6. Manager `updateGeometry(..., { skipHistory: true })` ile adapter'ın `moveControlPoint` metodunu çalıştırır.
 7. Pointer up'ta tek “Geometri duzenle” geçmiş kaydı commit edilir.
 
