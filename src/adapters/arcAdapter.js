@@ -106,6 +106,78 @@
     return ((angle % tau) + tau) % tau;
   }
 
+  function signedArcDelta(geometry) {
+    return geometry.sweepFlag
+      ? normalizeAngle(geometry.endAngle - geometry.startAngle)
+      : -normalizeAngle(geometry.startAngle - geometry.endAngle);
+  }
+
+  function cubicArcSegments(geometry) {
+    const delta = signedArcDelta(geometry);
+    const count = Math.max(1, Math.ceil(Math.abs(delta) / (Math.PI / 2)));
+    const step = delta / count;
+    const segments = [];
+    for (let index = 0; index < count; index += 1) {
+      const startAngle = geometry.startAngle + step * index;
+      const endAngle = startAngle + step;
+      const factor = 4 / 3 * Math.tan(step / 4);
+      const start = pointOnCircle(geometry, geometry.radius, startAngle);
+      const end = pointOnCircle(geometry, geometry.radius, endAngle);
+      segments.push({
+        start,
+        c1: {
+          x: start.x - Math.sin(startAngle) * geometry.radius * factor,
+          y: start.y + Math.cos(startAngle) * geometry.radius * factor
+        },
+        c2: {
+          x: end.x + Math.sin(endAngle) * geometry.radius * factor,
+          y: end.y - Math.cos(endAngle) * geometry.radius * factor
+        },
+        end
+      });
+    }
+    return segments;
+  }
+
+  function shiftPoint(point, dx, dy) {
+    point.x += dx;
+    point.y += dy;
+  }
+
+  function renderedPathData(model, style = model.style) {
+    const renderModel = style === model.style ? model : { ...model, style };
+    const startOffset = styleManager.lineEndpointMarkerOffset(renderModel, "start");
+    const endOffset = styleManager.lineEndpointMarkerOffset(renderModel, "end");
+    if (!startOffset && !endOffset) return pathData(model);
+
+    const geometry = circleGeometry(model.geometry.start, model.geometry.end, controlPoint(model));
+    if (!geometry) {
+      const endpoints = lineGeometry.insetSegment(model.geometry.start, model.geometry.end, startOffset, endOffset);
+      return lineGeometry.pathData(endpoints.start, endpoints.end);
+    }
+
+    const delta = signedArcDelta(geometry);
+    const offsets = lineGeometry.fitEndpointOffsets(Math.abs(delta) * geometry.radius, startOffset, endOffset);
+    const segments = cubicArcSegments(geometry);
+    const first = segments[0];
+    const last = segments[segments.length - 1];
+    const startTangent = lineGeometry.normalizedVector(first.start, first.c1);
+    const endTangent = lineGeometry.normalizedVector(last.c2, last.end);
+    const startDx = startTangent.x * offsets.start;
+    const startDy = startTangent.y * offsets.start;
+    const endDx = -endTangent.x * offsets.end;
+    const endDy = -endTangent.y * offsets.end;
+    shiftPoint(first.start, startDx, startDy);
+    shiftPoint(first.c1, startDx, startDy);
+    shiftPoint(last.c2, endDx, endDy);
+    shiftPoint(last.end, endDx, endDy);
+
+    return [
+      `M ${formatPoint(first.start)}`,
+      ...segments.map((segment) => `C ${formatPoint(segment.c1)} ${formatPoint(segment.c2)} ${formatPoint(segment.end)}`)
+    ].join(" ");
+  }
+
   function offsetPathData(model, offset = 0, reverse = false) {
     const start = model.geometry.start;
     const end = model.geometry.end;
@@ -222,7 +294,7 @@
       element.dataset.arcControlX = String(control.x);
       element.dataset.arcControlY = String(control.y);
       element.dataset.arcSagittaRatio = String(model.geometry.ratio);
-      element.setAttribute("d", pathData(model));
+      element.setAttribute("d", renderedPathData(model));
       element.removeAttribute("transform");
     },
 
@@ -298,7 +370,7 @@
     },
 
     renderSelection(element, model, style, mode) {
-      element.setAttribute("d", pathData(model));
+      element.setAttribute("d", renderedPathData(model, style));
       element.setAttribute("stroke-width", String(style.strokeWidth + 4));
       element.setAttribute("stroke-linecap", style.lineCap);
       element.classList.toggle("is-edit", mode === "edit");

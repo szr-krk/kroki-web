@@ -32,12 +32,15 @@
     return type === CUBIC ? CUBIC : QUADRATIC;
   }
 
-  function pathData(model) {
-    const geometry = model.geometry;
+  function pathDataFromGeometry(geometry) {
     if (geometry.bezierType === CUBIC) {
       return `M ${formatPoint(geometry.start)} C ${formatPoint(geometry.c1)} ${formatPoint(geometry.c2)} ${formatPoint(geometry.end)}`;
     }
     return `M ${formatPoint(geometry.start)} Q ${formatPoint(geometry.q)} ${formatPoint(geometry.end)}`;
+  }
+
+  function pathData(model) {
+    return pathDataFromGeometry(model.geometry);
   }
 
   function pointAt(model, t) {
@@ -67,6 +70,70 @@
       x: 2 * (1 - t) * (geometry.q.x - geometry.start.x) + 2 * t * (geometry.end.x - geometry.q.x),
       y: 2 * (1 - t) * (geometry.q.y - geometry.start.y) + 2 * t * (geometry.end.y - geometry.q.y)
     };
+  }
+
+  function cubicGeometry(geometry) {
+    const start = { ...geometry.start };
+    const end = { ...geometry.end };
+    if (geometry.bezierType === CUBIC) {
+      return {
+        bezierType: CUBIC,
+        start,
+        end,
+        c1: { ...geometry.c1 },
+        c2: { ...geometry.c2 }
+      };
+    }
+    const q = geometry.q;
+    return {
+      bezierType: CUBIC,
+      start,
+      end,
+      c1: {
+        x: start.x + (q.x - start.x) * 2 / 3,
+        y: start.y + (q.y - start.y) * 2 / 3
+      },
+      c2: {
+        x: end.x + (q.x - end.x) * 2 / 3,
+        y: end.y + (q.y - end.y) * 2 / 3
+      }
+    };
+  }
+
+  function curveLength(model) {
+    let length = 0;
+    let previous = pointAt(model, 0);
+    for (let index = 1; index <= SAMPLE_COUNT; index += 1) {
+      const current = pointAt(model, index / SAMPLE_COUNT);
+      length += Math.hypot(current.x - previous.x, current.y - previous.y);
+      previous = current;
+    }
+    return length;
+  }
+
+  function renderedPathData(model, style = model.style) {
+    const renderModel = style === model.style ? model : { ...model, style };
+    const startOffset = styleManager.lineEndpointMarkerOffset(renderModel, "start");
+    const endOffset = styleManager.lineEndpointMarkerOffset(renderModel, "end");
+    if (!startOffset && !endOffset) return pathData(model);
+
+    const geometry = cubicGeometry(model.geometry);
+    const offsets = lineGeometry.fitEndpointOffsets(curveLength(model), startOffset, endOffset);
+    const startTangent = lineGeometry.normalizedVector(geometry.start, geometry.c1);
+    const endTangent = lineGeometry.normalizedVector(geometry.c2, geometry.end);
+    const startDx = startTangent.x * offsets.start;
+    const startDy = startTangent.y * offsets.start;
+    const endDx = -endTangent.x * offsets.end;
+    const endDy = -endTangent.y * offsets.end;
+    geometry.start.x += startDx;
+    geometry.start.y += startDy;
+    geometry.c1.x += startDx;
+    geometry.c1.y += startDy;
+    geometry.c2.x += endDx;
+    geometry.c2.y += endDy;
+    geometry.end.x += endDx;
+    geometry.end.y += endDy;
+    return pathDataFromGeometry(geometry);
   }
 
   function offsetPathData(model, offset = 0, reverse = false) {
@@ -201,7 +268,7 @@
         delete element.dataset.bezierC2X;
         delete element.dataset.bezierC2Y;
       }
-      element.setAttribute("d", pathData(model));
+      element.setAttribute("d", renderedPathData(model));
       element.removeAttribute("transform");
     },
 
@@ -296,7 +363,7 @@
     },
 
     renderSelection(element, model, style, mode) {
-      element.setAttribute("d", pathData(model));
+      element.setAttribute("d", renderedPathData(model, style));
       element.setAttribute("stroke-width", String(style.strokeWidth + 4));
       element.setAttribute("stroke-linecap", style.lineCap);
       element.classList.toggle("is-edit", mode === "edit");

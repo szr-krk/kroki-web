@@ -331,6 +331,7 @@
       viewBox: "0 0 10 10",
       refX: "5",
       refY: "5",
+      snapX: 5,
       draw(marker) {
         marker.append(utils.createSvgElement("circle", { cx: "5", cy: "5", r: "5", fill: "context-stroke" }));
       }
@@ -339,6 +340,7 @@
       viewBox: "0 0 10 10",
       refX: "0",
       refY: "5",
+      snapX: 10,
       draw(marker) {
         marker.append(utils.createSvgElement("path", { d: "M0 0L10 5L0 10Z", fill: "context-stroke" }));
       }
@@ -347,6 +349,7 @@
       viewBox: "0 0 10 10",
       refX: "5",
       refY: "5",
+      snapX: 10,
       draw(marker) {
         marker.append(utils.createSvgElement("path", { d: "M0 0L10 5L0 10L4 5Z", fill: "context-stroke" }));
       }
@@ -355,6 +358,7 @@
       viewBox: "0 0 10 10",
       refX: "0",
       refY: "5",
+      snapX: 6.5,
       draw(marker) {
         marker.append(utils.createSvgElement("path", { d: "M0 0L6 5L0 10ZM6 0L6 10L7 10L7 0Z", fill: "context-stroke" }));
       }
@@ -363,6 +367,7 @@
       viewBox: "0 0 10 10",
       refX: "5",
       refY: "5",
+      snapX: 5,
       draw(marker) {
         marker.append(utils.createSvgElement("path", {
           d: "M5 0L5 10",
@@ -750,6 +755,21 @@
     const scale = markerScaleValue(markerScale);
     const baseStrokeWidth = normalizeStrokeWidth(strokeWidth) / scale;
     return markerStrokeUnitSizeForStroke(baseStrokeWidth);
+  }
+
+  function markerTipOffset(type, strokeWidth, markerScale = 1) {
+    const config = MARKER_BASE[normalizeArrowType(type)];
+    if (!config) return 0;
+    const viewBox = String(config.viewBox || "0 0 10 10").trim().split(/\s+/).map(Number);
+    const viewBoxWidth = Math.max(0.001, numberOr(viewBox[2], 10));
+    const markerWidth = markerStrokeUnitSize(strokeWidth, markerScale) * normalizeStrokeWidth(strokeWidth);
+    return Math.max(0, (numberOr(config.snapX, config.refX) - numberOr(config.refX, 0)) / viewBoxWidth * markerWidth);
+  }
+
+  function lineEndpointMarkerOffset(model, pointId) {
+    const style = normalizeStyle(model?.style, model?.type);
+    const type = pointId === "start" ? style.arrowStart : style.arrowEnd;
+    return markerTipOffset(type, style.strokeWidth, style.markerScale);
   }
 
   function markerMetricKey(value) {
@@ -2572,6 +2592,7 @@
     writeStyleDataset,
     applyStyleToElement,
     ensureFillPattern,
+    lineEndpointMarkerOffset,
     cleanupDefs,
     syncControls,
     hidePanels,

@@ -569,7 +569,8 @@
 
 .side-ip-text-mark.shape-convert-mark {
   max-width: calc(var(--editor-rail-button-size) - 0.75rem);
-  font-size: 0.8rem;
+  font-size: 0.72rem;
+  line-height: 1.05;
   text-align: center;
 }
 

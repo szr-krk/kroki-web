@@ -9,12 +9,12 @@
   function geometryFromElement(element) {
     return {
       start: {
-        x: utils.numberOr(element.getAttribute("x1"), 0),
-        y: utils.numberOr(element.getAttribute("y1"), 0)
+        x: utils.numberOr(element.dataset.geometryStartX, utils.numberOr(element.getAttribute("x1"), 0)),
+        y: utils.numberOr(element.dataset.geometryStartY, utils.numberOr(element.getAttribute("y1"), 0))
       },
       end: {
-        x: utils.numberOr(element.getAttribute("x2"), 0),
-        y: utils.numberOr(element.getAttribute("y2"), 0)
+        x: utils.numberOr(element.dataset.geometryEndX, utils.numberOr(element.getAttribute("x2"), 0)),
+        y: utils.numberOr(element.dataset.geometryEndY, utils.numberOr(element.getAttribute("y2"), 0))
       }
     };
   }
@@ -24,6 +24,16 @@
       x: model.geometry.start.x + (model.geometry.end.x - model.geometry.start.x) * t,
       y: model.geometry.start.y + (model.geometry.end.y - model.geometry.start.y) * t
     };
+  }
+
+  function renderedEndpoints(model, style = model.style) {
+    const renderModel = style === model.style ? model : { ...model, style };
+    return lineGeometry.insetSegment(
+      model.geometry.start,
+      model.geometry.end,
+      styleManager.lineEndpointMarkerOffset(renderModel, "start"),
+      styleManager.lineEndpointMarkerOffset(renderModel, "end")
+    );
   }
 
   const adapter = {
@@ -58,10 +68,15 @@
     },
 
     render(model, element) {
-      element.setAttribute("x1", String(model.geometry.start.x));
-      element.setAttribute("y1", String(model.geometry.start.y));
-      element.setAttribute("x2", String(model.geometry.end.x));
-      element.setAttribute("y2", String(model.geometry.end.y));
+      const geometry = renderedEndpoints(model);
+      element.dataset.geometryStartX = String(model.geometry.start.x);
+      element.dataset.geometryStartY = String(model.geometry.start.y);
+      element.dataset.geometryEndX = String(model.geometry.end.x);
+      element.dataset.geometryEndY = String(model.geometry.end.y);
+      element.setAttribute("x1", String(geometry.start.x));
+      element.setAttribute("y1", String(geometry.start.y));
+      element.setAttribute("x2", String(geometry.end.x));
+      element.setAttribute("y2", String(geometry.end.y));
       element.removeAttribute("d");
       element.removeAttribute("transform");
     },
@@ -143,7 +158,8 @@
     },
 
     renderSelection(element, model, style, mode) {
-      element.setAttribute("d", lineGeometry.pathData(model.geometry.start, model.geometry.end));
+      const geometry = renderedEndpoints(model, style);
+      element.setAttribute("d", lineGeometry.pathData(geometry.start, geometry.end));
       element.setAttribute("stroke-width", String(style.strokeWidth + 4));
       element.setAttribute("stroke-linecap", style.lineCap);
       element.classList.toggle("is-edit", mode === "edit");

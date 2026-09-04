@@ -14,8 +14,8 @@
   const CLOSED_FAMILY = [
     { key: "circle", title: "Daire", short: "Daire" },
     { key: "ellipse", title: "Elips", short: "Elips" },
-    { key: "rectangle", title: "Dikdörtgen", short: "Dörtgen" },
-    { key: "closedShape", title: "Kapalı eğri", short: "Eğri" }
+    { key: "rectangle", title: "Dikdörtgen", short: "Dikdörtgen" },
+    { key: "closedShape", title: "Kapalı eğri", short: "Kapalı" }
   ];
   const DEFAULT_ARC_RATIO = 0.20;
   const MIN_SIZE = 1;
@@ -252,7 +252,7 @@
     const description = `${info.current.title} → ${info.next.title}`;
     button.title = description;
     button.setAttribute("aria-label", `${info.current.title} çizimini ${info.next.title} türüne dönüştür`);
-    if (buttonLabel) buttonLabel.textContent = info.next.short;
+    if (buttonLabel) buttonLabel.textContent = info.current.short;
   }
 
   function convert(id, options = {}) {

@@ -41,6 +41,30 @@
     return { x: control.x - direction.x * offset, y: control.y - direction.y * offset };
   }
 
+  function fitEndpointOffsets(length, startOffset = 0, endOffset = 0, minimumLength = 0.001) {
+    const available = Math.max(0, (Number(length) || 0) - Math.max(0, Number(minimumLength) || 0));
+    const start = Math.max(0, Number(startOffset) || 0);
+    const end = Math.max(0, Number(endOffset) || 0);
+    const total = start + end;
+    const scale = total > available && total > 0 ? available / total : 1;
+    return { start: start * scale, end: end * scale };
+  }
+
+  function insetSegment(start, end, startOffset = 0, endOffset = 0) {
+    const direction = normalizedVector(start, end);
+    const offsets = fitEndpointOffsets(direction.length, startOffset, endOffset);
+    return {
+      start: {
+        x: start.x + direction.x * offsets.start,
+        y: start.y + direction.y * offsets.start
+      },
+      end: {
+        x: end.x - direction.x * offsets.end,
+        y: end.y - direction.y * offsets.end
+      }
+    };
+  }
+
   function pathData(start, end) {
     return `M ${Number(start.x) || 0} ${Number(start.y) || 0} L ${Number(end.x) || 0} ${Number(end.y) || 0}`;
   }
@@ -64,6 +88,8 @@
     distanceToSegment,
     lineEndpointControlPoint,
     endpointFromControl,
+    fitEndpointOffsets,
+    insetSegment,
     pathData,
     offsetPathData
   };

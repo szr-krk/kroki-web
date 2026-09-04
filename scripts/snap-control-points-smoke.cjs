@@ -118,6 +118,18 @@ const snappedPoint = grid.snapPoint({ x: 23, y: 38 });
 assert.equal(snappedPoint.x, 20);
 assert.equal(snappedPoint.y, 40);
 
+const lineGeometryWindow = { Kroki: { EditorUtils: {} } };
+lineGeometryWindow.window = lineGeometryWindow;
+vm.runInContext(read("src/geometry/lineGeometry.js"), vm.createContext({ window: lineGeometryWindow }));
+const inset = lineGeometryWindow.Kroki.LineGeometry.insetSegment(
+  { x: 0, y: 0 },
+  { x: 100, y: 0 },
+  16,
+  20
+);
+assert.deepEqual({ ...inset.start }, { x: 16, y: 0 });
+assert.deepEqual({ ...inset.end }, { x: 80, y: 0 });
+
 grid.beginGesture(["catalog-object"], "touch", { positionSnap: false });
 assert.equal(grid.snapPoint({ x: 23, y: 38 }).x, 23, "Catalog object position should remain free");
 assert.equal(grid.snapAngle(87), 90, "Catalog object rotation should keep cardinal assistance");
@@ -174,6 +186,18 @@ assert.match(multi, /function beginMove[\s\S]+?const positionSnap = Boolean\(act
 assert.match(multi, /if \(drag\.cpId === "rotate"\)[\s\S]+?EditorGrid\?\.snapAngle\(rawRotation, event\)/);
 
 const styleManager = read("src/core/styleManager.js");
+assert.match(styleManager, /triangle:\s*\{[\s\S]+?refX: "0",[\s\S]+?snapX: 10,/);
+assert.match(styleManager, /function markerTipOffset[\s\S]+?function lineEndpointMarkerOffset/);
+assert.match(styleManager, /lineEndpointMarkerOffset,/);
+const lineAdapterSource = read("src/adapters/lineAdapter.js");
+const arcAdapterSource = read("src/adapters/arcAdapter.js");
+const bezierAdapterSource = read("src/adapters/bezierAdapter.js");
+assert.match(lineAdapterSource, /function renderedEndpoints[\s\S]+?lineEndpointMarkerOffset/);
+assert.match(lineAdapterSource, /dataset\.geometryEndX/);
+assert.match(arcAdapterSource, /function cubicArcSegments/);
+assert.match(arcAdapterSource, /function renderedPathData/);
+assert.match(bezierAdapterSource, /function cubicGeometry/);
+assert.match(bezierAdapterSource, /function renderedPathData/);
 const objectRotationStart = styleManager.indexOf("function setObjectRotation");
 const objectRotationEnd = styleManager.indexOf("function syncObjectRotationControls", objectRotationStart);
 assert.doesNotMatch(styleManager.slice(objectRotationStart, objectRotationEnd), /snapAngle/, "IP object rotation must stay free at one-degree steps");

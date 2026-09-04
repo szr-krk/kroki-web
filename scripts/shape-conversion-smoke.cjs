@@ -204,8 +204,14 @@ assert.equal(conversion.infoFor({ type: "line", metadata: { draft: true } }), nu
 
 conversion.syncButton(line);
 assert.equal(button.classList.contains("gizli"), false);
-assert.equal(buttonLabel.textContent, "Yay");
+assert.equal(buttonLabel.textContent, "Çizgi");
 assert.equal(button.title, "Çizgi → Yay");
+conversion.syncButton(rectangle);
+assert.equal(buttonLabel.textContent, "Dikdörtgen");
+assert.equal(button.title, "Dikdörtgen → Kapalı eğri");
+conversion.syncButton(closedShape);
+assert.equal(buttonLabel.textContent, "Kapalı");
+assert.equal(button.title, "Kapalı eğri → Daire");
 conversion.syncButton({ type: "callout" });
 assert.equal(button.classList.contains("gizli"), true);
 
