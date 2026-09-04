@@ -9,7 +9,7 @@
   const NS = "http://www.w3.org/2000/svg";
   const SIZE = 32;
   const ROTATION_SNAP_STEP = 90;
-  const ROTATION_SNAP_TOLERANCE = 5;
+  const ROTATION_SNAP_TOLERANCE = 10;
   const gridButton = document.querySelector("#btnEditorGrid");
   const snapButton = document.querySelector("#btnEditorSnap");
   const rulerButton = document.querySelector("#btnEditorRulers");
