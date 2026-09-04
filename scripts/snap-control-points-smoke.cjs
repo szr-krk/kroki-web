@@ -177,6 +177,8 @@ const selection = read("src/core/selectionManager.js");
 assert.match(selection, /EditorGrid\?\.movePoint\(dragState\.startPoint, dragState\.gridAnchor, point\)/);
 assert.match(selection, /const positionSnap = type === "object"[\s\S]+?capabilities\?\.gridSnap !== false[\s\S]+?extra\.cpId !== "rotate"/);
 assert.match(selection, /beginGesture\(\[model\.id\], event\.pointerType, \{ positionSnap \}\)/);
+assert.match(selection, /function updateLineControlPreview[\s\S]+?adapter\.render\(model, dragState\.lineElement\)/);
+assert.doesNotMatch(selection, /function renderLinePreviewElement/, "Line CP preview must use the adapter render path so arrow insets stay active");
 
 const multi = read("src/core/multiSelectManager.js");
 assert.match(multi, /EditorGrid\?\.movePoint\(drag\.startPoint, drag\.gridAnchor, point, event\)/);

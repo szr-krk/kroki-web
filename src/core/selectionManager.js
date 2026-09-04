@@ -342,18 +342,11 @@
     dragState.hiddenRoadSource = null;
   }
 
-  function renderLinePreviewElement(element, model) {
-    const start = model?.geometry?.start || {};
-    const end = model?.geometry?.end || {};
-    element?.setAttribute?.("x1", String(start.x || 0));
-    element?.setAttribute?.("y1", String(start.y || 0));
-    element?.setAttribute?.("x2", String(end.x || 0));
-    element?.setAttribute?.("y2", String(end.y || 0));
-  }
-
   function updateLineControlPreview(dragState, model, adapter) {
     if (!dragState || !model || !adapter) return;
-    renderLinePreviewElement(dragState.lineElement, model);
+    if (dragState.lineElement?.isConnected && typeof adapter.render === "function") {
+      adapter.render(model, dragState.lineElement);
+    }
     if (dragState.lineSelectionElement?.isConnected && typeof adapter.renderSelection === "function") {
       adapter.renderSelection(dragState.lineSelectionElement, model, model.style, mode);
     }
