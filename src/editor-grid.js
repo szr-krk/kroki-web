@@ -59,8 +59,8 @@
       height: canvasRect.height,
       left: canvasRect.left,
       top: canvasRect.top,
-      x: (canvasRect.width - viewBox.width * scale) / 2 - viewBox.x * scale,
-      y: (canvasRect.height - viewBox.height * scale) / 2 - viewBox.y * scale
+      x: -viewBox.x * scale,
+      y: -viewBox.y * scale
     };
   }
 
@@ -263,7 +263,7 @@
         labels.append(label);
       }
       if (label.style.display === "none") label.style.display = "";
-      label.setAttribute(isHorizontal ? "x" : "y", isHorizontal ? position + 3 : position - 4);
+      label.setAttribute(isHorizontal ? "x" : "y", isHorizontal ? position + 3 : Math.max(10, position - 4));
       const text = Math.abs(value) < 1e-9 ? "0" : value.toFixed(state.precision);
       if (label.textContent !== text) label.textContent = text;
       const fill = i === 0 ? "#2563eb" : "#475569";

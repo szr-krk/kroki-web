@@ -346,8 +346,9 @@
     return {
       rect,
       scale,
-      left: rect.left + (rect.width - viewportWidth) / 2,
-      top: rect.top + (rect.height - viewportHeight) / 2,
+      // The editor SVG is anchored at xMinYMin; other SVGs retain centered fitting.
+      left: rect.left + (svg === canvas ? 0 : (rect.width - viewportWidth) / 2),
+      top: rect.top + (svg === canvas ? 0 : (rect.height - viewportHeight) / 2),
       width: viewportWidth,
       height: viewportHeight
     };

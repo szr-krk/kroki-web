@@ -191,7 +191,7 @@
       </div>
       <main class="editor-calisma-alani">
         <canvas id="editorGrid" class="editor-grid" aria-hidden="true"></canvas>
-        <svg id="editorCanvas" class="editor-canvas" viewBox="0 0 1200 800" aria-label="Boş kroki alanı">
+        <svg id="editorCanvas" class="editor-canvas" viewBox="0 0 1200 800" preserveAspectRatio="xMinYMin meet" aria-label="Boş kroki alanı">
           <g id="editorBackground" pointer-events="none" aria-hidden="true"></g>
           <g id="editorObjects"></g>
           <g id="editorEditLayer"></g>
@@ -1405,8 +1405,8 @@
   <script src="src/editor-state.js"></script>
   <script src="src/editor-framing.js"></script>
   <script src="src/editor-rail.js?v=20260801-cp-fit-preselect-v1"></script>
-  <script src="src/editor-camera.js?v=20260903-grid-fast-v2"></script>
-  <script src="src/editor-grid.js?v=20260906-road-placement-snap-v1"></script>
+  <script src="src/editor-camera.js?v=20260906-top-left-origin-v1"></script>
+  <script src="src/editor-grid.js?v=20260906-top-left-origin-v1"></script>
   <script src="src/editor-object-edit.js?v=20260903-grid-v1"></script>
   <script src="src/editor-stroke-style.js?v=20260807-adaptive-dash-stepper-v1"></script>
   <script src="src/data/traffic-signs-1-tanzim-levhalari.generated.js?v=20260810-performance-stability-v1"></script>
@@ -1433,7 +1433,7 @@
   <script src="src/core/hitTestManager.js"></script>
   <script src="src/core/controlPointManager.js?v=20260813-group-rotate-cp-v1"></script>
   <script src="src/core/multiSelectManager.js?v=20260905-group-transform-snap-v1"></script>
-  <script src="src/core/roadDragPreview.js?v=20260713-island-circle-preview"></script>
+  <script src="src/core/roadDragPreview.js?v=20260906-top-left-origin-v1"></script>
   <script src="src/core/selectionManager.js?v=20260905-visible-arrow-snap-v2"></script>
   <script src="src/geometry/lineGeometry.js?v=20260905-visible-arrow-snap-v1"></script>
   <script src="src/geometry/circleGeometry.js"></script>

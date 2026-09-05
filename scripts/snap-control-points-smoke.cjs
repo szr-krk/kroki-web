@@ -35,6 +35,10 @@ class FakeNode {
     this.listeners.set(name, listener);
   }
 
+  dispatchEvent(event) {
+    this.listeners.get(event.type)?.({ ...event, target: this });
+  }
+
   setAttribute(name, value) {
     this.attributes.set(name, String(value));
   }
@@ -44,10 +48,11 @@ class FakeNode {
   }
 }
 
-function loadEditorGrid() {
+function loadEditorGrid(canvasRect = { width: 1200, height: 800, left: 0, top: 0 }, initialBox = { x: 0, y: 0, width: 1200, height: 800 }) {
   const editor = new FakeNode();
   const canvas = new FakeNode();
-  canvas.getBoundingClientRect = () => ({ width: 1200, height: 800, left: 0, top: 0 });
+  canvas.getBoundingClientRect = () => canvasRect;
+  canvas.setAttribute("viewBox", "0 0 1200 800");
   const gridCanvas = new FakeNode();
   gridCanvas.getContext = () => ({
     fillRect() {},
@@ -67,6 +72,7 @@ function loadEditorGrid() {
     ["#editorRulerY", new FakeNode()]
   ]);
   const documentObject = {
+    addEventListener() {},
     querySelector(selector) {
       return nodes.get(selector) || null;
     },
@@ -80,10 +86,6 @@ function loadEditorGrid() {
         getObjectsInDomOrder() { return []; }
       }
     },
-    krokiEditorCamera: {
-      readViewBox() { return { x: 0, y: 0, width: 1200, height: 800 }; },
-      isGestureActive() { return false; }
-    },
     addEventListener() {},
     dispatchEvent() {}
   };
@@ -93,10 +95,28 @@ function loadEditorGrid() {
     document: documentObject,
     requestAnimationFrame() { return 1; },
     ResizeObserver: class { observe() {} },
-    Event: class {}
+    Event: class {},
+    CustomEvent: class {
+      constructor(type, options) { this.type = type; this.detail = options.detail; }
+    }
   });
+  vm.runInContext(read("src/editor-camera.js"), context);
+  const camera = windowObject.krokiEditorCamera;
+  camera.writeViewBox(canvas, initialBox);
+  const corner = camera.clientToWorld(canvas, canvasRect.left, canvasRect.top);
+  assert.equal(corner.x, initialBox.x, "Camera x origin must align with the canvas left edge");
+  assert.equal(corner.y, initialBox.y, "Camera y origin must align with the canvas top edge");
   vm.runInContext(read("src/editor-grid.js"), context);
+  const gridCorner = windowObject.Kroki.EditorGrid.pointFromEvent({ clientX: canvasRect.left, clientY: canvasRect.top });
+  assert.equal(gridCorner.x, corner.x, "Grid x and camera x must agree");
+  assert.equal(gridCorner.y, corner.y, "Grid y and camera y must agree");
   return windowObject.Kroki.EditorGrid;
+}
+
+for (const [width, height] of [[1600, 800], [600, 1200], [1200, 800]]) {
+  const rect = { width, height, left: 32, top: 32 };
+  loadEditorGrid(rect);
+  loadEditorGrid(rect, { x: -120, y: 80, width: 600, height: 400 });
 }
 
 const grid = loadEditorGrid();

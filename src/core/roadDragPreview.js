@@ -35,13 +35,11 @@
       overlay.height = pixelHeight;
     }
     const scale = Math.min(rect.width / viewBox.width, rect.height / viewBox.height);
-    const offsetX = (rect.width - viewBox.width * scale) / 2;
-    const offsetY = (rect.height - viewBox.height * scale) / 2;
     return {
       dpr,
       scale,
-      x: offsetX - viewBox.x * scale,
-      y: offsetY - viewBox.y * scale
+      x: -viewBox.x * scale,
+      y: -viewBox.y * scale
     };
   }
 
