@@ -101,6 +101,7 @@ function loadEditorGrid() {
 
 const grid = loadEditorGrid();
 assert.ok(grid, "EditorGrid should initialize");
+assert.equal(grid.placementSnapStep(), 20, "Insertion must use the same minor grid step as dragging");
 const editorGridSource = read("src/editor-grid.js");
 assert.match(editorGridSource, /gesturePositionSnapEnabled = options\.positionSnap !== false/);
 assert.doesNotMatch(editorGridSource, /excludedIds\.every\([\s\S]+?capabilities\?\.gridSnap/, "Grid should not infer group policy from member adapters");

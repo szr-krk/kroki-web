@@ -175,30 +175,48 @@
     if (model.geometry.profile === "islandRing") return;
     const adapter = manager.getAdapter(model);
     const metrics = Kroki.ControlPointManager.metrics();
-    const box = roadPlacementBounds(model, adapter, metrics);
     const horizontal = model.geometry.start.y === model.geometry.end.y;
-    const dir = horizontal ? { x: 1, y: 0 } : { x: 0, y: 1 };
-    const candidateAt = (length) => {
-      const geometry = initialRoadGeometry(model.geometry.profile, { x: 0, y: 0 }, dir, length);
+    const step = Kroki.EditorGrid?.placementSnapStep?.() || 0;
+    const placements = [false, true].map((isHorizontal) => {
+      const dir = isHorizontal ? { x: 1, y: 0 } : { x: 0, y: 1 };
+      const geometry = initialRoadGeometry(model.geometry.profile, { x: 0, y: 0 }, dir, 1);
+      return { dir, box: roadPlacementBounds({ ...model, geometry }, adapter, metrics) };
+    });
+    const coordinateWithin = (min, max) => {
+      if (min > max) return null;
+      if (!step) return (min + max) / 2;
+      const first = Math.ceil(min / step - 1e-8);
+      const last = Math.floor(max / step + 1e-8);
+      if (first > last) return null;
+      return Math.round(Math.min(last, Math.max(first, Math.round((min + max) / (2 * step)))) * step * 1e8) / 1e8;
+    };
+    const candidateAt = (length, placement) => {
+      const { dir, box } = placement;
+      // Start at the grid origin so translating to a grid point aligns both ends.
+      const geometry = initialRoadGeometry(model.geometry.profile, pointAlong({ x: 0, y: 0 }, dir, length / 2), dir, length);
       const points = adapter.getControlPoints({ ...model, geometry }, metrics, "edit");
       const xs = points.map((point) => point.x);
       const ys = points.map((point) => point.y);
       const bounds = { x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) };
-      return { geometry, bounds };
+      const dx = coordinateWithin(box.x - bounds.x, box.x + box.width - bounds.x - bounds.width);
+      const dy = coordinateWithin(box.y - bounds.y, box.y + box.height - bounds.y - bounds.height);
+      return dx === null || dy === null ? null : { geometry, dx, dy };
     };
-    let low = 1;
-    let high = Math.max(low, horizontal ? box.width : box.height);
-    // Use the adapter's actual handles: curved endpoints follow their tangents.
+    let low = 0;
+    let high = Math.min(placements[0].box.height, placements[1].box.width);
+    // One common length fits both directions, including their actual handles.
     for (let index = 0; index < 24; index += 1) {
       const length = (low + high) / 2;
-      const { bounds } = candidateAt(length);
-      if (bounds.width <= box.width && bounds.height <= box.height) low = length;
+      const alignedLength = step ? Math.floor(length / step) * step : length;
+      if (placements.every((placement) => candidateAt(alignedLength, placement))) low = length;
       else high = length;
     }
-    const { geometry, bounds } = candidateAt(low);
+    const length = step ? Math.floor(low / step) * step : low;
+    const fitted = candidateAt(length, placements[horizontal ? 1 : 0]);
+    if (!fitted || length <= 0) return;
     manager.updateGeometry(model.id, (draft) => {
-      draft.geometry = geometry;
-      adapter.move(draft, box.x + (box.width - bounds.width) / 2 - bounds.x, box.y + (box.height - bounds.height) / 2 - bounds.y);
+      draft.geometry = fitted.geometry;
+      adapter.move(draft, fitted.dx, fitted.dy);
     }, { skipHistory: true, styleControls: false });
   }
 

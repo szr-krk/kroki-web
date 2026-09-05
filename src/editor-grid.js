@@ -143,6 +143,10 @@
     return closest;
   }
 
+  function placementSnapStep() {
+    return gridVisible && snapEnabled ? getViewport().minorStep : 0;
+  }
+
   function snapPoint(point, modifiers = {}) {
     if (!point || !gesturePositionSnapEnabled || !gridVisible || !snapEnabled || modifiers.ctrlKey || modifiers.metaKey) return point;
     const state = getViewport();
@@ -381,6 +385,6 @@
   window.addEventListener("resize", resize);
   window.addEventListener("kroki:camera-gesture-start", () => { clearCursor(); endGesture(); });
 
-  Kroki.EditorGrid = Object.freeze({ scaleForZoom, snapPoint, snapAngle, anchorForModel, movePoint, pointFromEvent, beginGesture, endGesture });
+  Kroki.EditorGrid = Object.freeze({ scaleForZoom, placementSnapStep, snapPoint, snapAngle, anchorForModel, movePoint, pointFromEvent, beginGesture, endGesture });
   syncButtons();
 })();

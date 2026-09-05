@@ -36,7 +36,7 @@ function rect(left, top, width, height) {
   return { left, top, width, height, right: left + width, bottom: top + height };
 }
 
-function scenario({ profile, orientation, scale, layout, toolbar, divided = false }) {
+function scenario({ profile, orientation, scale, layout, toolbar, divided = false, snap = true }) {
   const canvasRect = rect(32, 47, layout.width, layout.height);
   const viewBox = { x: -713.25, y: 249.5, width: layout.projectedWidth / scale, height: layout.projectedHeight / scale };
   const viewport = {
@@ -48,6 +48,7 @@ function scenario({ profile, orientation, scale, layout, toolbar, divided = fals
     height: layout.projectedHeight
   };
   const metrics = { unit: 1 / scale, visibleRadius: 24 / scale, touchRadius: 36 / scale, endpointOffset: 48 / scale, handleGap: 48 / scale, minGap: 2 / scale };
+  const step = snap ? 20 / scale : 0;
   const queue = [];
   const actions = [];
   const objects = new Map();
@@ -108,6 +109,10 @@ function scenario({ profile, orientation, scale, layout, toolbar, divided = fals
       closeRailMenus: () => actions.push("close")
     },
     Kroki: {
+      EditorGrid: {
+        placementSnapStep: () => step,
+        snapPoint: (point) => step ? { x: Math.round(point.x / step) * step, y: Math.round(point.y / step) * step } : point
+      },
       StyleManager: { normalizeStyle: (value) => value || {} },
       ControlPointManager: { metrics: () => metrics },
       SelectionManager: {
@@ -204,16 +209,31 @@ function scenario({ profile, orientation, scale, layout, toolbar, divided = fals
     top: Math.min(...points.map((point) => point.y)),
     bottom: Math.max(...points.map((point) => point.y))
   };
-  const horizontalSlack = safe.right - safe.left - (bounds.right - bounds.left);
-  const verticalSlack = safe.bottom - safe.top - (bounds.bottom - bounds.top);
-  assert.ok(Math.min(horizontalSlack, verticalSlack) < 0.01, `${description}: road left usable screen length unfilled`);
-  assert.ok(Math.abs(bounds.left + bounds.right - safe.left - safe.right) < 0.001, `${description}: horizontal placement off center`);
-  assert.ok(Math.abs(bounds.top + bounds.bottom - safe.top - safe.bottom) < 0.001, `${description}: vertical placement off center`);
-  if (profile === "straight") {
-    const availableAxis = orientation === "horizontal" ? safe.right - safe.left : safe.bottom - safe.top;
-    const actualLength = Math.hypot(model.geometry.end.x - model.geometry.start.x, model.geometry.end.y - model.geometry.start.y) * scale;
-    assert.ok(Math.abs(actualLength - (availableAxis - 96)) < 0.01, `${description}: straight length must use the full span after endpoint handle offsets`);
+  assert.ok(Math.abs(bounds.left + bounds.right - safe.left - safe.right) <= step * scale + 0.001, `${description}: horizontal placement off center`);
+  assert.ok(Math.abs(bounds.top + bounds.bottom - safe.top - safe.bottom) <= step * scale + 0.001, `${description}: vertical placement off center`);
+  const actualLength = Math.hypot(model.geometry.end.x - model.geometry.start.x, model.geometry.end.y - model.geometry.start.y) * scale;
+  if (step) {
+    for (const endpoint of [model.geometry.start, model.geometry.end]) {
+      assert.ok(Math.abs(endpoint.x / step - Math.round(endpoint.x / step)) < 1e-7, `${description}: endpoint x is off grid`);
+      assert.ok(Math.abs(endpoint.y / step - Math.round(endpoint.y / step)) < 1e-7, `${description}: endpoint y is off grid`);
+    }
   }
+  if (profile === "straight") {
+    const verticalInset = toolbar && toolbar !== "off-axis" ? 154 : 0;
+    const commonLimit = Math.min(canvasRect.width - 76, canvasRect.height - verticalInset - 76) - 96;
+    assert.ok(actualLength <= commonLimit + 0.01 && commonLimit - actualLength <= 2 * step * scale + 0.01, `${description}: common length should fill the shorter available axis within grid rounding`);
+    const draft = plain(model);
+    const adapter = manager.getAdapter();
+    const startPoint = { ...draft.geometry.start };
+    const startState = adapter.beginControlPointMove(draft, "start", startPoint);
+    adapter.moveControlPoint(draft, "start", {
+      x: startPoint.x + (orientation === "horizontal" ? 40 / scale : 0),
+      y: startPoint.y + (orientation === "vertical" ? 40 / scale : 0)
+    }, { startState, metrics });
+    if (orientation === "horizontal") assert.equal(draft.geometry.start.y, draft.geometry.end.y, "Moving only one CP must keep a level road level");
+    else assert.equal(draft.geometry.start.x, draft.geometry.end.x, "Moving only one CP must keep a vertical road vertical");
+  }
+  return actualLength;
 }
 
 const layouts = [
@@ -226,10 +246,12 @@ let count = 0;
 for (const layout of layouts) {
   for (const scale of [0.5, 1, 2]) {
     for (const profile of ["straight", "arc", "sCurve"]) {
-      for (const orientation of ["horizontal", "vertical"]) {
-        for (const toolbar of [false, true]) {
-          scenario({ layout, scale, profile, orientation, toolbar, divided: count % 2 === 0 });
-          count += 1;
+      for (const toolbar of [false, true]) {
+        for (const snap of [false, true]) {
+          const horizontal = scenario({ layout, scale, profile, orientation: "horizontal", toolbar, snap });
+          const vertical = scenario({ layout, scale, profile, orientation: "vertical", toolbar, snap, divided: true });
+          assert.ok(Math.abs(horizontal - vertical) < 0.001, `${profile}: horizontal and vertical insertion lengths must match`);
+          count += 2;
         }
       }
     }
