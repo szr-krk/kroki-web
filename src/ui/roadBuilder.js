@@ -73,6 +73,8 @@
   }
 
   function viewBoxRect() {
+    const cameraBox = window.krokiEditorCamera?.readViewBox?.(manager.canvas);
+    if (cameraBox) return cameraBox;
     const live = manager.canvas?.viewBox?.baseVal;
     if (live && live.width > 0 && live.height > 0) {
       return { x: live.x, y: live.y, width: live.width, height: live.height };
@@ -91,27 +93,10 @@
     };
   }
 
-  function geometryFromInputs() {
-    const box = viewBoxRect();
-    const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-    const horizontal = selectedValue(fields.orientationButtons, "roadOrientation", "horizontal") !== "vertical";
-    const axisLength = horizontal ? box.width : box.height;
-    const length = Math.max(260, Math.min(520, axisLength * 0.55));
-    const dir = horizontal ? { x: 1, y: 0 } : { x: 0, y: 1 };
+  function initialRoadGeometry(profile, center, dir, length) {
     const normal = { x: -dir.y, y: dir.x };
     const start = pointAlong(center, dir, -length / 2);
     const end = pointAlong(center, dir, length / 2);
-    const profile = selectedValue(fields.profileButtons, "roadProfile", "straight");
-    if (profile === "islandRing") {
-      const laneCount = laneCountFromInputs();
-      const laneWidth = DEFAULT_LANE_WIDTH;
-      return {
-        profile,
-        center,
-        innerDiameter: DEFAULT_ISLAND_INNER_DIAMETER,
-        outerDiameter: DEFAULT_ISLAND_INNER_DIAMETER + laneCount * laneWidth * 2
-      };
-    }
     const geometry = { profile, start, end };
     if (profile === "arc") geometry.ratio = DEFAULT_ARC_RATIO;
     if (profile === "sCurve") {
@@ -131,6 +116,90 @@
       geometry.c2 = geometry.controls[1];
     }
     return geometry;
+  }
+
+  function geometryFromInputs() {
+    const box = viewBoxRect();
+    const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    const profile = selectedValue(fields.profileButtons, "roadProfile", "straight");
+    if (profile === "islandRing") {
+      return {
+        profile,
+        center,
+        innerDiameter: DEFAULT_ISLAND_INNER_DIAMETER,
+        outerDiameter: DEFAULT_ISLAND_INNER_DIAMETER + laneCountFromInputs() * DEFAULT_LANE_WIDTH * 2
+      };
+    }
+    const horizontal = selectedValue(fields.orientationButtons, "roadOrientation", "horizontal") !== "vertical";
+    return initialRoadGeometry(profile, center, horizontal ? { x: 1, y: 0 } : { x: 0, y: 1 }, horizontal ? box.width : box.height);
+  }
+
+  function roadPlacementBounds(model, adapter, metrics) {
+    const box = viewBoxRect();
+    const viewport = window.krokiEditorCamera?.getViewportMetrics?.(manager.canvas, box);
+    if (!viewport?.rect || !(viewport.scale > 0)) return box;
+    const rect = viewport.rect;
+    const inset = (metrics.touchRadius + 2 * metrics.unit) * viewport.scale;
+    const left = rect.left + inset;
+    const right = rect.left + rect.width - inset;
+    const horizontal = model.geometry.start.y === model.geometry.end.y;
+    let corridorLeft = rect.left;
+    let corridorRight = rect.right;
+    if (!horizontal) {
+      const geometry = initialRoadGeometry(model.geometry.profile, { x: 0, y: 0 }, { x: 0, y: 1 }, rect.height / viewport.scale);
+      const xs = adapter.getControlPoints({ ...model, geometry }, metrics, "edit").map((point) => point.x);
+      const halfWidth = (Math.max(...xs) - Math.min(...xs)) * viewport.scale / 2 + inset;
+      corridorLeft = rect.left + rect.width / 2 - halfWidth;
+      corridorRight = rect.left + rect.width / 2 + halfWidth;
+    }
+    let top = rect.top;
+    let bottom = rect.top + rect.height;
+    // Measure after selection opens the IP, so its responsive height is current.
+    document.querySelectorAll(".editor-top-ip, .editor-floating-toolbar, .editor-grid-controls").forEach((element) => {
+      const toolbar = element.getBoundingClientRect();
+      if (!toolbar.width || !toolbar.height || toolbar.right <= corridorLeft || toolbar.left >= corridorRight) return;
+      if (element.classList.contains("editor-grid-controls")) bottom = Math.min(bottom, toolbar.top);
+      else top = Math.max(top, toolbar.bottom);
+    });
+    top += inset;
+    bottom -= inset;
+    return {
+      x: box.x + (left - viewport.left) / viewport.scale,
+      y: box.y + (top - viewport.top) / viewport.scale,
+      width: Math.max(1, (right - left) / viewport.scale),
+      height: Math.max(1, (bottom - top) / viewport.scale)
+    };
+  }
+
+  function fitNewRoadGeometry(model) {
+    if (model.geometry.profile === "islandRing") return;
+    const adapter = manager.getAdapter(model);
+    const metrics = Kroki.ControlPointManager.metrics();
+    const box = roadPlacementBounds(model, adapter, metrics);
+    const horizontal = model.geometry.start.y === model.geometry.end.y;
+    const dir = horizontal ? { x: 1, y: 0 } : { x: 0, y: 1 };
+    const candidateAt = (length) => {
+      const geometry = initialRoadGeometry(model.geometry.profile, { x: 0, y: 0 }, dir, length);
+      const points = adapter.getControlPoints({ ...model, geometry }, metrics, "edit");
+      const xs = points.map((point) => point.x);
+      const ys = points.map((point) => point.y);
+      const bounds = { x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) };
+      return { geometry, bounds };
+    };
+    let low = 1;
+    let high = Math.max(low, horizontal ? box.width : box.height);
+    // Use the adapter's actual handles: curved endpoints follow their tangents.
+    for (let index = 0; index < 24; index += 1) {
+      const length = (low + high) / 2;
+      const { bounds } = candidateAt(length);
+      if (bounds.width <= box.width && bounds.height <= box.height) low = length;
+      else high = length;
+    }
+    const { geometry, bounds } = candidateAt(low);
+    manager.updateGeometry(model.id, (draft) => {
+      draft.geometry = geometry;
+      adapter.move(draft, box.x + (box.width - bounds.width) / 2 - bounds.x, box.y + (box.height - bounds.height) / 2 - bounds.y);
+    }, { skipHistory: true, styleControls: false });
   }
 
   function roadBarrier(edgeKey, side) {
@@ -278,6 +347,7 @@
       if (!model) return;
       window.krokiEditorRail?.closeRailMenus?.();
       selection.edit(model.id);
+      fitNewRoadGeometry(model);
       Kroki.HistoryManager?.pushObjectAdd?.(model, "Yol ekle");
     } finally {
       addRoadScheduled = false;
