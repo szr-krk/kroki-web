@@ -919,6 +919,7 @@
     draft.style = scaleStyle(clonePlain(source.style), scale);
     draft.label = scaleLabel(clonePlain(source.label), scale);
     draft.metadata = clonePlain(source.metadata);
+    manager.getAdapter(source)?.scaleForGroup?.(draft, scale);
     const geometry = draft.geometry || {};
     const rotationDelta = options.rotationDelta || 0;
 
@@ -932,7 +933,7 @@
       return draft;
     }
 
-    if (source.type === "bezier") {
+    if (source.type === "bezier" || source.type === "barrier") {
       ["start", "end", "q", "c1", "c2"].forEach((key) => {
         if (geometry[key]) geometry[key] = transformPoint(geometry[key], mapper);
       });

@@ -85,13 +85,14 @@
 
   function typeFromElement(element) {
     const shape = element?.dataset?.shape;
-    if (shape === "arc" || shape === "bezier" || shape === "circle" || shape === "ellipse" || shape === "rectangle" || shape === "closedShape" || shape === "text" || shape === "callout" || shape === "road" || shape === "trafficSign" || shape === "otherSymbol" || shape === "vehicle") return shape;
+    if (shape === "arc" || shape === "bezier" || shape === "barrier" || shape === "circle" || shape === "ellipse" || shape === "rectangle" || shape === "closedShape" || shape === "text" || shape === "callout" || shape === "road" || shape === "trafficSign" || shape === "otherSymbol" || shape === "vehicle") return shape;
     if (element?.tagName?.toLowerCase() === "circle") return "circle";
     if (element?.tagName?.toLowerCase() === "ellipse") return "ellipse";
     if (element?.tagName?.toLowerCase() === "rect" && element?.classList?.contains("editor-rectangle")) return "rectangle";
     if (element?.tagName?.toLowerCase() === "path" && element?.classList?.contains("editor-closed-shape")) return "closedShape";
     if (element?.tagName?.toLowerCase() === "text" && element?.classList?.contains("editor-text")) return "text";
     if (element?.tagName?.toLowerCase() === "g" && element?.classList?.contains("editor-callout")) return "callout";
+    if (element?.tagName?.toLowerCase() === "g" && element?.classList?.contains("editor-manual-barrier")) return "barrier";
     if (element?.tagName?.toLowerCase() === "g" && element?.classList?.contains("editor-road")) return "road";
     if (element?.tagName?.toLowerCase() === "g" && element?.classList?.contains("editor-traffic-sign")) return "trafficSign";
     if (element?.tagName?.toLowerCase() === "g" && element?.classList?.contains("editor-other-symbol")) return "otherSymbol";

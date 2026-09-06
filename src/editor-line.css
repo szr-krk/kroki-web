@@ -81,7 +81,8 @@
   vector-effect: non-scaling-stroke;
 }
 
-.editor-road-barrier {
+.editor-road-barrier,
+.editor-manual-barrier {
   pointer-events: none;
 }
 

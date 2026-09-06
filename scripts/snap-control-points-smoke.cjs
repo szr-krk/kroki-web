@@ -226,6 +226,7 @@ const drawingAdapters = {
   "src/adapters/lineAdapter.js": ["snapPoint"],
   "src/adapters/arcAdapter.js": ["snapPoint"],
   "src/adapters/bezierAdapter.js": ["snapPoint"],
+  "src/adapters/barrierAdapter.js": ["snapPoint"],
   "src/adapters/circleAdapter.js": ["snapPoint", "snapAngle"],
   "src/adapters/ellipseAdapter.js": ["snapPoint", "snapAngle"],
   "src/adapters/rectangleAdapter.js": ["snapPoint", "snapAngle"],

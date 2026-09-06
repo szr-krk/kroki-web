@@ -34,7 +34,7 @@ assert.match(composerSource, /complete: submitText/);
 assert.match(styleManager, /return type === "text" \|\| isLineToolType\(type\) \|\| isBasicShapeToolType\(type\) \|\| type === "callout";/);
 assert.match(styleManager, /controls\?\.sideIp\?\.classList\.toggle\("is-text-object-ip", isTextObject\)/);
 assert.match(styleManager, /controls\?\.textStyleSizeSection\?\.classList\.toggle\("gizli", isTextObject \|\| isCallout\)/);
-assert.match(styleManager, /controls\?\.colorButton\?\.classList\.toggle\("gizli", isTextObject \|\| isRoadObject/);
+assert.match(styleManager, /controls\?\.colorButton\?\.classList\.toggle\("gizli", isTextObject \|\| usesRoadControls/);
 assert.match(styleManager, /if \(isTextObjectEntry\(entry\)\) updateStyle\(\{ opacity \}\);/);
 assert.match(styleManager, /renderFreeTextAlignIcon\(controls\.textStyleAnchorIcon, align\.id\);/);
 assert.match(styleManager, /Kroki\.FreeTextComposer\?\.isOpenFor\?\.\(entry\.model\.id\)/);

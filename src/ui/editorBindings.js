@@ -23,6 +23,7 @@
     if (tool === "cizgi") return "line";
     if (tool === "arc") return "arc";
     if (tool === "curve" || tool === "cubic") return "bezier";
+    if (tool === "bariyer") return "barrier";
     if (tool === "daire") return "circle";
     if (tool === "elips") return "ellipse";
     if (tool === "dikdortgen") return "rectangle";
@@ -51,6 +52,7 @@
         bezierType: tool === "cubic" ? "cubic" : "quadratic"
       }, options);
     }
+    if (type === "barrier") return manager.create("barrier", { start, end: start }, options);
     if (type === "circle") return manager.create("circle", { start, end: start }, options);
     if (type === "ellipse") return manager.create("ellipse", { start, end: start }, options);
     if (type === "rectangle") return manager.create("rectangle", { start, end: start }, options);
@@ -182,9 +184,13 @@
     manager.updateGeometry(draft.model.id, (model) => {
       if (draft.type === "line" || draft.type === "arc") {
         model.geometry.end = { x: end.x, y: end.y };
-      } else if (draft.type === "bezier") {
+      } else if (draft.type === "bezier" || draft.type === "barrier") {
         model.geometry.end = { x: end.x, y: end.y };
-        Object.assign(model.geometry, defaultBezierControls(model.geometry.start, model.geometry.end, model.geometry.bezierType));
+        Object.assign(model.geometry, defaultBezierControls(
+          model.geometry.start,
+          model.geometry.end,
+          draft.type === "barrier" ? "cubic" : model.geometry.bezierType
+        ));
       } else if (draft.type === "circle") {
         model.geometry = Kroki.CircleGeometry.fromDiameter(draft.start, point, model.geometry.rotation);
       } else if (draft.type === "ellipse") {

@@ -36,7 +36,7 @@ assert.match(adapterSource, /function applyGeometryStrokeScaling\(element\) \{\s
 
 const visibilityLine = styleManagerSource.match(/controls\?\.strokeStepper\?\.classList\.toggle\("gizli",[^;]+;/)?.[0] || "";
 assert.ok(visibilityLine, "stroke picker visibility rule must exist");
-assert.match(visibilityLine, /isCallout \|\| isRoadObject \|\| isCatalogObject \|\| isVehicleObject/);
+assert.match(visibilityLine, /isCallout \|\| usesRoadControls \|\| isCatalogObject \|\| isVehicleObject/);
 
 assert.match(indexSource, /id="calloutTextSizeStepper"/);
 assert.match(indexSource, /id="lineStrokeWidthStepper"/);

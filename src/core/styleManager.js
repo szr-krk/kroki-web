@@ -1214,6 +1214,8 @@
     const isLineFamily = isLineToolType(model?.type);
     const isShapeFamily = usesShapeStylePanel(model?.type);
     const isRoadObject = Boolean(adapter?.capabilities?.roadObject);
+    const isManualBarrier = Boolean(adapter?.capabilities?.manualBarrier);
+    const usesRoadControls = isRoadObject || isManualBarrier;
     const isTrafficSign = Boolean(adapter?.capabilities?.trafficSign);
     const isCatalogObject = isCatalogObjectAdapter(adapter);
     const isVehicleObject = Boolean(adapter?.capabilities?.vehicleObject);
@@ -1230,7 +1232,7 @@
     controls?.fillPatternPanelButton?.classList.toggle("gizli", !hasFillPattern || !isShapeFamily);
     controls?.closedShapeControls?.forEach((control) => control.classList.toggle("gizli", !hasPointEdit));
     controls?.objectRotationControl?.classList.toggle("gizli", !hasRotationPicker);
-    controls?.roadOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isRoadObject));
+    controls?.roadOnlyControls?.forEach((control) => control.classList.toggle("gizli", !usesRoadControls));
     controls?.trafficSignOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isCatalogObject));
     controls?.vehicleOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isVehicleObject));
     controls?.calloutOnlyControls?.forEach((control) => control.classList.toggle("gizli", !isCallout));
@@ -1248,7 +1250,7 @@
     controls?.lineAdvancedStyleControls?.classList.toggle("gizli", !isLineFamily);
     controls?.shapeAdvancedStyleControls?.classList.toggle("gizli", !isShapeFamily && !isCallout);
     if (controls?.shapeAdvancedStyleLabel) controls.shapeAdvancedStyleLabel.textContent = isCallout ? "Cizgi davranisi" : "Dolgu deseni";
-    controls?.colorButton?.classList.toggle("gizli", isTextObject || isRoadObject || isCatalogObject || isVehicleObject);
+    controls?.colorButton?.classList.toggle("gizli", isTextObject || usesRoadControls || isCatalogObject || isVehicleObject);
     controls?.textButton?.classList.toggle("gizli", noText);
     controls?.textStyleButton?.classList.toggle("gizli", !usesStructuredTextStylePanel(model?.type) || noText);
     controls?.textStyleSizeSection?.classList.toggle("gizli", isTextObject || isCallout);
@@ -1256,7 +1258,7 @@
     controls?.trafficSignTextFields?.classList.toggle("gizli", !trafficSignFieldText);
     controls?.textInput?.classList.toggle("gizli", trafficSignFieldText);
     controls?.textAlign?.classList.toggle("gizli", isTextObject || noText || isCatalogObject || isLineFamily || isShapeFamily || isCallout);
-    if (isRoadObject || isVehicleObject) {
+    if (usesRoadControls || isVehicleObject) {
       cachedControl("strokeColorPanel", "#strokeColorPanel")?.classList.add("gizli");
       controls?.colorButton?.setAttribute("aria-expanded", "false");
     }
@@ -1281,8 +1283,8 @@
       document.querySelector("#strokeColorPanel")?.classList.add("gizli");
       controls?.colorButton?.setAttribute("aria-expanded", "false");
     }
-    controls?.strokeStepper?.classList.toggle("gizli", isCallout || isRoadObject || isCatalogObject || isVehicleObject);
-    controls?.styleButton?.classList.toggle("gizli", isTextObject || isRoadObject || isCatalogObject || isVehicleObject);
+    controls?.strokeStepper?.classList.toggle("gizli", isCallout || usesRoadControls || isCatalogObject || isVehicleObject);
+    controls?.styleButton?.classList.toggle("gizli", isTextObject || usesRoadControls || isCatalogObject || isVehicleObject);
   }
 
   function updateStyle(patch) {

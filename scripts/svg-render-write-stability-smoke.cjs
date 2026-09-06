@@ -88,7 +88,7 @@ windowObject.Kroki.StyleManager = {
   readLabelFromElement() { return {}; }
 };
 for (const type of ["line", "circle", "ellipse", "rectangle"]) load(`src/geometry/${type}Geometry.js`);
-for (const type of ["line", "arc", "bezier", "circle", "ellipse", "rectangle", "closedShape"]) load(`src/adapters/${type}Adapter.js`);
+for (const type of ["line", "arc", "bezier", "circle", "ellipse", "rectangle", "closedShape", "barrier"]) load(`src/adapters/${type}Adapter.js`);
 
 const fixtures = [
   { type: "line", attribute: "x1", expected: "17" },
@@ -157,6 +157,34 @@ for (const type of ["quadratic", "cubic", "quadratic"]) {
   assert.equal(curveElement.dataset.bezierQX === undefined, type === "cubic");
   assert.equal(curveElement.dataset.bezierC1X === undefined, type === "quadratic");
 }
+
+const barrier = registry.get("barrier");
+assert.ok(barrier, "Manual barrier adapter must initialize");
+const barrierModel = barrier.create({ start: { x: 20, y: 40 }, end: { x: 220, y: 40 } });
+const barrierElement = new SvgNode("g");
+const barrierSelection = barrier.createSelectionElement();
+const renderBarrier = () => {
+  barrier.render(barrierModel, barrierElement);
+  barrier.renderSelection(barrierSelection, barrierModel, barrierModel.style, "edit");
+};
+renderBarrier();
+assert.equal(barrierElement.children.length, 2, "Manual barrier should reuse one rail and one post path");
+assert.ok(barrierElement.children.every((node) => node.getAttribute("d")), "Manual barrier artwork must be visible");
+mutations.length = 0;
+for (let frame = 0; frame < 100; frame += 1) renderBarrier();
+assert.equal(mutations.length, 0, "Unchanged manual barrier renders must not rewrite SVG attributes");
+assert.deepEqual(plain(barrier.readFromElement(barrierElement).geometry), plain(barrierModel.geometry));
+barrier.setManualBarrierSpacing(barrierModel, 55);
+barrier.cycleManualBarrierEndCaps(barrierModel);
+assert.equal(barrier.selectedBarrierInfo(barrierModel).spacing, 55);
+assert.deepEqual(plain(barrier.selectedBarrierInfo(barrierModel).endCaps), { start: false, end: true });
+barrier.scaleForGroup(barrierModel, 2);
+assert.equal(barrier.selectedBarrierInfo(barrierModel).spacing, 110, "Manual barrier spacing must scale with its group");
+assert.equal(barrierModel.metadata.barrier.scale, 2, "Manual barrier artwork must scale with its group");
+windowObject.Kroki.EditorGrid = { snapPoint(value) { return { x: Math.round(value.x / 20) * 20, y: Math.round(value.y / 20) * 20 }; } };
+const barrierStartState = barrier.beginControlPointMove(barrierModel, "c1", { x: 87, y: 43 });
+barrier.moveControlPoint(barrierModel, "c1", { x: 102, y: 58 }, { startState: barrierStartState });
+assert.deepEqual(plain(barrierModel.geometry.c1), { x: 100, y: 60 }, "Manual barrier curve handles must snap to the grid");
 
 const editLayer = new SvgNode();
 const controlPoint = { id: "resize", x: 25, y: 40, angle: 17, cursor: "grab" };

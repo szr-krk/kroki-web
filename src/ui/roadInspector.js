@@ -99,6 +99,19 @@
     return model?.type === "road" ? model : null;
   }
 
+  function isManualBarrierModel(model) {
+    return Boolean(model && adapterFor(model)?.capabilities?.manualBarrier);
+  }
+
+  function activeManualBarrierModel() {
+    const model = selection.getActiveModel?.();
+    return isManualBarrierModel(model) ? model : null;
+  }
+
+  function activeBarrierModel() {
+    return activeManualBarrierModel() || activeRoadModel();
+  }
+
   function keepRoadLayersAtBack() {
     if (typeof manager.keepRoadLayersAtBack === "function") {
       manager.keepRoadLayersAtBack();
@@ -358,8 +371,22 @@
     }, label || "Yol bariyeri");
   }
 
+  function updateManualBarrier(mutator, label) {
+    const model = activeManualBarrierModel();
+    if (!model) return false;
+    selection.promoteToEdit?.();
+    manager.updateModel(model.id, (draft) => {
+      mutator(adapterFor(draft), draft);
+      return draft;
+    }, { label: label || "Manuel bariyer" });
+    return true;
+  }
+
   function updateBarrierSpacingValue(value, label) {
     const spacing = clampInt(value, 18, 180, 42);
+    if (updateManualBarrier((adapter, draft) => {
+      adapter?.setManualBarrierSpacing?.(draft, spacing);
+    }, label || "Bariyer direk araligi")) return;
     updateSelectedBarrier((adapter, draft, config, barrier) => {
       adapter?.setBarrierSpacing?.(config, barrier.id, spacing);
     }, label || "Bariyer direk araligi");
@@ -369,19 +396,25 @@
     if (!controls.barrierSpacing || controls.barrierSpacing.value === "") return;
     const spacing = clampInt(controls.barrierSpacing.value, 18, 180, 42);
     controls.barrierSpacing.value = String(spacing);
-    const model = activeRoadModel();
+    const model = activeBarrierModel();
     const barrier = selectedBarrierInfo(model);
     if (!barrier || clampInt(barrier.spacing, 18, 180, 42) === spacing) return;
     updateBarrierSpacingValue(spacing);
   }
 
   function nudgeBarrierSpacing(delta) {
-    const barrier = selectedBarrierInfo(activeRoadModel());
+    const barrier = selectedBarrierInfo(activeBarrierModel());
     if (!barrier) return;
     updateBarrierSpacingValue(clampInt(barrier.spacing, 18, 180, 42) + delta);
   }
 
   function deleteSelectedBarrier() {
+    const manual = activeManualBarrierModel();
+    if (manual) {
+      manager.remove(manual.id, { label: "Manuel bariyer sil" });
+      window.krokiEditorRail?.resetCizimAraci?.();
+      return;
+    }
     updateActiveRoad((config, section, draft) => {
       const adapter = adapterFor(draft);
       const barrier = adapter?.selectedBarrierInfo?.(draft);
@@ -391,6 +424,9 @@
   }
 
   function cycleSelectedBarrierEndCaps() {
+    if (updateManualBarrier((adapter, draft) => {
+      adapter?.cycleManualBarrierEndCaps?.(draft);
+    }, "Bariyer uçları")) return;
     updateSelectedBarrier((adapter, draft, config, barrier) => {
       adapter?.cycleBarrierEndCaps?.(config, barrier.id);
     }, "Bariyer uçları");
@@ -577,6 +613,11 @@
   }
 
   function clearBarrierSelection() {
+    if (activeManualBarrierModel()) {
+      selection.clear?.();
+      window.krokiEditorRail?.resetCizimAraci?.();
+      return;
+    }
     const model = activeRoadModel();
     if (!model) return;
     manager.updateModel(model.id, (draft) => {
@@ -792,14 +833,68 @@
     }
   }
 
+  function syncBarrierControls(barrier, manual = false) {
+    togglePressed(controls.barrierAttached, barrier.attached);
+    if (controls.barrierAttached) {
+      controls.barrierAttached.disabled = manual;
+      controls.barrierAttached.setAttribute("aria-disabled", String(manual));
+      const attachedTitle = manual
+        ? "Manuel bariyer (serbest)"
+        : (barrier.attached ? "Yola yapisik" : "Serbest bariyer");
+      controls.barrierAttached.setAttribute("title", attachedTitle);
+      controls.barrierAttached.setAttribute("aria-label", attachedTitle);
+    }
+    const endCapsTitle = "Bariyer uçları: " + barrierEndCapsTitle(barrier.endCaps);
+    setBarrierEndCapsLabel(barrier.endCaps);
+    if (controls.barrierEndCaps) {
+      controls.barrierEndCaps.disabled = false;
+      controls.barrierEndCaps.setAttribute("aria-disabled", "false");
+      controls.barrierEndCaps.setAttribute("title", endCapsTitle);
+      controls.barrierEndCaps.setAttribute("aria-label", endCapsTitle);
+    }
+    const spacing = clampInt(barrier.spacing, 18, 180, 42);
+    if (controls.barrierSpacing && controls.barrierSpacing.value !== String(spacing)) {
+      controls.barrierSpacing.value = String(spacing);
+    }
+  }
+
+  function syncManualBarrier(model) {
+    controls.pocketIslandDone?.classList.add("gizli");
+    closeBoundaryPanel();
+    closeDeparturePanel();
+    controls.globalControls.forEach((control) => control.classList.add("gizli"));
+    controls.sectionControls.forEach((control) => control.classList.add("gizli"));
+    controls.symmetryControls.forEach((control) => control.classList.add("gizli"));
+    controls.laneWidthControl?.classList.add("gizli");
+    controls.upperLine?.classList.add("gizli");
+    controls.lowerLine?.classList.add("gizli");
+    controls.addBarrier?.classList.add("gizli");
+    controls.profile?.classList.add("gizli");
+    controls.pocket?.classList.add("gizli");
+    controls.departure?.classList.add("gizli");
+    controls.sCurveControls?.classList.add("gizli");
+    controls.leftShoulder?.classList.add("gizli");
+    controls.rightShoulder?.classList.add("gizli");
+    controls.markingStyle?.classList.add("gizli");
+    controls.barrierControls?.classList.remove("gizli");
+    syncBarrierControls(selectedBarrierInfo(model), true);
+  }
+
   function sync(entry) {
-    const model = entry?.model?.type === "road" ? entry.model : activeRoadModel();
+    const entryModel = entry?.model;
+    const model = entryModel?.type === "road" || isManualBarrierModel(entryModel)
+      ? entryModel
+      : activeBarrierModel();
     const visible = Boolean(model);
     controls.root?.classList.toggle("gizli", !visible);
     if (!visible) {
       controls.pocketIslandDone?.classList.add("gizli");
       closeBoundaryPanel();
       closeDeparturePanel();
+      return;
+    }
+    if (isManualBarrierModel(model)) {
+      syncManualBarrier(model);
       return;
     }
     keepRoadLayersAtBack();
@@ -850,19 +945,7 @@
     controls.barrierControls?.classList.toggle("gizli", !barrierMode);
     if (barrierMode) {
       closeBoundaryPanel();
-      togglePressed(controls.barrierAttached, barrier.attached);
-      controls.barrierAttached?.setAttribute("title", barrier.attached ? "Yola yapisik" : "Serbest bariyer");
-      controls.barrierAttached?.setAttribute("aria-label", barrier.attached ? "Yola yapisik" : "Serbest bariyer");
-      const endCapsTitle = "Bariyer uçları: " + barrierEndCapsTitle(barrier.endCaps);
-      setBarrierEndCapsLabel(barrier.endCaps);
-      if (controls.barrierEndCaps) {
-        controls.barrierEndCaps.disabled = false;
-        controls.barrierEndCaps.setAttribute("aria-disabled", "false");
-        controls.barrierEndCaps.setAttribute("title", endCapsTitle);
-        controls.barrierEndCaps.setAttribute("aria-label", endCapsTitle);
-      }
-      const spacing = clampInt(barrier.spacing, 18, 180, 42);
-      if (controls.barrierSpacing && controls.barrierSpacing.value !== String(spacing)) controls.barrierSpacing.value = String(spacing);
+      syncBarrierControls(barrier);
     }
     if (island) {
       controls.profile?.classList.add("gizli");

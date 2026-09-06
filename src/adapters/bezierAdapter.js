@@ -371,6 +371,7 @@
     },
 
     pointAt,
+    tangentAt,
     offsetPathData,
     midpointTangentAngle
   };
