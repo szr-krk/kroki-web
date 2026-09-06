@@ -14,6 +14,7 @@ const plain = (value) => JSON.parse(JSON.stringify(value));
 
 function element(classes = [], dataset = {}) {
   const active = new Set(classes);
+  const listeners = new Map();
   return {
     dataset,
     value: "3",
@@ -27,7 +28,8 @@ function element(classes = [], dataset = {}) {
       }
     },
     setAttribute() {},
-    addEventListener() {},
+    addEventListener(name, callback) { listeners.set(name, callback); },
+    click() { listeners.get("click")?.(); },
     closest() { return element(); }
   };
 }
@@ -36,9 +38,9 @@ function rect(left, top, width, height) {
   return { left, top, width, height, right: left + width, bottom: top + height };
 }
 
-function scenario({ profile, orientation, scale, layout, toolbar, divided = false, snap = true }) {
+function scenario({ profile, orientation, scale, layout, toolbar, divided = false, snap = true, sequential = false, origin = { x: -713.25, y: 249.5 } }) {
   const canvasRect = rect(32, 47, layout.width, layout.height);
-  const viewBox = { x: -713.25, y: 249.5, width: layout.projectedWidth / scale, height: layout.projectedHeight / scale };
+  const viewBox = { ...origin, width: layout.projectedWidth / scale, height: layout.projectedHeight / scale };
   const viewport = {
     rect: canvasRect,
     scale,
@@ -141,7 +143,7 @@ function scenario({ profile, orientation, scale, layout, toolbar, divided = fals
       assert.equal(type, "road");
       assert.equal(options.skipHistory, true);
       const model = this.getAdapter().create(data);
-      model.id = "inserted-road";
+      model.id = `inserted-road-${objects.size + 1}`;
       objects.set(model.id, model);
       initialRoadConfig = plain(model.metadata.road);
       actions.push("create");
@@ -165,23 +167,77 @@ function scenario({ profile, orientation, scale, layout, toolbar, divided = fals
   assert.equal(objects.size, 1);
   assert.equal(history.length, 1);
   assert.equal(field("#btnAddRoad").disabled, false);
-  assert.deepEqual(actions, profile === "islandRing"
-    ? ["reset", "create", "close", "edit", "history"]
-    : ["reset", "create", "close", "edit", "fit", "history"]);
-  const model = objects.get("inserted-road");
+  assert.deepEqual(actions, ["reset", "create", "close", "edit", "fit", "history"]);
+  const model = objects.get("inserted-road-1");
   assert.deepEqual(history[0].model, plain(model), "Undo/redo must store the final fitted geometry");
   assert.deepEqual(plain(model.metadata.road), initialRoadConfig, "Fitting must preserve lane widths, shoulders and barriers");
   assert.equal(model.metadata.road.laneWidth, 50);
   assert.ok(model.metadata.road.laneWidths.every((width) => width === 50));
 
+  const description = `${profile}/${orientation} scale=${scale} ${layout.name} toolbar=${toolbar} snap=${snap}`;
+  // Every profile shares the visible workspace center, including off-axis IPs.
+  const sharedSafe = {
+    left: canvasRect.left + 38,
+    right: canvasRect.right - 38,
+    top: (toolbar ? topToolbar.bottom : canvasRect.top) + 38,
+    bottom: (toolbar ? bottomToolbar.top : canvasRect.bottom) - 38
+  };
+  const expectedCenter = sandbox.Kroki.EditorGrid.snapPoint({
+    x: viewBox.x + ((sharedSafe.left + sharedSafe.right) / 2 - viewport.left) / scale,
+    y: viewBox.y + ((sharedSafe.top + sharedSafe.bottom) / 2 - viewport.top) / scale
+  });
+  const centerOf = (road) => road.geometry.profile === "islandRing" ? road.geometry.center : {
+    x: (road.geometry.start.x + road.geometry.end.x) / 2,
+    y: (road.geometry.start.y + road.geometry.end.y) / 2
+  };
+  const center = centerOf(model);
+  const assertSharedCenter = (road) => {
+    const actual = centerOf(road);
+    assert.ok(Math.abs(actual.x - expectedCenter.x) < 1e-6 && Math.abs(actual.y - expectedCenter.y) < 1e-6,
+      `${description}: ${road.geometry.profile} must use the shared workspace center`);
+    if (step) {
+      assert.ok(Math.abs(actual.x / step - Math.round(actual.x / step)) < 1e-7, `${description}: midpoint x is off grid`);
+      assert.ok(Math.abs(actual.y / step - Math.round(actual.y / step)) < 1e-7, `${description}: midpoint y is off grid`);
+    }
+  };
+  assertSharedCenter(model);
+
+  if (sequential) {
+    assert.equal(profile, "straight");
+    assert.equal(orientation, "horizontal");
+    for (const [nextProfile, nextOrientation] of [["straight", "vertical"], ["islandRing", "horizontal"]]) {
+      choices["[data-road-profile]"].find((button) => button.dataset.roadProfile === nextProfile).click();
+      choices["[data-road-orientation]"].find((button) => button.dataset.roadOrientation === nextOrientation).click();
+      const previousCount = objects.size;
+      const previousActions = actions.length;
+      sandbox.Kroki.RoadBuilder.addRoad();
+      sandbox.Kroki.RoadBuilder.addRoad();
+      while (queue.length) queue.shift()();
+      assert.equal(objects.size, previousCount + 1, "A completed insertion permits exactly one next insertion");
+      const inserted = objects.get(`inserted-road-${objects.size}`);
+      assert.equal(inserted.geometry.profile, nextProfile);
+      assertSharedCenter(inserted);
+      assert.deepEqual(actions.slice(previousActions), ["reset", "create", "close", "edit", "fit", "history"]);
+      assert.equal(history.length, objects.size);
+      assert.deepEqual(history.at(-1).model, plain(inserted), "Each consecutive insertion stores its fitted geometry");
+      assert.deepEqual(plain(history[0].model), plain(model), "Later insertions must not alter the first road");
+      assert.deepEqual(plain(inserted.metadata.road), initialRoadConfig);
+      assert.equal(field("#btnAddRoad").disabled, false);
+      if (nextProfile === "straight") {
+        assert.equal(inserted.geometry.start.x, inserted.geometry.end.x);
+        assert.ok(Math.abs(Math.abs(inserted.geometry.end.y - inserted.geometry.start.y)
+          - Math.abs(model.geometry.end.x - model.geometry.start.x)) < 1e-6, "Consecutive H/V insertions have the same length");
+      } else {
+        assert.equal(inserted.geometry.innerDiameter, 160);
+        assert.equal(inserted.geometry.outerDiameter, 460);
+      }
+    }
+  }
+
   if (profile === "islandRing") {
-    assert.deepEqual(plain(model.geometry), {
-      profile,
-      center: { x: viewBox.x + viewBox.width / 2, y: viewBox.y + viewBox.height / 2 },
-      innerDiameter: 160,
-      outerDiameter: 460
-    }, "Island rings retain their existing creation geometry");
-    return;
+    assert.equal(model.geometry.innerDiameter, 160, "Centering preserves island inner diameter");
+    assert.equal(model.geometry.outerDiameter, 460, "Centering preserves island outer diameter");
+    return { center };
   }
 
   const toolbarBlocksAxis = toolbar && !(toolbar === "off-axis" && orientation === "vertical");
@@ -197,20 +253,11 @@ function scenario({ profile, orientation, scale, layout, toolbar, divided = fals
     y: viewport.top + (point.y - viewBox.y) * scale
   }));
   assert.equal(points.length, profile === "straight" ? 2 : profile === "arc" ? 3 : 4);
-  const description = `${profile}/${orientation} scale=${scale} ${layout.name} toolbar=${toolbar}`;
   for (const point of points) {
     assert.ok(point.x >= safe.left - 0.001 && point.x <= safe.right + 0.001
       && point.y >= safe.top - 0.001 && point.y <= safe.bottom + 0.001,
     `${description}: ${point.id} touch target clipped at ${point.x},${point.y}`);
   }
-  const bounds = {
-    left: Math.min(...points.map((point) => point.x)),
-    right: Math.max(...points.map((point) => point.x)),
-    top: Math.min(...points.map((point) => point.y)),
-    bottom: Math.max(...points.map((point) => point.y))
-  };
-  assert.ok(Math.abs(bounds.left + bounds.right - safe.left - safe.right) <= step * scale + 0.001, `${description}: horizontal placement off center`);
-  assert.ok(Math.abs(bounds.top + bounds.bottom - safe.top - safe.bottom) <= step * scale + 0.001, `${description}: vertical placement off center`);
   const actualLength = Math.hypot(model.geometry.end.x - model.geometry.start.x, model.geometry.end.y - model.geometry.start.y) * scale;
   if (step) {
     for (const endpoint of [model.geometry.start, model.geometry.end]) {
@@ -219,9 +266,19 @@ function scenario({ profile, orientation, scale, layout, toolbar, divided = fals
     }
   }
   if (profile === "straight") {
-    const verticalInset = toolbar && toolbar !== "off-axis" ? 154 : 0;
-    const commonLimit = Math.min(canvasRect.width - 76, canvasRect.height - verticalInset - 76) - 96;
-    assert.ok(actualLength <= commonLimit + 0.01 && commonLimit - actualLength <= 2 * step * scale + 0.01, `${description}: common length should fill the shorter available axis within grid rounding`);
+    const screenCenter = {
+      x: viewport.left + (center.x - viewBox.x) * scale,
+      y: viewport.top + (center.y - viewBox.y) * scale
+    };
+    const verticalSafe = toolbar === "off-axis"
+      ? { top: canvasRect.top + 38, bottom: canvasRect.bottom - 38 }
+      : sharedSafe;
+    // Symmetric endpoints leave 48px for each endpoint handle. With a fixed
+    // center, the nearest edge across both orientations determines the limit.
+    const commonLimit = 2 * Math.min(screenCenter.x - sharedSafe.left, sharedSafe.right - screenCenter.x,
+      screenCenter.y - verticalSafe.top, verticalSafe.bottom - screenCenter.y) - 96;
+    assert.ok(actualLength <= commonLimit + 0.001 && commonLimit - actualLength < 2 * step * scale + 0.001,
+      `${description}: length must be maximal about the shared center within one two-step grid quantum`);
     const draft = plain(model);
     const adapter = manager.getAdapter();
     const startPoint = { ...draft.geometry.start };
@@ -233,7 +290,7 @@ function scenario({ profile, orientation, scale, layout, toolbar, divided = fals
     if (orientation === "horizontal") assert.equal(draft.geometry.start.y, draft.geometry.end.y, "Moving only one CP must keep a level road level");
     else assert.equal(draft.geometry.start.x, draft.geometry.end.x, "Moving only one CP must keep a vertical road vertical");
   }
-  return actualLength;
+  return { length: actualLength, center };
 }
 
 const layouts = [
@@ -250,13 +307,22 @@ for (const layout of layouts) {
         for (const snap of [false, true]) {
           const horizontal = scenario({ layout, scale, profile, orientation: "horizontal", toolbar, snap });
           const vertical = scenario({ layout, scale, profile, orientation: "vertical", toolbar, snap, divided: true });
-          assert.ok(Math.abs(horizontal - vertical) < 0.001, `${profile}: horizontal and vertical insertion lengths must match`);
+          assert.ok(Math.abs(horizontal.length - vertical.length) < 0.001, `${profile}: horizontal and vertical insertion lengths must match`);
+          assert.deepEqual(horizontal.center, vertical.center, `${profile}: horizontal and vertical midpoints must match`);
           count += 2;
         }
       }
     }
-    scenario({ layout, scale, profile: "islandRing", orientation: "horizontal", toolbar: true });
-    count += 1;
+    for (const toolbar of [false, true, "off-axis"]) {
+      for (const snap of [false, true]) {
+        const horizontal = scenario({ layout, scale, profile: "straight", orientation: "horizontal", toolbar, snap,
+          sequential: true, origin: { x: 1327.125, y: -987.75 } });
+        const island = scenario({ layout, scale, profile: "islandRing", orientation: "horizontal", toolbar, snap,
+          origin: { x: 1327.125, y: -987.75 } });
+        assert.deepEqual(horizontal.center, plain(island.center), "Straight midpoint and island center must match");
+        count += 4;
+      }
+    }
   }
 }
 for (const scale of [0.5, 1, 2]) {
