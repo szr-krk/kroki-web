@@ -39,7 +39,7 @@ assert.match(css, /\.editor-cizgi\s*\{[^}]*vector-effect:\s*none/s, "tuval cizgi
 assert.match(css, /\.line-style-arrow-btn svg \*,\s*\.line-style-tool-btn svg \*\s*\{\s*vector-effect:\s*none/);
 assert.match(css, /\.line-text-icon-btn path,\s*\.line-text-icon-btn line,\s*\.line-text-icon-btn rect\s*\{\s*vector-effect:\s*none/);
 assert.doesNotMatch(styleManager, /non-scaling-stroke/, "belge geometrisi ekran kalinligina sabitlenmemeli");
-const allowedNonScalingSelectors = /editor-road-lane-highlight|editor-road-boundary-active|editor-road-pocket-island-highlight|editor-object-selection|editor-line-selection|editor-road-selection|editor-multi-selection|editor-select-marquee|editor-object-cp-role-road-barrier|editor-endpoint-alignment-guide/;
+const allowedNonScalingSelectors = /editor-road-lane-highlight|editor-road-boundary-active|editor-road-pocket-island-highlight|editor-object-selection|editor-line-selection|editor-road-selection|editor-multi-selection|editor-select-marquee|editor-object-cp-role-road-barrier|editor-object-cp-role-road-segment-boundary|editor-endpoint-alignment-guide/;
 const nonScalingBlocks = css.match(/[^{}]+\{[^{}]*vector-effect:\s*non-scaling-stroke[^{}]*\}/g) || [];
 assert.ok(nonScalingBlocks.length > 0, "secim cizgileri ekran kalinligini korumali");
 nonScalingBlocks.forEach((block) => assert.match(block, allowedNonScalingSelectors, "yalniz secim ve aktif duzenleme vurgulari non-scaling kullanabilir"));

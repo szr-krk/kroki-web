@@ -103,30 +103,36 @@
       ];
     },
 
-    beginControlPointMove(model, cpId, point) {
+    beginControlPointMove(model, cpId, point, metrics = {}) {
+      const handle = cpId === "start" || cpId === "end"
+        ? lineGeometry.lineEndpointControlPoint(
+          model.geometry.start,
+          model.geometry.end,
+          cpId,
+          utils.numberOr(metrics.endpointOffset, 0)
+        )
+        : point;
       return {
-        point: { x: point.x, y: point.y },
-        geometry: { start: { ...model.geometry.start }, end: { ...model.geometry.end } }
+        grabOffset: {
+          x: handle.x - point.x,
+          y: handle.y - point.y
+        }
       };
     },
 
     moveControlPoint(model, cpId, worldPoint, modifiers = {}) {
-      const state = modifiers.startState;
-      if (state && (cpId === "start" || cpId === "end")) {
-        const point = {
-          x: state.geometry[cpId].x + worldPoint.x - state.point.x,
-          y: state.geometry[cpId].y + worldPoint.y - state.point.y
-        };
-        model.geometry[cpId] = Kroki.EditorGrid?.snapPoint(point, modifiers) || point;
-        return;
-      }
       const metrics = modifiers.metrics || { endpointOffset: 0, minGap: 0 };
+      const grabOffset = modifiers.startState?.grabOffset || { x: 0, y: 0 };
+      const control = {
+        x: worldPoint.x + utils.numberOr(grabOffset.x, 0),
+        y: worldPoint.y + utils.numberOr(grabOffset.y, 0)
+      };
       if (cpId === "start") {
-        const start = lineGeometry.endpointFromControl(model.geometry.start, model.geometry.end, "start", worldPoint, metrics);
+        const start = lineGeometry.endpointFromControl(model.geometry.start, model.geometry.end, "start", control, metrics);
         model.geometry.start = Kroki.EditorGrid?.snapPoint(start, modifiers) || start;
       }
       if (cpId === "end") {
-        const end = lineGeometry.endpointFromControl(model.geometry.start, model.geometry.end, "end", worldPoint, metrics);
+        const end = lineGeometry.endpointFromControl(model.geometry.start, model.geometry.end, "end", control, metrics);
         model.geometry.end = Kroki.EditorGrid?.snapPoint(end, modifiers) || end;
       }
     },

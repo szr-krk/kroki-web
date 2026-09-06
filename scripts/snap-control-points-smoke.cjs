@@ -151,6 +151,63 @@ const inset = lineGeometryWindow.Kroki.LineGeometry.insetSegment(
 assert.deepEqual({ ...inset.start }, { x: 16, y: 0 });
 assert.deepEqual({ ...inset.end }, { x: 80, y: 0 });
 
+let lineAdapter;
+const lineAdapterWindow = {
+  Kroki: {
+    EditorUtils: {
+      numberOr(value, fallback) {
+        const number = Number(value);
+        return Number.isFinite(number) ? number : fallback;
+      },
+      clonePlain(value) { return JSON.parse(JSON.stringify(value)); },
+      createSvgElement() { return new FakeNode(); },
+      setAttributeIfChanged() {}
+    },
+    ShapeRegistry: {
+      register(type, adapter) {
+        if (type === "line") lineAdapter = adapter;
+      }
+    },
+    LineGeometry: lineGeometryWindow.Kroki.LineGeometry,
+    StyleManager: {
+      lineEndpointMarkerOffset() { return 0; },
+      readStyleFromElement() { return {}; },
+      readLabelFromElement() { return null; }
+    },
+    EditorGrid: {
+      snapPoint(point) { return point; }
+    }
+  }
+};
+lineAdapterWindow.window = lineAdapterWindow;
+vm.runInContext(read("src/adapters/lineAdapter.js"), vm.createContext({ window: lineAdapterWindow }));
+assert.ok(lineAdapter, "Line adapter should initialize for endpoint tracking regression");
+const endpointMetrics = { endpointOffset: 20, minGap: 8 };
+const rotatingLine = lineAdapter.create({ start: { x: 100, y: 100 }, end: { x: 300, y: 100 }, style: {} });
+const initialStartHandle = lineAdapter.getControlPoints(rotatingLine, endpointMetrics).find((cp) => cp.id === "start");
+const lineDragState = lineAdapter.beginControlPointMove(
+  rotatingLine,
+  "start",
+  { x: initialStartHandle.x + 2, y: initialStartHandle.y + 3 },
+  endpointMetrics
+);
+lineAdapter.moveControlPoint(rotatingLine, "start", { x: 302, y: 323 }, {
+  startState: lineDragState,
+  metrics: endpointMetrics
+});
+assert.deepEqual({ ...rotatingLine.geometry.start }, { x: 300, y: 300 }, "Dragged endpoint should become exactly vertical");
+const verticalHandles = lineAdapter.getControlPoints(rotatingLine, endpointMetrics);
+assert.deepEqual(
+  { x: verticalHandles[0].x, y: verticalHandles[0].y },
+  { x: 300, y: 320 },
+  "Grabbed CP should remain under the pointer while line direction changes"
+);
+assert.deepEqual(
+  { x: verticalHandles[1].x, y: verticalHandles[1].y },
+  { x: 300, y: 80 },
+  "Opposite CP should update to the vertical line direction"
+);
+
 grid.beginGesture(["catalog-object"], "touch", { positionSnap: false });
 assert.equal(grid.snapPoint({ x: 23, y: 38 }).x, 23, "Catalog object position should remain free");
 assert.equal(grid.snapAngle(87), 90, "Catalog object rotation should keep cardinal assistance");
@@ -210,7 +267,8 @@ assert.match(selection, /clearEndpointAlignmentGuide\(drag\);\s+Kroki\.EditorGri
 
 const lineCss = read("src/editor-line.css");
 assert.match(lineCss, /\.editor-endpoint-alignment-guide\s*\{[\s\S]+?vector-effect:\s*non-scaling-stroke/);
-assert.match(lineCss, /\.editor-object-cp-role-road-barrier[\s\S]+?fill:\s*#f97316[\s\S]+?stroke:\s*#7c2d12/);
+assert.match(lineCss, /\.editor-object-cp-role-road-segment-boundary[\s\S]+?fill:\s*#38bdf8[\s\S]+?fill-opacity:\s*\.5[\s\S]+?stroke:\s*#075985/);
+assert.match(lineCss, /\.editor-object-cp-role-road-barrier[\s\S]+?fill:\s*#f97316[\s\S]+?fill-opacity:\s*\.5[\s\S]+?stroke:\s*#7c2d12/);
 
 const multi = read("src/core/multiSelectManager.js");
 assert.match(multi, /EditorGrid\?\.movePoint\(drag\.startPoint, drag\.gridAnchor, point, event\)/);
@@ -228,6 +286,7 @@ const arcAdapterSource = read("src/adapters/arcAdapter.js");
 const bezierAdapterSource = read("src/adapters/bezierAdapter.js");
 assert.match(lineAdapterSource, /function renderedEndpoints[\s\S]+?lineEndpointMarkerOffset/);
 assert.match(lineAdapterSource, /dataset\.geometryEndX/);
+assert.doesNotMatch(lineAdapterSource, /state\.geometry\[cpId\]/, "Line endpoint dragging must not use a direction-blind translation");
 assert.match(arcAdapterSource, /function cubicArcSegments/);
 assert.match(arcAdapterSource, /function renderedPathData/);
 assert.match(bezierAdapterSource, /function cubicGeometry/);

@@ -228,9 +228,11 @@
 }
 
 .editor-object-cp-role-road-segment-boundary .editor-object-cp-segment-visual {
-  fill: #dbeafe;
-  stroke: none;
-  stroke-width: 0;
+  fill: #38bdf8;
+  fill-opacity: .5;
+  stroke: #075985;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
 }
 
 .editor-object-cp-role-road-segment-boundary .editor-object-cp-hit {
@@ -240,7 +242,7 @@
 .editor-object-cp-role-road-barrier .editor-object-cp-visual,
 .editor-object-cp-role-road-barrier-free .editor-object-cp-visual {
   fill: #f97316;
-  fill-opacity: .95;
+  fill-opacity: .5;
   stroke: #7c2d12;
   stroke-width: 2;
   vector-effect: non-scaling-stroke;
