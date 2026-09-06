@@ -201,7 +201,9 @@ assert.match(selection, /beginGesture\(\[model\.id\], event\.pointerType, \{ pos
 assert.match(selection, /function updateLineControlPreview[\s\S]+?adapter\.render\(model, dragState\.lineElement\)/);
 assert.doesNotMatch(selection, /function renderLinePreviewElement/, "Line CP preview must use the adapter render path so arrow insets stay active");
 assert.match(selection, /function endpointAlignmentAxis[\s\S]+?cpId !== "start" && cpId !== "end"/);
-assert.match(selection, /function updateEndpointAlignmentGuide[\s\S]+?viewBox\.x \+ viewBox\.width[\s\S]+?viewBox\.y \+ viewBox\.height/);
+assert.match(selection, /function visibleCanvasBounds[\s\S]+?getBoundingClientRect[\s\S]+?pointFromEvent/);
+assert.match(selection, /endpointGuideBounds:\s*type === "control" && \(extra\.cpId === "start" \|\| extra\.cpId === "end"\)[\s\S]+?visibleCanvasBounds\(matrix\)/);
+assert.match(selection, /function updateEndpointAlignmentGuide[\s\S]+?bounds\.x \+ bounds\.width[\s\S]+?bounds\.y \+ bounds\.height/);
 assert.match(selection, /updateLineControlPreview\(dragState, dragState\.previewModel, adapter\);\s+updateEndpointAlignmentGuide\(dragState, dragState\.previewModel\);/);
 assert.match(selection, /updateRoadControlPreview\(dragState, dragState\.previewModel, adapter\);\s+updateEndpointAlignmentGuide\(dragState, dragState\.previewModel\);/);
 assert.match(selection, /clearEndpointAlignmentGuide\(drag\);\s+Kroki\.EditorGrid\?\.endGesture\(\)/);

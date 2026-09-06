@@ -375,20 +375,32 @@
     return "";
   }
 
-  function canvasViewBox() {
-    const base = manager.canvas.viewBox?.baseVal;
-    if (base && [base.x, base.y, base.width, base.height].every(Number.isFinite) && base.width > 0 && base.height > 0) {
-      return base;
+  function visibleCanvasBounds(matrix = screenMatrix()) {
+    const rect = manager.canvas.getBoundingClientRect?.();
+    if (matrix && rect && rect.width > 0 && rect.height > 0) {
+      const corners = [
+        pointFromEvent({ clientX: rect.left, clientY: rect.top }, matrix),
+        pointFromEvent({ clientX: rect.left + rect.width, clientY: rect.top }, matrix),
+        pointFromEvent({ clientX: rect.left, clientY: rect.top + rect.height }, matrix),
+        pointFromEvent({ clientX: rect.left + rect.width, clientY: rect.top + rect.height }, matrix)
+      ];
+      const xs = corners.map((point) => point.x);
+      const ys = corners.map((point) => point.y);
+      if ([...xs, ...ys].every(Number.isFinite)) {
+        const x = Math.min(...xs);
+        const y = Math.min(...ys);
+        return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
+      }
     }
-    const values = String(manager.canvas.getAttribute("viewBox") || "").trim().split(/[\s,]+/).map(Number);
-    if (values.length !== 4 || !values.every(Number.isFinite) || values[2] <= 0 || values[3] <= 0) return null;
-    return { x: values[0], y: values[1], width: values[2], height: values[3] };
+    const base = manager.canvas.viewBox?.baseVal;
+    if (!base || ![base.x, base.y, base.width, base.height].every(Number.isFinite)) return null;
+    return { x: base.x, y: base.y, width: base.width, height: base.height };
   }
 
   function updateEndpointAlignmentGuide(dragState, model) {
     const axis = endpointAlignmentAxis(model, dragState?.cpId);
-    const viewBox = axis ? canvasViewBox() : null;
-    if (!axis || !viewBox) {
+    const bounds = axis ? dragState?.endpointGuideBounds : null;
+    if (!axis || !bounds) {
       clearEndpointAlignmentGuide(dragState);
       return;
     }
@@ -407,16 +419,16 @@
     const guide = dragState.endpointAlignmentGuide;
     guide.dataset.axis = axis;
     if (axis === "horizontal") {
-      utils.setAttributeIfChanged(guide, "x1", viewBox.x);
+      utils.setAttributeIfChanged(guide, "x1", bounds.x);
       utils.setAttributeIfChanged(guide, "y1", model.geometry.start.y);
-      utils.setAttributeIfChanged(guide, "x2", viewBox.x + viewBox.width);
+      utils.setAttributeIfChanged(guide, "x2", bounds.x + bounds.width);
       utils.setAttributeIfChanged(guide, "y2", model.geometry.start.y);
       return;
     }
     utils.setAttributeIfChanged(guide, "x1", model.geometry.start.x);
-    utils.setAttributeIfChanged(guide, "y1", viewBox.y);
+    utils.setAttributeIfChanged(guide, "y1", bounds.y);
     utils.setAttributeIfChanged(guide, "x2", model.geometry.start.x);
-    utils.setAttributeIfChanged(guide, "y2", viewBox.y + viewBox.height);
+    utils.setAttributeIfChanged(guide, "y2", bounds.y + bounds.height);
   }
 
   function roadPreviewInfo(model, adapter, dragState = null) {
@@ -725,6 +737,9 @@
       previewNeedsFinalize: false,
       previewControlHandles: null,
       endpointAlignmentGuide: null,
+      endpointGuideBounds: type === "control" && (extra.cpId === "start" || extra.cpId === "end")
+        ? visibleCanvasBounds(matrix)
+        : null,
       totalDx: 0,
       totalDy: 0,
       pendingPoint: null,
