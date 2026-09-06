@@ -113,6 +113,7 @@
 
   function clearContourMask(layer = contourLayer()) {
     layer?.removeAttribute?.("mask");
+    layer?.removeAttribute?.("clip-path");
     const mask = manager.canvas.querySelector("#" + CONTOUR_MASK_ID);
     const defs = mask?.parentNode;
     mask?.remove();
@@ -143,6 +144,32 @@
 
     const defs = ensureContourMaskDefs();
     let mask = defs.querySelector("#" + CONTOUR_MASK_ID);
+    // One circular exclusion is an exact vector clip: no viewport-sized
+    // luminance surface needs to be rasterized while sibling objects change.
+    // Keep compositing masks for multiple islands (overlapping holes must union,
+    // not cancel each other as they would in an even-odd compound path).
+    const vectorClip = islandCenters.length === 1;
+    const tag = vectorClip ? "clipPath" : "mask";
+    if (mask && mask.tagName.toLowerCase() !== tag.toLowerCase()) {
+      mask.remove();
+      mask = null;
+    }
+    if (vectorClip) {
+      if (!mask) {
+        mask = createSvgElement("clipPath", { id: CONTOUR_MASK_ID, clipPathUnits: "userSpaceOnUse" });
+        defs.append(mask);
+      }
+      const { cx, cy, radius: r } = islandCenters[0];
+      const d = `M ${x} ${y} h ${width} v ${height} h ${-width} Z M ${cx - r} ${cy} A ${r} ${r} 0 1 0 ${cx + r} ${cy} A ${r} ${r} 0 1 0 ${cx - r} ${cy} Z`;
+      const existing = mask.firstElementChild;
+      if (!existing || existing.getAttribute("d") !== d) {
+        mask.replaceChildren(createSvgElement("path", { d, "clip-rule": "evenodd" }));
+      }
+      layer.removeAttribute("mask");
+      layer.setAttribute("clip-path", `url(#${CONTOUR_MASK_ID})`);
+      return;
+    }
+    layer.removeAttribute("clip-path");
     if (!mask) {
       mask = createSvgElement("mask", {
         id: CONTOUR_MASK_ID,

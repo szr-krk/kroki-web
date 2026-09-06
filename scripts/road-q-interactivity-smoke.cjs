@@ -290,4 +290,32 @@ for (const side of ["control", "entry", "exit"]) {
   assert.deepEqual(coalesced, drag(side, "pointercancel", false), `${side}: cancellation must preserve the existing commit-on-cancel behavior`);
 }
 
-console.log("road Q interactivity smoke: ok");
+{
+  const scene = createScene();
+  const manager = scene.window.Kroki.EditorObjectManager;
+  const objects = manager.getAll();
+  const adapter = manager.getAdapter();
+  const island = (id, x) => ({ ...adapter.create({ geometry: {
+    profile: "islandRing", center: { x, y: 0 }, innerDiameter: 160, outerDiameter: 360
+  } }), id });
+  objects.push(island("island-a", 0));
+  scene.engine.rebuild();
+  const layer = scene.canvas.querySelector("#roadIntersectionContourLayer");
+  assert.equal(scene.canvas.querySelector("#roadIntersectionContourMask").tagName, "clipPath");
+  assert.ok(layer.getAttribute("clip-path"));
+  assert.equal(layer.getAttribute("mask"), null);
+  objects.push(island("island-b", 40));
+  scene.engine.rebuild();
+  assert.equal(scene.canvas.querySelector("#roadIntersectionContourMask").tagName, "mask", "Overlapping islands must retain union masking");
+  assert.equal(layer.getAttribute("clip-path"), null);
+  objects.pop();
+  scene.engine.rebuild();
+  assert.equal(scene.canvas.querySelector("#roadIntersectionContourMask").tagName, "clipPath");
+  objects.pop();
+  scene.engine.rebuild();
+  assert.equal(scene.canvas.querySelector("#roadIntersectionContourMask"), null);
+  assert.equal(layer.getAttribute("mask"), null);
+  assert.equal(layer.getAttribute("clip-path"), null);
+}
+
+console.log("road Q interactivity and island clipping smoke: ok");
