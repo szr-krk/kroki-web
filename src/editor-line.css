@@ -239,9 +239,22 @@
 
 .editor-object-cp-role-road-barrier .editor-object-cp-visual,
 .editor-object-cp-role-road-barrier-free .editor-object-cp-visual {
-  fill: #dbeafe;
-  stroke: none;
-  stroke-width: 0;
+  fill: #f97316;
+  fill-opacity: .95;
+  stroke: #7c2d12;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.editor-endpoint-alignment-guide {
+  fill: none;
+  opacity: .92;
+  pointer-events: none;
+  stroke: #db2777;
+  stroke-dasharray: 9 6;
+  stroke-linecap: butt;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
 }
 
 .editor-object-cp:active,

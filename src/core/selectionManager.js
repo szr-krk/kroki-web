@@ -11,6 +11,7 @@
   let drag = null;
   let viewportSyncFrame = 0;
   const DRAG_START_THRESHOLD_PX = 3;
+  const AXIS_ALIGNMENT_EPSILON = 0.0000001;
 
   function screenMatrix() {
     return manager.canvas.getScreenCTM?.()?.inverse?.() || null;
@@ -138,6 +139,7 @@
           dragState.previewNeedsFinalize = true;
         }
         updateRoadControlPreview(dragState, dragState.previewModel, adapter);
+        updateEndpointAlignmentGuide(dragState, dragState.previewModel);
         dragState.lastPoint = point;
         return true;
       }
@@ -149,6 +151,7 @@
           metrics: dragState.metrics || controlPoints.metrics()
         });
         updateLineControlPreview(dragState, dragState.previewModel, adapter);
+        updateEndpointAlignmentGuide(dragState, dragState.previewModel);
         dragState.lastPoint = point;
         return true;
       }
@@ -172,6 +175,7 @@
         )) ? "geometry" : false
       });
       controlPoints.sync({ reuseMetrics: true, resize: false });
+      updateEndpointAlignmentGuide(dragState, model);
       dragState.lastPoint = point;
       return true;
     }
@@ -351,6 +355,68 @@
       adapter.renderSelection(dragState.lineSelectionElement, model, model.style, mode);
     }
     updatePreviewControlHandles(dragState, model, adapter, dragState.metrics);
+  }
+
+  function clearEndpointAlignmentGuide(dragState) {
+    dragState?.endpointAlignmentGuide?.remove();
+    if (dragState) dragState.endpointAlignmentGuide = null;
+  }
+
+  function endpointAlignmentAxis(model, cpId) {
+    if (cpId !== "start" && cpId !== "end") return "";
+    const start = model?.geometry?.start;
+    const end = model?.geometry?.end;
+    if (![start?.x, start?.y, end?.x, end?.y].every(Number.isFinite)) return "";
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    if (Math.hypot(dx, dy) <= AXIS_ALIGNMENT_EPSILON) return "";
+    if (Math.abs(dy) <= AXIS_ALIGNMENT_EPSILON) return "horizontal";
+    if (Math.abs(dx) <= AXIS_ALIGNMENT_EPSILON) return "vertical";
+    return "";
+  }
+
+  function canvasViewBox() {
+    const base = manager.canvas.viewBox?.baseVal;
+    if (base && [base.x, base.y, base.width, base.height].every(Number.isFinite) && base.width > 0 && base.height > 0) {
+      return base;
+    }
+    const values = String(manager.canvas.getAttribute("viewBox") || "").trim().split(/[\s,]+/).map(Number);
+    if (values.length !== 4 || !values.every(Number.isFinite) || values[2] <= 0 || values[3] <= 0) return null;
+    return { x: values[0], y: values[1], width: values[2], height: values[3] };
+  }
+
+  function updateEndpointAlignmentGuide(dragState, model) {
+    const axis = endpointAlignmentAxis(model, dragState?.cpId);
+    const viewBox = axis ? canvasViewBox() : null;
+    if (!axis || !viewBox) {
+      clearEndpointAlignmentGuide(dragState);
+      return;
+    }
+    if (!dragState.endpointAlignmentGuide?.isConnected) {
+      const editLayer = manager.canvas.querySelector("#editorEditLayer");
+      if (!editLayer) return;
+      dragState.endpointAlignmentGuide = utils.createSvgElement("line", {
+        class: "editor-endpoint-alignment-guide",
+        "pointer-events": "none"
+      });
+      editLayer.insertBefore(
+        dragState.endpointAlignmentGuide,
+        editLayer.querySelector(".editor-object-cp:not(.editor-group-cp)") || null
+      );
+    }
+    const guide = dragState.endpointAlignmentGuide;
+    guide.dataset.axis = axis;
+    if (axis === "horizontal") {
+      utils.setAttributeIfChanged(guide, "x1", viewBox.x);
+      utils.setAttributeIfChanged(guide, "y1", model.geometry.start.y);
+      utils.setAttributeIfChanged(guide, "x2", viewBox.x + viewBox.width);
+      utils.setAttributeIfChanged(guide, "y2", model.geometry.start.y);
+      return;
+    }
+    utils.setAttributeIfChanged(guide, "x1", model.geometry.start.x);
+    utils.setAttributeIfChanged(guide, "y1", viewBox.y);
+    utils.setAttributeIfChanged(guide, "x2", model.geometry.start.x);
+    utils.setAttributeIfChanged(guide, "y2", viewBox.y + viewBox.height);
   }
 
   function roadPreviewInfo(model, adapter, dragState = null) {
@@ -658,6 +724,7 @@
       roadMovePreviewReady: false,
       previewNeedsFinalize: false,
       previewControlHandles: null,
+      endpointAlignmentGuide: null,
       totalDx: 0,
       totalDy: 0,
       pendingPoint: null,
@@ -881,6 +948,7 @@
       Kroki.HistoryManager?.commit?.(drag.transaction, drag.historyLabel, { assumeChanged: true, ownSnapshots: true });
     }
     cancelQueuedDragFrame(drag);
+    clearEndpointAlignmentGuide(drag);
     Kroki.EditorGrid?.endGesture();
     drag = null;
     if (shouldClear) clear();

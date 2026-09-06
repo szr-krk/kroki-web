@@ -200,6 +200,15 @@ assert.match(selection, /const positionSnap = type === "object"[\s\S]+?capabilit
 assert.match(selection, /beginGesture\(\[model\.id\], event\.pointerType, \{ positionSnap \}\)/);
 assert.match(selection, /function updateLineControlPreview[\s\S]+?adapter\.render\(model, dragState\.lineElement\)/);
 assert.doesNotMatch(selection, /function renderLinePreviewElement/, "Line CP preview must use the adapter render path so arrow insets stay active");
+assert.match(selection, /function endpointAlignmentAxis[\s\S]+?cpId !== "start" && cpId !== "end"/);
+assert.match(selection, /function updateEndpointAlignmentGuide[\s\S]+?viewBox\.x \+ viewBox\.width[\s\S]+?viewBox\.y \+ viewBox\.height/);
+assert.match(selection, /updateLineControlPreview\(dragState, dragState\.previewModel, adapter\);\s+updateEndpointAlignmentGuide\(dragState, dragState\.previewModel\);/);
+assert.match(selection, /updateRoadControlPreview\(dragState, dragState\.previewModel, adapter\);\s+updateEndpointAlignmentGuide\(dragState, dragState\.previewModel\);/);
+assert.match(selection, /clearEndpointAlignmentGuide\(drag\);\s+Kroki\.EditorGrid\?\.endGesture\(\)/);
+
+const lineCss = read("src/editor-line.css");
+assert.match(lineCss, /\.editor-endpoint-alignment-guide\s*\{[\s\S]+?vector-effect:\s*non-scaling-stroke/);
+assert.match(lineCss, /\.editor-object-cp-role-road-barrier[\s\S]+?fill:\s*#f97316[\s\S]+?stroke:\s*#7c2d12/);
 
 const multi = read("src/core/multiSelectManager.js");
 assert.match(multi, /EditorGrid\?\.movePoint\(drag\.startPoint, drag\.gridAnchor, point, event\)/);
