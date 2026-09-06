@@ -28,6 +28,7 @@
   ];
   const MIN_S_CURVE_CONTROLS = 2;
   const MAX_S_CURVE_CONTROLS = 2;
+  const LANE_WIDTH_STEP = 1;
   const ROAD_LINE_COLOR = "#000000";
   let activeBoundaryKey = "";
   let departureSide = "right";
@@ -921,14 +922,14 @@
     const config = normalizeConfig(model, model?.metadata?.road);
     const section = selectedSectionInfo(model);
     const current = pickerInt(section?.width || config.laneWidth, 50);
-    updateLaneWidthValue(current + 5, isIslandRoad(model) ? "Ada serit genisligi" : "Yol kesit genisligi");
+    updateLaneWidthValue(current + LANE_WIDTH_STEP, isIslandRoad(model) ? "Ada serit genisligi" : "Yol kesit genisligi");
   });
   bindHoldAction(controls.laneWidthMinus, () => {
     const model = activeRoadModel();
     const config = normalizeConfig(model, model?.metadata?.road);
     const section = selectedSectionInfo(model);
     const current = pickerInt(section?.width || config.laneWidth, 50);
-    updateLaneWidthValue(current - 5, isIslandRoad(model) ? "Ada serit genisligi" : "Yol kesit genisligi");
+    updateLaneWidthValue(current - LANE_WIDTH_STEP, isIslandRoad(model) ? "Ada serit genisligi" : "Yol kesit genisligi");
   });
   controls.laneWidth?.addEventListener("input", () => {
     if (controls.laneWidth.value === "") return;

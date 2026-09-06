@@ -9,6 +9,7 @@ const styleManager = fs.readFileSync(path.join(__dirname, "..", "src", "core", "
 const editorObjectManager = fs.readFileSync(path.join(__dirname, "..", "src", "core", "editorObjectManager.js"), "utf8");
 const documentSerializer = fs.readFileSync(path.join(__dirname, "..", "src", "core", "documentSerializer.js"), "utf8");
 const responsiveScale = fs.readFileSync(path.join(__dirname, "..", "src", "responsive-scale.js"), "utf8");
+const roadInspector = fs.readFileSync(path.join(__dirname, "..", "src", "ui", "roadInspector.js"), "utf8");
 
 const baseRule = css.match(/\.line-text-panel\s*\{([^}]*)\}/)?.[1] || "";
 const focusSectionStart = css.indexOf("/* Sanal klavye acikken");
@@ -166,6 +167,9 @@ assert.match(styleManager, /repositionTextEntryPanel\(textPanel, controls\.textB
 assert.match(responsiveScale, /activeTextEntryHost\?\.matches\?\.\("\.free-text-composer, \.line-text-panel"\)/);
 
 assert.match(index, /kroki-build" content="[^"]+"/);
+assert.match(index, /id="roadLaneWidthIpInput"[^>]*step="1"/);
+assert.match(roadInspector, /const LANE_WIDTH_STEP = 1;/);
+assert.match(roadInspector, /current \+ LANE_WIDTH_STEP[\s\S]+?current - LANE_WIDTH_STEP/);
 
 global.window = { Kroki: { EditorUtils: {} } };
 require(path.join(__dirname, "..", "src", "editor-stroke-style.js"));
