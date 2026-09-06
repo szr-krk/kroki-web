@@ -54,7 +54,7 @@ assert.match(styleManager, /typeof adapter\?\.setRotation === "function"/);
 assert.match(styleManager, /entry\.adapter\.setRotation\(draft, nextRotation\)/);
 assert.match(styleManager, /bindHoldAction\(controls\.objectRotateMinus/);
 assert.match(styleManager, /bindHoldAction\(controls\.objectRotatePlus/);
-assert.match(selectionManager, /styleControls:\s*dragState\.cpId === "rotate"/);
+assert.match(selectionManager, /styleControls:\s*\(dragState\.cpId === "rotate"[\s\S]*?\? "geometry" : false/);
 assert.match(controlPointManager, /const CP_TOUCH_DIAMETER_PX = 72/);
 assert.match(controlPointManager, /const ROTATE_ICON_SIZE_PX = 36/);
 assert.match(controlPointManager, /const ROTATE_ICON_PATH = "M12 6V3L8 7L12 11V8C14\.21/);

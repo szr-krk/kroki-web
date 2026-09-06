@@ -23,7 +23,7 @@ assert.match(index, /kroki-build" content="[^"]+"/);
 assert.match(index, /id="trafficSignSearch"[^>]*placeholder="Levha ara\.\.\."/s);
 assert.match(index, /id="trafficSignSearchCount"/);
 assert.match(index, /id="btnTrafficSignSearchClear"/);
-assert.match(index, /src\/core\/shapeRegistry\.js\?v=20260810-performance-stability-v1/);
+assert.match(index, /src\/core\/shapeRegistry\.js\?v=[^"\s]+/);
 assert.match(index, /src\/ui\/trafficSignLibrary\.js\?v=20260810-performance-stability-v1/);
 
 assert.match(trafficSignLibrary, /catalog\.all\(\)\.filter/);

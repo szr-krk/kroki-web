@@ -248,27 +248,27 @@
 
     render(model, element) {
       const geometry = model.geometry;
-      element.setAttribute("x1", String(geometry.start.x));
-      element.setAttribute("y1", String(geometry.start.y));
-      element.setAttribute("x2", String(geometry.end.x));
-      element.setAttribute("y2", String(geometry.end.y));
-      element.dataset.bezierType = geometry.bezierType;
+      utils.setAttributeIfChanged(element, "x1", String(geometry.start.x));
+      utils.setAttributeIfChanged(element, "y1", String(geometry.start.y));
+      utils.setAttributeIfChanged(element, "x2", String(geometry.end.x));
+      utils.setAttributeIfChanged(element, "y2", String(geometry.end.y));
+      utils.setAttributeIfChanged(element, "data-bezier-type", geometry.bezierType);
       if (geometry.bezierType === CUBIC) {
-        element.dataset.bezierC1X = String(geometry.c1.x);
-        element.dataset.bezierC1Y = String(geometry.c1.y);
-        element.dataset.bezierC2X = String(geometry.c2.x);
-        element.dataset.bezierC2Y = String(geometry.c2.y);
+        utils.setAttributeIfChanged(element, "data-bezier-c1-x", String(geometry.c1.x));
+        utils.setAttributeIfChanged(element, "data-bezier-c1-y", String(geometry.c1.y));
+        utils.setAttributeIfChanged(element, "data-bezier-c2-x", String(geometry.c2.x));
+        utils.setAttributeIfChanged(element, "data-bezier-c2-y", String(geometry.c2.y));
         delete element.dataset.bezierQX;
         delete element.dataset.bezierQY;
       } else {
-        element.dataset.bezierQX = String(geometry.q.x);
-        element.dataset.bezierQY = String(geometry.q.y);
+        utils.setAttributeIfChanged(element, "data-bezier-q-x", String(geometry.q.x));
+        utils.setAttributeIfChanged(element, "data-bezier-q-y", String(geometry.q.y));
         delete element.dataset.bezierC1X;
         delete element.dataset.bezierC1Y;
         delete element.dataset.bezierC2X;
         delete element.dataset.bezierC2Y;
       }
-      element.setAttribute("d", renderedPathData(model));
+      utils.setAttributeIfChanged(element, "d", renderedPathData(model));
       element.removeAttribute("transform");
     },
 
@@ -363,9 +363,9 @@
     },
 
     renderSelection(element, model, style, mode) {
-      element.setAttribute("d", renderedPathData(model, style));
-      element.setAttribute("stroke-width", String(style.strokeWidth + 4));
-      element.setAttribute("stroke-linecap", style.lineCap);
+      utils.setAttributeIfChanged(element, "d", renderedPathData(model, style));
+      utils.setAttributeIfChanged(element, "stroke-width", String(style.strokeWidth + 4));
+      utils.setAttributeIfChanged(element, "stroke-linecap", style.lineCap);
       element.classList.toggle("is-edit", mode === "edit");
       element.classList.toggle("is-preselect", mode === "preselect");
     },

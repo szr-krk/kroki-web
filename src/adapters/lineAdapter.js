@@ -69,14 +69,14 @@
 
     render(model, element) {
       const geometry = renderedEndpoints(model);
-      element.dataset.geometryStartX = String(model.geometry.start.x);
-      element.dataset.geometryStartY = String(model.geometry.start.y);
-      element.dataset.geometryEndX = String(model.geometry.end.x);
-      element.dataset.geometryEndY = String(model.geometry.end.y);
-      element.setAttribute("x1", String(geometry.start.x));
-      element.setAttribute("y1", String(geometry.start.y));
-      element.setAttribute("x2", String(geometry.end.x));
-      element.setAttribute("y2", String(geometry.end.y));
+      utils.setAttributeIfChanged(element, "data-geometry-start-x", String(model.geometry.start.x));
+      utils.setAttributeIfChanged(element, "data-geometry-start-y", String(model.geometry.start.y));
+      utils.setAttributeIfChanged(element, "data-geometry-end-x", String(model.geometry.end.x));
+      utils.setAttributeIfChanged(element, "data-geometry-end-y", String(model.geometry.end.y));
+      utils.setAttributeIfChanged(element, "x1", String(geometry.start.x));
+      utils.setAttributeIfChanged(element, "y1", String(geometry.start.y));
+      utils.setAttributeIfChanged(element, "x2", String(geometry.end.x));
+      utils.setAttributeIfChanged(element, "y2", String(geometry.end.y));
       element.removeAttribute("d");
       element.removeAttribute("transform");
     },
@@ -159,9 +159,9 @@
 
     renderSelection(element, model, style, mode) {
       const geometry = renderedEndpoints(model, style);
-      element.setAttribute("d", lineGeometry.pathData(geometry.start, geometry.end));
-      element.setAttribute("stroke-width", String(style.strokeWidth + 4));
-      element.setAttribute("stroke-linecap", style.lineCap);
+      utils.setAttributeIfChanged(element, "d", lineGeometry.pathData(geometry.start, geometry.end));
+      utils.setAttributeIfChanged(element, "stroke-width", String(style.strokeWidth + 4));
+      utils.setAttributeIfChanged(element, "stroke-linecap", style.lineCap);
       element.classList.toggle("is-edit", mode === "edit");
       element.classList.toggle("is-preselect", mode === "preselect");
     },

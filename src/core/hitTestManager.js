@@ -63,7 +63,7 @@
       for (let stepIndex = 0; stepIndex < HIT_TOLERANCE_STEPS_PX.length; stepIndex += 1) {
         const tol = HIT_TOLERANCE_STEPS_PX[stepIndex] * unitsPerPx;
         for (let index = 0; index < entryCount; index += 1) {
-          const entry = entryAt(index);
+          const entry = entryAt(index, roadPass);
           if (!entry || Number(entry.model.type === "road") !== roadPass) continue;
           if (!hitEntry(entry, point, tol)) continue;
           return { model: entry.model, element: entry.element, adapter: entry.adapter };
@@ -75,8 +75,10 @@
 
   function linearHitTest(point, objects, unitsPerPx) {
     const entries = new Array(objects.length);
-    return prioritizedHitTest(point, objects.length, (priorityIndex) => {
+    return prioritizedHitTest(point, objects.length, (priorityIndex, roadPass) => {
       const objectIndex = objects.length - priorityIndex - 1;
+      // Skip the other pass before constructing bounds for an unused object.
+      if (Number(objects[objectIndex].type === "road") !== roadPass) return null;
       if (!entries[objectIndex]) entries[objectIndex] = entryFor(objects[objectIndex], objectIndex);
       return entries[objectIndex];
     }, unitsPerPx);

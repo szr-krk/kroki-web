@@ -114,12 +114,12 @@
       const geometry = model.geometry;
       const rx = Math.max(1, geometry.rx);
       const ry = Math.max(1, geometry.ry);
-      element.setAttribute("x", String(geometry.cx - rx));
-      element.setAttribute("y", String(geometry.cy - ry));
-      element.setAttribute("width", String(rx * 2));
-      element.setAttribute("height", String(ry * 2));
-      element.dataset.rotation = String(utils.normalizeRotation(geometry.rotation));
-      element.setAttribute("transform", `rotate(${utils.normalizeRotation(geometry.rotation)} ${geometry.cx} ${geometry.cy})`);
+      utils.setAttributeIfChanged(element, "x", String(geometry.cx - rx));
+      utils.setAttributeIfChanged(element, "y", String(geometry.cy - ry));
+      utils.setAttributeIfChanged(element, "width", String(rx * 2));
+      utils.setAttributeIfChanged(element, "height", String(ry * 2));
+      utils.setAttributeIfChanged(element, "data-rotation", String(utils.normalizeRotation(geometry.rotation)));
+      utils.setAttributeIfChanged(element, "transform", `rotate(${utils.normalizeRotation(geometry.rotation)} ${geometry.cx} ${geometry.cy})`);
     },
 
     hitTest(model, point, tolerance) {
@@ -214,12 +214,12 @@
 
     renderSelection(element, model, style, mode) {
       const geometry = model.geometry;
-      element.setAttribute("x", String(geometry.cx - geometry.rx));
-      element.setAttribute("y", String(geometry.cy - geometry.ry));
-      element.setAttribute("width", String(geometry.rx * 2));
-      element.setAttribute("height", String(geometry.ry * 2));
-      element.setAttribute("stroke-width", String(style.strokeWidth + 4));
-      element.setAttribute("transform", `rotate(${geometry.rotation} ${geometry.cx} ${geometry.cy})`);
+      utils.setAttributeIfChanged(element, "x", String(geometry.cx - geometry.rx));
+      utils.setAttributeIfChanged(element, "y", String(geometry.cy - geometry.ry));
+      utils.setAttributeIfChanged(element, "width", String(geometry.rx * 2));
+      utils.setAttributeIfChanged(element, "height", String(geometry.ry * 2));
+      utils.setAttributeIfChanged(element, "stroke-width", String(style.strokeWidth + 4));
+      utils.setAttributeIfChanged(element, "transform", `rotate(${geometry.rotation} ${geometry.cx} ${geometry.cy})`);
       element.classList.toggle("is-edit", mode === "edit");
       element.classList.toggle("is-preselect", mode === "preselect");
     }

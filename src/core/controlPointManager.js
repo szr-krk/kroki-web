@@ -262,9 +262,9 @@
     if (options.resize !== false) resizeHandle(handle, sizes, cp);
     const isRotate = isRotateControlPoint(cp);
     const rotation = !isRotate && Number.isFinite(cp.angle) ? ` rotate(${cp.angle})` : "";
-    handle.setAttribute("transform", `translate(${cp.x} ${cp.y})${rotation}`);
+    utils.setAttributeIfChanged(handle, "transform", `translate(${cp.x} ${cp.y})${rotation}`);
     handle.classList.toggle("is-preselect", mode === "preselect");
-    if (cp.cursor) handle.style.cursor = cp.cursor;
+    if (cp.cursor && handle.style.cursor !== cp.cursor) handle.style.cursor = cp.cursor;
   }
 
   function sync(options = {}) {

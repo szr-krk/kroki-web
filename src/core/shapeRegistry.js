@@ -12,6 +12,11 @@
     return element;
   }
 
+  function setAttributeIfChanged(element, name, value) {
+    const text = String(value);
+    if (element.getAttribute(name) !== text) element.setAttribute(name, text);
+  }
+
   function numberOr(value, fallback) {
     if (value == null || value === "") return fallback;
     const number = Number(value);
@@ -98,6 +103,7 @@
   Kroki.EditorUtils = {
     svgNs: SVG_NS,
     createSvgElement,
+    setAttributeIfChanged,
     numberOr,
     clonePlain,
     pointFromEvent,

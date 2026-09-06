@@ -1679,13 +1679,18 @@
     controls?.vehicleLabelInput?.select();
   }
 
+  function syncVehicleGeometryControls(model) {
+    const percent = vehicleScalePercent(model.geometry?.scale);
+    const rotation = Math.round(utils.normalizeRotation(model.geometry?.rotation || 0));
+    if (controls?.vehicleScaleInput && controls.vehicleScaleInput.value !== String(percent)) controls.vehicleScaleInput.value = String(percent);
+    if (controls?.vehicleRotateInput && controls.vehicleRotateInput.value !== String(rotation)) controls.vehicleRotateInput.value = String(rotation);
+  }
+
   function syncVehicleControls(model) {
     const catalog = vehicleCatalog();
     const metadata = model.metadata || {};
     const variant = vehicleVariant(model);
     const view = catalog?.normalizeView?.(variant, metadata.vehicleView || "top") || "top";
-    const percent = vehicleScalePercent(model.geometry?.scale);
-    const rotation = Math.round(utils.normalizeRotation(model.geometry?.rotation || 0));
     const color = metadata.vehicleColor || variant?.color || "#000000";
     const labelText = normalizeVehicleLabelText(metadata.vehicleLabelText);
     const labelPosition = normalizeVehicleLabelPosition(metadata.vehicleLabelPosition);
@@ -1707,8 +1712,7 @@
     if (controls?.vehicleLabelPosition) controls.vehicleLabelPosition.dataset.currentPosition = labelPosition;
     controls?.vehicleLabelPosition?.setAttribute("title", labelPositionTitle + ". Konumu degistir");
     controls?.vehicleLabelPosition?.setAttribute("aria-label", labelPositionTitle + ". Konumu degistir");
-    if (controls?.vehicleScaleInput && controls.vehicleScaleInput.value !== String(percent)) controls.vehicleScaleInput.value = String(percent);
-    if (controls?.vehicleRotateInput && controls.vehicleRotateInput.value !== String(rotation)) controls.vehicleRotateInput.value = String(rotation);
+    syncVehicleGeometryControls(model);
   }
 
   function updatePrimaryColor(color) {
@@ -1859,7 +1863,7 @@
     });
   }
 
-  function syncControls() {
+  function syncControls(options = {}) {
     const entry = activeEntry();
     if (!entry || !controls) {
       hidePanels();
@@ -1879,6 +1883,14 @@
     }
 
     const { model, adapter } = entry;
+    // A control-point drag changes geometry, not the inspector's style, icons or
+    // available actions. Keep its live numeric feedback without rebuilding them.
+    if (options.geometryOnly && !entry.multi && model.type !== "road") {
+      syncObjectRotationControls(entry);
+      if (isCatalogObjectAdapter(adapter)) syncCatalogObjectControls(model);
+      if (adapter?.capabilities?.vehicleObject) syncVehicleGeometryControls(model);
+      return;
+    }
     Kroki.ShapeConversionManager?.syncButton?.(entry.multi ? null : model);
     const isTextObject = isTextObjectEntry(entry);
     const isCallout = adapter?.type === "callout";

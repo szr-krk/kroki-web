@@ -43,6 +43,10 @@ class FakeNode {
     if (name === "class") this.classList = new FakeClassList(value);
   }
 
+  getAttribute(name) {
+    return this.attributes.get(name) ?? null;
+  }
+
   querySelector(selector) {
     const className = selector.split(".").filter(Boolean).at(-1);
     return this.children.find((child) => child.classList?.contains(className)) || null;
@@ -110,14 +114,6 @@ const camera = {
 
 const windowObject = {
   Kroki: {
-    EditorUtils: {
-      svgUnitsPerScreenPx() {
-        return 1;
-      },
-      createSvgElement(_name, attributes) {
-        return new FakeNode(attributes);
-      }
-    },
     EditorObjectManager: manager
   },
   krokiEditorCamera: camera,
@@ -126,6 +122,11 @@ const windowObject = {
   }
 };
 windowObject.window = windowObject;
+
+vm.runInNewContext(fs.readFileSync(path.join(__dirname, "..", "src", "core", "shapeRegistry.js"), "utf8"), {
+  window: windowObject,
+  document: { createElementNS() { return new FakeNode(); } }
+});
 
 const source = fs.readFileSync(
   path.join(__dirname, "..", "src", "core", "controlPointManager.js"),

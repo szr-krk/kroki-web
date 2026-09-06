@@ -746,7 +746,7 @@
 
   function syncDependents(options = {}) {
     if (options.controlPoints !== false) Kroki.ControlPointManager?.sync?.();
-    if (options.styleControls !== false) Kroki.StyleManager?.syncControls?.();
+    if (options.styleControls !== false) Kroki.StyleManager?.syncControls?.({ geometryOnly: options.styleControls === "geometry" });
   }
 
   function updateModel(id, updater, options = {}) {

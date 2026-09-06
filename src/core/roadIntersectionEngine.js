@@ -34,6 +34,7 @@
   let selectedQKey = "";
   let qEndpointEdits = new Map();
   let qEndpointDrag = null;
+  let qInteractivityNodes = [];
   let qMetricSyncFrame = 0;
   let lastDiagnostics = null;
   let dirtyRoadIds = new Set();
@@ -174,6 +175,7 @@
   function clearLayer() {
     const layer = contourLayer();
     layer.replaceChildren();
+    qInteractivityNodes = [];
     clearContourMask(layer);
   }
 
@@ -2751,7 +2753,7 @@
 
   function selectQSegment(key) {
     selectedQKey = qKeyTouchesIsland(key) ? "" : (key || "");
-    render();
+    refreshQInteractivity();
   }
 
   function updateQEndpointEdit(item, side, point) {
@@ -2786,6 +2788,8 @@
   function stopQEndpointDrag(event) {
     if (!qEndpointDrag) return;
     const drag = qEndpointDrag;
+    // Commit the last pointermove even when pointerup/cancel precedes its frame.
+    if (drag.moved && scheduled) render();
     const pointerId = event?.pointerId ?? drag.pointerId;
     try {
       if (pointerId != null && manager.canvas.hasPointerCapture?.(pointerId)) manager.canvas.releasePointerCapture(pointerId);
@@ -2795,7 +2799,6 @@
     window.removeEventListener("pointerup", stopQEndpointDrag, true);
     window.removeEventListener("pointercancel", stopQEndpointDrag, true);
     if (drag.moved) Kroki.HistoryManager?.commit?.(drag.transaction, "Kavsak Q duzenle");
-    scheduleRefresh();
   }
 
   function handleQEndpointDrag(event) {
@@ -2808,8 +2811,10 @@
     const moved = qEndpointDrag.side === "control"
       ? updateQControlEdit(item, point)
       : updateQEndpointEdit(item, qEndpointDrag.side, point);
-    if (moved) qEndpointDrag.moved = true;
-    render();
+    if (moved) {
+      qEndpointDrag.moved = true;
+      scheduleRefresh();
+    }
   }
 
   function startQEndpointDrag(event, key, side) {
@@ -2913,6 +2918,8 @@
   }
 
   function renderQInteractivity(layer, segments) {
+    qInteractivityNodes.forEach((node) => node.remove());
+    qInteractivityNodes = [];
     // Ada bağlantılarındaki otomatik Q'lar düzgün ağız geometrisini korur; kullanıcı
     // editi ise uçları çember boyunca taşıyıp dış kontur kalıntısı üretebildiği için kapalıdır.
     const items = (Array.isArray(segments) ? segments : []).filter(isEditableQSegment);
@@ -2932,6 +2939,7 @@
         "data-q-key": item.key,
         cursor: "pointer"
       });
+      qInteractivityNodes.push(hit);
       hit.addEventListener("pointerdown", (event) => {
         if (!canInteractWithQ()) {
           blockQEvent(event);
@@ -2941,11 +2949,10 @@
         event.stopPropagation();
         // Q parçasına ilk dokunuş önseçim/edit başlatır; seçiliyken tekrar Q çizgisine
         // veya CP dışındaki alana dokunmak düzenlemeyi bitirir.
-        selectedQKey = selectedQKey === item.key ? "" : item.key;
-        render();
+        selectQSegment(selectedQKey === item.key ? "" : item.key);
       }, true);
       if (isSelected) {
-        appendPath(layer, {
+        qInteractivityNodes.push(appendPath(layer, {
           class: "road-intersection-q-selected",
           d: qSegmentPath(item),
           fill: "none",
@@ -2954,8 +2961,8 @@
           "stroke-linecap": "round",
           "stroke-linejoin": "round",
           "pointer-events": "none"
-        });
-        appendPath(layer, {
+        }));
+        qInteractivityNodes.push(appendPath(layer, {
           class: "road-intersection-q-guide",
           d: `M ${fmt(item.entry.x)} ${fmt(item.entry.y)} L ${fmt(item.control.x)} ${fmt(item.control.y)} L ${fmt(item.exit.x)} ${fmt(item.exit.y)}`,
           fill: "none",
@@ -2963,10 +2970,18 @@
           "stroke-width": fmt(sizes.guideStroke),
           "stroke-dasharray": `${fmt(sizes.guideStroke * 4)} ${fmt(sizes.guideStroke * 3)}`,
           "pointer-events": "none"
-        });
-        layer.append(createQControlHandle(item, sizes), createQEndpointHandle(item, "entry", sizes), createQEndpointHandle(item, "exit", sizes));
+        }));
+        const handles = [createQControlHandle(item, sizes), createQEndpointHandle(item, "entry", sizes), createQEndpointHandle(item, "exit", sizes)];
+        layer.append(...handles);
+        qInteractivityNodes.push(...handles);
       }
     });
+  }
+
+  function refreshQInteractivity() {
+    if (suspended) return;
+    const layer = manager.canvas.querySelector("#roadIntersectionContourLayer");
+    if (layer) renderQInteractivity(layer, lastQSegments);
   }
 
   function resetQEndpointEdits() {
@@ -2991,7 +3006,7 @@
       timings[name] = performance.now() - startedAt;
       return performance.now();
     };
-    scheduled = 0;
+    cancelScheduledRefresh();
     if (suspended) return;
     let phaseStartedAt = performance.now();
     const layer = contourLayer();
@@ -3088,16 +3103,19 @@
     scheduled = window.requestAnimationFrame?.(render) || window.setTimeout(render, 16);
   }
 
+  function cancelScheduledRefresh() {
+    if (!scheduled) return;
+    if (window.cancelAnimationFrame) window.cancelAnimationFrame(scheduled);
+    else window.clearTimeout(scheduled);
+    scheduled = 0;
+  }
+
   function setSuspended(value, options = {}) {
     const next = Boolean(value);
     if (suspended === next) return;
     suspended = next;
     if (suspended) {
-      if (scheduled) {
-        if (window.cancelAnimationFrame) window.cancelAnimationFrame(scheduled);
-        else window.clearTimeout(scheduled);
-        scheduled = 0;
-      }
+      cancelScheduledRefresh();
       if (options.clear !== false) {
         clearLayer();
         clearClasses();
@@ -3116,8 +3134,7 @@
     // CP dışında bir yere dokunulursa Q düzenleme biter. Q çizgisine dokunma ise
     // kendi handler'ında toggle/select olarak ele alınır; burada karışmayız.
     if (isQInteractionTarget(event.target)) return;
-    selectedQKey = "";
-    render();
+    selectQSegment("");
   }
 
 
@@ -3204,7 +3221,7 @@
     exportState,
     importState,
     resetQEndpointEdits,
-    clearQSelection() { selectedQKey = ""; scheduleRefresh(); }
+    clearQSelection() { selectQSegment(""); }
   };
 
   window.addEventListener("load", scheduleRefresh, { once: true });

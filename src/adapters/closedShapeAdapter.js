@@ -395,11 +395,11 @@
     render(model, element) {
       const geometry = normalizeGeometry(model.geometry);
       model.geometry = geometry;
-      element.dataset.closedShapePoints = JSON.stringify(geometry.points);
-      element.dataset.closedShapeControls = JSON.stringify(geometry.controls);
-      element.dataset.closedShapeClosed = String(geometry.closed);
-      element.dataset.closedShapeFrame = JSON.stringify(geometry.frame);
-      element.setAttribute("d", pathDataFromGeometry(geometry));
+      utils.setAttributeIfChanged(element, "data-closed-shape-points", JSON.stringify(geometry.points));
+      utils.setAttributeIfChanged(element, "data-closed-shape-controls", JSON.stringify(geometry.controls));
+      utils.setAttributeIfChanged(element, "data-closed-shape-closed", String(geometry.closed));
+      utils.setAttributeIfChanged(element, "data-closed-shape-frame", JSON.stringify(geometry.frame));
+      utils.setAttributeIfChanged(element, "d", pathDataFromGeometry(geometry));
       element.removeAttribute("transform");
     },
 
@@ -554,9 +554,9 @@
     },
 
     renderSelection(element, model, style, mode) {
-      element.setAttribute("d", pathDataFromGeometry(model.geometry));
-      element.setAttribute("stroke-width", String(style.strokeWidth + 4));
-      element.setAttribute("stroke-linecap", "round");
+      utils.setAttributeIfChanged(element, "d", pathDataFromGeometry(model.geometry));
+      utils.setAttributeIfChanged(element, "stroke-width", String(style.strokeWidth + 4));
+      utils.setAttributeIfChanged(element, "stroke-linecap", "round");
       element.classList.toggle("is-edit", mode === "edit");
       element.classList.toggle("is-preselect", mode === "preselect");
     },

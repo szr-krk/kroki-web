@@ -69,10 +69,10 @@
 
     render(model, element) {
       const geometry = model.geometry;
-      element.setAttribute("cx", String(geometry.cx));
-      element.setAttribute("cy", String(geometry.cy));
-      element.setAttribute("r", String(Math.max(1, geometry.r)));
-      element.dataset.rotation = String(utils.normalizeRotation(geometry.rotation));
+      utils.setAttributeIfChanged(element, "cx", String(geometry.cx));
+      utils.setAttributeIfChanged(element, "cy", String(geometry.cy));
+      utils.setAttributeIfChanged(element, "r", String(Math.max(1, geometry.r)));
+      utils.setAttributeIfChanged(element, "data-rotation", String(utils.normalizeRotation(geometry.rotation)));
       element.removeAttribute("transform");
     },
 
@@ -140,10 +140,10 @@
     },
 
     renderSelection(element, model, style, mode) {
-      element.setAttribute("cx", String(model.geometry.cx));
-      element.setAttribute("cy", String(model.geometry.cy));
-      element.setAttribute("r", String(model.geometry.r));
-      element.setAttribute("stroke-width", String(style.strokeWidth + 4));
+      utils.setAttributeIfChanged(element, "cx", String(model.geometry.cx));
+      utils.setAttributeIfChanged(element, "cy", String(model.geometry.cy));
+      utils.setAttributeIfChanged(element, "r", String(model.geometry.r));
+      utils.setAttributeIfChanged(element, "stroke-width", String(style.strokeWidth + 4));
       element.classList.toggle("is-edit", mode === "edit");
       element.classList.toggle("is-preselect", mode === "preselect");
     }

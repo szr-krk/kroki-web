@@ -287,14 +287,14 @@
 
     render(model, element) {
       const control = controlPoint(model);
-      element.setAttribute("x1", String(model.geometry.start.x));
-      element.setAttribute("y1", String(model.geometry.start.y));
-      element.setAttribute("x2", String(model.geometry.end.x));
-      element.setAttribute("y2", String(model.geometry.end.y));
-      element.dataset.arcControlX = String(control.x);
-      element.dataset.arcControlY = String(control.y);
-      element.dataset.arcSagittaRatio = String(model.geometry.ratio);
-      element.setAttribute("d", renderedPathData(model));
+      utils.setAttributeIfChanged(element, "x1", String(model.geometry.start.x));
+      utils.setAttributeIfChanged(element, "y1", String(model.geometry.start.y));
+      utils.setAttributeIfChanged(element, "x2", String(model.geometry.end.x));
+      utils.setAttributeIfChanged(element, "y2", String(model.geometry.end.y));
+      utils.setAttributeIfChanged(element, "data-arc-control-x", String(control.x));
+      utils.setAttributeIfChanged(element, "data-arc-control-y", String(control.y));
+      utils.setAttributeIfChanged(element, "data-arc-sagitta-ratio", String(model.geometry.ratio));
+      utils.setAttributeIfChanged(element, "d", renderedPathData(model));
       element.removeAttribute("transform");
     },
 
@@ -370,9 +370,9 @@
     },
 
     renderSelection(element, model, style, mode) {
-      element.setAttribute("d", renderedPathData(model, style));
-      element.setAttribute("stroke-width", String(style.strokeWidth + 4));
-      element.setAttribute("stroke-linecap", style.lineCap);
+      utils.setAttributeIfChanged(element, "d", renderedPathData(model, style));
+      utils.setAttributeIfChanged(element, "stroke-width", String(style.strokeWidth + 4));
+      utils.setAttributeIfChanged(element, "stroke-linecap", style.lineCap);
       element.classList.toggle("is-edit", mode === "edit");
       element.classList.toggle("is-preselect", mode === "preselect");
     },
