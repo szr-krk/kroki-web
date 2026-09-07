@@ -7,7 +7,7 @@
     return new TextDecoder("utf-8").decode(bytes);
   }
 
-  const MODERN_DONER_KAVSAK_SVG = [
+  const MODERN_DONEL_KAVSAK_SVG = [
     "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iZWRpdG9yQ2FudmFzIiB2aWV3Qm94PSItMjU4LjMyOTA2MzE3NjMyNTEg",
     "LTUyOC4zMjkwNjMxNzYzMjUyIDE4NzYuNjU4MTI2MzUyNjUgMTg3Ni42NTgxMjYzNTI2NTEiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaW5ZTWluIG1lZXQi",
     "IHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHdpZHRoPSIxODc3",
@@ -2370,11 +2370,11 @@
 
   Kroki.ReadyDrawings = [
     {
-      id: "modern-doner-kavsak",
-      title: "Modern Döner Kavşak",
+      id: "modern-donel-kavsak",
+      title: "Modern Dönel Kavşak",
       category: "Hazır Kavşaklar",
       type: "intersection",
-      svg: decodeBase64Utf8(MODERN_DONER_KAVSAK_SVG)
+      svg: decodeBase64Utf8(MODERN_DONEL_KAVSAK_SVG)
     }
   ];
 })();
