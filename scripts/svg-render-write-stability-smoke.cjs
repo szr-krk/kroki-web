@@ -181,6 +181,17 @@ assert.deepEqual(plain(barrier.selectedBarrierInfo(barrierModel).endCaps), { sta
 barrier.scaleForGroup(barrierModel, 2);
 assert.equal(barrier.selectedBarrierInfo(barrierModel).spacing, 110, "Manual barrier spacing must scale with its group");
 assert.equal(barrierModel.metadata.barrier.scale, 2, "Manual barrier artwork must scale with its group");
+assert.equal(barrier.selectedBarrierInfo(barrierModel).profile, "line", "Manual barriers should start with a line profile");
+assert.deepEqual(plain(barrier.getControlPoints(barrierModel, {}, "edit").map((point) => point.id)), ["start", "end"]);
+barrier.cycleManualBarrierProfile(barrierModel);
+assert.equal(barrier.selectedBarrierInfo(barrierModel).profile, "arc");
+assert.deepEqual(plain(barrier.getControlPoints(barrierModel, {}, "edit").map((point) => point.id)), ["start", "end", "control"]);
+barrier.cycleManualBarrierProfile(barrierModel);
+assert.equal(barrier.selectedBarrierInfo(barrierModel).profile, "quadratic");
+assert.deepEqual(plain(barrier.getControlPoints(barrierModel, {}, "edit").map((point) => point.id)), ["start", "end", "q"]);
+barrier.cycleManualBarrierProfile(barrierModel);
+assert.equal(barrier.selectedBarrierInfo(barrierModel).profile, "cubic");
+assert.deepEqual(plain(barrier.getControlPoints(barrierModel, {}, "edit").map((point) => point.id)), ["start", "end", "c1", "c2"]);
 windowObject.Kroki.EditorGrid = { snapPoint(value) { return { x: Math.round(value.x / 20) * 20, y: Math.round(value.y / 20) * 20 }; } };
 const barrierStartState = barrier.beginControlPointMove(barrierModel, "c1", { x: 87, y: 43 });
 barrier.moveControlPoint(barrierModel, "c1", { x: 102, y: 58 }, { startState: barrierStartState });

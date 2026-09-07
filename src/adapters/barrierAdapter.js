@@ -3,10 +3,13 @@
   const utils = Kroki.EditorUtils;
   const registry = Kroki.ShapeRegistry;
   const lineGeometry = Kroki.LineGeometry;
+  const lineAdapter = registry?.get?.("line");
+  const arcAdapter = registry?.get?.("arc");
   const curveAdapter = registry?.get?.("bezier");
-  if (!utils || !registry || !lineGeometry || !curveAdapter) return;
+  if (!utils || !registry || !lineGeometry || !lineAdapter || !arcAdapter || !curveAdapter) return;
 
   const SAMPLE_COUNT = 72;
+  const DEFAULT_ARC_RATIO = 0.20;
   const DEFAULT_SPACING = 42;
   const MIN_SPACING = 18;
   const MAX_SPACING = 180;
@@ -19,6 +22,12 @@
     { start: false, end: true },
     { start: true, end: false },
     { start: true, end: true }
+  ];
+  const PROFILE_SEQUENCE = [
+    { id: "line", title: "Çizgi", short: "Çizgi" },
+    { id: "arc", title: "Yay", short: "Yay" },
+    { id: "quadratic", title: "Eğri", short: "Eğri" },
+    { id: "cubic", title: "Kübik eğri", short: "Kübik" }
   ];
 
   function point(value, fallback = { x: 0, y: 0 }) {
@@ -39,17 +48,42 @@
     return { c1: lerp(start, end, 1 / 3), c2: lerp(start, end, 2 / 3) };
   }
 
-  function normalizeGeometry(source = {}) {
+  function normalizeProfile(value, fallback = "line") {
+    const profile = String(value || "");
+    return PROFILE_SEQUENCE.some((item) => item.id === profile) ? profile : fallback;
+  }
+
+  function profileFromGeometry(source = {}, fallback = "line") {
+    const explicit = normalizeProfile(source.profile || source.barrierProfile, "");
+    if (explicit) return explicit;
+    if (source.bezierType === "quadratic" || source.q) return "quadratic";
+    if (source.bezierType === "cubic" || source.c1 || source.c2) return "cubic";
+    if (Number.isFinite(Number(source.ratio))) return "arc";
+    return fallback;
+  }
+
+  function normalizeGeometry(source = {}, fallbackProfile = "line") {
     const start = point(source.start);
     const end = point(source.end, start);
+    const profile = profileFromGeometry(source, fallbackProfile);
     const defaults = defaultControls(start, end);
-    return {
-      bezierType: "cubic",
-      start,
-      end,
-      c1: point(source.c1, defaults.c1),
-      c2: point(source.c2, defaults.c2)
-    };
+    if (profile === "arc") {
+      return { profile, start, end, ratio: utils.numberOr(source.ratio, DEFAULT_ARC_RATIO) };
+    }
+    if (profile === "quadratic") {
+      return { profile, bezierType: "quadratic", start, end, q: point(source.q, lerp(start, end, 0.5)) };
+    }
+    if (profile === "cubic") {
+      return {
+        profile,
+        bezierType: "cubic",
+        start,
+        end,
+        c1: point(source.c1, defaults.c1),
+        c2: point(source.c2, defaults.c2)
+      };
+    }
+    return { profile: "line", start, end };
   }
 
   function normalizeSpacing(value) {
@@ -78,15 +112,78 @@
     return `${Number(value.x) || 0} ${Number(value.y) || 0}`;
   }
 
+  function profileModel(model) {
+    const geometry = normalizeGeometry(model?.geometry);
+    if (geometry.profile === "arc") return { ...model, type: "arc", geometry };
+    if (geometry.profile === "quadratic" || geometry.profile === "cubic") {
+      return { ...model, type: "bezier", geometry };
+    }
+    return { ...model, type: "line", geometry };
+  }
+
+  function profileAdapter(model) {
+    const profile = normalizeGeometry(model?.geometry).profile;
+    if (profile === "arc") return arcAdapter;
+    if (profile === "quadratic" || profile === "cubic") return curveAdapter;
+    return lineAdapter;
+  }
+
   function pointAt(model, t) {
-    return curveAdapter.pointAt(model, t);
+    const proxy = profileModel(model);
+    return profileAdapter(model)?.pointAt?.(proxy, t) || lerp(proxy.geometry.start, proxy.geometry.end, t);
   }
 
   function tangentAt(model, t) {
-    if (typeof curveAdapter.tangentAt === "function") return curveAdapter.tangentAt(model, t);
+    const proxy = profileModel(model);
+    const adapter = profileAdapter(model);
+    if (typeof adapter?.tangentAt === "function") return adapter.tangentAt(proxy, t);
     const before = pointAt(model, Math.max(0, t - 0.001));
     const after = pointAt(model, Math.min(1, t + 0.001));
     return { x: after.x - before.x, y: after.y - before.y };
+  }
+
+  function profileInfo(model) {
+    const profile = normalizeGeometry(model?.geometry).profile;
+    const index = Math.max(0, PROFILE_SEQUENCE.findIndex((item) => item.id === profile));
+    return {
+      current: PROFILE_SEQUENCE[index],
+      next: PROFILE_SEQUENCE[(index + 1) % PROFILE_SEQUENCE.length]
+    };
+  }
+
+  function nextProfileGeometry(model) {
+    const geometry = normalizeGeometry(model?.geometry);
+    const endpoints = { start: geometry.start, end: geometry.end };
+    if (geometry.profile === "line") {
+      return normalizeGeometry({ ...endpoints, profile: "arc", ratio: DEFAULT_ARC_RATIO });
+    }
+    if (geometry.profile === "arc") {
+      const straightMidpoint = lerp(geometry.start, geometry.end, 0.5);
+      const curveMidpoint = pointAt({ ...model, geometry }, 0.5);
+      return normalizeGeometry({
+        ...endpoints,
+        profile: "quadratic",
+        q: {
+          x: 2 * curveMidpoint.x - straightMidpoint.x,
+          y: 2 * curveMidpoint.y - straightMidpoint.y
+        }
+      });
+    }
+    if (geometry.profile === "quadratic") {
+      return normalizeGeometry({
+        ...endpoints,
+        profile: "cubic",
+        c1: {
+          x: geometry.start.x + (geometry.q.x - geometry.start.x) * 2 / 3,
+          y: geometry.start.y + (geometry.q.y - geometry.start.y) * 2 / 3
+        },
+        c2: {
+          x: geometry.end.x + (geometry.q.x - geometry.end.x) * 2 / 3,
+          y: geometry.end.y + (geometry.q.y - geometry.end.y) * 2 / 3
+        }
+      });
+    }
+    return normalizeGeometry({ ...endpoints, profile: "line" });
   }
 
   function sampleAt(model, t, scale = 1) {
@@ -234,7 +331,7 @@
     capabilities: { manualBarrier: true, noText: true, fill: false, gridSnap: true },
 
     create(initialData = {}) {
-      const geometry = normalizeGeometry(initialData);
+      const geometry = normalizeGeometry(initialData, "line");
       return {
         type: "barrier",
         geometry,
@@ -255,15 +352,18 @@
       const start = pointFromDataset(element, "barrierStart", { x: 0, y: 0 });
       const end = pointFromDataset(element, "barrierEnd", start);
       const defaults = defaultControls(start, end);
+      const profile = normalizeProfile(element.dataset.barrierProfile, "cubic");
+      const geometrySource = { profile, start, end };
+      if (profile === "arc") geometrySource.ratio = element.dataset.barrierRatio;
+      if (profile === "quadratic") geometrySource.q = pointFromDataset(element, "barrierQ", lerp(start, end, 0.5));
+      if (profile === "cubic") {
+        geometrySource.c1 = pointFromDataset(element, "barrierC1", defaults.c1);
+        geometrySource.c2 = pointFromDataset(element, "barrierC2", defaults.c2);
+      }
       return {
         id: element.dataset.objectId,
         type: "barrier",
-        geometry: normalizeGeometry({
-          start,
-          end,
-          c1: pointFromDataset(element, "barrierC1", defaults.c1),
-          c2: pointFromDataset(element, "barrierC2", defaults.c2)
-        }),
+        geometry: normalizeGeometry(geometrySource, profile),
         style: {},
         label: null,
         metadata: {
@@ -283,10 +383,25 @@
       const geometry = normalizeGeometry(model.geometry);
       const settings = barrierSettings(model);
       const data = artwork({ ...model, geometry });
-      ["start", "end", "c1", "c2"].forEach((key) => {
+      ["start", "end"].forEach((key) => {
         utils.setAttributeIfChanged(element, `data-barrier-${key}-x`, geometry[key].x);
         utils.setAttributeIfChanged(element, `data-barrier-${key}-y`, geometry[key].y);
       });
+      utils.setAttributeIfChanged(element, "data-barrier-profile", geometry.profile);
+      ["ratio", "q-x", "q-y", "c1-x", "c1-y", "c2-x", "c2-y"].forEach((name) => {
+        element.removeAttribute(`data-barrier-${name}`);
+      });
+      if (geometry.profile === "arc") {
+        utils.setAttributeIfChanged(element, "data-barrier-ratio", geometry.ratio);
+      } else if (geometry.profile === "quadratic") {
+        utils.setAttributeIfChanged(element, "data-barrier-q-x", geometry.q.x);
+        utils.setAttributeIfChanged(element, "data-barrier-q-y", geometry.q.y);
+      } else if (geometry.profile === "cubic") {
+        ["c1", "c2"].forEach((key) => {
+          utils.setAttributeIfChanged(element, `data-barrier-${key}-x`, geometry[key].x);
+          utils.setAttributeIfChanged(element, `data-barrier-${key}-y`, geometry[key].y);
+        });
+      }
       utils.setAttributeIfChanged(element, "data-barrier-spacing", settings.spacing);
       utils.setAttributeIfChanged(element, "data-barrier-scale", settings.scale);
       utils.setAttributeIfChanged(element, "data-barrier-cap-start", settings.endCaps.start);
@@ -309,12 +424,24 @@
 
     getControlPoints(model, _metrics, mode) {
       if (mode !== "edit") return [];
-      return [
-        { id: "start", ...model.geometry.start, role: "road-barrier", cursor: "grab" },
-        { id: "end", ...model.geometry.end, role: "road-barrier", cursor: "grab" },
-        { id: "c1", ...model.geometry.c1, role: "road-barrier-free", cursor: "grab" },
-        { id: "c2", ...model.geometry.c2, role: "road-barrier-free", cursor: "grab" }
+      const geometry = normalizeGeometry(model.geometry);
+      const points = [
+        { id: "start", ...geometry.start, role: "road-barrier", cursor: "grab" },
+        { id: "end", ...geometry.end, role: "road-barrier", cursor: "grab" }
       ];
+      if (geometry.profile === "arc") {
+        const control = arcAdapter.getControlPoints(profileModel({ ...model, geometry }), { endpointOffset: 0 })
+          .find((item) => item.id === "control");
+        if (control) points.push({ ...control, role: "road-barrier-free" });
+      } else if (geometry.profile === "quadratic") {
+        points.push({ id: "q", ...geometry.q, role: "road-barrier-free", cursor: "grab" });
+      } else if (geometry.profile === "cubic") {
+        points.push(
+          { id: "c1", ...geometry.c1, role: "road-barrier-free", cursor: "grab" },
+          { id: "c2", ...geometry.c2, role: "road-barrier-free", cursor: "grab" }
+        );
+      }
+      return points;
     },
 
     beginControlPointMove(model, cpId, pointer) {
@@ -322,9 +449,23 @@
     },
 
     moveControlPoint(model, cpId, worldPoint, modifiers = {}) {
-      if (!["start", "end", "c1", "c2"].includes(cpId)) return;
+      const geometry = normalizeGeometry(model.geometry);
+      model.geometry = geometry;
+      if (cpId === "control" && geometry.profile === "arc") {
+        const proxy = profileModel(model);
+        arcAdapter.moveControlPoint(proxy, cpId, worldPoint, modifiers);
+        model.geometry = normalizeGeometry({ ...proxy.geometry, profile: "arc" });
+        return;
+      }
+      if (["q", "c1", "c2"].includes(cpId) && geometry[cpId]) {
+        const snapped = Kroki.EditorGrid?.snapPoint(worldPoint, modifiers) || worldPoint;
+        geometry[cpId] = { x: snapped.x, y: snapped.y };
+        return;
+      }
+      if (!["start", "end"].includes(cpId)) return;
       const startState = modifiers.startState;
-      const source = startState?.geometry?.[cpId] || model.geometry[cpId];
+      const startGeometry = normalizeGeometry(startState?.geometry || geometry, geometry.profile);
+      const source = startGeometry[cpId] || geometry[cpId];
       const pointer = startState?.point || worldPoint;
       const candidate = {
         x: source.x + worldPoint.x - pointer.x,
@@ -335,7 +476,10 @@
     },
 
     move(model, dx, dy) {
-      ["start", "end", "c1", "c2"].forEach((key) => {
+      const geometry = normalizeGeometry(model.geometry);
+      model.geometry = geometry;
+      ["start", "end", "q", "c1", "c2"].forEach((key) => {
+        if (!geometry[key]) return;
         model.geometry[key].x += dx;
         model.geometry[key].y += dy;
       });
@@ -372,13 +516,24 @@
 
     selectedBarrierInfo(model) {
       const settings = barrierSettings(model);
+      const profile = profileInfo(model);
       return {
         id: model.id,
         attached: false,
         spacing: settings.spacing,
         endCaps: settings.endCaps,
+        profile: profile.current.id,
+        profileTitle: profile.current.title,
+        profileShort: profile.current.short,
+        nextProfileTitle: profile.next.title,
         manual: true
       };
+    },
+
+    manualBarrierProfileInfo: profileInfo,
+
+    cycleManualBarrierProfile(model) {
+      model.geometry = nextProfileGeometry(model);
     },
 
     setManualBarrierSpacing(model, value) {

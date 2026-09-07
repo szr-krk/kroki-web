@@ -67,6 +67,8 @@
     addBarrier: document.querySelector("#btnRoadAddBarrierIp"),
     barrierControls: document.querySelector("#roadBarrierControlsIp"),
     barrierAttached: document.querySelector("#btnRoadBarrierAttachedIp"),
+    manualBarrierProfile: document.querySelector("#btnManualBarrierProfileIp"),
+    manualBarrierProfileLabel: document.querySelector("#lblManualBarrierProfileIp"),
     barrierEndCaps: document.querySelector("#btnRoadBarrierEndCapsIp"),
     barrierEndCapsLabel: document.querySelector("#lblRoadBarrierEndCapsIp"),
     barrierSpacing: document.querySelector("#roadBarrierSpacingIpInput"),
@@ -430,6 +432,12 @@
     updateSelectedBarrier((adapter, draft, config, barrier) => {
       adapter?.cycleBarrierEndCaps?.(config, barrier.id);
     }, "Bariyer uçları");
+  }
+
+  function cycleManualBarrierProfile() {
+    updateManualBarrier((adapter, draft) => {
+      adapter?.cycleManualBarrierProfile?.(draft);
+    }, "Manuel bariyer profili");
   }
 
   function profileInfo(profile) {
@@ -834,13 +842,22 @@
   }
 
   function syncBarrierControls(barrier, manual = false) {
-    togglePressed(controls.barrierAttached, barrier.attached);
+    controls.barrierAttached?.classList.toggle("gizli", manual);
+    controls.manualBarrierProfile?.classList.toggle("gizli", !manual);
+    if (manual && controls.manualBarrierProfile) {
+      const currentTitle = barrier.profileTitle || "Çizgi";
+      const nextTitle = barrier.nextProfileTitle || "Yay";
+      controls.manualBarrierProfile.disabled = false;
+      controls.manualBarrierProfile.setAttribute("aria-disabled", "false");
+      controls.manualBarrierProfile.setAttribute("title", `${currentTitle} → ${nextTitle}`);
+      controls.manualBarrierProfile.setAttribute("aria-label", `Manuel bariyer profilini ${currentTitle} türünden ${nextTitle} türüne dönüştür`);
+      if (controls.manualBarrierProfileLabel) controls.manualBarrierProfileLabel.textContent = barrier.profileShort || currentTitle;
+    }
     if (controls.barrierAttached) {
-      controls.barrierAttached.disabled = manual;
-      controls.barrierAttached.setAttribute("aria-disabled", String(manual));
-      const attachedTitle = manual
-        ? "Manuel bariyer (serbest)"
-        : (barrier.attached ? "Yola yapisik" : "Serbest bariyer");
+      togglePressed(controls.barrierAttached, barrier.attached);
+      controls.barrierAttached.disabled = false;
+      controls.barrierAttached.setAttribute("aria-disabled", "false");
+      const attachedTitle = barrier.attached ? "Yola yapisik" : "Serbest bariyer";
       controls.barrierAttached.setAttribute("title", attachedTitle);
       controls.barrierAttached.setAttribute("aria-label", attachedTitle);
     }
@@ -1059,6 +1076,7 @@
   controls.barrierAttached?.addEventListener("click", () => updateSelectedBarrier((adapter, draft, config, barrier) => {
     adapter?.setBarrierAttached?.(draft, config, barrier.id, !barrier.attached);
   }, "Bariyer yola yapisik"));
+  controls.manualBarrierProfile?.addEventListener("click", cycleManualBarrierProfile);
   controls.barrierEndCaps?.addEventListener("click", cycleSelectedBarrierEndCaps);
   bindHoldAction(controls.barrierSpacingPlus, () => nudgeBarrierSpacing(1), { repeatDelay: 55 });
   bindHoldAction(controls.barrierSpacingMinus, () => nudgeBarrierSpacing(-1), { repeatDelay: 55 });

@@ -184,13 +184,15 @@
     manager.updateGeometry(draft.model.id, (model) => {
       if (draft.type === "line" || draft.type === "arc") {
         model.geometry.end = { x: end.x, y: end.y };
-      } else if (draft.type === "bezier" || draft.type === "barrier") {
+      } else if (draft.type === "bezier") {
         model.geometry.end = { x: end.x, y: end.y };
         Object.assign(model.geometry, defaultBezierControls(
           model.geometry.start,
           model.geometry.end,
-          draft.type === "barrier" ? "cubic" : model.geometry.bezierType
+          model.geometry.bezierType
         ));
+      } else if (draft.type === "barrier") {
+        model.geometry.end = { x: end.x, y: end.y };
       } else if (draft.type === "circle") {
         model.geometry = Kroki.CircleGeometry.fromDiameter(draft.start, point, model.geometry.rotation);
       } else if (draft.type === "ellipse") {
