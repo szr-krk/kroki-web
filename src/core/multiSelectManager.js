@@ -1483,6 +1483,7 @@
     handlePointerMove,
     stopDrag,
     promoteToEdit,
+    moveSelected,
     deleteSelected,
     copySelected,
     bringToFront,

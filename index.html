@@ -7,11 +7,12 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <meta name="kroki-build" content="20260907-barrier-profile-v2" />
+  <meta name="kroki-build" content="20260909-touch-controls-v1" />
   <title>Kroki Pro</title>
   <link rel="stylesheet" href="src/home.css?v=20260903-home-pro-v1" />
   <link rel="stylesheet" href="src/editor.css?v=20260903-grid-fast-v2" />
   <link rel="stylesheet" href="src/editor-line.css?v=20260907-barrier-profile-v2" />
+  <link rel="stylesheet" href="src/touch-controls.css?v=20260909-touch-controls-v1" />
 </head>
 
 <body>
@@ -220,6 +221,64 @@
             </svg>
           </button>
         </div>
+      </div>
+
+      <div id="touchControlDock" class="touch-control-dock">
+        <section id="touchControlPanel" class="touch-control-panel" aria-label="Dokunmatik hassas kontroller">
+          <header class="touch-control-header">
+            <button id="btnTouchControlOpacity" class="touch-control-header-btn" type="button"
+              aria-label="Panel opaklığını değiştir" title="Panel opaklığı: %90">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 3.5S6.5 9.7 6.5 14a5.5 5.5 0 0 0 11 0C17.5 9.7 12 3.5 12 3.5Z"
+                  stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path>
+                <path d="M9.2 14.3a2.9 2.9 0 0 0 2.9 2.9" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round"></path>
+              </svg>
+            </button>
+            <output id="touchControlZoomValue" class="touch-control-zoom-value" aria-label="Yakınlaştırma oranı">Zoom: %100</output>
+            <button id="btnTouchControlCollapse" class="touch-control-header-btn is-close" type="button"
+              aria-label="Dokunmatik kontrolleri gizle" title="Kontrolleri gizle" aria-controls="touchControlPanel">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path>
+              </svg>
+            </button>
+          </header>
+
+          <div class="touch-control-grid" role="group" aria-label="Bir birim taşıma ve yüzde bir yakınlaştırma">
+            <button class="touch-control-btn is-up" type="button" data-touch-action="move-up"
+              aria-label="Bir birim yukarı taşı" title="1 birim yukarı taşı · Basılı tutabilirsiniz">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 19V5m0 0-6 6m6-6 6 6" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </button>
+            <button class="touch-control-btn is-left" type="button" data-touch-action="move-left"
+              aria-label="Bir birim sola taşı" title="1 birim sola taşı · Basılı tutabilirsiniz">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 12H5m0 0 6-6m-6 6 6 6" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </button>
+            <button class="touch-control-btn is-minus" type="button" data-touch-action="zoom-out"
+              aria-label="Yüzde bir uzaklaştır" title="%1 uzaklaştır · Basılı tutabilirsiniz">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 12h12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"></path></svg>
+            </button>
+            <button class="touch-control-btn is-plus" type="button" data-touch-action="zoom-in"
+              aria-label="Yüzde bir yakınlaştır" title="%1 yakınlaştır · Basılı tutabilirsiniz">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 6v12M6 12h12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"></path></svg>
+            </button>
+            <button class="touch-control-btn is-right" type="button" data-touch-action="move-right"
+              aria-label="Bir birim sağa taşı" title="1 birim sağa taşı · Basılı tutabilirsiniz">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m0 0-6-6m6 6-6 6" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </button>
+            <button class="touch-control-btn is-down" type="button" data-touch-action="move-down"
+              aria-label="Bir birim aşağı taşı" title="1 birim aşağı taşı · Basılı tutabilirsiniz">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14m0 0 6-6m-6 6-6-6" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </button>
+          </div>
+        </section>
+
+        <button id="btnTouchControlRestore" class="touch-control-restore" type="button" hidden
+          aria-label="Dokunmatik kontrolleri aç" title="Dokunmatik kontrolleri aç" aria-controls="touchControlPanel">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 3v18M3 12h18M12 3 9 6m3-3 3 3M21 12l-3-3m3 3-3 3M12 21l-3-3m3 3 3-3M3 12l3-3m-3 3 3 3"
+              stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </button>
       </div>
 
       <aside class="editor-rail" aria-label="Ana menü">
@@ -1414,7 +1473,7 @@
   <script src="src/editor-state.js"></script>
   <script src="src/editor-framing.js"></script>
   <script src="src/editor-rail.js?v=20260801-cp-fit-preselect-v1"></script>
-  <script src="src/editor-camera.js?v=20260906-top-left-origin-v1"></script>
+  <script src="src/editor-camera.js?v=20260909-touch-controls-v1"></script>
   <script src="src/editor-grid.js?v=20260906-top-left-origin-v1"></script>
   <script src="src/editor-object-edit.js?v=20260903-grid-v1"></script>
   <script src="src/editor-stroke-style.js?v=20260807-adaptive-dash-stepper-v1"></script>
@@ -1441,7 +1500,7 @@
   <script src="src/core/historyManager.js"></script>
   <script src="src/core/hitTestManager.js?v=20260906-interaction-performance-v1"></script>
   <script src="src/core/controlPointManager.js?v=20260906-interaction-performance-v1"></script>
-  <script src="src/core/multiSelectManager.js?v=20260907-barrier-profile-v2"></script>
+  <script src="src/core/multiSelectManager.js?v=20260909-touch-controls-v1"></script>
   <script src="src/core/roadDragPreview.js?v=20260906-top-left-origin-v1"></script>
   <script src="src/core/selectionManager.js?v=20260906-endpoint-axis-guide-v2"></script>
   <script src="src/geometry/lineGeometry.js?v=20260905-visible-arrow-snap-v1"></script>
@@ -1472,6 +1531,7 @@
   <script src="src/ui/trafficSignLibrary.js?v=20260810-performance-stability-v1"></script>
   <script src="src/ui/otherSymbolLibrary.js?v=20260810-performance-stability-v1"></script>
   <script src="src/editor-main-menu.js?v=20260903-home-pro-v1"></script>
+  <script src="src/ui/touchControlPanel.js?v=20260909-touch-controls-v1"></script>
 </body>
 
 </html>

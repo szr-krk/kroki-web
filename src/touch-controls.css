@@ -1,0 +1,178 @@
+.touch-control-dock {
+  --touch-control-opacity: .9;
+  position: fixed;
+  right: calc(var(--editor-rail-width) + max(.75rem, env(safe-area-inset-right)));
+  bottom: max(.75rem, env(safe-area-inset-bottom));
+  z-index: 9;
+  box-sizing: border-box;
+  color: #0f172a;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  pointer-events: none;
+}
+
+.touch-control-panel {
+  width: min(264px, calc(100vw - var(--editor-rail-width) - var(--editor-ruler-size) - 1rem));
+  box-sizing: border-box;
+  padding: .625rem;
+  border: 1px solid rgba(100, 116, 139, .58);
+  border-radius: .875rem;
+  background: linear-gradient(160deg, rgba(255, 255, 255, .98), rgba(241, 245, 249, .96));
+  box-shadow: 0 .75rem 2rem rgba(15, 23, 42, .2), 0 .125rem .375rem rgba(15, 23, 42, .13);
+  opacity: var(--touch-control-opacity);
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-control-panel[hidden],
+.touch-control-restore[hidden] {
+  display: none !important;
+}
+
+.touch-control-header {
+  min-height: 52px;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 52px;
+  align-items: center;
+  gap: .375rem;
+  margin-bottom: .5rem;
+}
+
+.touch-control-zoom-value {
+  overflow: hidden;
+  color: #0f172a;
+  font-size: .9375rem;
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: -.015em;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.touch-control-header-btn,
+.touch-control-btn,
+.touch-control-restore {
+  appearance: none;
+  border: 1px solid #cbd5e1;
+  display: grid;
+  place-items: center;
+  color: #334155;
+  background: #ffffff;
+  cursor: pointer;
+  touch-action: none;
+  transition: transform 90ms ease, border-color 100ms ease, background 100ms ease, color 100ms ease, box-shadow 100ms ease;
+}
+
+.touch-control-header-btn {
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border-radius: .625rem;
+}
+
+.touch-control-header-btn svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.touch-control-header-btn.is-close {
+  color: #991b1b;
+}
+
+.touch-control-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-areas:
+    ". up up ."
+    "left minus plus right"
+    ". down down .";
+  gap: .375rem;
+}
+
+.touch-control-btn {
+  min-width: 0;
+  height: 52px;
+  padding: 0;
+  border-radius: .6875rem;
+  background: linear-gradient(#ffffff, #f8fafc);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .08);
+}
+
+.touch-control-btn svg {
+  width: 1.75rem;
+  height: 1.75rem;
+  pointer-events: none;
+}
+
+.touch-control-btn.is-up { grid-area: up; }
+.touch-control-btn.is-left { grid-area: left; }
+.touch-control-btn.is-minus { grid-area: minus; }
+.touch-control-btn.is-plus { grid-area: plus; }
+.touch-control-btn.is-right { grid-area: right; }
+.touch-control-btn.is-down { grid-area: down; }
+
+.touch-control-btn.is-minus,
+.touch-control-btn.is-plus {
+  color: #0f766e;
+  border-color: #99c9c2;
+  background: linear-gradient(#f7fffd, #e7f7f4);
+}
+
+.touch-control-header-btn:hover,
+.touch-control-btn:hover,
+.touch-control-restore:hover {
+  color: #0f766e;
+  border-color: #5ea99f;
+  background: #ecfdf9;
+}
+
+.touch-control-header-btn:focus-visible,
+.touch-control-btn:focus-visible,
+.touch-control-restore:focus-visible {
+  outline: 3px solid rgba(13, 148, 136, .3);
+  outline-offset: 2px;
+}
+
+.touch-control-header-btn:active,
+.touch-control-btn:active,
+.touch-control-btn.is-repeating,
+.touch-control-restore:active {
+  transform: scale(.95);
+  color: #115e59;
+  border-color: #0f766e;
+  background: #ccfbf1;
+  box-shadow: inset 0 1px 3px rgba(15, 118, 110, .18);
+}
+
+.touch-control-restore {
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border-color: rgba(100, 116, 139, .7);
+  border-radius: .875rem;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 .5rem 1.25rem rgba(15, 23, 42, .2);
+  opacity: var(--touch-control-opacity);
+  pointer-events: auto;
+}
+
+.touch-control-restore svg {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+@media (max-width: 40rem) {
+  .touch-control-dock {
+    right: calc(var(--editor-rail-width) + max(.5rem, env(safe-area-inset-right)));
+    bottom: max(.5rem, env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .touch-control-header-btn,
+  .touch-control-btn,
+  .touch-control-restore {
+    transition: none;
+  }
+}

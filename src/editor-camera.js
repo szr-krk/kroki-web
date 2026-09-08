@@ -387,6 +387,22 @@
     return nextViewBox;
   }
 
+  function panByWorld(svg = canvas, dxWorld, dyWorld) {
+    const viewBox = readViewBox(svg);
+    const safeDx = Number.isFinite(dxWorld) ? dxWorld : 0;
+    const safeDy = Number.isFinite(dyWorld) ? dyWorld : 0;
+    if (!safeDx && !safeDy) return viewBox;
+
+    const nextViewBox = {
+      ...viewBox,
+      // Positive values move the scene content in the requested direction.
+      x: viewBox.x - safeDx,
+      y: viewBox.y - safeDy
+    };
+    writeViewBox(svg, nextViewBox, { defer: svg === canvas });
+    return nextViewBox;
+  }
+
   function zoomAtScreen(svg = canvas, factor, clientX, clientY) {
     if (!Number.isFinite(factor) || factor <= 0) return readViewBox(svg);
 
@@ -404,6 +420,25 @@
     nextViewBox.y = anchor.y - ry * nextViewBox.height;
     writeViewBox(svg, nextViewBox, { defer: svg === canvas });
     return nextViewBox;
+  }
+
+  function getScale(svg = canvas) {
+    return scaleForViewBox(readViewBox(svg));
+  }
+
+  function zoomByPercentagePointAtCenter(svg = canvas, deltaPercent = 0) {
+    const delta = Number(deltaPercent);
+    if (!Number.isFinite(delta) || delta === 0) return readViewBox(svg);
+
+    const viewBox = readViewBox(svg);
+    const currentScale = scaleForViewBox(viewBox);
+    const nextScale = clampScale(currentScale + delta / 100);
+    if (Math.abs(nextScale - currentScale) < 0.000001) return viewBox;
+
+    const metrics = getViewportMetrics(svg, viewBox);
+    const centerX = metrics.left + metrics.width / 2;
+    const centerY = metrics.top + metrics.height / 2;
+    return zoomAtScreen(svg, nextScale / currentScale, centerX, centerY);
   }
 
   function pinchFromStart(svg = canvas, startViewBox, startCenter, currentCenter, scaleFactor) {
@@ -676,7 +711,10 @@
     getViewportMetrics,
     clientToWorld,
     panByScreen,
+    panByWorld,
     zoomAtScreen,
+    getScale,
+    zoomByPercentagePointAtCenter,
     pinchFromStart,
     fitBounds,
     fitToContent,
