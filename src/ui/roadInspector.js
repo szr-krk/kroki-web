@@ -481,7 +481,7 @@
       fill: "none",
       stroke: ROAD_LINE_COLOR,
       "stroke-width": "4",
-      "stroke-linecap": "round"
+      "stroke-linecap": dash ? "butt" : "round"
     });
     if (dash) path.setAttribute("stroke-dasharray", "8 7");
     return path;

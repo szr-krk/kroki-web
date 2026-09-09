@@ -2534,7 +2534,7 @@
       stroke: "#000000",
       "stroke-width": String(width || DEFAULT_LINE_STROKE_WIDTH),
       "stroke-linejoin": "round",
-      "stroke-linecap": "round",
+      "stroke-linecap": dashed ? "butt" : "round",
       "vector-effect": "none",
       "pointer-events": "none"
     };

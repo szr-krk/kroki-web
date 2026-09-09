@@ -2049,7 +2049,7 @@
     element.setAttribute("fill", "none");
     element.setAttribute("stroke", color);
     element.setAttribute("stroke-width", String(width));
-    element.setAttribute("stroke-linecap", "round");
+    element.setAttribute("stroke-linecap", dash ? "butt" : "round");
     element.setAttribute("stroke-linejoin", "round");
     element.setAttribute("vector-effect", "none");
     element.style.setProperty("vector-effect", "none");
