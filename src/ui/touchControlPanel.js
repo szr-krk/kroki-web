@@ -3,32 +3,26 @@
   const dock = document.querySelector("#touchControlDock");
   const panel = document.querySelector("#touchControlPanel");
   const zoomValue = document.querySelector("#touchControlZoomValue");
-  const opacityButton = document.querySelector("#btnTouchControlOpacity");
-  const collapseButton = document.querySelector("#btnTouchControlCollapse");
   const restoreButton = document.querySelector("#btnTouchControlRestore");
   const actionButtons = Array.from(document.querySelectorAll("[data-touch-action]"));
-  if (!canvas || !dock || !panel || !zoomValue || !opacityButton || !collapseButton || !restoreButton || !actionButtons.length) return;
+  if (!canvas || !dock || !panel || !zoomValue || !restoreButton || !actionButtons.length) return;
 
   const HOLD_DELAY_MS = 360;
   const REPEAT_INTERVAL_MS = 70;
-  const OPACITY_LEVELS = [1, .9, .75, .6];
-  const OPACITY_STORAGE_KEY = "kroki.touchControls.opacity";
+  const INACTIVITY_MS = 5000;
   const movementByAction = {
     "move-up": { dx: 0, dy: -1 },
-    "move-left": { dx: -1, dy: 0 },
     "move-right": { dx: 1, dy: 0 },
-    "move-down": { dx: 0, dy: 1 }
+    "move-down": { dx: 0, dy: 1 },
+    "move-left": { dx: -1, dy: 0 }
   };
 
   let activePress = null;
+  let inactivityTimer = 0;
   const lastPointerActivation = new WeakMap();
 
-  function cameraApi() {
-    return window.krokiEditorCamera;
-  }
-
   function currentZoomPercent() {
-    const scale = Number(cameraApi()?.getScale?.(canvas));
+    const scale = Number(window.krokiEditorCamera?.getScale?.(canvas));
     return Number.isFinite(scale) ? scale * 100 : 100;
   }
 
@@ -82,7 +76,7 @@
   function moveTarget(target, dx, dy) {
     const Kroki = window.Kroki || {};
     if (target.kind === "camera") {
-      cameraApi()?.panByWorld?.(canvas, dx, dy);
+      window.krokiEditorCamera?.panByWorld?.(canvas, dx, dy);
       return true;
     }
     if (target.kind === "blocked") return false;
@@ -116,31 +110,47 @@
   }
 
   function createActionSession(action) {
-    if (movementByAction[action]) return { type: "move", target: resolveMoveTarget() };
-    if (action === "zoom-in") return { type: "zoom", delta: 1 };
-    if (action === "zoom-out") return { type: "zoom", delta: -1 };
-    return { type: "none" };
+    return { action, target: resolveMoveTarget() };
   }
 
   function performAction(session) {
-    if (session.type === "move") {
-      const movement = movementByAction[session.action];
-      return movement ? moveTarget(session.target, movement.dx, movement.dy) : false;
-    }
-    if (session.type === "zoom") {
-      const before = currentZoomPercent();
-      cameraApi()?.zoomByPercentagePointAtCenter?.(canvas, session.delta);
-      renderZoomValue();
-      return Math.abs(currentZoomPercent() - before) > .000001;
-    }
-    return false;
+    const movement = movementByAction[session.action];
+    return movement ? moveTarget(session.target, movement.dx, movement.dy) : false;
   }
 
-  function finishActionSession(session) {
-    if (session?.type === "move") finishMoveTarget(session.target);
+  function cancelInactivityTimer() {
+    window.clearTimeout(inactivityTimer);
+    inactivityTimer = 0;
   }
 
-  function stopActivePress(pointerId) {
+  function collapsePanel(options = {}) {
+    cancelInactivityTimer();
+    if (activePress) stopActivePress(null, false);
+    if (panel.hidden) return;
+    const shouldRestoreFocus = options.restoreFocus && panel.contains(document.activeElement);
+    panel.hidden = true;
+    restoreButton.hidden = false;
+    restoreButton.setAttribute("aria-expanded", "false");
+    if (shouldRestoreFocus) restoreButton.focus({ preventScroll: true });
+  }
+
+  function scheduleAutoCollapse() {
+    cancelInactivityTimer();
+    if (panel.hidden || activePress) return;
+    inactivityTimer = window.setTimeout(() => collapsePanel({ restoreFocus: true }), INACTIVITY_MS);
+  }
+
+  function openPanel(event) {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    panel.hidden = false;
+    restoreButton.hidden = true;
+    restoreButton.setAttribute("aria-expanded", "true");
+    scheduleAutoCollapse();
+    if (event?.detail === 0) actionButtons[0]?.focus({ preventScroll: true });
+  }
+
+  function stopActivePress(pointerId, restartInactivity = true) {
     if (!activePress || (pointerId != null && activePress.pointerId !== pointerId)) return;
     const press = activePress;
     activePress = null;
@@ -150,7 +160,8 @@
     if (press.pointerId != null && press.button.hasPointerCapture?.(press.pointerId)) {
       press.button.releasePointerCapture(press.pointerId);
     }
-    finishActionSession(press.session);
+    finishMoveTarget(press.session.target);
+    if (restartInactivity) scheduleAutoCollapse();
   }
 
   function repeatActivePress(press) {
@@ -162,22 +173,25 @@
     if (event.button != null && event.button !== 0) return;
     event.preventDefault();
     event.stopPropagation();
-    stopActivePress();
+    cancelInactivityTimer();
+    stopActivePress(null, false);
 
     const button = event.currentTarget;
-    const action = button.dataset.touchAction;
-    const session = { ...createActionSession(action), action };
     const press = {
       button,
       pointerId: event.pointerId,
-      session,
+      session: createActionSession(button.dataset.touchAction),
       holdTimer: 0,
       repeatTimer: 0
     };
     activePress = press;
     lastPointerActivation.set(button, performance.now());
-    button.setPointerCapture?.(event.pointerId);
-    performAction(session);
+    try {
+      button.setPointerCapture?.(event.pointerId);
+    } catch (_) {
+      // Synthetic and older pointer implementations may not support capture.
+    }
+    performAction(press.session);
     press.holdTimer = window.setTimeout(() => {
       if (activePress !== press) return;
       button.classList.add("is-repeating");
@@ -191,66 +205,16 @@
     event.stopPropagation();
     const lastPointerTime = lastPointerActivation.get(event.currentTarget) || 0;
     if (performance.now() - lastPointerTime < 800) return;
-    const action = event.currentTarget.dataset.touchAction;
-    const session = { ...createActionSession(action), action };
+    const session = createActionSession(event.currentTarget.dataset.touchAction);
     performAction(session);
-    finishActionSession(session);
+    finishMoveTarget(session.target);
+    scheduleAutoCollapse();
   }
 
   function stopPointerEvent(event) {
     event.preventDefault();
     event.stopPropagation();
     stopActivePress(event.pointerId);
-  }
-
-  function readStoredOpacity() {
-    try {
-      const stored = Number(window.localStorage.getItem(OPACITY_STORAGE_KEY));
-      if (OPACITY_LEVELS.includes(stored)) return stored;
-    } catch (_) {
-      // Storage can be unavailable in privacy-restricted contexts.
-    }
-    return .9;
-  }
-
-  function applyOpacity(value) {
-    const safeValue = OPACITY_LEVELS.includes(value) ? value : .9;
-    dock.style.setProperty("--touch-control-opacity", String(safeValue));
-    const percent = Math.round(safeValue * 100);
-    opacityButton.title = `Panel opaklığı: %${percent}`;
-    opacityButton.setAttribute("aria-label", `Panel opaklığını değiştir; mevcut yüzde ${percent}`);
-    opacityButton.dataset.opacity = String(safeValue);
-    try {
-      window.localStorage.setItem(OPACITY_STORAGE_KEY, String(safeValue));
-    } catch (_) {
-      // The visual setting still applies for the current session.
-    }
-  }
-
-  function cycleOpacity(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    const current = Number(opacityButton.dataset.opacity) || .9;
-    const index = OPACITY_LEVELS.indexOf(current);
-    applyOpacity(OPACITY_LEVELS[(index + 1) % OPACITY_LEVELS.length]);
-  }
-
-  function collapsePanel(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    stopActivePress();
-    panel.hidden = true;
-    restoreButton.hidden = false;
-    restoreButton.focus({ preventScroll: true });
-  }
-
-  function restorePanel(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    panel.hidden = false;
-    restoreButton.hidden = true;
-    collapseButton.focus({ preventScroll: true });
-    renderZoomValue();
   }
 
   actionButtons.forEach((button) => {
@@ -263,27 +227,29 @@
   });
 
   dock.addEventListener("pointerdown", (event) => event.stopPropagation());
-  opacityButton.addEventListener("click", cycleOpacity);
-  collapseButton.addEventListener("click", collapsePanel);
-  restoreButton.addEventListener("click", restorePanel);
+  restoreButton.addEventListener("click", openPanel);
   canvas.addEventListener("kroki:viewboxchange", renderZoomValue);
   window.addEventListener("resize", renderZoomValue);
-  window.addEventListener("blur", () => stopActivePress());
+  window.addEventListener("blur", () => collapsePanel());
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden) stopActivePress();
+    if (document.hidden) collapsePanel();
+  });
+  document.addEventListener("pointerdown", (event) => {
+    if (!panel.hidden && !dock.contains(event.target)) collapsePanel();
+  }, true);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !panel.hidden) {
+      event.preventDefault();
+      collapsePanel({ restoreFocus: true });
+    }
   });
 
-  applyOpacity(readStoredOpacity());
   renderZoomValue();
 
   window.Kroki = window.Kroki || {};
   window.Kroki.TouchControlPanel = {
-    collapse() {
-      collapsePanel(new Event("click"));
-    },
-    restore() {
-      restorePanel(new Event("click"));
-    },
+    open: openPanel,
+    collapse: collapsePanel,
     getZoomPercent: currentZoomPercent,
     isCollapsed() {
       return panel.hidden;

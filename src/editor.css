@@ -1280,9 +1280,11 @@
 .editor-ruler-corner { position: absolute; top: 0; left: 0; width: 32px; height: 32px; display: grid; place-items: center; background: #e2e8f0; color: #64748b; font: 9px monospace; }
 #editor.editor-rulers-hidden { --editor-ruler-size: 0px; }
 .editor-rulers-hidden .editor-ruler, .editor-rulers-hidden .editor-ruler-corner { display: none; }
-.editor-grid-controls { position: absolute; bottom: 8px; left: calc(var(--editor-ruler-size) + 8px); z-index: 8; display: flex; gap: 4px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 10px; background: #fff; }
-.editor-grid-controls button { width: 44px; height: 44px; display: grid; place-items: center; padding: 0; border: 1px solid transparent; border-radius: 6px; background: #f8fafc; color: #64748b; cursor: pointer; touch-action: manipulation; }
+.editor-grid-controls { position: absolute; bottom: 8px; left: calc(var(--editor-ruler-size) + 8px); z-index: 8; height: 54px; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px; padding: 3px; border: 1px solid #cbd5e1; border-radius: 10px; background: #fff; }
+.editor-grid-control-buttons { display: flex; gap: 3px; }
+.editor-grid-controls button { width: 34px; height: 34px; display: grid; place-items: center; padding: 0; border: 1px solid transparent; border-radius: 6px; background: #f8fafc; color: #64748b; cursor: pointer; touch-action: manipulation; }
 .editor-grid-controls button[aria-pressed="true"] { background: #dbeafe; color: #1d4ed8; }
 .editor-grid-controls #btnEditorSnap[aria-pressed="true"] { background: #fef3c7; color: #92400e; }
 .editor-grid-controls button:focus-visible { outline: 2px solid #0f766e; outline-offset: 1px; }
-.editor-grid-controls button svg { width: 22px; height: 22px; }
+.editor-grid-controls button svg { width: 18px; height: 18px; }
+.editor-grid-zoom-value { min-height: 10px; color: #475569; font: 700 9px/10px ui-sans-serif, system-ui, sans-serif; letter-spacing: .01em; text-align: center; white-space: nowrap; }

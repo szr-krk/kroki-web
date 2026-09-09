@@ -22,12 +22,30 @@ const server = http.createServer((request, response) => {
   });
 });
 
+const buttonPoint = {
+  "move-up": { x: 58, y: 23 },
+  "move-right": { x: 93, y: 58 },
+  "move-down": { x: 58, y: 93 },
+  "move-left": { x: 23, y: 58 }
+};
+
 function closeTo(actual, expected, epsilon = 1e-6, message = "values differ") {
   assert.ok(Math.abs(actual - expected) <= epsilon, `${message}: ${actual} != ${expected}`);
 }
 
 async function nextPaint(page) {
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+}
+
+async function pressDirection(page, action, holdMs = 0) {
+  const box = await page.locator(`[data-touch-action='${action}']`).boundingBox();
+  assert.ok(box, `${action} control is not visible`);
+  const point = buttonPoint[action];
+  await page.mouse.move(box.x + point.x, box.y + point.y);
+  await page.mouse.down();
+  if (holdMs) await page.waitForTimeout(holdMs);
+  await page.mouse.up();
+  await nextPaint(page);
 }
 
 (async () => {
@@ -57,57 +75,68 @@ async function nextPaint(page) {
     });
     await nextPaint(page);
 
+    assert.equal(await page.locator("#touchControlPanel").isHidden(), true, "direction pad must start collapsed");
+    assert.equal(await page.locator("#btnTouchControlRestore").isVisible(), true, "collapsed launcher must be visible");
+    closeTo(
+      Number(await page.locator("#btnTouchControlRestore").evaluate((node) => getComputedStyle(node).opacity)),
+      .5,
+      1e-8,
+      "collapsed launcher opacity"
+    );
+
+    const gridLayout = await page.evaluate(() => {
+      const controls = document.querySelector(".editor-grid-controls").getBoundingClientRect();
+      const buttons = document.querySelector(".editor-grid-control-buttons").getBoundingClientRect();
+      const zoom = document.querySelector("#touchControlZoomValue").getBoundingClientRect();
+      const ruler = document.querySelector("#btnEditorRulers").getBoundingClientRect();
+      return {
+        controls: { height: controls.height, top: controls.top, bottom: controls.bottom },
+        buttons: { bottom: buttons.bottom },
+        zoom: { top: zoom.top, bottom: zoom.bottom },
+        ruler: { width: ruler.width, height: ruler.height }
+      };
+    });
+    closeTo(gridLayout.controls.height, 54, .1, "grid control group height must stay unchanged");
+    assert.ok(gridLayout.zoom.top >= gridLayout.buttons.bottom, "zoom label must sit below the grid buttons");
+    assert.ok(gridLayout.ruler.width <= 34.1 && gridLayout.ruler.height <= 34.1, "grid buttons must make room for zoom text");
+
+    await page.click("#btnTouchControlRestore");
+    await page.waitForTimeout(180);
+    assert.equal(await page.locator("#touchControlPanel").isVisible(), true, "launcher must open direction pad");
+    assert.equal(await page.locator("#btnTouchControlRestore").isHidden(), true, "launcher must hide while pad is open");
+    assert.equal(await page.locator("[data-touch-action]").count(), 4, "pad must contain only four direction controls");
+    assert.equal(await page.locator("[data-touch-action^='zoom-']").count(), 0, "zoom buttons must be removed");
+
     const placement = await page.evaluate(() => {
       const panel = document.querySelector("#touchControlPanel").getBoundingClientRect();
       const canvas = document.querySelector("#editorCanvas").getBoundingClientRect();
-      const mainButton = document.querySelector("[data-touch-action='move-left']").getBoundingClientRect();
-      const headerButton = document.querySelector("#btnTouchControlCollapse").getBoundingClientRect();
-      const plainRect = (rect) => ({
-        x: rect.x,
-        y: rect.y,
-        width: rect.width,
-        height: rect.height,
-        right: rect.right,
-        bottom: rect.bottom
-      });
       return {
-        panel: plainRect(panel),
-        canvas: plainRect(canvas),
-        mainButton: plainRect(mainButton),
-        headerButton: plainRect(headerButton)
+        panel: { width: panel.width, height: panel.height, right: panel.right, bottom: panel.bottom },
+        canvas: { right: canvas.right, bottom: canvas.bottom }
       };
     });
-    assert.ok(placement.panel.right <= placement.canvas.right, "panel must remain inside the canvas right edge");
-    assert.ok(placement.panel.bottom <= placement.canvas.bottom, "panel must remain inside the canvas bottom edge");
-    assert.ok(placement.panel.right > placement.canvas.right - 40, "panel must dock at the canvas bottom-right");
-    assert.ok(
-      placement.mainButton.width >= 48 && placement.mainButton.height >= 48,
-      `primary controls need touch-sized targets: ${JSON.stringify(placement.mainButton)}`
-    );
-    assert.ok(
-      placement.headerButton.width >= 48 && placement.headerButton.height >= 48,
-      `header controls need touch-sized targets: ${JSON.stringify(placement.headerButton)}`
-    );
+    closeTo(placement.panel.width, 120, .1, "diamond panel width");
+    closeTo(placement.panel.height, 120, .1, "diamond panel height");
+    assert.ok(placement.panel.right <= placement.canvas.right && placement.panel.right > placement.canvas.right - 40, "panel must dock at canvas right");
+    assert.ok(placement.panel.bottom <= placement.canvas.bottom && placement.panel.bottom > placement.canvas.bottom - 40, "panel must dock at canvas bottom");
     if (process.env.SCREENSHOT_PATH) await page.screenshot({ path: process.env.SCREENSHOT_PATH });
 
     const initialView = await page.evaluate(() => window.krokiEditorCamera.readViewBox());
-    await page.click("[data-touch-action='zoom-in']");
+    await page.evaluate(() => window.krokiEditorCamera.zoomByPercentagePointAtCenter(document.querySelector("#editorCanvas"), 1));
     await nextPaint(page);
     const zoomed = await page.evaluate(() => ({
       viewBox: window.krokiEditorCamera.readViewBox(),
-      percent: window.Kroki.TouchControlPanel.getZoomPercent(),
       label: document.querySelector("#touchControlZoomValue").textContent
     }));
-    closeTo(zoomed.percent, 101, 1e-8, "zoom-in must add one percentage point");
+    assert.equal(zoomed.label, "Zoom: %101", "zoom information must follow camera changes");
     closeTo(zoomed.viewBox.x + zoomed.viewBox.width / 2, initialView.x + initialView.width / 2, 1e-7, "zoom center x changed");
     closeTo(zoomed.viewBox.y + zoomed.viewBox.height / 2, initialView.y + initialView.height / 2, 1e-7, "zoom center y changed");
-    assert.equal(zoomed.label, "Zoom: %101");
-
-    await page.click("[data-touch-action='zoom-out']");
-    await page.click("[data-touch-action='move-right']");
+    await page.evaluate(() => window.krokiEditorCamera.zoomByPercentagePointAtCenter(document.querySelector("#editorCanvas"), -1));
     await nextPaint(page);
+
+    await pressDirection(page, "move-right");
     const panned = await page.evaluate(() => window.krokiEditorCamera.readViewBox());
-    closeTo(panned.x, initialView.x - 1, 1e-7, "right arrow must move the scene one world unit");
+    closeTo(panned.x, initialView.x - 1, 1e-7, "right segment must move the scene one world unit");
     closeTo(panned.y, initialView.y, 1e-7, "horizontal scene movement changed y");
 
     const objectBefore = await page.evaluate(() => {
@@ -121,15 +150,15 @@ async function nextPaint(page) {
         viewBox: window.krokiEditorCamera.readViewBox()
       };
     });
-    await page.click("[data-touch-action='move-right']");
+    await pressDirection(page, "move-right");
     const objectMoved = await page.evaluate(() => ({
       geometry: structuredClone(window.Kroki.EditorObjectManager.get("touch-control-test-line").geometry),
       mode: window.Kroki.SelectionManager.getMode(),
       canUndo: window.Kroki.HistoryManager.canUndo(),
       viewBox: window.krokiEditorCamera.readViewBox()
     }));
-    closeTo(objectMoved.geometry.start.x, objectBefore.geometry.start.x + 1, 1e-8, "selected object start did not move exactly one unit");
-    closeTo(objectMoved.geometry.end.x, objectBefore.geometry.end.x + 1, 1e-8, "selected object end did not move exactly one unit");
+    closeTo(objectMoved.geometry.start.x, objectBefore.geometry.start.x + 1, 1e-8, "selected object start did not move one unit");
+    closeTo(objectMoved.geometry.end.x, objectBefore.geometry.end.x + 1, 1e-8, "selected object end did not move one unit");
     assert.equal(objectMoved.mode, "preselect", "precision move must preserve preselect mode");
     assert.equal(objectMoved.canUndo, true, "precision object movement must be undoable");
     assert.deepEqual(objectMoved.viewBox, objectBefore.viewBox, "selected object movement must not pan the scene");
@@ -140,51 +169,23 @@ async function nextPaint(page) {
       "single-step undo did not restore object geometry"
     );
 
-    const selectedZoomBefore = await page.evaluate(() => ({
-      geometry: structuredClone(window.Kroki.EditorObjectManager.get("touch-control-test-line").geometry),
-      viewBox: window.krokiEditorCamera.readViewBox()
-    }));
-    await page.click("[data-touch-action='zoom-in']");
-    const selectedZoomAfter = await page.evaluate(() => ({
-      geometry: structuredClone(window.Kroki.EditorObjectManager.get("touch-control-test-line").geometry),
-      viewBox: window.krokiEditorCamera.readViewBox()
-    }));
-    assert.deepEqual(selectedZoomAfter.geometry, selectedZoomBefore.geometry, "zoom must not transform the selected object");
-    closeTo(
-      selectedZoomAfter.viewBox.x + selectedZoomAfter.viewBox.width / 2,
-      selectedZoomBefore.viewBox.x + selectedZoomBefore.viewBox.width / 2,
-      1e-7,
-      "selected-state zoom center x changed"
-    );
-    closeTo(
-      selectedZoomAfter.viewBox.y + selectedZoomAfter.viewBox.height / 2,
-      selectedZoomBefore.viewBox.y + selectedZoomBefore.viewBox.height / 2,
-      1e-7,
-      "selected-state zoom center y changed"
-    );
-    await page.click("[data-touch-action='zoom-out']");
-
     await page.evaluate(() => {
       window.Kroki.SelectionManager.promoteToEdit();
       window.Kroki.HistoryManager.clear();
     });
     const editBeforeY = await page.evaluate(() => window.Kroki.EditorObjectManager.get("touch-control-test-line").geometry.start.y);
-    await page.click("[data-touch-action='move-down']");
+    await pressDirection(page, "move-down");
     const editMoved = await page.evaluate(() => ({
       y: window.Kroki.EditorObjectManager.get("touch-control-test-line").geometry.start.y,
       mode: window.Kroki.SelectionManager.getMode()
     }));
-    closeTo(editMoved.y, editBeforeY + 1, 1e-8, "edit-mode object did not move exactly one unit");
+    closeTo(editMoved.y, editBeforeY + 1, 1e-8, "edit-mode object did not move one unit");
     assert.equal(editMoved.mode, "edit", "precision move must preserve edit mode");
     await page.evaluate(() => window.Kroki.HistoryManager.undo());
 
     await page.evaluate(() => window.Kroki.HistoryManager.clear());
     const holdBefore = await page.evaluate(() => window.Kroki.EditorObjectManager.get("touch-control-test-line").geometry.start.x);
-    const rightButton = await page.locator("[data-touch-action='move-right']").boundingBox();
-    await page.mouse.move(rightButton.x + rightButton.width / 2, rightButton.y + rightButton.height / 2);
-    await page.mouse.down();
-    await page.waitForTimeout(540);
-    await page.mouse.up();
+    await pressDirection(page, "move-right", 540);
     const holdAfter = await page.evaluate(() => ({
       x: window.Kroki.EditorObjectManager.get("touch-control-test-line").geometry.start.x,
       historySize: window.Kroki.HistoryManager.size()
@@ -200,17 +201,15 @@ async function nextPaint(page) {
       "long-press undo did not restore the starting position"
     );
 
-    await page.click("#btnTouchControlOpacity");
-    assert.equal(await page.locator("#btnTouchControlOpacity").getAttribute("data-opacity"), "0.75");
-    await page.click("#btnTouchControlCollapse");
-    assert.equal(await page.locator("#touchControlPanel").isHidden(), true);
-    assert.equal(await page.locator("#btnTouchControlRestore").isVisible(), true);
-    await page.click("#btnTouchControlRestore");
-    assert.equal(await page.locator("#touchControlPanel").isVisible(), true);
-    assert.equal(await page.locator("#btnTouchControlRestore").isHidden(), true);
+    await page.waitForTimeout(5200);
+    assert.equal(await page.locator("#touchControlPanel").isHidden(), true, "pad must auto-collapse after five idle seconds");
+    assert.equal(await page.locator("#btnTouchControlRestore").isVisible(), true, "launcher must return after auto-collapse");
 
+    await page.click("#btnTouchControlRestore");
+    await page.mouse.click(400, 400);
+    assert.equal(await page.locator("#touchControlPanel").isHidden(), true, "outside click should collapse the transient pad");
     assert.deepEqual(errors, [], "browser errors");
-    console.log("PASS: touch panel placement, 1-unit scene/object movement, centered 1-point zoom, long press/undo, opacity and collapse/restore.");
+    console.log("PASS: compact diamond pad, four-way 1-unit movement, long press/undo, zoom readout, outside-click and five-second auto-collapse.");
     await page.close();
   } finally {
     await browser.close();

@@ -7,12 +7,12 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <meta name="kroki-build" content="20260909-touch-controls-v1" />
+  <meta name="kroki-build" content="20260909-touch-controls-v2" />
   <title>Kroki Pro</title>
   <link rel="stylesheet" href="src/home.css?v=20260903-home-pro-v1" />
-  <link rel="stylesheet" href="src/editor.css?v=20260903-grid-fast-v2" />
+  <link rel="stylesheet" href="src/editor.css?v=20260909-touch-controls-v2" />
   <link rel="stylesheet" href="src/editor-line.css?v=20260907-barrier-profile-v2" />
-  <link rel="stylesheet" href="src/touch-controls.css?v=20260909-touch-controls-v1" />
+  <link rel="stylesheet" href="src/touch-controls.css?v=20260909-touch-controls-v2" />
 </head>
 
 <body>
@@ -179,16 +179,19 @@
       <div class="editor-ruler-corner" aria-hidden="true">x/y</div>
       <svg id="editorRulerX" class="editor-ruler editor-ruler-x" aria-hidden="true"></svg>
       <svg id="editorRulerY" class="editor-ruler editor-ruler-y" aria-hidden="true"></svg>
-      <div class="editor-grid-controls" role="group" aria-label="Cetvel ve ızgara">
-        <button id="btnEditorRulers" type="button" aria-label="Cetvelleri gizle" title="Cetvelleri gizle" aria-pressed="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 3h18v7H10v11H3Z M7 3v4m5-4v4m5-4v4M3 12h4m-4 5h4"/></svg>
-        </button>
-        <button id="btnEditorGrid" type="button" aria-label="Izgarayı gizle" title="Izgarayı gizle" aria-pressed="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M9 3v18m6-18v18M3 9h18M3 15h18"/></svg>
-        </button>
-        <button id="btnEditorSnap" type="button" aria-label="Izgaraya yapışma açık" title="Izgaraya yapışma açık" aria-pressed="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 3v10a8 8 0 0 0 16 0V3h-5v10a3 3 0 0 1-6 0V3ZM4 8h5m6 0h5"/></svg>
-        </button>
+      <div class="editor-grid-controls" role="group" aria-label="Cetvel, ızgara ve zoom bilgisi">
+        <div class="editor-grid-control-buttons">
+          <button id="btnEditorRulers" type="button" aria-label="Cetvelleri gizle" title="Cetvelleri gizle" aria-pressed="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 3h18v7H10v11H3Z M7 3v4m5-4v4m5-4v4M3 12h4m-4 5h4"/></svg>
+          </button>
+          <button id="btnEditorGrid" type="button" aria-label="Izgarayı gizle" title="Izgarayı gizle" aria-pressed="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M9 3v18m6-18v18M3 9h18M3 15h18"/></svg>
+          </button>
+          <button id="btnEditorSnap" type="button" aria-label="Izgaraya yapışma açık" title="Izgaraya yapışma açık" aria-pressed="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 3v10a8 8 0 0 0 16 0V3h-5v10a3 3 0 0 1-6 0V3ZM4 8h5m6 0h5"/></svg>
+          </button>
+        </div>
+        <output id="touchControlZoomValue" class="editor-grid-zoom-value" aria-label="Yakınlaştırma oranı">Zoom: %100</output>
       </div>
       <main class="editor-calisma-alani">
         <canvas id="editorGrid" class="editor-grid" aria-hidden="true"></canvas>
@@ -224,59 +227,34 @@
       </div>
 
       <div id="touchControlDock" class="touch-control-dock">
-        <section id="touchControlPanel" class="touch-control-panel" aria-label="Dokunmatik hassas kontroller">
-          <header class="touch-control-header">
-            <button id="btnTouchControlOpacity" class="touch-control-header-btn" type="button"
-              aria-label="Panel opaklığını değiştir" title="Panel opaklığı: %90">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M12 3.5S6.5 9.7 6.5 14a5.5 5.5 0 0 0 11 0C17.5 9.7 12 3.5 12 3.5Z"
-                  stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path>
-                <path d="M9.2 14.3a2.9 2.9 0 0 0 2.9 2.9" stroke="currentColor" stroke-width="1.8"
-                  stroke-linecap="round"></path>
-              </svg>
-            </button>
-            <output id="touchControlZoomValue" class="touch-control-zoom-value" aria-label="Yakınlaştırma oranı">Zoom: %100</output>
-            <button id="btnTouchControlCollapse" class="touch-control-header-btn is-close" type="button"
-              aria-label="Dokunmatik kontrolleri gizle" title="Kontrolleri gizle" aria-controls="touchControlPanel">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path>
-              </svg>
-            </button>
-          </header>
-
-          <div class="touch-control-grid" role="group" aria-label="Bir birim taşıma ve yüzde bir yakınlaştırma">
-            <button class="touch-control-btn is-up" type="button" data-touch-action="move-up"
+        <section id="touchControlPanel" class="touch-control-panel" aria-label="Dokunmatik hassas taşıma" hidden>
+          <div class="touch-direction-diamond" role="group" aria-label="Bir birim yönlü taşıma">
+            <button class="touch-direction-btn is-up" type="button" data-touch-action="move-up"
               aria-label="Bir birim yukarı taşı" title="1 birim yukarı taşı · Basılı tutabilirsiniz">
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 19V5m0 0-6 6m6-6 6 6" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"></path></svg>
             </button>
-            <button class="touch-control-btn is-left" type="button" data-touch-action="move-left"
-              aria-label="Bir birim sola taşı" title="1 birim sola taşı · Basılı tutabilirsiniz">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 12H5m0 0 6-6m-6 6 6 6" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-            </button>
-            <button class="touch-control-btn is-minus" type="button" data-touch-action="zoom-out"
-              aria-label="Yüzde bir uzaklaştır" title="%1 uzaklaştır · Basılı tutabilirsiniz">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 12h12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"></path></svg>
-            </button>
-            <button class="touch-control-btn is-plus" type="button" data-touch-action="zoom-in"
-              aria-label="Yüzde bir yakınlaştır" title="%1 yakınlaştır · Basılı tutabilirsiniz">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 6v12M6 12h12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"></path></svg>
-            </button>
-            <button class="touch-control-btn is-right" type="button" data-touch-action="move-right"
+            <button class="touch-direction-btn is-right" type="button" data-touch-action="move-right"
               aria-label="Bir birim sağa taşı" title="1 birim sağa taşı · Basılı tutabilirsiniz">
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m0 0-6-6m6 6-6 6" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"></path></svg>
             </button>
-            <button class="touch-control-btn is-down" type="button" data-touch-action="move-down"
+            <button class="touch-direction-btn is-down" type="button" data-touch-action="move-down"
               aria-label="Bir birim aşağı taşı" title="1 birim aşağı taşı · Basılı tutabilirsiniz">
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14m0 0 6-6m-6 6-6-6" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </button>
+            <button class="touch-direction-btn is-left" type="button" data-touch-action="move-left"
+              aria-label="Bir birim sola taşı" title="1 birim sola taşı · Basılı tutabilirsiniz">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 12H5m0 0 6-6m-6 6 6 6" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"></path></svg>
             </button>
           </div>
         </section>
 
-        <button id="btnTouchControlRestore" class="touch-control-restore" type="button" hidden
-          aria-label="Dokunmatik kontrolleri aç" title="Dokunmatik kontrolleri aç" aria-controls="touchControlPanel">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M12 3v18M3 12h18M12 3 9 6m3-3 3 3M21 12l-3-3m3 3-3 3M12 21l-3-3m3 3 3-3M3 12l3-3m-3 3 3 3"
-              stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"></path>
+        <button id="btnTouchControlRestore" class="touch-control-restore" type="button"
+          aria-label="Hassas taşıma kumandasını aç" title="Hassas taşıma kumandasını aç" aria-controls="touchControlPanel" aria-expanded="false">
+          <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+            <path d="M16 2.5 29.5 16 16 29.5 2.5 16 16 2.5ZM9.25 9.25l13.5 13.5m0-13.5-13.5 13.5"
+              stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"></path>
+            <path d="M16 6v5m0-5-2 2m2-2 2 2M26 16h-5m5 0-2-2m2 2-2 2M16 26v-5m0 5-2-2m2 2 2-2M6 16h5m-5 0 2-2m-2 2 2 2"
+              stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
           </svg>
         </button>
       </div>
@@ -1531,7 +1509,7 @@
   <script src="src/ui/trafficSignLibrary.js?v=20260810-performance-stability-v1"></script>
   <script src="src/ui/otherSymbolLibrary.js?v=20260810-performance-stability-v1"></script>
   <script src="src/editor-main-menu.js?v=20260903-home-pro-v1"></script>
-  <script src="src/ui/touchControlPanel.js?v=20260909-touch-controls-v1"></script>
+  <script src="src/ui/touchControlPanel.js?v=20260909-touch-controls-v2"></script>
 </body>
 
 </html>
