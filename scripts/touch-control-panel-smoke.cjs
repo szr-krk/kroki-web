@@ -190,8 +190,8 @@ async function pressDirection(page, action, holdMs = 0) {
       x: window.Kroki.EditorObjectManager.get("touch-control-test-line").geometry.start.x,
       historySize: window.Kroki.HistoryManager.size()
     }));
-    assert.ok(holdAfter.x - holdBefore >= 4, "long press must repeat movement");
-    assert.ok(holdAfter.x - holdBefore <= 6, "long press repetition must stay at the calmer rate");
+    assert.ok(holdAfter.x - holdBefore >= 10, "long press must use the three-times-faster repeat rate");
+    assert.ok(holdAfter.x - holdBefore <= 13, "long press repeat rate exceeded the intended three-times speed");
     assert.ok(Number.isInteger(holdAfter.x - holdBefore), "long press must repeat in exact one-unit steps");
     assert.equal(holdAfter.historySize.undo, 1, "one long press must create one undo record");
     await page.evaluate(() => window.Kroki.HistoryManager.undo());

@@ -8,7 +8,7 @@
   if (!canvas || !dock || !panel || !zoomValue || !restoreButton || !actionButtons.length) return;
 
   const HOLD_DELAY_MS = 420;
-  const REPEAT_INTERVAL_MS = 110;
+  const REPEAT_INTERVAL_MS = 110 / 3;
   const INACTIVITY_MS = 5000;
   const movementByAction = {
     "move-up": { dx: 0, dy: -1 },
