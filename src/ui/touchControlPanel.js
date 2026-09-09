@@ -7,8 +7,8 @@
   const actionButtons = Array.from(document.querySelectorAll("[data-touch-action]"));
   if (!canvas || !dock || !panel || !zoomValue || !restoreButton || !actionButtons.length) return;
 
-  const HOLD_DELAY_MS = 360;
-  const REPEAT_INTERVAL_MS = 70;
+  const HOLD_DELAY_MS = 420;
+  const REPEAT_INTERVAL_MS = 110;
   const INACTIVITY_MS = 5000;
   const movementByAction = {
     "move-up": { dx: 0, dy: -1 },
@@ -214,6 +214,7 @@
   function stopPointerEvent(event) {
     event.preventDefault();
     event.stopPropagation();
+    lastPointerActivation.set(event.currentTarget, performance.now());
     stopActivePress(event.pointerId);
   }
 
