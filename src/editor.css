@@ -1284,6 +1284,7 @@
 .editor-grid-control-buttons { display: flex; gap: 3px; }
 .editor-grid-controls button { width: 34px; height: 34px; display: grid; place-items: center; padding: 0; border: 1px solid transparent; border-radius: 6px; background: #f8fafc; color: #64748b; cursor: pointer; touch-action: manipulation; }
 .editor-grid-controls button[aria-pressed="true"] { background: #dbeafe; color: #1d4ed8; }
+.editor-grid-controls button[hidden], .editor-grid-controls button[aria-pressed="true"] .photo-visibility-slash { display: none; }
 .editor-grid-controls #btnEditorSnap[aria-pressed="true"] { background: #fef3c7; color: #92400e; }
 .editor-grid-controls button:focus-visible { outline: 2px solid #0f766e; outline-offset: 1px; }
 .editor-grid-controls button svg { width: 18px; height: 18px; }

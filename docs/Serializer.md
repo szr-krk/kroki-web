@@ -40,6 +40,8 @@ Mevcut sürüm `schemaVersion: 1`, uygulama adı `Kroki Pro`dur.
 
 Nesneler SVG DOM sırasıyla export edilir; bu sıra katman sırasıdır.
 
+Belgenin `photoBackground` alanı fotoğraf verisini, boyutlarını, sınırlarını ve `visible` görünürlük değerini taşır; fotoğraf yoksa `null` olur. Eski belgelerde eksik `visible` değeri `true` kabul edilir. Gizli fotoğraf IndexedDB kaydında korunur; SVG içinde `display="none"` katmanında tutulduğu için yeniden içe aktarıldığında tekrar gösterilebilir. PNG ve önizlemelerde görünmez, çıktı kadrajının hesabına katılmaz.
+
 ## Export davranışı
 
 - `createdAt` ve `updatedAt` her export çağrısında aynı “şimdi” ISO değeriyle yazılır.

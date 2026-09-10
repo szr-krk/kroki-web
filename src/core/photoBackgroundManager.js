@@ -22,6 +22,7 @@
 
   const canvas = document.querySelector("#editorCanvas");
   const layer = document.querySelector("#editorBackground");
+  const visibilityButton = document.querySelector("#btnEditorPhotoVisibility");
   let backgroundState = null;
 
   function finiteNumber(value, fallback) {
@@ -85,13 +86,49 @@
       dataUrl,
       mimeType: preferredMimeType || normalizedMimeType(embeddedMimeType),
       name: String(source.name || "Fotoğraf"),
+      visible: source.visible !== false,
       naturalWidth: Math.max(1, finiteNumber(source.naturalWidth, 1)),
       naturalHeight: Math.max(1, finiteNumber(source.naturalHeight, 1)),
       bounds: normalizeBounds(source.bounds)
     };
   }
 
+  function isVisible() {
+    return Boolean(backgroundState && backgroundState.visible);
+  }
+
+  function syncVisibility() {
+    const visible = isVisible();
+    // Keep the image data in the SVG so hidden backgrounds can be restored after import.
+    layer?.setAttribute("display", visible ? "inline" : "none");
+    if (!visibilityButton) return;
+    const label = visible ? "Fotoğrafı gizle" : "Fotoğrafı göster";
+    visibilityButton.hidden = !backgroundState;
+    visibilityButton.setAttribute("aria-pressed", String(visible));
+    visibilityButton.setAttribute("aria-label", label);
+    visibilityButton.setAttribute("title", label);
+  }
+
+  function setVisible(value, options = {}) {
+    if (!backgroundState) return false;
+    const visible = Boolean(value);
+    if (backgroundState.visible === visible) return false;
+    const label = visible ? "Fotoğrafı göster" : "Fotoğrafı gizle";
+    const beforeVisible = backgroundState.visible;
+    backgroundState.visible = visible;
+    syncVisibility();
+    if (!options.skipHistory) {
+      Kroki.HistoryManager?.pushDelta?.({
+        label,
+        undo: () => setVisible(beforeVisible, { skipHistory: true }),
+        redo: () => setVisible(visible, { skipHistory: true })
+      });
+    }
+    return true;
+  }
+
   function render() {
+    syncVisibility();
     if (!layer) return;
     layer.replaceChildren();
     if (!backgroundState) return;
@@ -184,13 +221,18 @@
     clear,
     exportState,
     getBounds() {
-      return backgroundState ? { ...backgroundState.bounds } : null;
+      return isVisible() ? { ...backgroundState.bounds } : null;
     },
     has() {
       return Boolean(backgroundState);
     },
     importState,
+    isVisible,
     set,
+    setVisible,
     stateFromFile
   };
+
+  visibilityButton?.addEventListener("click", () => setVisible(!isVisible()));
+  syncVisibility();
 })();

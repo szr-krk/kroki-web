@@ -114,6 +114,8 @@ Grup veya grup birimleri seçildiğinde sağ ray `is-empty` olur ve stil panelle
 
 Sol alttaki üç dokunma düğmesi cetvelleri, ızgarayı ve snap durumunu yönetir. Izgarayı gizlemek snap'i de kapatır. Cetvel görünürlüğü bağımsızdır; ayrıntı: [[Editör#Cetvel, ızgara ve snap]]. Sağ özellik rayı aynı şekilde çalışır.
 
+Fotoğraf altlığı varsa snap düğmesinin hemen yanında dördüncü kontrol olarak göz simgesi görünür. “Fotoğrafı gizle” / “Fotoğrafı göster” işlemi altlığı silmeden görünürlüğünü değiştirir; fotoğrafsız belgede bu düğme gizlenir. Seçim kayda, SVG/PNG çıktısına ve geri al/ileri al geçmişine yansır.
+
 ## Yüzen geçmiş çubuğu
 
 Sol üstte yalnız Undo ve Redo vardır. Düğmeler `HistoryManager.onChange` ile etkin/pasif olur. Ayrıntı: [[Undo Redo]].

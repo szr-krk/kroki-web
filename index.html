@@ -7,10 +7,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <meta name="kroki-build" content="20260909-road-dash-butt-v1" />
+  <meta name="kroki-build" content="20260910-photo-visibility-v1" />
   <title>Kroki Pro</title>
   <link rel="stylesheet" href="src/home.css?v=20260903-home-pro-v1" />
-  <link rel="stylesheet" href="src/editor.css?v=20260909-touch-controls-v2" />
+  <link rel="stylesheet" href="src/editor.css?v=20260910-photo-visibility-v1" />
   <link rel="stylesheet" href="src/editor-line.css?v=20260907-barrier-profile-v2" />
   <link rel="stylesheet" href="src/touch-controls.css?v=20260909-touch-controls-v2" />
 </head>
@@ -179,7 +179,7 @@
       <div class="editor-ruler-corner" aria-hidden="true">x/y</div>
       <svg id="editorRulerX" class="editor-ruler editor-ruler-x" aria-hidden="true"></svg>
       <svg id="editorRulerY" class="editor-ruler editor-ruler-y" aria-hidden="true"></svg>
-      <div class="editor-grid-controls" role="group" aria-label="Cetvel, ızgara ve zoom bilgisi">
+      <div class="editor-grid-controls" role="group" aria-label="Cetvel, ızgara, fotoğraf ve zoom bilgisi">
         <div class="editor-grid-control-buttons">
           <button id="btnEditorRulers" type="button" aria-label="Cetvelleri gizle" title="Cetvelleri gizle" aria-pressed="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 3h18v7H10v11H3Z M7 3v4m5-4v4m5-4v4M3 12h4m-4 5h4"/></svg>
@@ -189,6 +189,9 @@
           </button>
           <button id="btnEditorSnap" type="button" aria-label="Izgaraya yapışma açık" title="Izgaraya yapışma açık" aria-pressed="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 3v10a8 8 0 0 0 16 0V3h-5v10a3 3 0 0 1-6 0V3ZM4 8h5m6 0h5"/></svg>
+          </button>
+          <button id="btnEditorPhotoVisibility" type="button" aria-label="Fotoğrafı göster" title="Fotoğrafı göster" aria-pressed="false" aria-controls="editorBackground" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="photo-visibility-slash" d="m3 3 18 18"/></svg>
           </button>
         </div>
         <output id="touchControlZoomValue" class="editor-grid-zoom-value" aria-label="Yakınlaştırma oranı">Zoom: %100</output>
@@ -1471,7 +1474,7 @@
   <script src="src/core/shapeRegistry.js?v=20260907-barrier-profile-v2"></script>
   <script src="src/core/styleManager.js?v=20260907-barrier-profile-v2"></script>
   <script src="src/core/editorObjectManager.js?v=20260906-interaction-performance-v1"></script>
-  <script src="src/core/photoBackgroundManager.js?v=20260809-photo-background-v1"></script>
+  <script src="src/core/photoBackgroundManager.js?v=20260910-photo-visibility-v1"></script>
   <script src="src/core/documentStorage.js?v=20260809-indexeddb-library-v1"></script>
   <script src="src/core/groupManager.js"></script>
   <script src="src/core/documentSerializer.js?v=20260809-line-family-v1"></script>

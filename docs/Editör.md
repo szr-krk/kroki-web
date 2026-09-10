@@ -89,6 +89,10 @@ Serbest metin aracı canvas merkezine yakın (`viewBox` merkezinin yatay merkezi
 
 Modal, açık ray paneli veya serbest metin composer görünürken `krokiEditorState.isBlockingOverlayOpen()` canvas etkileşimini engeller.
 
+## Fotoğraf altlığının görünürlüğü
+
+Fotoğraf içe aktarıldığında sol altta `btnEditorSnap` yanına `btnEditorPhotoVisibility` göz düğmesi eklenir. Düğme, `PhotoBackgroundManager.setVisible()` ile yalnız altlık katmanının görünürlüğünü değiştirir; çizimleri ve fotoğraf verisini korur. Gizleme/gösterme geri alınabilir; kaydedilen belge yeniden açılınca seçilen görünürlük korunur. Fotoğraf gizliyken SVG/PNG ve önizlemelerde görünmez, içeriğe sığdırma ve çıktı alanı hesabına katılmaz. Fotoğrafsız belgeye geçildiğinde düğme kaybolur.
+
 ## Bağlı modüller
 
 - Nesne üretimi ve render: [[Nesne Sistemi]].
