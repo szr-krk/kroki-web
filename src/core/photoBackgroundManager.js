@@ -207,13 +207,18 @@
     if (!file || !mimeType) throw new Error("unsupported-image");
     const dataUrl = await fileAsDataUrl(file, mimeType);
     const dimensions = await imageDimensions(dataUrl);
+    const scale = Math.min(
+      DEFAULT_VIEWBOX.width / dimensions.width,
+      DEFAULT_VIEWBOX.height / dimensions.height
+    );
     return normalizeState({
       dataUrl,
       mimeType,
       name: file.name || "Fotoğraf",
       naturalWidth: dimensions.width,
       naturalHeight: dimensions.height,
-      bounds: parseViewBox(canvas?.getAttribute("viewBox"))
+      // New photos have tight bounds independent of the previous document's camera.
+      bounds: { x: 0, y: 0, width: dimensions.width * scale, height: dimensions.height * scale }
     });
   }
 
@@ -221,7 +226,18 @@
     clear,
     exportState,
     getBounds() {
-      return isVisible() ? { ...backgroundState.bounds } : null;
+      if (!isVisible()) return null;
+      const { bounds, naturalWidth, naturalHeight } = backgroundState;
+      const scale = Math.min(bounds.width / naturalWidth, bounds.height / naturalHeight);
+      const width = naturalWidth * scale;
+      const height = naturalHeight * scale;
+      // Legacy records may include letterboxing; frame the painted image without moving it.
+      return {
+        x: bounds.x + (bounds.width - width) / 2,
+        y: bounds.y + (bounds.height - height) / 2,
+        width,
+        height
+      };
     },
     has() {
       return Boolean(backgroundState);

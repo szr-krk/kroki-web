@@ -60,10 +60,11 @@ class FakeFileReader {
 }
 
 class FakeImage {
+  static dimensions = { width: 1600, height: 900 };
   constructor() {
     this.listeners = new Map();
-    this.naturalWidth = 1600;
-    this.naturalHeight = 900;
+    this.naturalWidth = FakeImage.dimensions.width;
+    this.naturalHeight = FakeImage.dimensions.height;
   }
 
   addEventListener(name, callback) {
@@ -149,6 +150,18 @@ const sourceFile = {
   assert.equal(state.visible, true, "yeni fotoğraf görünür başlamalı");
   assert.equal(sourceFile.name, "orijinal.jpg", "kaynak dosya değiştirilmemeli");
 
+  for (const [width, height] of [[1600, 900], [900, 1600], [1000, 1000], [3000, 400]]) {
+    FakeImage.dimensions = { width, height };
+    canvas.setAttribute("viewBox", "-2700 4200 75 50");
+    const imported = await manager.stateFromFile(sourceFile);
+    const scale = Math.min(1200 / width, 800 / height);
+    assert.deepEqual(plain(imported.bounds), { x: 0, y: 0, width: width * scale, height: height * scale },
+      "yeni fotoğraf, önceki kameradan bağımsız ve doğal oranında yüklenmeli");
+    assert.equal(imported.bounds.width / imported.bounds.height, width / height);
+  }
+  FakeImage.dimensions = { width: 1600, height: 900 };
+  canvas.setAttribute("viewBox", "0 0 1200 800");
+
   manager.set(state);
   assertVisibility(true);
   assert.equal(layer.children.length, 1, "SVG fotoğraf katmanı oluşmadı");
@@ -158,7 +171,7 @@ const sourceFile = {
   assert.equal(layer.children[0].getAttribute("pointer-events"), "none");
   assert.deepEqual(
     JSON.parse(JSON.stringify(manager.getBounds())),
-    { x: 0, y: 0, width: 1200, height: 800 }
+    { x: 0, y: 0, width: 1200, height: 675 }
   );
 
   const exported = manager.exportState();
@@ -187,6 +200,14 @@ const sourceFile = {
 
   const legacyState = plain(state);
   delete legacyState.visible;
+  const letterboxedLegacyState = { ...legacyState, bounds: { x: 40, y: 70, width: 1200, height: 800 } };
+  manager.importState(letterboxedLegacyState);
+  assert.deepEqual(plain(manager.getBounds()), { x: 40, y: 132.5, width: 1200, height: 675 },
+    "eski fotoğrafın boş kenarları kadraja dahil edilmemeli");
+  assert.deepEqual(plain(manager.exportState().bounds), letterboxedLegacyState.bounds,
+    "eski kaydın fotoğraf/çizim koordinatları değişmemeli");
+  assert.equal(layer.children[0].getAttribute("x"), "40");
+  assert.equal(layer.children[0].getAttribute("y"), "70");
   assert.equal(manager.importState(legacyState), true);
   assertVisibility(true);
   assert.equal(manager.exportState().visible, true, "eski fotoğraf kaydı görünür olarak açılmalı");

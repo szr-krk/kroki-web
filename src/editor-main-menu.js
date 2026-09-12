@@ -580,7 +580,7 @@
     showEditor();
     Kroki.HistoryManager?.clear?.();
     Kroki.StyleManager?.syncControls?.();
-    if (options.fitToContent) window.krokiEditorCamera?.fitToContent?.();
+    if (options.fitToContent) window.krokiEditorCamera?.fitToContent?.(options.fitOptions);
     else dispatchViewBoxChange();
     if (options.markSaved === false) lastSavedSnapshot = "";
     else markDocumentSaved();
@@ -1563,7 +1563,11 @@
     }
     return confirmDiscard("Mevcut kroki kapatılıp SVG içindeki kroki açılacak. Devam edilsin mi?")
       .then((ok) => {
-        if (ok) loadDocument(payload.document, { currentDocumentId: "" });
+        if (ok) loadDocument(payload.document, {
+          currentDocumentId: "",
+          fitToContent: true,
+          fitOptions: { paddingWorld: 0 }
+        });
       });
   }
 
@@ -1598,7 +1602,12 @@
         photoBackground,
         groups: [],
         roadIntersection: null
-      }, { currentDocumentId: "", markSaved: false });
+      }, {
+        currentDocumentId: "",
+        markSaved: false,
+        fitToContent: true,
+        fitOptions: { paddingWorld: 0 }
+      });
       return true;
     } catch {
       await notify("Fotoğraf okunamadı. JPEG, PNG, WebP, GIF, BMP veya AVIF dosyası seçin.", "Fotoğraf Yükle");

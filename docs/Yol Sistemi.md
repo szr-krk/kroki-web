@@ -65,6 +65,10 @@ Geometri `start`, `end` ve `ratio` taşır. `ratio`, chord orta noktasına norma
 
 `roadAdapter` merkez çizgisini 64 eşit parametre parçasıyla örnekler. Her örnekte tangent ve normal hesaplanır. Yol çizgileri normal yönünde offset path olarak, kesitler iki offset arasındaki kapalı band olarak türetilir. Ada path'i dış ve ters yönlü iç çemberden oluşur.
 
+Ada için yalnız SVG çizim üretimi analitik daire yaylarını kullanır: tam çember iki `A` komutu ve `Z`, kırpılmış/stil parçası tek `A` komutudur. İç/dış kenar, şerit çizgisi, seçili kesit, seçim halkası ve önizleme aynı yay üretimini kullanır. Kısmi yaylar kapatılmaz; ters yönlü iç halka seçim alanındaki deliği korur. Kavşak, görünür aralık, Q, hit-test ve merkez çizgisi örnekleme hesapları değişmez. Her görünür/stil aralığı ayrı path olmaya devam eder; çift/karma çizgilerin offset'leri, genişlikleri ve kesik çizgi başlangıçları korunur.
+
+`scripts/island-arc-render-browser.cjs --baseline <git-ref>` eski adapter ile güncel adapter'ı aynı Chrome sahnelerinde karşılaştırır. Tek ada, kesişen yollar, terminal bağlantı, arc/S yolları, parçalı/çift/karma/sıfır genişlikli çizgiler ve çakışan adalar için hesap geometri ve Q durumu eşitliğini denetler. Üç şeritli tek adada path sayısı 4 kalırken SVG komut sayısı 264'ten 16'ya, path verisi 9474'ten 251 karaktere indi (`2e2c3a9` karşılaştırması). Bu ölçüm çizim verisinin azalmasını gösterir; fiziksel Android cihaz FPS ölçümü değildir.
+
 Normal render sırasında beyaz yol yüzeyi DOM'a eklenmez; `renderSurface()` bilinçli olarak `null` döner. Yüzey geometrisi hit-test, seçim ve kavşak hesaplarında yine üretilir. Görünen ana yol öğeleri sınır/şerit çizgileri, seçili kesit vurgusu ve bariyerlerdir.
 
 ## Çekirdek algoritma sırası

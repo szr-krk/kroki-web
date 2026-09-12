@@ -1140,6 +1140,7 @@
   }
 
   function offsetPathData(model, offset = 0, reverse = false, sampleCount = SAMPLE_COUNT) {
+    if (isIslandGeometry(model?.geometry)) return islandPathDataRange(model, offset, 0, 1, reverse);
     if (model?.geometry?.profile === ARC && !isDepartureRoad(model)) {
       const arcPath = arcPathDataRange(model, offset, 0, 1, reverse);
       if (arcPath) return arcPath;
@@ -1165,6 +1166,7 @@
     const start = clamp(numberOr(from, 0), 0, 1);
     const end = clamp(numberOr(to, 1), 0, 1);
     if (end <= start) return "";
+    if (isIslandGeometry(model?.geometry)) return islandPathDataRange(model, offset, start, end, reverse);
     if (isStraightGeometry(model?.geometry)) {
       const points = [offsetPointAt(model, start, offset), offsetPointAt(model, end, offset)];
       if (reverse) points.reverse();
@@ -1246,17 +1248,33 @@
     return [...left, ...right];
   }
 
-  function islandRingPathData(model, sampleCount = SAMPLE_COUNT) {
-    const center = point(model.geometry.center);
+  function islandPathDataRange(model, offset = 0, from = 0, to = 1, reverse = false) {
+    const start = clamp(numberOr(from, 0), 0, 1);
+    const end = clamp(numberOr(to, 1), 0, 1);
+    if (end <= start) return "";
     const radii = islandRadii(model.geometry);
-    const outer = circlePoints(center, radii.outerRadius, false, sampleCount);
-    const inner = circlePoints(center, radii.innerRadius, true, sampleCount);
-    return pathFromPoints(outer, true) + " " + pathFromPoints(inner, true);
+    const radius = Math.max(1, radii.centerRadius + offset);
+    const first = islandPointAt(model.geometry, reverse ? end : start, offset);
+    const sweep = reverse ? 1 : 0;
+    // SVG needs two arcs for a complete circle. Clipped/style ranges keep their
+    // original endpoints and direction; geometry sampling is still used by Q,
+    // intersection and hit-test calculations, never by this rendering shortcut.
+    if (end - start === 1) {
+      const opposite = islandPointAt(model.geometry, 0.5, offset);
+      return `${arcSegmentPath(first, opposite, radius, 0, sweep)} A ${radius} ${radius} 0 0 ${sweep} ${formatPoint(first)} Z`;
+    }
+    const last = islandPointAt(model.geometry, reverse ? start : end, offset);
+    return arcSegmentPath(first, last, radius, end - start > 0.5 ? 1 : 0, sweep);
+  }
+
+  function islandRingPathData(model) {
+    const half = islandRadii(model.geometry).width / 2;
+    return islandPathDataRange(model, half) + " " + islandPathDataRange(model, -half, 0, 1, true);
   }
 
   function surfacePathData(model, width, options = {}) {
     const sampleCount = clampInt(options.sampleCount, 4, SAMPLE_COUNT, SAMPLE_COUNT);
-    if (isIslandGeometry(model?.geometry)) return islandRingPathData(model, sampleCount);
+    if (isIslandGeometry(model?.geometry)) return islandRingPathData(model);
     if (model?.geometry?.profile === ARC && !isDepartureRoad(model)) return arcSurfacePathData(model, width) || pathFromPoints(surfaceOutline(model, width, sampleCount), true);
     return pathFromPoints(surfaceOutline(model, width, sampleCount), true);
   }
@@ -1343,6 +1361,9 @@
   }
 
   function bandPathData(model, startOffset, endOffset) {
+    if (isIslandGeometry(model?.geometry)) {
+      return islandPathDataRange(model, endOffset) + " " + islandPathDataRange(model, startOffset, 0, 1, true);
+    }
     if (model?.geometry?.profile === ARC && !isDepartureRoad(model)) {
       const arcPath = arcBandPathData(model, startOffset, endOffset);
       if (arcPath) return arcPath;

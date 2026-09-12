@@ -37,6 +37,8 @@ SVG kodu ve dosyası aynı `importKrokiSvgText` doğrulamasını kullanır: yaln
 
 Fotoğraf mevcut `PhotoBackgroundManager.stateFromFile` üzerinden etkileşimsiz altlığa dönüştürülür. Kaynak dosya değiştirilmez. Kaydetme mevcut editör akışında kullanıcı komutuyla yapılır.
 
+Yeni fotoğrafın sınırları doğal en-boy oranında, `(0,0)` başlangıçlı ve önceki belgenin pan/zoom durumundan bağımsızdır. Fotoğraf ve imzalı SVG dosyaları, editör görünür olduktan sonra içeriğin tamamı kırpılmadan, oranı korunarak, merkezlenmiş ve ek kadraj payı olmadan açılır. Farklı ekran/içerik oranından kalan boşluk iki yana eşit dağılır. Son Krokiler'den açılan belgenin kayıtlı kamera konumu korunur. Eski fotoğrafların saklanan koordinatları değiştirilmez; kadraj hesabında yalnız fotoğrafın gerçek görünen sınırları kullanılır.
+
 Kılavuz, mevcut `kilavuz.html` içeriğini aynı sayfadaki pencerede gösterir. İçerik ilk açılışta yüklenir. Tam ekran düğmesi mevcut tarayıcı API'leriyle çalışır; desteklenmeyen cihazda uygulama kullanılabilir kalır.
 
 ## Değişmeyen kayıt sözleşmesi
