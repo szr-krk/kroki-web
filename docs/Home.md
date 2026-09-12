@@ -33,6 +33,8 @@ Ana ekran, editörün orantılı `rem` ölçeğinden bağımsız okunabilir boyu
 
 SVG Yükle, dosya seç/sürükle ve SVG kodu yapıştır seçeneklerini açar. Fotoğraf Yükle desteklenen görselleri seçtirir. Dosya seçildikten sonra Aç ve Düzenle ile mevcut import akışına geçilir. Ana ekrana dosya bırakmak da aynı seçili dosya onayını açar.
 
+Seçilen fotoğraf veya SVG, `homeUploadSelected` kartında oranı korunmuş ve kırpılmamış önizlemeyle gösterilir; altında dosya adı, boyutu ve açma/değiştirme düğmeleri bulunur. Önizleme yerel Blob URL'sini bir `img` içinde kullanır; SVG içeriği sayfa DOM'una eklenmez. Dosya değiştirilince veya pencere kapanınca önceki önizleme ve Blob URL'si bırakılır. Önizleme çözülemezse kartta bilgi gösterilir; dosya değiştirme ve mevcut import doğrulaması kullanılabilir kalır.
+
 SVG kodu ve dosyası aynı `importKrokiSvgText` doğrulamasını kullanır: yalnız Kroki Pro imzalı belge metadata'sı içeren SVG açılır. Genel SVG parser eklenmemiştir; dış SVG markup'ı doğrudan sayfaya yerleştirilmez.
 
 Fotoğraf mevcut `PhotoBackgroundManager.stateFromFile` üzerinden etkileşimsiz altlığa dönüştürülür. Kaynak dosya değiştirilmez. Kaydetme mevcut editör akışında kullanıcı komutuyla yapılır.

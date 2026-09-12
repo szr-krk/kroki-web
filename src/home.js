@@ -7,6 +7,8 @@
   const uploadModal = document.querySelector("#homeUploadModal");
   const uploadInput = document.querySelector("#homeUploadInput");
   const uploadError = document.querySelector("#homeUploadError");
+  const uploadPreview = document.querySelector("#homeUploadPreview");
+  const uploadPreviewStatus = document.querySelector("#homeUploadPreviewStatus");
   const guideModal = document.querySelector("#homeGuideModal");
   const dropOverlay = document.querySelector("#homeDropOverlay");
   const panels = { recent: "sonKrokilerListesi", template: "sablonlarimListesi", ready: "hazirKavsaklarListesi" };
@@ -17,6 +19,8 @@
   let uploadKind = "svg";
   let selectedFile = null;
   let uploadBusy = false;
+  let uploadPreviewImage = null;
+  let uploadPreviewUrl = "";
   let dragDepth = 0;
   let forcedFullscreenOffUntil = 0;
   let fullscreenPreferred = false;
@@ -127,7 +131,52 @@
     }
   }
 
+  function clearUploadPreview() {
+    if (uploadPreviewImage) {
+      uploadPreviewImage.onload = null;
+      uploadPreviewImage.onerror = null;
+      uploadPreviewImage.removeAttribute("src");
+      uploadPreviewImage.remove();
+      uploadPreviewImage = null;
+    }
+    if (uploadPreviewUrl) URL.revokeObjectURL(uploadPreviewUrl);
+    uploadPreviewUrl = "";
+    uploadPreviewStatus.textContent = "";
+    uploadPreviewStatus.classList.remove("gizli");
+  }
+
+  function showUploadPreview(file, svg) {
+    clearUploadPreview();
+    uploadPreviewStatus.textContent = "Önizleme hazırlanıyor…";
+    try {
+      // SVG stays in an image context; its markup is never inserted into the page.
+      const source = svg ? file.slice(0, file.size, "image/svg+xml") : file;
+      uploadPreviewUrl = URL.createObjectURL(source);
+      const image = new Image();
+      uploadPreviewImage = image;
+      image.className = "home-upload-preview-image gizli";
+      image.alt = `${file.name} önizlemesi`;
+      image.decoding = "async";
+      image.onload = () => {
+        if (uploadPreviewImage !== image) return;
+        image.classList.remove("gizli");
+        uploadPreviewStatus.classList.add("gizli");
+        uploadPreviewStatus.textContent = "";
+      };
+      image.onerror = () => {
+        if (uploadPreviewImage !== image) return;
+        uploadPreviewStatus.textContent = "Bu dosyanın önizlemesi gösterilemiyor.";
+      };
+      uploadPreview.append(image);
+      image.src = uploadPreviewUrl;
+    } catch {
+      clearUploadPreview();
+      uploadPreviewStatus.textContent = "Bu dosyanın önizlemesi gösterilemiyor.";
+    }
+  }
+
   function clearUpload() {
+    clearUploadPreview();
     selectedFile = null;
     uploadInput.value = "";
     document.querySelector("#homeUploadCode").value = "";
@@ -198,6 +247,7 @@
     uploadError.classList.add("gizli");
     document.querySelector("#homeUploadPick").classList.add("gizli");
     document.querySelector("#homeUploadSelected").classList.remove("gizli");
+    showUploadPreview(file, svg);
     document.querySelector("#homeUploadFilename").textContent = file.name;
     document.querySelector("#homeUploadFilesize").textContent = file.size < 1048576
       ? Math.max(1, Math.round(file.size / 1024)) + " KB" : (file.size / 1048576).toFixed(1) + " MB";

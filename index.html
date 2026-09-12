@@ -7,9 +7,9 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <meta name="kroki-build" content="20260911-import-fit-island-arc-v1" />
+  <meta name="kroki-build" content="20260913-upload-preview-v1" />
   <title>Kroki Pro</title>
-  <link rel="stylesheet" href="src/home.css?v=20260903-home-pro-v1" />
+  <link rel="stylesheet" href="src/home.css?v=20260913-upload-preview-v1" />
   <link rel="stylesheet" href="src/editor.css?v=20260910-photo-visibility-v1" />
   <link rel="stylesheet" href="src/editor-line.css?v=20260907-barrier-profile-v2" />
   <link rel="stylesheet" href="src/touch-controls.css?v=20260909-touch-controls-v2" />
@@ -150,9 +150,14 @@
                 <small id="homeUploadFormats">SVG</small>
               </button>
               <div id="homeUploadSelected" class="home-upload-selected gizli">
-                <strong id="homeUploadFilename"></strong><span id="homeUploadFilesize"></span>
-                <button id="homeUploadConfirm" class="home-primary-btn" type="button">Aç ve Düzenle</button>
-                <button id="homeUploadChange" class="home-text-btn" type="button">Farklı Dosya Seç</button>
+                <div id="homeUploadPreview" class="home-upload-preview">
+                  <p id="homeUploadPreviewStatus" role="status"></p>
+                </div>
+                <div class="home-upload-selected-info">
+                  <strong id="homeUploadFilename"></strong><span id="homeUploadFilesize"></span>
+                  <button id="homeUploadConfirm" class="home-primary-btn" type="button">Aç ve Düzenle</button>
+                  <button id="homeUploadChange" class="home-text-btn" type="button">Farklı Dosya Seç</button>
+                </div>
               </div>
             </div>
             <div id="homeUploadPastePanel" class="gizli" role="tabpanel" aria-labelledby="homeUploadPasteTab">
@@ -1450,7 +1455,7 @@
   <script src="src/responsive-scale.js?v=20260809-line-family-v1"></script>
   <script src="src/kroki-dialog.js?v=20260803-proportional-responsive-v1"></script>
   <script src="src/data/ready-drawings.js?v=20260907-ready-kavsak-6"></script>
-  <script src="src/home.js?v=20260903-home-pro-v1"></script>
+  <script src="src/home.js?v=20260913-upload-preview-v1"></script>
   <script src="src/editor-state.js"></script>
   <script src="src/editor-framing.js"></script>
   <script src="src/editor-rail.js?v=20260801-cp-fit-preselect-v1"></script>
