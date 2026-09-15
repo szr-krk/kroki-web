@@ -116,6 +116,8 @@ Label alanları: `text`, `size`, `color`, `opacity`, `position`, `bold`, `italic
 
 `start/end/ratio` ile dairesel yay; endpoint + curve kontrolü, oklar ve eğri label destekler. Geçersiz çember hesabında doğrusal fallback kullanır.
 
+Ok eklendiğinde gövde yine aynı çemberin tek SVG `A` yayıdır; Bézier'e dönüştürülmez. Ok uzunluğu kadar kiriş uçlardan ayrılır ve marker yarım kiriş açısıyla döndürülerek gerçek model ucuna ulaşır. Böylece orta kontrol noktası, eğri label ve snap uçları aynı geometriyi korur. Yayın tamamını tüketecek kadar büyük oklar kalan gövdeyi ters çevirmeden küçültülür. Arc adapter'ının `ownsMarkers` yeteneği, yalnız geometri güncellenen CP sürüklemesinde de marker konumunu günceller; nesne/uç başına sabit marker kimliği kullanıldığından her açı değişiminde yeni tanım üretilmez.
+
 ### Bezier
 
 Quadratic (`q`) veya cubic (`c1/c2`); endpoint ve curve kontrolleri, oklar ve eğri label destekler.

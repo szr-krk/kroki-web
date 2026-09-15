@@ -288,8 +288,6 @@ const bezierAdapterSource = read("src/adapters/bezierAdapter.js");
 assert.match(lineAdapterSource, /function renderedEndpoints[\s\S]+?lineEndpointMarkerOffset/);
 assert.match(lineAdapterSource, /dataset\.geometryEndX/);
 assert.doesNotMatch(lineAdapterSource, /state\.geometry\[cpId\]/, "Line endpoint dragging must not use a direction-blind translation");
-assert.match(arcAdapterSource, /function cubicArcSegments/);
-assert.match(arcAdapterSource, /function renderedPathData/);
 assert.match(bezierAdapterSource, /function cubicGeometry/);
 assert.match(bezierAdapterSource, /function renderedPathData/);
 const objectRotationStart = styleManager.indexOf("function setObjectRotation");

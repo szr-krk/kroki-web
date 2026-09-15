@@ -112,70 +112,50 @@
       : -normalizeAngle(geometry.startAngle - geometry.endAngle);
   }
 
-  function cubicArcSegments(geometry) {
-    const delta = signedArcDelta(geometry);
-    const count = Math.max(1, Math.ceil(Math.abs(delta) / (Math.PI / 2)));
-    const step = delta / count;
-    const segments = [];
-    for (let index = 0; index < count; index += 1) {
-      const startAngle = geometry.startAngle + step * index;
-      const endAngle = startAngle + step;
-      const factor = 4 / 3 * Math.tan(step / 4);
-      const start = pointOnCircle(geometry, geometry.radius, startAngle);
-      const end = pointOnCircle(geometry, geometry.radius, endAngle);
-      segments.push({
-        start,
-        c1: {
-          x: start.x - Math.sin(startAngle) * geometry.radius * factor,
-          y: start.y + Math.cos(startAngle) * geometry.radius * factor
-        },
-        c2: {
-          x: end.x + Math.sin(endAngle) * geometry.radius * factor,
-          y: end.y - Math.cos(endAngle) * geometry.radius * factor
-        },
-        end
-      });
-    }
-    return segments;
-  }
-
-  function shiftPoint(point, dx, dy) {
-    point.x += dx;
-    point.y += dy;
-  }
-
-  function renderedPathData(model, style = model.style) {
+  function renderedGeometry(model, style = model.style) {
     const renderModel = style === model.style ? model : { ...model, style };
     const startOffset = styleManager.lineEndpointMarkerOffset(renderModel, "start");
     const endOffset = styleManager.lineEndpointMarkerOffset(renderModel, "end");
-    if (!startOffset && !endOffset) return pathData(model);
+    if (!startOffset && !endOffset) return { path: pathData(model), markers: null };
 
     const geometry = circleGeometry(model.geometry.start, model.geometry.end, controlPoint(model));
     if (!geometry) {
+      const length = Math.hypot(model.geometry.end.x - model.geometry.start.x, model.geometry.end.y - model.geometry.start.y);
+      const offsets = lineGeometry.fitEndpointOffsets(length, startOffset, endOffset);
       const endpoints = lineGeometry.insetSegment(model.geometry.start, model.geometry.end, startOffset, endOffset);
-      return lineGeometry.pathData(endpoints.start, endpoints.end);
+      return {
+        path: lineGeometry.pathData(endpoints.start, endpoints.end),
+        markers: {
+          start: startOffset ? { rotation: 0, scale: offsets.start / startOffset } : null,
+          end: endOffset ? { rotation: 0, scale: offsets.end / endOffset } : null
+        }
+      };
     }
 
     const delta = signedArcDelta(geometry);
-    const offsets = lineGeometry.fitEndpointOffsets(Math.abs(delta) * geometry.radius, startOffset, endOffset);
-    const segments = cubicArcSegments(geometry);
-    const first = segments[0];
-    const last = segments[segments.length - 1];
-    const startTangent = lineGeometry.normalizedVector(first.start, first.c1);
-    const endTangent = lineGeometry.normalizedVector(last.c2, last.end);
-    const startDx = startTangent.x * offsets.start;
-    const startDy = startTangent.y * offsets.start;
-    const endDx = -endTangent.x * offsets.end;
-    const endDy = -endTangent.y * offsets.end;
-    shiftPoint(first.start, startDx, startDy);
-    shiftPoint(first.c1, startDx, startDy);
-    shiftPoint(last.c2, endDx, endDy);
-    shiftPoint(last.end, endDx, endDy);
-
-    return [
-      `M ${formatPoint(first.start)}`,
-      ...segments.map((segment) => `C ${formatPoint(segment.c1)} ${formatPoint(segment.c2)} ${formatPoint(segment.end)}`)
-    ].join(" ");
+    const sign = geometry.sweepFlag ? 1 : -1;
+    // The straight marker spans a chord, not an arc length. Preserve the circle
+    // and rotate the marker by half that chord's angle to reach the model tip.
+    const startTrim = 2 * Math.asin(Math.min(1, startOffset / (2 * geometry.radius)));
+    const endTrim = 2 * Math.asin(Math.min(1, endOffset / (2 * geometry.radius)));
+    const available = Math.abs(delta) - Math.min(Math.abs(delta) * 0.01, 0.001 / geometry.radius);
+    const trimScale = Math.min(1, available / (startTrim + endTrim));
+    const startAngle = startTrim * trimScale;
+    const endAngle = endTrim * trimScale;
+    const start = pointOnCircle(geometry, geometry.radius, geometry.startAngle + sign * startAngle);
+    const end = pointOnCircle(geometry, geometry.radius, geometry.endAngle - sign * endAngle);
+    const largeArc = Math.abs(delta) - startAngle - endAngle > Math.PI + 0.000001 ? 1 : 0;
+    const placement = (offset, angle, rotationSign) => offset ? {
+      rotation: rotationSign * angle * 90 / Math.PI,
+      scale: Math.min(1, 2 * geometry.radius * Math.sin(angle / 2) / offset)
+    } : null;
+    return {
+      path: `M ${formatPoint(start)} A ${geometry.radius} ${geometry.radius} 0 ${largeArc} ${geometry.sweepFlag} ${formatPoint(end)}`,
+      markers: {
+        start: placement(startOffset, startAngle, -sign),
+        end: placement(endOffset, endAngle, sign)
+      }
+    };
   }
 
   function offsetPathData(model, offset = 0, reverse = false) {
@@ -241,7 +221,7 @@
   const adapter = {
     elementTag: "path",
     className: "editor-cizgi",
-    capabilities: { arrows: true, fill: false, curvedLabel: true },
+    capabilities: { arrows: true, ownsMarkers: true, fill: false, curvedLabel: true },
 
     create(initialData = {}) {
       const start = initialData.start || { x: 0, y: 0 };
@@ -294,7 +274,12 @@
       utils.setAttributeIfChanged(element, "data-arc-control-x", String(control.x));
       utils.setAttributeIfChanged(element, "data-arc-control-y", String(control.y));
       utils.setAttributeIfChanged(element, "data-arc-sagitta-ratio", String(model.geometry.ratio));
-      utils.setAttributeIfChanged(element, "d", renderedPathData(model));
+      const rendered = renderedGeometry(model);
+      utils.setAttributeIfChanged(element, "d", rendered.path);
+      // Geometry-only CP previews also update the existing marker placements.
+      if (element.ownerSVGElement) {
+        styleManager.applyMarkers(element, styleManager.normalizeStyle(model.style, model.type), adapter, element.ownerSVGElement, rendered.markers);
+      }
       element.removeAttribute("transform");
     },
 
@@ -370,7 +355,7 @@
     },
 
     renderSelection(element, model, style, mode) {
-      utils.setAttributeIfChanged(element, "d", renderedPathData(model, style));
+      utils.setAttributeIfChanged(element, "d", renderedGeometry(model, style).path);
       utils.setAttributeIfChanged(element, "stroke-width", String(style.strokeWidth + 4));
       utils.setAttributeIfChanged(element, "stroke-linecap", style.lineCap);
       element.classList.toggle("is-edit", mode === "edit");

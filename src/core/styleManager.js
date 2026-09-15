@@ -791,8 +791,8 @@
     ].join("-");
   }
 
-  function markerUrl(type, strokeWidth, strokeOpacity, markerScale = 1) {
-    return type === "none" ? "" : "url(#" + markerId(type, strokeWidth, strokeOpacity, markerScale) + ")";
+  function markerUrl(type, strokeWidth, strokeOpacity, markerScale = 1, placementKey = "") {
+    return type === "none" ? "" : "url(#" + markerId(type, strokeWidth, strokeOpacity, markerScale) + placementKey + ")";
   }
 
   function ensureMarkerDefs(canvas) {
@@ -803,14 +803,23 @@
     return defs;
   }
 
-  function ensureMarker(canvas, type, strokeWidth, strokeOpacity, markerScale = 1) {
+  function updateMarkerPlacement(marker, config, placement) {
+    if (!placement) return;
+    const transform = `translate(${config.refX} ${config.refY}) rotate(${placement.rotation}) scale(${placement.scale}) translate(${-Number(config.refX)} ${-Number(config.refY)})`;
+    Array.from(marker.children).forEach((child) => utils.setAttributeIfChanged(child, "transform", transform));
+  }
+
+  function ensureMarker(canvas, type, strokeWidth, strokeOpacity, markerScale = 1, placement = null, placementKey = "") {
     if (type === "none") return null;
     const config = MARKER_BASE[type];
     if (!config) return null;
     const defs = ensureMarkerDefs(canvas);
-    const id = markerId(type, strokeWidth, strokeOpacity, markerScale);
+    const id = markerId(type, strokeWidth, strokeOpacity, markerScale) + placementKey;
     const existing = defs.querySelector("#" + id);
-    if (existing) return existing;
+    if (existing) {
+      updateMarkerPlacement(existing, config, placement);
+      return existing;
+    }
     const size = markerStrokeUnitSize(strokeWidth, markerScale);
     const marker = utils.createSvgElement("marker", {
       id,
@@ -823,6 +832,10 @@
       markerUnits: "strokeWidth"
     });
     config.draw(marker);
+    if (placement) {
+      marker.setAttribute("overflow", "visible");
+      updateMarkerPlacement(marker, config, placement);
+    }
     Array.from(marker.children).forEach((child) => child.setAttribute("opacity", String(normalizeOpacity(strokeOpacity))));
     defs.append(marker);
     return marker;
@@ -957,20 +970,29 @@
     });
   }
 
-  function applyMarkers(element, style, adapter, canvas) {
+  const markerPlacementKeys = new WeakMap();
+  let markerPlacementSequence = 0;
+
+  function applyMarkers(element, style, adapter, canvas, placements = null) {
     if (!adapter?.capabilities?.arrows) {
       element.removeAttribute("marker-start");
       element.removeAttribute("marker-end");
       return;
     }
 
-    ensureMarker(canvas, style.arrowStart, style.strokeWidth, style.strokeOpacity, style.markerScale);
-    ensureMarker(canvas, style.arrowEnd, style.strokeWidth, style.strokeOpacity, style.markerScale);
-    const startMarker = markerUrl(style.arrowStart, style.strokeWidth, style.strokeOpacity, style.markerScale);
-    const endMarker = markerUrl(style.arrowEnd, style.strokeWidth, style.strokeOpacity, style.markerScale);
-    if (startMarker) element.setAttribute("marker-start", startMarker);
+    // Stable keys let live geometry edits reuse definitions instead of creating
+    // one marker for every angle. Ordinary line/Bezier markers stay shared.
+    if (placements && !markerPlacementKeys.has(element)) markerPlacementKeys.set(element, ++markerPlacementSequence);
+    const key = markerPlacementKeys.get(element);
+    const startKey = placements?.start ? `-placement-${key}-start` : "";
+    const endKey = placements?.end ? `-placement-${key}-end` : "";
+    ensureMarker(canvas, style.arrowStart, style.strokeWidth, style.strokeOpacity, style.markerScale, placements?.start, startKey);
+    ensureMarker(canvas, style.arrowEnd, style.strokeWidth, style.strokeOpacity, style.markerScale, placements?.end, endKey);
+    const startMarker = markerUrl(style.arrowStart, style.strokeWidth, style.strokeOpacity, style.markerScale, startKey);
+    const endMarker = markerUrl(style.arrowEnd, style.strokeWidth, style.strokeOpacity, style.markerScale, endKey);
+    if (startMarker) utils.setAttributeIfChanged(element, "marker-start", startMarker);
     else element.removeAttribute("marker-start");
-    if (endMarker) element.setAttribute("marker-end", endMarker);
+    if (endMarker) utils.setAttributeIfChanged(element, "marker-end", endMarker);
     else element.removeAttribute("marker-end");
   }
 
@@ -1032,7 +1054,7 @@
     }
     applyPaintOpacity(element, style, Boolean(adapter?.capabilities?.fill));
 
-    applyMarkers(element, style, adapter, canvas);
+    if (!adapter?.capabilities?.ownsMarkers) applyMarkers(element, style, adapter, canvas);
     scheduleDefsCleanup(canvas);
   }
 
@@ -2605,6 +2627,7 @@
     readLabelFromElement,
     writeStyleDataset,
     applyStyleToElement,
+    applyMarkers,
     ensureFillPattern,
     lineEndpointMarkerOffset,
     cleanupDefs,

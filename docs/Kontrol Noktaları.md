@@ -39,7 +39,7 @@ Kontrol noktalarının görünürlüğü normal seçim, edit, yeniden render vey
 ## Tip bazında kontrol noktaları
 
 - **Line:** başlangıç ve bitiş; handle çizgi ucunun dışındadır; kavrama noktası ile başlangıç geometrisi saklanır ve gerçek uç bu farkla taşınır. Yakındaki mevcut uç grid'den önceliklidir; bu nedenle zoom değiştirmeden tam birleştirme yapılabilir.
-- **Arc:** başlangıç, bitiş ve sagitta/arc kontrolü; üçü de ortak snap'i kullanır.
+- **Arc:** başlangıç, bitiş ve sagitta/arc kontrolü; üçü de ortak snap'i kullanır. Ok stili model geometrisini veya orta CP konumunu değiştirmez; oklu gövde aynı çember üzerinde kalır ve ok ucu model ucuna hizalanır. Canlı CP önizlemesi gövde ile marker dönüşümünü birlikte günceller.
 - **Bezier:** başlangıç, bitiş; quadratic için `q`, cubic için `c1/c2`.
 - **Circle:** tek radius/rotation handle'ı; gerçek çember noktası grid'e, yönü ana açılara snap edilir.
 - **Ellipse:** dört köşe resize grid'e, rotate ana açılara snap edilir.
