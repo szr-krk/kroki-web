@@ -5,6 +5,15 @@ const http = require("node:http");
 const path = require("node:path");
 const { chromium } = require("playwright");
 const root = path.resolve(__dirname, "..");
+async function waitRecords(page, predicate) {
+  const deadline = Date.now() + 10000;
+  while (Date.now() < deadline) {
+    const records = await page.evaluate(() => Kroki.DocumentStorage.listRecovery());
+    if (predicate(records)) return records;
+    await page.waitForTimeout(100);
+  }
+  throw new Error("Timed out waiting for committed recovery records");
+}
 const server = http.createServer((req, res) => {
   const file = path.resolve(root, decodeURIComponent(new URL(req.url, "http://localhost").pathname).slice(1) || "index.html");
   if (!file.startsWith(root + path.sep)) return res.writeHead(403).end();
@@ -49,7 +58,7 @@ const server = http.createServer((req, res) => {
       Kroki.DocumentSerializer.exportDocument = (...args) => { window.exports++; return original(...args); };
       addLine("first");
     });
-    await page.waitForFunction(async () => (await Kroki.DocumentStorage.listRecovery()).length === 1);
+    await waitRecords(page, records => records.length === 1 && records[0].document.objects.some(o => o.id === "first"));
     await page.waitForFunction(() => window.exports > 0);
     const beforeIdle = await page.evaluate(() => window.exports);
     await page.waitForTimeout(2200);
@@ -149,7 +158,7 @@ const server = http.createServer((req, res) => {
       KrokiMainMenu.resetDocument();
       await write;
     });
-    await page.waitForFunction(async () => (await Kroki.DocumentStorage.listRecovery()).length === 0);
+    await waitRecords(page, records => records.length === 0);
     assert.deepEqual(errors, [], "Browser errors");
     console.log("PASS: v1 migration, idle/gesture batching, two snapshots, photo reuse, write failure/abort, live tabs, renderer crash, previous snapshot fallback, recovery without undo, discard/write race.");
   } finally { await browser.close(); }
