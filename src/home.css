@@ -830,3 +830,7 @@ select {
 .home-drop-overlay strong { padding: 36px; border: 2px dashed #99f6e4; border-radius: 20px; font-size: 22px; }
 .btn-ok { border-color: #0f766e; background: #0f766e; color: #fff; }
 .btn-danger { border-color: #b91c1c; background: #fee2e2; color: #7f1d1d; }
+.recovery-card { margin: 12px 0; padding: 12px; border: 1px solid #d7a645; border-radius: 12px; background: #fff8e7; color: #302719; }
+.recovery-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.recovery-row span { flex: 1 1 140px; }
+.recovery-row button { padding: 10px 14px; border: 1px solid #c4ad7c; border-radius: 8px; background: white; color: #302719; cursor: pointer; }

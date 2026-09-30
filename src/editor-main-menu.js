@@ -261,6 +261,7 @@
   }
 
   function resetDocument() {
+    Kroki.DocumentRecovery?.stop();
     window.krokiEditorRail?.resetCizimAraci?.();
     Kroki.SelectionManager?.clear?.({ silent: true });
     Kroki.MultiSelectManager?.clear?.({ silent: true });
@@ -533,6 +534,7 @@
       };
       await documentStorage.put("recent", entry);
       currentDocumentId = entry.id;
+      Kroki.DocumentRecovery?.setDocumentId(entry.id);
       markDocumentSaved();
       await renderStoredLists();
       return entry;
@@ -584,6 +586,7 @@
     else dispatchViewBoxChange();
     if (options.markSaved === false) lastSavedSnapshot = "";
     else markDocumentSaved();
+    Kroki.DocumentRecovery?.start({ documentId: currentDocumentId, sourceSession: options.recoverySession, dirty: true });
     return true;
   }
 
@@ -1359,6 +1362,7 @@
     if (!(await confirmDiscard("Eski çizimler silinecek. Yeni boş krokiye geçilsin mi?"))) return;
     resetDocument();
     showEditor();
+    Kroki.DocumentRecovery?.start();
   }
 
   async function askHomeSaveDecision() {
@@ -1683,6 +1687,66 @@
     importKrokiSvgText
   };
 
+  async function showRecoveryRecords() {
+    try {
+      const records = await Kroki.DocumentRecovery?.candidates() || [];
+      const sessions = [...new Set(records.map(record => record.session))];
+      if (!sessions.length || !recentList) return;
+      const box = document.createElement("section");
+      box.className = "recovery-card";
+      const title = document.createElement("strong");
+      title.textContent = "Yarım kalan çizimler";
+      box.append(title);
+      for (const session of sessions) {
+        const snapshots = records.filter(record => record.session === session);
+        const row = document.createElement("div");
+        row.className = "recovery-row";
+        const label = document.createElement("span");
+        label.textContent = displayDate(new Date(snapshots[0].updatedAt).toISOString());
+        const recover = document.createElement("button");
+        recover.type = "button";
+        recover.textContent = "Çizimi Kurtar";
+        const discard = document.createElement("button");
+        discard.type = "button";
+        discard.textContent = "Sil";
+        recover.addEventListener("click", async () => {
+          if (!(await confirmDiscard())) return;
+          recover.disabled = discard.disabled = true;
+          try {
+            let doc = null, record = null;
+            for (const snapshot of snapshots) {
+              try { doc = await Kroki.DocumentRecovery.read(snapshot); record = snapshot; break; } catch { /* Try previous complete snapshot. */ }
+            }
+            if (!doc) throw new Error("recovery-unreadable");
+            if (loadDocument(doc, { currentDocumentId: record.documentId, markSaved: false, recoverySession: session })) {
+              row.remove();
+              if (!box.querySelector(".recovery-row")) box.remove();
+            }
+          } catch {
+            await notify("Kurtarma kaydı okunamadı. Kayıt silinmedi.");
+          } finally { recover.disabled = discard.disabled = false; }
+        });
+        discard.addEventListener("click", async () => {
+          if (!(await ask("Bu yarım kalan çizimin kurtarma kaydı silinsin mi?", "Kurtarma Kaydı"))) return;
+          recover.disabled = discard.disabled = true;
+          try {
+            await Kroki.DocumentRecovery.discard(session);
+            row.remove();
+            if (!box.querySelector(".recovery-row")) box.remove();
+          } catch { await notify("Kurtarma kaydı silinemedi."); }
+          finally { recover.disabled = discard.disabled = false; }
+        });
+        row.append(label, recover, discard);
+        box.append(row);
+      }
+      recentList.before(box);
+    } catch (error) {
+      console.warn("Recovery records unavailable", error);
+      await notify("Otomatik kurtarma kaydı kullanılamıyor. Çiziminizi Kaydet menüsünden kaydedin.");
+    }
+  }
+
+  void showRecoveryRecords();
   void renderStoredLists();
   markDocumentSaved();
 })();

@@ -1,7 +1,9 @@
 (() => {
   const Kroki = window.Kroki = window.Kroki || {};
   const DATABASE_NAME = "krokiPro.documents.v1";
-  const DATABASE_VERSION = 1;
+  const DATABASE_VERSION = 2;
+  const RECOVERY_STORE = "recoverySnapshots";
+  const RECOVERY_PHOTOS = "recoveryPhotos";
   const DOCUMENT_STORE = "documents";
   const ASSET_STORE = "assets";
   const PHOTO_TOKEN = "__KROKI_PHOTO_ASSET__";
@@ -48,6 +50,8 @@
         return;
       }
       const request = window.indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
+      let failed = false;
+      const fail = (error) => { failed = true; reject(error); };
       request.addEventListener("upgradeneeded", () => {
         const database = request.result;
         if (!database.objectStoreNames.contains(DOCUMENT_STORE)) {
@@ -57,11 +61,22 @@
         if (!database.objectStoreNames.contains(ASSET_STORE)) {
           database.createObjectStore(ASSET_STORE, { keyPath: "id" });
         }
+        for (const name of [RECOVERY_STORE, RECOVERY_PHOTOS]) {
+          if (!database.objectStoreNames.contains(name)) {
+            database.createObjectStore(name, { keyPath: "key" }).createIndex("session", "session");
+          }
+        }
       });
-      request.addEventListener("success", () => resolve(request.result), { once: true });
-      request.addEventListener("error", () => reject(request.error || new Error("indexeddb-open-failed")), { once: true });
-      request.addEventListener("blocked", () => reject(new Error("indexeddb-upgrade-blocked")), { once: true });
+      request.addEventListener("success", () => {
+        const database = request.result;
+        if (failed) { database.close(); return; }
+        database.addEventListener("versionchange", () => { database.close(); databasePromise = null; });
+        resolve(database);
+      }, { once: true });
+      request.addEventListener("error", () => fail(request.error || new Error("indexeddb-open-failed")), { once: true });
+      request.addEventListener("blocked", () => fail(new Error("indexeddb-upgrade-blocked")), { once: true });
     });
+    databasePromise.catch(() => { databasePromise = null; });
     return databasePromise;
   }
 
@@ -195,10 +210,70 @@
     return removeRaw(database, kind, id);
   }
 
+  // Recovery has no preview or history. Photos are written only when their source changes.
+  async function putRecovery(record, photo) {
+    const database = await openDatabase();
+    const transaction = database.transaction([RECOVERY_STORE, RECOVERY_PHOTOS], "readwrite");
+    const done = transactionDone(transaction);
+    try {
+      const store = transaction.objectStore(RECOVERY_STORE);
+      const [old, other] = await Promise.all([
+        requestResult(store.get(record.key)),
+        requestResult(store.get(`${record.session}:${1 - record.slot}`))
+      ]);
+      store.put(record);
+      const photos = transaction.objectStore(RECOVERY_PHOTOS);
+      if (photo) photos.put(photo);
+      if (old?.photoKey && old.photoKey !== record.photoKey && old.photoKey !== other?.photoKey) photos.delete(old.photoKey);
+      await done;
+    } catch (error) {
+      try { transaction.abort(); } catch { /* Already completed or aborted. */ }
+      await done.catch(() => {});
+      throw error;
+    }
+  }
+
+  async function listRecovery() {
+    const database = await openDatabase();
+    const records = await requestResult(database.transaction(RECOVERY_STORE, "readonly").objectStore(RECOVERY_STORE).getAll());
+    return records.sort((a, b) => b.updatedAt - a.updatedAt);
+  }
+
+  async function readRecovery(record) {
+    if (!record?.document || record.document.schemaVersion !== 1 || !Array.isArray(record.document.objects)) throw new Error("invalid-recovery");
+    if (record.photoKey) {
+      const database = await openDatabase();
+      const photo = await requestResult(database.transaction(RECOVERY_PHOTOS, "readonly").objectStore(RECOVERY_PHOTOS).get(record.photoKey));
+      if (!photo?.dataUrl || !record.document.photoBackground) throw new Error("recovery-photo-missing");
+      record.document.photoBackground.dataUrl = photo.dataUrl;
+    }
+    return record.document;
+  }
+
+  async function removeRecovery(session) {
+    const database = await openDatabase();
+    const transaction = database.transaction([RECOVERY_STORE, RECOVERY_PHOTOS], "readwrite");
+    const done = transactionDone(transaction);
+    for (const name of [RECOVERY_STORE, RECOVERY_PHOTOS]) {
+      const request = transaction.objectStore(name).index("session").openKeyCursor(IDBKeyRange.only(session));
+      request.addEventListener("success", () => {
+        const cursor = request.result;
+        if (!cursor) return;
+        transaction.objectStore(name).delete(cursor.primaryKey);
+        cursor.continue();
+      });
+    }
+    await done;
+  }
+
   Kroki.DocumentStorage = {
     get,
     list,
     put,
-    remove
+    remove,
+    putRecovery,
+    listRecovery,
+    readRecovery,
+    removeRecovery
   };
 })();
