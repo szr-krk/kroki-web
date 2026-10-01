@@ -82,8 +82,20 @@
     },
 
     hitTest(model, point, tolerance) {
-      const distance = lineGeometry.distanceToSegment(model.geometry.start, model.geometry.end, point);
-      return distance <= tolerance;
+      const { start, end } = renderedEndpoints(model);
+      const halfStroke = Math.max(0, utils.numberOr(model.style.strokeWidth, 0)) / 2;
+      const direction = lineGeometry.normalizedVector(start, end);
+      if (model.style.lineCap === "round") {
+        return lineGeometry.distanceToSegment(start, end, point) <= halfStroke + tolerance;
+      }
+      const dx = point.x - start.x;
+      const dy = point.y - start.y;
+      const along = dx * direction.x + dy * direction.y;
+      const across = Math.abs(dx * direction.y - dy * direction.x);
+      const capExtension = model.style.lineCap === "square" ? halfStroke : 0;
+      const outsideAlong = Math.max(-capExtension - along, 0, along - direction.length - capExtension);
+      const outsideAcross = Math.max(across - halfStroke, 0);
+      return Math.hypot(outsideAlong, outsideAcross) <= tolerance;
     },
 
     getControlPoints(model, metrics) {
@@ -145,13 +157,14 @@
     },
 
     getBounds(model) {
+      const pad = Math.max(0, utils.numberOr(model.style.strokeWidth, 0)) / 2;
       const x = Math.min(model.geometry.start.x, model.geometry.end.x);
       const y = Math.min(model.geometry.start.y, model.geometry.end.y);
       return {
-        x,
-        y,
-        width: Math.abs(model.geometry.end.x - model.geometry.start.x),
-        height: Math.abs(model.geometry.end.y - model.geometry.start.y)
+        x: x - pad,
+        y: y - pad,
+        width: Math.abs(model.geometry.end.x - model.geometry.start.x) + pad * 2,
+        height: Math.abs(model.geometry.end.y - model.geometry.start.y) + pad * 2
       };
     },
 
