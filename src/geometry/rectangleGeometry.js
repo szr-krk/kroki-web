@@ -53,11 +53,14 @@
     pointToLocal,
     signedHalfDistance,
     bounds(geometry) {
+      const axes = rotationAxes(geometry.rotation);
+      const halfWidth = Math.abs(axes.xAxis.x) * geometry.rx + Math.abs(axes.yAxis.x) * geometry.ry;
+      const halfHeight = Math.abs(axes.xAxis.y) * geometry.rx + Math.abs(axes.yAxis.y) * geometry.ry;
       return {
-        x: geometry.cx - geometry.rx,
-        y: geometry.cy - geometry.ry,
-        width: geometry.rx * 2,
-        height: geometry.ry * 2
+        x: geometry.cx - halfWidth,
+        y: geometry.cy - halfHeight,
+        width: halfWidth * 2,
+        height: halfHeight * 2
       };
     }
   };
