@@ -495,7 +495,7 @@
     return {
       stroke: type === "callout" ? "#d11f1f" : isShapeWithFill(type) ? "#000000" : "#111827",
       fill,
-      strokeWidth: isLineToolType(type) ? 1 : 2,
+      strokeWidth: 2,
       opacity: 1,
       strokeOpacity: 1,
       fillOpacity: 1,
@@ -503,7 +503,7 @@
       dash: "solid",
       dashSize: 12,
       dashGap: 8,
-      lineCap: "round",
+      lineCap: "butt",
       arrowStart: "none",
       arrowEnd: "none"
     };

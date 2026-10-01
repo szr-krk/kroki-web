@@ -2534,7 +2534,7 @@
       stroke: "#000000",
       "stroke-width": String(width || DEFAULT_LINE_STROKE_WIDTH),
       "stroke-linejoin": "round",
-      "stroke-linecap": dashed ? "butt" : "round",
+      "stroke-linecap": "butt",
       "vector-effect": "none",
       "pointer-events": "none"
     };
@@ -2648,7 +2648,7 @@
           fill: "none",
           stroke: item.stroke || "#000000",
           "stroke-width": String(item.strokeWidth || DEFAULT_LINE_STROKE_WIDTH),
-          "stroke-linecap": "round",
+          "stroke-linecap": "butt",
           "stroke-linejoin": "round",
           "vector-effect": "none",
           "pointer-events": "none",
@@ -2960,7 +2960,7 @@
         fill: "none",
         stroke: "transparent",
         "stroke-width": fmt(sizes.hitStroke),
-        "stroke-linecap": "round",
+        "stroke-linecap": "butt",
         "stroke-linejoin": "round",
         "pointer-events": "stroke",
         "data-q-key": item.key,
@@ -2985,7 +2985,7 @@
           fill: "none",
           stroke: "#f97316",
           "stroke-width": fmt(Math.max(2.2 * sizes.unit, sizes.guideStroke * 2.2)),
-          "stroke-linecap": "round",
+          "stroke-linecap": "butt",
           "stroke-linejoin": "round",
           "pointer-events": "none"
         }));

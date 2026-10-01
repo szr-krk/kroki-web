@@ -46,7 +46,7 @@
   }
 
   function normalizeLineCap(value) {
-    return choiceOr(value, LINE_CAPS, "round");
+    return choiceOr(value, LINE_CAPS, "butt");
   }
 
   function normalizeStrokeWidth(value) {
