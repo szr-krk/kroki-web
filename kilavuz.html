@@ -965,8 +965,8 @@
         <div>
           <p class="eyebrow">Kroki hazırlama ve düzenleme rehberi</p>
           <h1>Kroki Pro Kullanım Kılavuzu</h1>
-          <p class="hero-lead">Bu kılavuz programı kullanmak isteyen herkes içindir. Teknik bilgi gerekmez; ekranda
-            gördüğünüz düğmelerin ne yaptığını ve hangi sırayla kullanıldığını anlatır.</p>
+          <p class="hero-lead">İlk kez kullanıyor olabilirsiniz. Sorun değil. Aşağıdaki sırayı izleyin:
+            düğmeye basın, çiziminizi yapın, “Tamam”a basın ve kaydedin. Her işlem burada tek tek anlatılıyor.</p>
         </div>
         <button class="print-button" id="btnPrintGuide" type="button" aria-label="Kılavuzu yazdır">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -1004,6 +1004,7 @@
         <a href="#yollar">Yollar</a>
         <a href="#kutuphaneler">Araç, levha ve semboller</a>
         <a href="#kaydetme">Kaydetme</a>
+        <a href="#fotograf-kurtarma">Fotoğraf ve yarım kalan çizim</a>
         <a href="#yardim">Sık karşılaşılan durumlar</a>
       </nav>
 
@@ -1011,17 +1012,16 @@
         <section id="baslangic">
           <p class="section-kicker">Başlangıç</p>
           <h2>İlk krokinizi oluşturun</h2>
-          <p class="section-lead">Programın temel kullanımı beş kısa adımdan oluşur. İlk denemenizde ayrıntılı ayarlara
-            girmeden bu sırayı izleyebilirsiniz.</p>
+          <p class="section-lead">Önce tek bir çizgi çizerek deneyin. “Tıklayın” dediğimiz yerde tablette parmağınızla
+            bir kez dokunun. “Sürükleyin” dediğimiz yerde fare tuşunu veya parmağınızı kaldırmadan hareket ettirin.</p>
 
           <ol class="steps">
             <li><span><strong>Ana ekrandan “Yeni Kroki”ye basın.</strong> Boş, beyaz çalışma alanı açılır.</span></li>
-            <li><span><strong>Sağ taraftan eklemek istediğiniz içeriği seçin.</strong> Çizim araçları, yol, araç, levha
-                ve diğer semboller aynı sağ çubuktadır.</span></li>
-            <li><span><strong>Çizim alanına yerleştirin.</strong> Çizgi ve şekilleri parmağınızla ya da fareyle
-                çizersiniz. Katalogdaki öğeler ekranın ortasına eklenir.</span></li>
-            <li><span><strong>Nesne seçiliyken özelliklerini ayarlayın.</strong> Konum ve biçim ayarları, seçtiğiniz
-                nesneye göre sağ tarafta görünür.</span></li>
+            <li><span><strong>Sağdaki kalem simgesine basın.</strong> “Çizim Araçları” listesi açılır. Listeden “Çizgi”yi seçin.</span></li>
+            <li><span><strong>Beyaz alanda çizginin başlayacağı yere basılı tutun.</strong> Bitiş yerine kadar sürükleyin.
+                Fare tuşunu veya parmağınızı bırakın. Bir çizgi oluşur.</span></li>
+            <li><span><strong>İsterseniz sağdaki + ve − düğmeleriyle kalınlığı değiştirin.</strong>
+                Yeni çizginin kalınlığı 2, uçları düzdür. İlk denemede hiçbir ayarı değiştirmeniz gerekmez.</span></li>
             <li><span><strong>Üstteki “Tamam” düğmesiyle düzenlemeyi bitirin.</strong> Sonra başka bir araç seçebilir
                 veya ana menüden çalışmanızı kaydedebilirsiniz.</span></li>
           </ol>
@@ -1029,6 +1029,13 @@
           <div class="callout"><strong>En kolay hatırlanacak kural:</strong> Bir nesneye ilk dokunuş onu ön seçer.
             Düzenlemeye geçmek için nesnenin kontrol noktalarından birine dokunun veya ön seçim sürerken sağdaki
             özelliklerden birini değiştirin.</div>
+          <h3 class="mini-heading">Ekrandaki kelimeler ne demek?</h3>
+          <div class="term-grid">
+            <div class="term"><strong>Nesne</strong><span>Çizdiğiniz çizgi, dikdörtgen, yol, araç veya yazı. Her biri ayrı bir parçadır.</span></div>
+            <div class="term"><strong>Kontrol noktası</strong><span>Seçilen parçanın çevresindeki renkli yuvarlak tutamaç. Tutup sürükleyerek boyutunu veya yönünü değiştirirsiniz.</span></div>
+            <div class="term"><strong>Dolgu</strong><span>Kapalı bir şeklin içindeki renk veya desen. Örneğin kilit taşı.</span></div>
+            <div class="term"><strong>Saydamlık</strong><span>Rengin ne kadar görünür olduğu. %100 tamamen görünür, %0 görünmez.</span></div>
+          </div>
         </section>
 
         <section id="ana-ekran">
@@ -1212,6 +1219,13 @@
           <h2>Seçme, taşıma ve düzenleme</h2>
           <p class="section-lead">Yanlış nesneyi taşımayı önlemek için seçim iki aşamalıdır. Renkli çerçeve, hangi
             aşamada olduğunuzu gösterir.</p>
+          <h3 class="mini-heading">Nereye dokunmalıyım?</h3>
+          <ul class="plain-list">
+            <li><strong>Kalın çizgi:</strong> Çizginin görünen renkli alanına dokunun. Tam ortasını bulmanız gerekmez.</li>
+            <li><strong>İçi dolu şekil:</strong> İçindeki renge veya desene dokunun. Döndürülmüş dikdörtgen ve kilit taşı dolgusu da bu şekilde seçilir.</li>
+            <li><strong>İçi boş şekil:</strong> Boş ortasına değil, kenar çizgisine dokunun.</li>
+            <li><strong>Üst üste duran parçalar:</strong> Tıkladığınız yerdeki üst parça seçilebilir. İstediğiniz parçanın açıkta kalan bir yerine dokunun.</li>
+          </ul>
 
           <div class="state-row">
             <article class="state">
@@ -1232,6 +1246,19 @@
               <p>Üstteki “Tamam” düğmesine basın. Düzenleme kapanır ve ana araçlar tekrar görünür.</p>
             </article>
           </div>
+
+          <h3 class="mini-heading">Bir parçayı başka yere taşıma</h3>
+          <ol class="steps">
+            <li><span><strong>Önce “Tamam”a basın.</strong> Başka bir parça düzenleniyorsa o düzenleme kapanır.</span></li>
+            <li><span><strong>Taşımak istediğiniz parçaya bir kez dokunun.</strong> Kırmızı seçim işareti görünür.</span></li>
+            <li><span><strong>Çevresindeki bir kontrol noktasına dokunup bırakın.</strong> Düzenleme açılır.
+              Noktayı sürüklerseniz parçanın boyutu veya yönü değişir.</span></li>
+            <li><span><strong>Kontrol noktasının dışında, beyaz alandan sürükleyin.</strong> Seçili parça yer değiştirir.
+              İstediğiniz konuma gelince bırakın ve “Tamam”a basın.</span></li>
+          </ol>
+          <div class="callout"><strong>Çok küçük bir hareket yapmak için:</strong> Seçim açıkken sağ alttaki
+            taşıma kumandasını açın. Yön okuna bir kez basın; parça o yönde 1 çizim birimi gider.
+            Basılı tutarsanız hareket tekrar eder. Bu, ekranı kaydırmak için değil seçili parçayı taşımak içindir.</div>
 
           <h3 class="mini-heading">Üst işlem çubuğu</h3>
           <div class="action-list">
@@ -1255,8 +1282,10 @@
             <li><strong>Bilgisayarda:</strong> Ctrl veya Shift tuşuna basılı tutarak nesnelere tıklayabilirsiniz.</li>
             <li><strong>Alanla seçim:</strong> Çoklu seçim açıkken boş bir yerden sürükleyerek seçim kutusu
               oluşturabilirsiniz.</li>
-            <li><strong>Birlikte taşıma:</strong> Doğrudan bir toplu taşıma aracı yoktur. Nesneleri seçtikten sonra
-              “Grupla”ya basın, oluşan grubu taşıyın ve isterseniz işlem sonunda “Grubu Çöz”e basın.</li>
+            <li><strong>Birlikte taşıma:</strong> Seçtiğiniz parçalardan birine basılı tutup sürükleyin; seçili parçalar
+              birlikte hareket eder. Kısa dokunuş o parçayı seçimden çıkarabilir, bu yüzden taşımak için sürükleyin.</li>
+            <li><strong>Kalıcı grup:</strong> Parçaların daha sonra da birlikte seçilmesini istiyorsanız “Grupla”ya basın.
+              Yeniden ayrı parçalar yapmak için “Grubu Çöz”e basın.</li>
           </ul>
 
           <div class="callout warning"><strong>Yollar farklı çalışır:</strong> Yol nesneleri çoklu seçime ve gruplamaya
@@ -1268,17 +1297,27 @@
           <h2>Renk, çizgi, dolgu ve yazı ayarları</h2>
           <p class="section-lead">Bir nesne seçildiğinde sağdaki ana düğmelerin yerini o nesneye uygun özellikler alır.
             Her nesnede yalnızca kullanılabilen ayarlar gösterilir.</p>
+          <h3 class="mini-heading">Örnek: bir dikdörtgenin içini kilit taşı yapma</h3>
+          <ol class="steps">
+            <li><span><strong>“Çizim Araçları”ndan “Dikdörtgen”i seçin.</strong> Bir köşeden karşı köşeye sürükleyip bırakın.</span></li>
+            <li><span><strong>Sağdaki “Dolgu rengi” düğmesine basın.</strong> Bir renk seçin. Açılan pencereyi kapatmak için dışına dokunun.</span></li>
+            <li><span><strong>“Çizgi stili” panelini açın.</strong> Buradaki dolgu deseni düğmesinden “Kilit taşı”nı seçin.</span></li>
+            <li><span><strong>İsterseniz dönüş açısı alanına bir sayı yazın.</strong> Dönüş tutamacını sürükleyerek de çevirebilirsiniz.</span></li>
+            <li><span><strong>“Tamam”a basın.</strong> Yeniden seçmek için taş deseninin istediğiniz bir yerine dokunun.</span></li>
+          </ol>
 
           <div class="cards">
             <article class="card">
               <h3>Çizgi özellikleri</h3>
-              <p>Çizgi rengini, saydamlığını ve kalınlığını değiştirebilirsiniz. Düz, kesik veya noktalı görünüm
-                seçebilir; kesiklerin boyunu ve aralığını ayarlayabilirsiniz.</p>
+              <p>Yeni çizimin kalınlığı <strong>2</strong> olur. Kalınlaştırmak için +, inceltmek için − düğmesine basın.
+                Renk düğmesine basıp bir renk seçin. Çizgi stili düğmesinden düz, kesik veya noktalı çizgi seçebilirsiniz.
+                Kesik çizgide parça boyu ve aralık da ayarlanabilir.</p>
             </article>
             <article class="card">
               <h3>Oklar ve çizgi uçları</h3>
-              <p>Uygun çizgilerde başlangıç ve bitiş oku ekleyebilirsiniz. Çizgi uçlarını yuvarlak, düz veya köşeli
-                görünüm arasında değiştirebilirsiniz.</p>
+              <p>Yeni çizimlerin uçları <strong>düz</strong> başlar. Uç ayarı gösterilen çizgilerde “Çizgi stili” panelini
+                açın ve uç düğmesine basarak düz veya yuvarlak uç seçin. Başlangıç ve bitiş oku düğmeleri yalnızca
+                ok eklenebilen çizimlerde görünür. Noktalı stilin noktaları yuvarlak görünür.</p>
             </article>
             <article class="card">
               <h3>Dolgu özellikleri</h3>
@@ -1328,6 +1367,8 @@
           </div>
 
           <h3 class="mini-heading">Yeni yol ekleme sırası</h3>
+          <p>Önce sağdaki yol simgesine basın. İlk denemede “Düz”, “Yatay” ve “Normal” seçebilirsiniz.
+            Şerit sayısını 2 bırakın. Aşağıdaki ayrıntıları sonra değiştirmeniz mümkündür.</p>
           <ol class="steps">
             <li><span><strong>Yol biçimini seçin:</strong> Düz, Viraj, S viraj veya Ada.</span></li>
             <li><span><strong>Yönü seçin:</strong> Yatay veya dikey. Ada seçildiğinde yön seçimi gerekmez.</span></li>
@@ -1339,6 +1380,12 @@
           </ol>
 
           <h3 class="mini-heading">Seçili yolun ayarları</h3>
+          <div class="term-grid">
+            <div class="term"><strong>Şerit</strong><span>Araçların ilerlediği yol bölümü. Şerit sayısı arttıkça yol genişler.</span></div>
+            <div class="term"><strong>Banket</strong><span>Yolun sağında veya solunda, taşıt şeritlerinin dışında kalan yan alan.</span></div>
+            <div class="term"><strong>Bölünmüş yol</strong><span>Karşı yönlerin ortadaki ayırıcı alanla birbirinden ayrıldığı yol.</span></div>
+            <div class="term"><strong>Bariyer</strong><span>Yol kenarındaki koruyucu engel. Eklemek için önce yolun en dış şeridini seçin.</span></div>
+          </div>
           <div class="cards">
             <article class="card"><h3>Şerit sayısı ve genişliği</h3><p>Yolun tamamındaki şerit sayısını ve genel şerit
                 genişliğini artırıp azaltır. Yolun içindeki belirli bir şerit veya bankete dokunursanız yalnızca o
@@ -1369,6 +1416,9 @@
         <section id="kutuphaneler">
           <p class="section-kicker">Hazır içerikler</p>
           <h2>Araç, levha ve diğer sembolleri ekleme</h2>
+          <p>Örnek olarak bir araç ekleyin: sağdaki araç simgesine basın, araç türünü seçin, listeden bir modeli
+            seçip paneldeki ekleme düğmesine basın. Araç çalışma alanına gelir. Kontrol noktasıyla yönünü veya boyutunu
+            değiştirin. İşiniz bitince “Tamam”a basın. Levha ve diğer sembollerde de aynı sırayı izleyin.</p>
           <p class="section-lead">Bu öğeleri çizmeniz gerekmez. Sağdaki ilgili kütüphaneyi açın, kategori ve öğeyi seçin,
             ardından “Tamam”a basın. Seçilen öğe çalışma alanının ortasına eklenir.</p>
 
@@ -1407,6 +1457,15 @@
         <section id="kaydetme">
           <p class="section-kicker">Kaydetme ve paylaşma</p>
           <h2>Çalışmanızı nasıl saklamak istiyorsunuz?</h2>
+          <h3 class="mini-heading">Yarın devam etmek için en kolay yol</h3>
+          <ol class="steps">
+            <li><span><strong>Düzenleme açıksa “Tamam”a basın.</strong> Sağdaki ana düğmeler geri gelir.</span></li>
+            <li><span><strong>Sağ üstteki üç çizgili “Ana Menü” düğmesine basın.</strong> “SVG Olarak Kaydet”i seçin.</span></li>
+            <li><span><strong>Dosyanın indiğini kontrol edin.</strong> Tarayıcının indirmeler listesinde .svg ile biten dosya görünür.</span></li>
+            <li><span><strong>Yarın ana ekranda “SVG Yükle”ye basın.</strong> Kaydettiğiniz dosyayı seçin, önizlemeye bakın ve “Aç ve Düzenle”ye basın.</span></li>
+          </ol>
+          <div class="callout"><strong>Sadece resim mi istiyorsunuz?</strong> “Resim Olarak Kaydet”i kullanın.
+            PNG bir resimdir. Ayrı ayrı parçaları düzenleyerek devam etmek için SVG dosyasını saklayın.</div>
           <p class="section-lead">Sağ üstteki Ana Menü, farklı kullanım amaçları için birkaç kayıt seçeneği sunar.</p>
 
           <div class="cards">
@@ -1458,6 +1517,34 @@
           </div>
         </section>
 
+        <section id="fotograf-kurtarma">
+          <p class="section-kicker">Fotoğraf ve kurtarma</p>
+          <h2>Fotoğrafın üstüne çizme ve yarım kalan işe dönme</h2>
+          <h3 class="mini-heading">Kaza yeri fotoğrafını açma</h3>
+          <ol class="steps">
+            <li><span><strong>Ana ekranda “Fotoğraf Yükle”ye basın.</strong> Dosya seçme penceresi açılır.</span></li>
+            <li><span><strong>“Dosya seçmek için dokunun” alanına basın.</strong> Cihazınızdaki fotoğrafı seçin.
+              JPEG, PNG ve WebP gibi resim dosyalarını kullanabilirsiniz.</span></li>
+            <li><span><strong>Önizlemeye bakın.</strong> Doğru fotoğrafsa “Aç ve Düzenle”ye basın.
+              Yanlışsa “Farklı Dosya Seç” ile yeniden seçin.</span></li>
+            <li><span><strong>Fotoğrafın üzerine çizgi, yol, araç veya yazı ekleyin.</strong> Fotoğraf bir altlıktır;
+              çizdiğiniz parçalar onun üzerinde görünür.</span></li>
+            <li><span><strong>Fotoğrafı geçici olarak gizlemek için fotoğraf düğmesine basın.</strong>
+              Aynı düğmeye yeniden basınca görünür. Gizlemek fotoğrafı silmez.</span></li>
+          </ol>
+          <h3 class="mini-heading">Program veya sekme kapanırsa</h3>
+          <ol class="steps">
+            <li><span><strong>Aynı cihazda, aynı tarayıcıyla Kroki Pro’yu açın.</strong>
+              Otomatik saklanan bir çizim varsa ana ekranda “Yarım kalan çizimler” görünür.</span></li>
+            <li><span><strong>Tarih ve saate bakın.</strong> Devam etmek istediğiniz kaydın “Çizimi Kurtar” düğmesine basın.</span></li>
+            <li><span><strong>Açılan çizimi kontrol edin.</strong> Kurtarmadan önceki geri alma geçmişi geri gelmez.
+              Devam edin ve önemli çalışmanızı ayrıca SVG dosyası olarak kaydedin.</span></li>
+          </ol>
+          <div class="callout warning"><strong>Otomatik kurtarma bir yedek dosya değildir:</strong>
+            Son hareketiniz henüz saklanmadan sekme kapanırsa o hareket eksik kalabilir.
+            “Yarım kalan çizimler” görünmüyorsa kurtarılacak kayıt yoktur. Önemli işi bitirince “SVG Olarak Kaydet” kullanın.</div>
+        </section>
+
         <section id="yardim">
           <p class="section-kicker">Yardım</p>
           <h2>Sık karşılaşılan durumlar</h2>
@@ -1466,10 +1553,10 @@
 
           <div class="faq">
             <details>
-              <summary>Nesneyi seçtim ama kontrol noktaları görünmedi</summary>
-              <p>İlk dokunuş yalnızca ön seçim yapar; aynı nesneye yeniden dokunmak düzenlemeyi başlatmaz. Nesnenin
-                kontrol noktalarından birine dokunun veya ön seçim sürerken sağdaki özelliklerden birini değiştirin.
-                Yeşil düzenleme görünümü açılır.</p>
+              <summary>Nesne kırmızı görünüyor ama taşıyamıyorum</summary>
+              <p>Kırmızı renk ilk seçimdir. Aynı yere tekrar tıklamak tek başına düzenlemeyi açmaz.
+                Çevresindeki yuvarlak kontrol noktasına dokunup bırakın veya sağdan bir özelliğini değiştirin.
+                Sonra kontrol noktasının dışından sürükleyin. İşiniz bitince “Tamam”a basın.</p>
             </details>
             <details>
               <summary>Yeni bir çizim aracını kullanamıyorum</summary>
@@ -1492,6 +1579,18 @@
                 alınmaz.</p>
             </details>
             <details>
+              <summary>Döndürülmüş dolgulu şekli veya kalın çizgiyi seçemiyorum</summary>
+              <p>Önce “Tamam”a basarak önceki düzenlemeyi bitirin. Sonra şeklin dolgusuna veya kalın çizginin renkli
+                alanına dokunun. Merkezini bulmanız gerekmez. Eski sekme açıksa çalışmanızı SVG olarak kaydedin,
+                sayfayı yenileyin ve SVG’yi yeniden açın.</p>
+            </details>
+            <details>
+              <summary>Çizdiğim uç tam istediğim yere gitmiyor</summary>
+              <p>Sol alttaki mıknatıs açıksa uçlar yakındaki çizgi ucuna veya kareli alanın çizgilerine oturur.
+                Serbest çizmek için mıknatısı kapatın. Bilgisayarda Ctrl veya Cmd tuşunu basılı tutarak da
+                o hareket için yapışmayı geçici olarak atlayabilirsiniz.</p>
+            </details>
+            <details>
               <summary>Yanlışlıkla bir şeyi sildim veya taşıdım</summary>
               <p>Sol üstteki “Geri Al” okuna basın. Bilgisayarda Ctrl+Z kısayolunu da kullanabilirsiniz.</p>
             </details>
@@ -1502,7 +1601,7 @@
       </main>
     </div>
 
-    <footer>Kroki Pro Kullanım Kılavuzu · Programı kullanmaya yönelik kısa ve anlaşılır başvuru kaynağı</footer>
+    <footer>Kroki Pro Kullanım Kılavuzu · Adım adım kullanım · Güncelleme: 2 Ekim 2026</footer>
   </div>
 
   <script>

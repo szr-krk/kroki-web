@@ -79,18 +79,18 @@ const read = (file) => fs.readFileSync(path.join(__dirname, "..", file), "utf8")
 
 assert.match(
   read("src/adapters/roadAdapter.js"),
-  /setAttribute\("stroke-linecap", dash \? "butt" : "round"\)/,
-  "Dashed road boundary paths must use flat caps"
+  /setAttribute\("stroke-linecap", "butt"\)/,
+  "All road boundary paths must use flat caps"
 );
 assert.match(
   read("src/core/roadIntersectionEngine.js"),
-  /"stroke-linecap": dashed \? "butt" : "round"/,
-  "Rebuilt dashed intersection contours must use flat caps"
+  /"stroke-linecap": "butt"/,
+  "Rebuilt intersection contours must use flat caps"
 );
 assert.match(
   read("src/ui/roadInspector.js"),
-  /"stroke-linecap": dash \? "butt" : "round"/,
-  "Road marking previews must match the flat dashed caps"
+  /"stroke-linecap": "butt"/,
+  "Road marking previews must use flat caps"
 );
 
 function createScene({ timeoutFallback = false } = {}) {
