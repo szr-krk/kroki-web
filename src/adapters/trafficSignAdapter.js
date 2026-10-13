@@ -534,7 +534,7 @@
 
   function signFromModel(model) {
     const metadata = model?.metadata || {};
-    return catalog.find(metadata.signKey) || {
+    const sign = catalog.find(metadata.signKey) || {
       key: metadata.signKey || "",
       code: metadata.signCode || "",
       name: metadata.signName || "Levha",
@@ -545,9 +545,11 @@
       height: Number(metadata.signHeight) || 100,
       viewBox: metadata.signViewBox || `0 0 ${Number(metadata.signWidth) || 100} ${Number(metadata.signHeight) || 100}`,
       baseScale: Number(metadata.signBaseScale) || 0.08,
+      layout: metadata.signLayout,
       art: metadata.signArt || "",
       svg: ""
     };
+    return Kroki.TrafficSignLayout?.resolve(sign, model) || sign;
   }
 
   function viewBoxFor(sign) {
@@ -1222,7 +1224,7 @@
 
     const textKey = textKeyFor(model);
     if (element.dataset.signTextKey !== textKey) {
-      applyEditableText(model, art);
+      if (!Kroki.TrafficSignLayout?.apply(art, sign)) applyEditableText(model, art);
       element.dataset.signTextKey = textKey;
     }
     return art;

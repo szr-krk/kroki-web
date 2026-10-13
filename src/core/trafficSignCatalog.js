@@ -87,6 +87,7 @@
       height: Number(sign?.height) || 0,
       viewBox: normalizedViewBox,
       baseScale: normalizedBaseScale(sign, normalizedCategoryKey, normalizedViewBox),
+      ...(sign?.layout ? { layout: { ...sign.layout } } : {}),
       art: normalizeMarkup(sign?.art)
     };
   }
@@ -158,6 +159,7 @@
         signWidth: normalized.width,
         signHeight: normalized.height,
         signBaseScale: normalized.baseScale,
+        ...(normalized.layout ? { signLayout: { ...normalized.layout } } : {}),
         signArt: normalized.art
       };
     }

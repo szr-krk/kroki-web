@@ -67,6 +67,18 @@ Etkin katalogda standart dışı kırmızı kullanan 83 levha kaydı düzeltildi
 
 ---
 
+## B-5a — İçeriğe göre genişleyen yön levhaları
+
+- Son kayıt tarihi: 2026-10-14.
+- Kaynak: kullanıcı tarafından verilen `137.pdf`, tek sayfa. Ölçü yazıları ve harf kutuları katalog görseline alınmaz.
+- Adlar: `KAVŞAK ÖNCESİ YÖN LEVHASI (Oklu - Tek mesaj) 1`, `2`, `3`; üç kayıtta kod `B-5a`.
+- Anahtarlar: `3-bilgi-levhalari/b-5a-kavsak-oncesi-yon-levhasi-1`, `-2`, `-3`.
+- `1`: sola ok / metin; `2`: yukarı ok / metin; `3`: metin / sağ üst çapraz ok.
+- Beyaz zemin, siyah ince konturlar ve içi boş oklar; siyah, düzenlenebilir tek metin alanı `message` (`Yer / yön adı`, başlangıç `MERKEZ`, sınır 120 karakter).
+- `a = 100` çizim birimi; başlangıç ölçeği `0.04`. Metinle birlikte yalnız genişlik hesaplanır; harfler sıkıştırılmaz.
+- Kaynak üretimi: `python scripts/generate-direction-sign-data.py <137.pdf-yolu>`. Mevcut `src/arial-narrow.ttf` dosyası kullanılmalıdır. Font veya PDF değişirse ölçü verisi yeniden üretilip tarayıcı testi çalıştırılır.
+- Bu üç kayıt sabit katalog generator'ına dahil edilmez; `traffic-signs-direction.js` ve `TrafficSignLayout` ortak yerleşimi tarafından üretilir. Ayrıntılar: [[Trafik Levhası Sistemi#İçeriğe göre genişleyen bilgi levhaları (14.10.2026)]].
+
 ## 1 Tanzim Levhaları
 
 ### TT-2 — Dur
