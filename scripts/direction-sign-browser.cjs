@@ -30,7 +30,7 @@ const server = http.createServer((req, res) => {
     await page.click("#btnYeniKroki");
     await page.click("#btnLevhaEkle");
     await page.fill("#trafficSignSearch", "B-5a kavşak");
-    await page.waitForFunction(() => document.querySelectorAll("#trafficSignGrid .traffic-sign-tile").length === 6);
+    await page.waitForFunction(() => document.querySelectorAll("#trafficSignGrid .traffic-sign-tile").length === 8);
     const titles = await page.locator("#trafficSignGrid .traffic-sign-tile").evaluateAll(items => items.map(item => item.title));
     titles.forEach((title, i) => assert.ok(title.endsWith(` ${i + 1}`), title));
     await page.locator("#trafficSignGrid .traffic-sign-tile").first().click();
@@ -71,6 +71,25 @@ const server = http.createServer((req, res) => {
       K.HistoryManager.redo();
     });
 
+    for (const index of [6, 7]) {
+      await page.evaluate(() => window.Kroki.SelectionManager.clear());
+      await page.click("#btnLevhaEkle");
+      await page.locator("#trafficSignGrid .traffic-sign-tile").nth(index).click();
+      await page.click("#btnTrafficSignAdd");
+      const field = index === 6 ? input : firstMessage;
+      if (!(await field.isVisible())) await page.click("#btnLineText");
+      await field.fill("ŞANLIURFA");
+      await field.press("Tab");
+      if (index === 7) { await secondMessage.fill("GAZİANTEP"); await secondMessage.press("Tab"); }
+      assert.equal(await page.locator("[data-traffic-sign-field-input]").count(), index === 6 ? 1 : 2);
+    }
+    await page.evaluate(() => window.Kroki.SelectionManager.clear());
+    await page.click("#btnLevhaEkle");
+    await page.fill("#trafficSignSearch", "şehir merkezi");
+    await page.locator('#trafficSignGrid [data-sign-key="3-bilgi-levhalari/sehir-merkezi-levhasi"]').click();
+    await page.click("#btnTrafficSignAdd");
+    assert.equal(await page.locator("#btnLineText").isVisible(), false, "fixed city sign has no text editor");
+
     const results = await page.evaluate(() => {
       const K = window.Kroki, m = K.EditorObjectManager, a = K.ShapeRegistry.get("trafficSign");
       const check = (ok, message) => { if (!ok) throw new Error(message); };
@@ -78,7 +97,7 @@ const server = http.createServer((req, res) => {
       K.SelectionManager.clear();
       m.getAll().forEach(model => m.remove(model.id, { skipHistory: true }));
       const signs = K.TrafficSignCatalog.all().filter(sign => sign.code === "B-5a");
-      check(signs.length === 6, "six catalog entries");
+      check(signs.length === 8, "eight B-5a catalog entries");
       for (const sign of signs) {
         const inserted = m.create("trafficSign", { sign }, { skipHistory: true });
         near(inserted.geometry.scale, 0.02, "half-sized insertion", 0.000001);
@@ -162,7 +181,7 @@ const server = http.createServer((req, res) => {
         m.updateGeometry(id, draft => { draft.geometry.cx = 320; }, { skipHistory: true });
         results.push({ id, direction: sign.layout.direction, width: before.width, textCases: Object.keys(widths).length });
       }
-      for (const [index, sign] of signs.slice(3).entries()) {
+      for (const [index, sign] of signs.slice(3, 6).entries()) {
         const model = m.create("trafficSign", { sign, center: { x: 870, y: 190 + 210 * index }, scale: 0.03 }, { skipHistory: true });
         const id = model.id;
         const update = (first, second) => m.updateModel(id, draft => {
@@ -224,6 +243,71 @@ const server = http.createServer((req, res) => {
         m.updateGeometry(id, draft => { draft.geometry.rotation = 0; }, { skipHistory: true });
         results.push({ id, direction: sign.layout.direction, rows: 2, width: before.width, textCases: widths.length });
       }
+      for (const [index, sign] of signs.slice(6).entries()) {
+        const model = m.create("trafficSign", { sign, center: { x: 1430, y: 190 + 210 * index }, scale: 0.03 }, { skipHistory: true });
+        const id = model.id, fields = a.editableTextFields(model);
+        check(fields.length === index + 1, "finger row count");
+        const setRows = values => m.updateModel(id, draft => {
+          fields.forEach((field, row) => a.updateEditableTextField(draft, field.id, values[row]));
+          return draft;
+        }, { skipHistory: true });
+        const cases = index === 0 ? [["İL"], ["WWW"], ["III"], ["KAHRAMANMARAŞ"], ["ÇIĞ ŞÜ İÖ"], [""], ["W".repeat(120)]] :
+          [["İL", "KAHRAMANMARAŞ"], ["KAHRAMANMARAŞ", "İL"], ["WWW", "III"], ["III", "WWW"], ["ÇIĞ ŞÜ İÖ", "İSTANBUL"], ["", ""], ["W".repeat(120), "İL"]];
+        const widths = [];
+        const initial = a.getBounds(model);
+        for (const values of cases) {
+          setRows(values);
+          const el = m.getElement(id), board = el.querySelector('[data-sign-part="board"]');
+          const inner = el.querySelector('[data-sign-part="inner-frame"]');
+          const box = board.getBBox();
+          const vertices = board.getAttribute("d").match(/-?\d+(?:\.\d+)?/g).map(Number);
+          near(box.height, window.KrokiDirectionSignData.capHeight * fields.length + (12 + 4 * index) * 100, "PDF finger height", 0.001);
+          near(vertices[3] - vertices[2], box.height / 2, "PDF h/2 pointed end", 0.001);
+          near(box.width - (inner.getBBox().x + inner.getBBox().width), 800, "PDF 8a tip gap", 0.001);
+          near(inner.getBBox().x, 200, "PDF 2a inner left edge", 0.001);
+          const texts = Array.from(el.querySelectorAll("text"));
+          const edges = texts.map((text, row) => {
+            check(text.textContent === values[row] && !text.hasAttribute("textLength"), "finger text remains independent and unsqueezed");
+            const ctx = document.createElement("canvas").getContext("2d");
+            ctx.font = `${text.getAttribute("font-size")}px KrokiSignNarrow`; ctx.fontKerning = "none";
+            let cursor = Number(text.getAttribute("x")), left = Infinity, right = -Infinity;
+            for (const char of Array.from(text.textContent)) {
+              const glyph = ctx.measureText(char);
+              if (glyph.actualBoundingBoxLeft + glyph.actualBoundingBoxRight > 0) { left = Math.min(left, cursor - glyph.actualBoundingBoxLeft); right = Math.max(right, cursor + glyph.actualBoundingBoxRight); }
+              cursor += glyph.width + 100;
+            }
+            if (Number.isFinite(left)) near(left, 600, "finger 6a left text margin", 20);
+            return right;
+          });
+          if (edges.some(Number.isFinite)) near(vertices[2] - Math.max(...edges), 700, "finger 4a + 3a right margin", 20);
+          const bounds = a.getBounds(m.get(id)); widths.push(bounds.width);
+          near(bounds.height, initial.height, "finger height fixed", 0.001);
+          check(a.hitTest(m.get(id), { x: bounds.x + bounds.width - 1, y: m.get(id).geometry.cy }, 0), "finger tip selectable");
+        }
+        if (index === 0) check(widths[1] > widths[2] && widths[3] > widths[0], "finger real glyph widths");
+        else { near(widths[0], widths[1], "finger longest row can be either", 0.001); near(widths[2], widths[3], "finger row swap", 0.001); }
+        check(widths[5] < widths[0] && widths[6] > widths[0], "finger shrink and growth");
+        setRows(index === 0 ? ["ANKARA"] : ["ŞANLIURFA", "GAZİANTEP"]);
+        const before = a.getBounds(m.get(id));
+        const copy = m.clone(id, { skipHistory: true }); near(a.getBounds(copy).width, before.width, "finger copy", 0.001); m.remove(copy.id, { skipHistory: true });
+        m.updateGeometry(id, draft => { draft.geometry.rotation = 90; }, { skipHistory: true });
+        near(a.getBounds(m.get(id)).height, before.width, "finger rotate", 0.001);
+        m.updateGeometry(id, draft => { draft.geometry.rotation = 0; }, { skipHistory: true });
+        const stableArt = m.getElement(id).firstElementChild;
+        m.updateGeometry(id, draft => { draft.geometry.cx += 10; }, { skipHistory: true });
+        check(m.getElement(id).firstElementChild === stableArt, "finger movement reuses art");
+        results.push({ id, shape: "finger", rows: fields.length, width: before.width, textCases: cases.length });
+      }
+      const citySign = K.TrafficSignCatalog.find("3-bilgi-levhalari/sehir-merkezi-levhasi");
+      const city = m.create("trafficSign", { sign: citySign, center: { x: 1430, y: 610 }, scale: 0.03 }, { skipHistory: true });
+      check(a.editableTextFields(city).length === 0 && !citySign.layout, "city sign fixed");
+      const symbol = m.getElement(city.id).querySelector('[data-sign-part="city-symbol"]').getAttribute("d");
+      check((symbol.match(/A/g) || []).length === 6 && !/[CL]/.test(symbol), "city circles consist of six SVG arc segments");
+      check(citySign.art.length < 8000, "compact fixed city artwork");
+      near(a.getBounds(city).width / a.getBounds(city).height, 1980 / 684, "fixed city aspect ratio", 0.000001);
+      const cityCopy = m.clone(city.id, { skipHistory: true });
+      check(a.editableTextFields(cityCopy).length === 0, "city copy remains fixed"); m.remove(cityCopy.id, { skipHistory: true });
+      results.push({ id: city.id, shape: "fixed-city", artBytes: citySign.art.length, width: a.getBounds(city).width });
       const json = K.DocumentSerializer.toJson();
       const originalWidths = results.map(({ id }) => a.getBounds(m.get(id)).width);
       check(K.DocumentSerializer.fromJson(json).ok, "document roundtrip");
@@ -234,10 +318,12 @@ const server = http.createServer((req, res) => {
       near(a.getBounds(m.get(fallback.id)).width, originalWidths[0], "metadata fallback", 0.001);
       check(m.getElement(fallback.id).querySelector("text").textContent === "MERKEZ", "fallback text");
       K.SelectionManager.clear();
-      window.krokiEditorCamera.writeViewBox(m.canvas, { x: 0, y: 0, width: 1200, height: 800 });
+      window.krokiEditorCamera.writeViewBox(m.canvas, { x: 0, y: 0, width: 1800, height: 800 });
       return results;
     });
-    await page.locator("#editorCanvas").screenshot({ path: path.join(output, "six-signs.png") });
+    await page.locator("#editorCanvas").screenshot({ path: path.join(output, "nine-signs.png") });
+    await page.evaluate(() => window.krokiEditorCamera.writeViewBox(window.Kroki.EditorObjectManager.canvas, { x: 1180, y: 60, width: 550, height: 700 }));
+    await page.locator("#editorCanvas").screenshot({ path: path.join(output, "pdf-139-signs.png") });
     await page.click("#btnEditorMenu");
     const downloadPromise = page.waitForEvent("download");
     await page.click('[data-menu-action="export-svg"]');
@@ -252,9 +338,13 @@ const server = http.createServer((req, res) => {
     await roundtrip;
     await page.evaluate(() => {
       const models = window.Kroki.EditorObjectManager.getAll().filter(m => m.type === "trafficSign");
-      if (models.length !== 6 || !models.every(m => m.metadata.signLayout)) throw new Error("SVG import lost dynamic layout");
-      const doubles = models.filter(m => m.metadata.signLayout.family === "arrow-double-message-v1");
+      if (models.length !== 9 || models.filter(m => m.metadata.signLayout).length !== 8) throw new Error("SVG import lost dynamic layout");
+      const doubles = models.filter(m => m.metadata.signLayout?.family === "arrow-double-message-v1");
       if (doubles.length !== 3 || !doubles.every(m => m.metadata.signTextFields.message1 && m.metadata.signTextFields.message2)) throw new Error("SVG import lost second rows");
+      const fingers = models.filter(m => m.metadata.signLayout?.family.startsWith("finger-"));
+      if (fingers.length !== 2 || !fingers.some(m => m.metadata.signTextFields.message2 === "GAZİANTEP")) throw new Error("SVG import lost finger rows");
+      const city = models.find(m => m.metadata.signKey.endsWith("sehir-merkezi-levhasi"));
+      if (window.Kroki.ShapeRegistry.get("trafficSign").editableTextFields(city).length) throw new Error("City sign became editable");
     });
     // Touch layout keeps text fields usable on a tablet.
     await page.setViewportSize({ width: 768, height: 1024 });
@@ -266,7 +356,7 @@ const server = http.createServer((req, res) => {
     await page.screenshot({ path: path.join(output, "tablet.png") });
     assert.deepEqual(errors, [], "page errors");
     console.log(JSON.stringify({ base, titles, results }, null, 2));
-    console.log("PASS: six entries, half-sized insertion, existing sizes preserved, independent double rows, longest-row width, margins, long/empty/Turkish text, arrows, hit tests, rotation, copy, drag reuse, undo/redo, JSON/SVG roundtrip, font export, tablet.");
+    console.log("PASS: eight dynamic signs + fixed city sign, SVG arc circles, compact source lettering, PDF finger geometry, half-sized insertion, independent rows, longest-row width, long/empty/Turkish text, hit tests, rotation, copy, drag reuse, undo/redo, JSON/SVG roundtrip, font export, tablet.");
   } catch (error) {
     await page.screenshot({ path: path.join(output, "failure.png") });
     console.error("Diagnostics", JSON.stringify(await page.evaluate(() => ({

@@ -4,12 +4,16 @@
   if (!data) return;
 
   const FAMILY = "arrow-single-message-v1";
+  const singleFields = [{ id: "message", label: "Yer / yön adı", defaultValue: "MERKEZ" }];
+  const doubleFields = [
+    { id: "message1", label: "1. yer / yön adı", defaultValue: "MERKEZ" },
+    { id: "message2", label: "2. yer / yön adı", defaultValue: "HASTANE" }
+  ];
   const FAMILIES = {
-    [FAMILY]: { arrows: data.arrows, fields: [{ id: "message", label: "Yer / yön adı", defaultValue: "MERKEZ" }] },
-    "arrow-double-message-v1": { arrows: data.doubleArrows, fields: [
-      { id: "message1", label: "1. yer / yön adı", defaultValue: "MERKEZ" },
-      { id: "message2", label: "2. yer / yön adı", defaultValue: "HASTANE" }
-    ] }
+    [FAMILY]: { arrows: data.arrows, fields: singleFields },
+    "arrow-double-message-v1": { arrows: data.doubleArrows, fields: doubleFields },
+    "finger-single-message-v1": { finger: true, fields: singleFields },
+    "finger-double-message-v1": { finger: true, fields: doubleFields }
   };
   const modelCache = new WeakMap();
   const number = value => String(Math.round(value * 1000) / 1000);
@@ -36,7 +40,7 @@
   function layoutFor(direction, values, family) {
     const profile = FAMILIES[family];
     const arrow = profile?.arrows?.[direction];
-    if (!arrow) return null;
+    if (!profile || (!profile.finger && !arrow)) return null;
     const a = data.unit;
     const rows = profile.fields.map(field => {
       const text = String(values?.[field.id] ?? field.defaultValue).replace(/[\r\n\t]+/g, " ").slice(0, 120);
@@ -44,31 +48,42 @@
     });
     const textWidth = Math.max(...rows.map(row => row.metrics.width));
     const height = rows.length * data.capHeight + (12 + 4 * (rows.length - 1)) * a;
-    const width = textWidth + arrow.width + 16 * a;
-    const arrowOnRight = direction === "right" || direction === "up-right";
+    const width = profile.finger ? textWidth + 13 * a + height / 2 : textWidth + arrow.width + 16 * a;
+    const arrowOnRight = profile.finger || direction === "right" || direction === "up-right";
     rows.forEach((row, index) => {
       row.textX = (arrowOnRight ? 6 * a : 10 * a + arrow.width) - row.metrics.left;
       row.baseline = 6 * a + data.capHeight + index * (data.capHeight + 4 * a);
     });
     return {
-      rows, width, height, arrow,
+      rows, width, height, arrow, finger: !!profile.finger,
       arrowX: arrowOnRight ? 10 * a + textWidth : 6 * a,
-      arrowY: (height - arrow.height) / 2,
+      arrowY: arrow ? (height - arrow.height) / 2 : 0,
       fontSize: data.capHeight / data.fontCapHeight * data.fontUnitsPerEm
     };
+  }
+
+  function fingerPath(layout, inset) {
+    const a = data.unit, h = layout.height, w = layout.width;
+    const shoulder = w - h / 2;
+    if (!inset) return `M0 0H${number(shoulder)}L${number(w)} ${number(h / 2)} ${number(shoulder)} ${number(h)}H0Z`;
+    const radius = inset === a ? 3 * a : 2 * a;
+    const topEnd = inset === a ? shoulder - (Math.SQRT2 - 1) * a : shoulder - 3 * a;
+    const tip = inset === a ? w - Math.SQRT2 * a : w - 8 * a;
+    return `M${number(inset + radius)} ${number(inset)}H${number(topEnd)}L${number(tip)} ${number(h / 2)} ${number(topEnd)} ${number(h - inset)}H${number(inset + radius)}A${radius} ${radius} 0 0 1 ${inset} ${number(h - inset - radius)}V${number(inset + radius)}A${radius} ${radius} 0 0 1 ${number(inset + radius)} ${inset}Z`;
   }
 
   function template(direction, family = FAMILY) {
     const layout = layoutFor(direction, {}, family);
     const a = data.unit;
     const rect = (role, inset, radius) => `<rect data-sign-part="${role}" x="${inset}" y="${inset}" width="${number(layout.width - 2 * inset)}" height="${number(layout.height - 2 * inset)}" rx="${radius}"/>`;
+    const frame = (role, inset, radius) => layout.finger ? `<path data-sign-part="${role}" d="${fingerPath(layout, inset)}"/>` : rect(role, inset, radius);
     return {
       width: layout.width, height: layout.height,
       art: `<g data-sign-layout="${family}" fill="#fff" stroke="#000" stroke-width="${number(data.outline)}" stroke-linejoin="round">
-        ${rect("board", 0, 0)}
-        ${rect("outer-frame", a, 3 * a)}
-        ${rect("inner-frame", 2 * a, 2 * a)}
-        <path data-sign-part="arrow" fill="none" d="${escape(layout.arrow.path)}" transform="translate(${number(layout.arrowX)} ${number(layout.arrowY)})"/>
+        ${frame("board", 0, 0)}
+        ${frame("outer-frame", a, 3 * a)}
+        ${frame("inner-frame", 2 * a, 2 * a)}
+        ${layout.arrow ? `<path data-sign-part="arrow" fill="none" d="${escape(layout.arrow.path)}" transform="translate(${number(layout.arrowX)} ${number(layout.arrowY)})"/>` : ""}
         ${layout.rows.map(row => `<text data-sign-part="${row.id}" data-editable-text="true" data-text-key="${row.id}" data-text-label="${escape(row.label)}" data-text-type="text" data-text-maxlength="120" x="${number(row.textX)}" y="${number(row.baseline)}" font-family="KrokiSignNarrow, Arial Narrow, Arial, sans-serif" font-size="${number(layout.fontSize)}" font-weight="400" letter-spacing="${a}" style="font-kerning:none;font-variant-ligatures:none" fill="#000" stroke="none" xml:space="preserve">${escape(row.text)}</text>`).join("\n")}
       </g>`
     };
@@ -93,9 +108,11 @@
     const layout = sign?.resolvedLayout;
     if (!layout) return false;
     for (const [role, inset] of [["board", 0], ["outer-frame", data.unit], ["inner-frame", 2 * data.unit]]) {
-      group.querySelector(`[data-sign-part="${role}"]`).setAttribute("width", number(layout.width - 2 * inset));
+      const frame = group.querySelector(`[data-sign-part="${role}"]`);
+      if (layout.finger) frame.setAttribute("d", fingerPath(layout, inset));
+      else frame.setAttribute("width", number(layout.width - 2 * inset));
     }
-    group.querySelector('[data-sign-part="arrow"]').setAttribute("transform", `translate(${number(layout.arrowX)} ${number(layout.arrowY)})`);
+    if (layout.arrow) group.querySelector('[data-sign-part="arrow"]').setAttribute("transform", `translate(${number(layout.arrowX)} ${number(layout.arrowY)})`);
     layout.rows.forEach(row => {
       const text = group.querySelector(`[data-sign-part="${row.id}"]`);
       text.textContent = row.text;

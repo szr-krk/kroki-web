@@ -70,15 +70,24 @@ Etkin katalogda standart dışı kırmızı kullanan 83 levha kaydı düzeltildi
 ## B-5a — İçeriğe göre genişleyen yön levhaları
 
 - Son kayıt tarihi: 2026-10-14.
-- Kaynak: kullanıcı tarafından verilen `137.pdf` ve `138.pdf`, birer sayfa. Ölçü yazıları ve harf kutuları katalog görseline alınmaz.
-- Adlar: `KAVŞAK ÖNCESİ YÖN LEVHASI (Oklu - Tek mesaj) 1`, `2`, `3` ve `KAVŞAK ÖNCESİ YÖN LEVHASI (Oklu - Çift mesaj) 4`, `5`, `6`; altı kayıtta kod `B-5a`.
-- Anahtarlar: `3-bilgi-levhalari/b-5a-kavsak-oncesi-yon-levhasi-1`–`-6`.
+- Kaynak: kullanıcı tarafından verilen `137.pdf`, `138.pdf` ve `139.pdf`, birer sayfa. Ölçü yazıları ve harf kutuları katalog görseline alınmaz.
+- Adlar: `KAVŞAK ÖNCESİ YÖN LEVHASI (Oklu - Tek mesaj) 1`, `2`, `3`, `KAVŞAK ÖNCESİ YÖN LEVHASI (Oklu - Çift mesaj) 4`, `5`, `6` ve `KAVŞAK ÖNCESİ YÖN LEVHASI (Parmak) 7`, `8`; sekiz kayıtta kod `B-5a`.
+- Anahtarlar: `3-bilgi-levhalari/b-5a-kavsak-oncesi-yon-levhasi-1`–`-8`.
 - `1`: sola ok / metin; `2`: yukarı ok / metin; `3`: metin / sağ üst çapraz ok.
 - `4`: yukarı ok / çift satır; `5`: çift satır / sağa ok; `6`: çift satır / sağ üst çapraz ok. Oklar 138.pdf'den alınır ve dikey ortalanır; satırlar sola hizalanır, aralarında `4a` boşluk vardır.
 - Beyaz zemin, siyah ince konturlar ve içi boş oklar; siyah, düzenlenebilir metin. Tek mesaj alanı `message` (`Yer / yön adı`, başlangıç `MERKEZ`); çift mesaj alanları `message1` ve `message2` (`1. yer / yön adı` / `2. yer / yön adı`, başlangıç `MERKEZ` / `HASTANE`). Her alanın sınırı 120 karakterdir.
-- `a = 100` çizim birimi; altı levhanın başlangıç ölçeği `0.02`, önceki `0.04` değerinin yarısıdır. Kaydedilmiş krokilerin açık ölçekleri korunur. Metinle birlikte yalnız genişlik hesaplanır; çift mesajda en uzun satır belirleyicidir, harfler sıkıştırılmaz.
-- Kaynak üretimi: `python scripts/generate-direction-sign-data.py <137.pdf-yolu> <138.pdf-yolu>`. Mevcut `src/arial-narrow.ttf` dosyası kullanılmalıdır. Font veya PDF değişirse ölçü verisi yeniden üretilip tarayıcı testi çalıştırılır.
-- Bu altı kayıt sabit katalog generator'ına dahil edilmez; `traffic-signs-direction.js` ve `TrafficSignLayout` ortak yerleşimi tarafından üretilir. Ayrıntılar: [[Trafik Levhası Sistemi#İçeriğe göre genişleyen bilgi levhaları (14.10.2026)]].
+- `7`: sağa bakan tek satırlı parmak; `8`: sağa bakan çift satırlı parmak. 139.pdf'ye göre sivri uç `h/2`, iç/dış uç arası `8a`, sağ üst/alt yazı boşluğu `4a` ve ardından `3a` omuz aralığı korunur.
+- `a = 100` çizim birimi; sekiz levhanın başlangıç ölçeği `0.02`, önceki `0.04` değerinin yarısıdır. Kaydedilmiş krokilerin açık ölçekleri korunur. Metinle birlikte yalnız genişlik hesaplanır; çift mesajda en uzun satır belirleyicidir, harfler sıkıştırılmaz.
+- Kaynak üretimi: `python scripts/generate-direction-sign-data.py <137.pdf-yolu> <138.pdf-yolu> <139.pdf-yolu>`. Mevcut `src/arial-narrow.ttf` dosyası kullanılmalıdır. Font veya PDF değişirse ölçü verisi yeniden üretilip tarayıcı testi çalıştırılır.
+- Bu sekiz kayıt sabit katalog generator'ına dahil edilmez; `traffic-signs-direction.js` ve `TrafficSignLayout` ortak yerleşimi tarafından üretilir. Ayrıntılar: [[Trafik Levhası Sistemi#İçeriğe göre genişleyen bilgi levhaları (14.10.2026)]].
+
+### Şehir Merkezi Levhası — Sabit parmak levha
+
+- Kaynak: `139.pdf`; anahtar `3-bilgi-levhalari/sehir-merkezi-levhasi`, ad `ŞEHİR MERKEZİ LEVHASI`. Kaynakta ayrı bir kod yoktur.
+- Ölçü oranı `1980 × 684`; kaynak `a=24`, katalogda `a=100` için `8250 × 2850` ve başlangıç ölçeği `0.02`.
+- Metin, simge ve genişlik sabittir; Abc paneli açılmaz. Şehir Merkezi yazısı PDF'nin özgün konturlarından alınır; tekrarlı dolgu üçgenleri taşınmaz.
+- Yuvarlak simge kullanıcı isteğiyle SVG `A` arc komutlarından oluşur: dış çap 300, halka kalınlığı 12, merkez çapı 120. Çerçevenin yuvarlak köşeleri de arc kullanır.
+- `traffic-signs-direction.js` içinde, B-5a 8'in ardından kayıtlıdır. Tam SVG art yaklaşık 4.3 KB; bitmap ve yeni font dosyası eklenmez.
 
 ## 1 Tanzim Levhaları
 
