@@ -13,7 +13,12 @@
     [FAMILY]: { arrows: data.arrows, fields: singleFields },
     "arrow-double-message-v1": { arrows: data.doubleArrows, fields: doubleFields },
     "finger-single-message-v1": { finger: true, fields: singleFields },
-    "finger-double-message-v1": { finger: true, fields: doubleFields }
+    "finger-double-message-v1": { finger: true, fields: doubleFields },
+    "tourist-finger-v1": { finger: true, tourist: true, background: "#74352f", foreground: "#fff", fields: [
+      { id: "message1", label: "Yer adı", defaultValue: "Belkıs" },
+      { id: "message2", label: "2. satır / açıklama", defaultValue: "(Aspendos)" },
+      { id: "distance", label: "Mesafe (km)", defaultValue: "4", maxLength: 8 }
+    ] }
   };
   const modelCache = new WeakMap();
   const number = value => String(Math.round(value * 1000) / 1000);
@@ -43,19 +48,22 @@
     if (!profile || (!profile.finger && !arrow)) return null;
     const a = data.unit;
     const rows = profile.fields.map(field => {
-      const text = String(values?.[field.id] ?? field.defaultValue).replace(/[\r\n\t]+/g, " ").slice(0, 120);
+      const text = String(values?.[field.id] ?? field.defaultValue).replace(/[\r\n\t]+/g, " ").slice(0, field.maxLength || 120);
       return { ...field, text, metrics: textMetrics(text) };
     });
-    const textWidth = Math.max(...rows.map(row => row.metrics.width));
-    const height = rows.length * data.capHeight + (12 + 4 * (rows.length - 1)) * a;
+    const nameWidth = profile.tourist ? Math.max(rows[0].metrics.width, rows[1].metrics.width) : 0;
+    const textWidth = profile.tourist ? nameWidth + 9 * a + rows[2].metrics.width : Math.max(...rows.map(row => row.metrics.width));
+    const lineCount = profile.tourist ? 2 : rows.length;
+    const height = lineCount * data.capHeight + (12 + 4 * (lineCount - 1)) * a;
     const width = profile.finger ? textWidth + 13 * a + height / 2 : textWidth + arrow.width + 16 * a;
     const arrowOnRight = profile.finger || direction === "right" || direction === "up-right";
     rows.forEach((row, index) => {
       row.textX = (arrowOnRight ? 6 * a : 10 * a + arrow.width) - row.metrics.left;
-      row.baseline = 6 * a + data.capHeight + index * (data.capHeight + 4 * a);
+      if (profile.tourist) row.textX = 6 * a + (index < 2 ? (nameWidth - row.metrics.width) / 2 : nameWidth + 9 * a) - row.metrics.left;
+      row.baseline = 6 * a + data.capHeight + (profile.tourist ? Math.min(index, 1) : index) * (data.capHeight + 4 * a);
     });
     return {
-      rows, width, height, arrow, finger: !!profile.finger,
+      rows, width, height, arrow, finger: !!profile.finger, background: profile.background, foreground: profile.foreground || "#000",
       arrowX: arrowOnRight ? 10 * a + textWidth : 6 * a,
       arrowY: arrow ? (height - arrow.height) / 2 : 0,
       fontSize: data.capHeight / data.fontCapHeight * data.fontUnitsPerEm
@@ -76,15 +84,15 @@
     const layout = layoutFor(direction, {}, family);
     const a = data.unit;
     const rect = (role, inset, radius) => `<rect data-sign-part="${role}" x="${inset}" y="${inset}" width="${number(layout.width - 2 * inset)}" height="${number(layout.height - 2 * inset)}" rx="${radius}"/>`;
-    const frame = (role, inset, radius) => layout.finger ? `<path data-sign-part="${role}" d="${fingerPath(layout, inset)}"/>` : rect(role, inset, radius);
+    const frame = (role, inset, radius) => layout.finger ? `<path data-sign-part="${role}"${layout.background ? ` fill="${role === "outer-frame" ? layout.foreground : layout.background}"` : ""} d="${fingerPath(layout, inset)}"/>` : rect(role, inset, radius);
     return {
       width: layout.width, height: layout.height,
-      art: `<g data-sign-layout="${family}" fill="#fff" stroke="#000" stroke-width="${number(data.outline)}" stroke-linejoin="round">
+      art: `<g data-sign-layout="${family}" fill="#fff" stroke="${layout.background ? "none" : "#000"}" stroke-width="${number(data.outline)}" stroke-linejoin="round">
         ${frame("board", 0, 0)}
         ${frame("outer-frame", a, 3 * a)}
         ${frame("inner-frame", 2 * a, 2 * a)}
         ${layout.arrow ? `<path data-sign-part="arrow" fill="none" d="${escape(layout.arrow.path)}" transform="translate(${number(layout.arrowX)} ${number(layout.arrowY)})"/>` : ""}
-        ${layout.rows.map(row => `<text data-sign-part="${row.id}" data-editable-text="true" data-text-key="${row.id}" data-text-label="${escape(row.label)}" data-text-type="text" data-text-maxlength="120" x="${number(row.textX)}" y="${number(row.baseline)}" font-family="KrokiSignNarrow, Arial Narrow, Arial, sans-serif" font-size="${number(layout.fontSize)}" font-weight="400" letter-spacing="${a}" style="font-kerning:none;font-variant-ligatures:none" fill="#000" stroke="none" xml:space="preserve">${escape(row.text)}</text>`).join("\n")}
+        ${layout.rows.map(row => `<text data-sign-part="${row.id}" data-editable-text="true" data-text-key="${row.id}" data-text-label="${escape(row.label)}" data-text-type="text" data-text-maxlength="${row.maxLength || 120}" x="${number(row.textX)}" y="${number(row.baseline)}" font-family="KrokiSignNarrow, Arial Narrow, Arial, sans-serif" font-size="${number(layout.fontSize)}" font-weight="400" letter-spacing="${a}" style="font-kerning:none;font-variant-ligatures:none" fill="${layout.foreground}" stroke="none" xml:space="preserve">${escape(row.text)}</text>`).join("\n")}
       </g>`
     };
   }

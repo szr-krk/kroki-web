@@ -78,7 +78,7 @@ Etkin katalogda standart dışı kırmızı kullanan 83 levha kaydı düzeltildi
 - Beyaz zemin, siyah ince konturlar ve içi boş oklar; siyah, düzenlenebilir metin. Tek mesaj alanı `message` (`Yer / yön adı`, başlangıç `MERKEZ`); çift mesaj alanları `message1` ve `message2` (`1. yer / yön adı` / `2. yer / yön adı`, başlangıç `MERKEZ` / `HASTANE`). Her alanın sınırı 120 karakterdir.
 - `7`: sağa bakan tek satırlı parmak; `8`: sağa bakan çift satırlı parmak. 139.pdf'ye göre sivri uç `h/2`, iç/dış uç arası `8a`, sağ üst/alt yazı boşluğu `4a` ve ardından `3a` omuz aralığı korunur.
 - `a = 100` çizim birimi; sekiz levhanın başlangıç ölçeği `0.02`, önceki `0.04` değerinin yarısıdır. Kaydedilmiş krokilerin açık ölçekleri korunur. Metinle birlikte yalnız genişlik hesaplanır; çift mesajda en uzun satır belirleyicidir, harfler sıkıştırılmaz.
-- Kaynak üretimi: `python scripts/generate-direction-sign-data.py <137.pdf-yolu> <138.pdf-yolu> <139.pdf-yolu>`. Mevcut `src/arial-narrow.ttf` dosyası kullanılmalıdır. Font veya PDF değişirse ölçü verisi yeniden üretilip tarayıcı testi çalıştırılır.
+- Kaynak üretimi: `python scripts/generate-direction-sign-data.py <137.pdf-yolu> <138.pdf-yolu> <139.pdf-yolu> <140.pdf-yolu>`. Mevcut `src/arial-narrow.ttf` dosyası kullanılmalıdır. Font veya PDF değişirse ölçü verisi yeniden üretilip tarayıcı testi çalıştırılır.
 - Bu sekiz kayıt sabit katalog generator'ına dahil edilmez; `traffic-signs-direction.js` ve `TrafficSignLayout` ortak yerleşimi tarafından üretilir. Ayrıntılar: [[Trafik Levhası Sistemi#İçeriğe göre genişleyen bilgi levhaları (14.10.2026)]].
 
 ### Şehir Merkezi Levhası — Sabit parmak levha
@@ -88,6 +88,19 @@ Etkin katalogda standart dışı kırmızı kullanan 83 levha kaydı düzeltildi
 - Metin, simge ve genişlik sabittir; Abc paneli açılmaz. Kullanıcı isteğiyle Şehir Merkezi yazısı path yerine mevcut KrokiSignNarrow fontunu kullanan iki SVG text öğesidir; ikisinde de `data-editable-text="false"` bulunur. Satırlar 294/540 tabanlarına yerleşir; yazı kalın, harf aralığı 24, sabit genişlikleri 696/1008'dir. Generated veride harf konturları tutulmaz.
 - Yuvarlak simge kullanıcı isteğiyle SVG `A` arc komutlarından oluşur: dış çap 300, halka kalınlığı 12, merkez çapı 120. Çerçevenin yuvarlak köşeleri de arc kullanır.
 - `traffic-signs-direction.js` içinde, B-5a 8'in ardından kayıtlıdır. Tam SVG art yaklaşık 1 KB; bitmap ve yeni font dosyası eklenmez.
+
+### B-5b — Kavşak İçi Yön Levhası (Turistik Mahal)
+
+- Kaynak: `140.pdf`; anahtar `3-bilgi-levhalari/b-5b-kavsak-ici-yon-levhasi-turistik-mahal`. Net en/boy olmadığından genişlik içeriğe göre hesaplanır; başlangıç ölçeği `0.02`.
+- Zemin kaynaktaki `#74352f`, çerçeve ve yazılar beyazdır. Parmak uç ve köşeler kısa path/arc komutlarıdır.
+- `message1`: Yer adı, başlangıç `Belkıs`; `message2`: 2. satır / açıklama, başlangıç `(Aspendos)`; her biri 120 karaktere kadar. `distance`: Mesafe (km), başlangıç `4`, 8 karaktere kadar (ondalık virgül kabul edilir).
+- Ad satırları ortak kutuda ortalanır; mesafe alt satırla aynı tabanda, en uzun adın 9a sağındadır. Harfler sıkıştırılmaz; ad veya mesafe uzayınca gövde genişler. Bütün yazılar düzenlenebilir SVG text'tir.
+
+### B-5c — Kavşak İçi Yön Levhası (Metro)
+
+- Kaynak: `140.pdf`; anahtar `3-bilgi-levhalari/b-5c-kavsak-ici-yon-levhasi-metro`. Net `1476 × 440` oranı sabittir; `a=16` kaynak ölçüsü `a=100` için `9225 × 2750` olarak çizilir, başlangıç ölçeği `0.02`.
+- Siyah/beyaz parmak çerçeve, mavi `#304faa` 280 × 280 P alanı ve `P + METRO` yazısı. Yazılar path yerine mevcut fontla SVG text'tir; üçü de `data-editable-text="false"` ile kilitlenir. Abc paneli açılmaz.
+- SVG art yaklaşık 1 KB; yeni font, bitmap veya çalışma zamanı bağımlılığı eklenmez.
 
 ## 1 Tanzim Levhaları
 

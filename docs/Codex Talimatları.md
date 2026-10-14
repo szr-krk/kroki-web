@@ -10,6 +10,7 @@ Bu proje üzerinde çalışacak Codex önce mevcut davranışı korumalı, sonra
 - IndexedDB kayıt düzenini koru; bu ana ekran değişikliği için veritabanı adı, sürümü, şeması veya kayıt akışını değiştirme.
 - Deneme dosyası, kurulum artığı, geçici kopya ve gereksiz bağımlılıkları teslim edilen projede bırakma.
 - Yereldeki temiz geri dönüş kopyasını değiştirme; geliştirmeyi ayrı çalışma kopyasında yap ve doğrulanan değişiklikleri mevcut GitHub Pages yayınına aktar.
+- Levha PDF'sinde en ve boy birlikte açıkça verilmemişse levhayı içeriğe göre genişleyen olarak ele al; açık sabit ölçüsü olan levhaları sabit tut. Yazılarda path yerine SVG text, yuvarlaklarda kısa arc komutları kullan; sabit yazıları `data-editable-text="false"` ile kilitle.
 
 ## Zorunlu ilk okuma sırası
 

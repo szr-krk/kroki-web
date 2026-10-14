@@ -1,6 +1,6 @@
-"""Extract B-5a vectors from 137/138/139.pdf and bundled sign font metrics.
+"""Extract direction-sign vectors and bundled sign font metrics.
 
-Usage: python scripts/generate-direction-sign-data.py path/to/137.pdf path/to/138.pdf path/to/139.pdf
+Usage: python scripts/generate-direction-sign-data.py path/to/137.pdf path/to/138.pdf path/to/139.pdf path/to/140.pdf
 Development dependencies: pdfplumber, fonttools. No runtime dependencies.
 """
 import hashlib
@@ -13,8 +13,8 @@ from fontTools.ttLib import TTFont
 from fontTools.pens.boundsPen import BoundsPen
 
 root = pathlib.Path(__file__).resolve().parents[1]
-if len(sys.argv) != 4:
-    raise SystemExit("Usage: generate-direction-sign-data.py <137.pdf> <138.pdf> <139.pdf>")
+if len(sys.argv) != 5:
+    raise SystemExit("Usage: generate-direction-sign-data.py <137.pdf> <138.pdf> <139.pdf> <140.pdf>")
 sources = [pathlib.Path(arg) for arg in sys.argv[1:]]
 font_path = root / "src/arial-narrow.ttf"
 font = TTFont(font_path)
