@@ -70,14 +70,15 @@ Etkin katalogda standart dışı kırmızı kullanan 83 levha kaydı düzeltildi
 ## B-5a — İçeriğe göre genişleyen yön levhaları
 
 - Son kayıt tarihi: 2026-10-14.
-- Kaynak: kullanıcı tarafından verilen `137.pdf`, tek sayfa. Ölçü yazıları ve harf kutuları katalog görseline alınmaz.
-- Adlar: `KAVŞAK ÖNCESİ YÖN LEVHASI (Oklu - Tek mesaj) 1`, `2`, `3`; üç kayıtta kod `B-5a`.
-- Anahtarlar: `3-bilgi-levhalari/b-5a-kavsak-oncesi-yon-levhasi-1`, `-2`, `-3`.
+- Kaynak: kullanıcı tarafından verilen `137.pdf` ve `138.pdf`, birer sayfa. Ölçü yazıları ve harf kutuları katalog görseline alınmaz.
+- Adlar: `KAVŞAK ÖNCESİ YÖN LEVHASI (Oklu - Tek mesaj) 1`, `2`, `3` ve `KAVŞAK ÖNCESİ YÖN LEVHASI (Oklu - Çift mesaj) 4`, `5`, `6`; altı kayıtta kod `B-5a`.
+- Anahtarlar: `3-bilgi-levhalari/b-5a-kavsak-oncesi-yon-levhasi-1`–`-6`.
 - `1`: sola ok / metin; `2`: yukarı ok / metin; `3`: metin / sağ üst çapraz ok.
-- Beyaz zemin, siyah ince konturlar ve içi boş oklar; siyah, düzenlenebilir tek metin alanı `message` (`Yer / yön adı`, başlangıç `MERKEZ`, sınır 120 karakter).
-- `a = 100` çizim birimi; başlangıç ölçeği `0.04`. Metinle birlikte yalnız genişlik hesaplanır; harfler sıkıştırılmaz.
-- Kaynak üretimi: `python scripts/generate-direction-sign-data.py <137.pdf-yolu>`. Mevcut `src/arial-narrow.ttf` dosyası kullanılmalıdır. Font veya PDF değişirse ölçü verisi yeniden üretilip tarayıcı testi çalıştırılır.
-- Bu üç kayıt sabit katalog generator'ına dahil edilmez; `traffic-signs-direction.js` ve `TrafficSignLayout` ortak yerleşimi tarafından üretilir. Ayrıntılar: [[Trafik Levhası Sistemi#İçeriğe göre genişleyen bilgi levhaları (14.10.2026)]].
+- `4`: yukarı ok / çift satır; `5`: çift satır / sağa ok; `6`: çift satır / sağ üst çapraz ok. Oklar 138.pdf'den alınır ve dikey ortalanır; satırlar sola hizalanır, aralarında `4a` boşluk vardır.
+- Beyaz zemin, siyah ince konturlar ve içi boş oklar; siyah, düzenlenebilir metin. Tek mesaj alanı `message` (`Yer / yön adı`, başlangıç `MERKEZ`); çift mesaj alanları `message1` ve `message2` (`1. yer / yön adı` / `2. yer / yön adı`, başlangıç `MERKEZ` / `HASTANE`). Her alanın sınırı 120 karakterdir.
+- `a = 100` çizim birimi; altı levhanın başlangıç ölçeği `0.02`, önceki `0.04` değerinin yarısıdır. Kaydedilmiş krokilerin açık ölçekleri korunur. Metinle birlikte yalnız genişlik hesaplanır; çift mesajda en uzun satır belirleyicidir, harfler sıkıştırılmaz.
+- Kaynak üretimi: `python scripts/generate-direction-sign-data.py <137.pdf-yolu> <138.pdf-yolu>`. Mevcut `src/arial-narrow.ttf` dosyası kullanılmalıdır. Font veya PDF değişirse ölçü verisi yeniden üretilip tarayıcı testi çalıştırılır.
+- Bu altı kayıt sabit katalog generator'ına dahil edilmez; `traffic-signs-direction.js` ve `TrafficSignLayout` ortak yerleşimi tarafından üretilir. Ayrıntılar: [[Trafik Levhası Sistemi#İçeriğe göre genişleyen bilgi levhaları (14.10.2026)]].
 
 ## 1 Tanzim Levhaları
 

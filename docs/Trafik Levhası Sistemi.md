@@ -37,7 +37,7 @@ Yedi generated dosya `window.KrokiTrafficSignCatalog` dizisine kayıtlarını pu
 
 taşır. `art`, dış `<svg>` olmadan iç SVG grubu; `svg` tam kaynak string'idir. Çalışma zamanı katalog API'si yalnız `key` ve `art` olan kayıtları döndürür.
 
-Mevcut katalog toplam 317 levha kaydı taşır.
+Mevcut katalog toplam 320 levha kaydı taşır.
 
 ## Kütüphane davranışı
 
@@ -96,22 +96,22 @@ Katalog art'ı metadata içinde bulunduğu için belge JSON'u büyük olabilir. 
 
 ## İçeriğe göre genişleyen bilgi levhaları (14.10.2026)
 
-B-5a, Bilgi Levhaları kategorisinde üç ayrı kayıttır: `KAVŞAK ÖNCESİ YÖN LEVHASI (Oklu - Tek mesaj) 1`, `2`, `3`. Sıra, 137.pdf içindeki sola ok, yukarı ok ve sağ üst çapraz ok sırasıdır. Varsayılan metin `MERKEZ`; mevcut Abc panelindeki `Yer / yön adı` alanı en fazla 120 karakter kabul eder.
+B-5a, Bilgi Levhaları kategorisinde altı ayrı kayıttır. `KAVŞAK ÖNCESİ YÖN LEVHASI (Oklu - Tek mesaj) 1`, `2`, `3`, 137.pdf içindeki sola ok, yukarı ok ve sağ üst çapraz ok sırasını izler. Varsayılan metin `MERKEZ`; mevcut Abc panelindeki `Yer / yön adı` alanı en fazla 120 karakter kabul eder. `KAVŞAK ÖNCESİ YÖN LEVHASI (Oklu - Çift mesaj) 4`, `5`, `6`, 138.pdf içindeki yukarı ok, sağa ok ve sağ üst çapraz ok sırasını izler. İki bağımsız alan `1. yer / yön adı` ve `2. yer / yön adı`, başlangıçta `MERKEZ` ve `HASTANE` içerir; her biri en fazla 120 karakter kabul eder.
 
 - `src/data/traffic-sign-direction-data.generated.js`: PDF'den çıkarılmış ok konturları, kaynak/font SHA-256 değerleri ve mevcut `arial-narrow.ttf` dosyasının karakter ölçüleri.
-- `src/core/trafficSignLayout.js`: `arrow-single-message-v1` ailesinin ortak genişlik hesabı ve SVG yerleşimi.
-- `src/data/traffic-signs-direction.js`: üç ayrı katalog kaydı; B-4 sonrasına yerleşir.
-- `scripts/generate-direction-sign-data.py`: PDF ve font verisinden kaynak veriyi yeniden üretir; geliştirme ortamında pdfplumber/fonttools gerekir.
+- `src/core/trafficSignLayout.js`: `arrow-single-message-v1` ve `arrow-double-message-v1` ailelerinin ortak genişlik hesabı ve SVG yerleşimi.
+- `src/data/traffic-signs-direction.js`: altı ayrı katalog kaydı; B-4 sonrasına yerleşir.
+- `scripts/generate-direction-sign-data.py`: iki PDF ve font verisinden kaynak veriyi yeniden üretir; geliştirme ortamında pdfplumber/fonttools gerekir. Kullanım: `python scripts/generate-direction-sign-data.py <137.pdf-yolu> <138.pdf-yolu>`.
 
 `a = 100` yalnız çizim birimidir; fiziksel cm/mm karşılığı tanımlanmaz. Kenar + çerçeve `a + a`, içerik boşlukları ve ok/metin aralığı `4a` tutulur. Yazı yüksekliği PDF kutularından, ok biçimleri PDF vektörlerinden alınır. Beyaz gövde, ince siyah çizgiler ve içi boş oklar korunur; kutuların yerine siyah KrokiSignNarrow metni çizilir. İç/dış çerçeve köşe yarıçapları `2a`/`3a`, harf aralığı `a`dır.
 
-Genişlik = yazının görünür genişliği + okun yatay genişliği + `16a`. Harf yüksekliği, ok, çerçeve ve boşluklar metin değişiminde aynı kalır. Sağ üst çapraz okta metin önce, ok sonra gelir. En/boy, seçim, hit-test, döndürme tutamacı ve çıktı sınırları aynı hesap üzerinden güncellenir. Başlangıç ölçeği `0.04` olup mevcut yüzde ölçek kontrolüyle değişir.
+Genişlik = en uzun satırın görünür genişliği + okun yatay genişliği + `16a`. Çift mesajda satırlar sola hizalanır, satır aralığı `4a`, üst/alt dış kenar boşluğu `6a`dır; ok dikey ortalanır. Her PDF'nin kendi ok vektörleri kullanılır. Harf yüksekliği, ok, çerçeve ve boşluklar metin değişiminde aynı kalır. Sağa ve sağ üst çapraz okta metin önce, ok sonra gelir. En/boy, seçim, hit-test, döndürme tutamacı ve çıktı sınırları aynı hesap üzerinden güncellenir. Altı levhanın başlangıç ölçeği `0.02` olup önceki `0.04` değerinin yarısıdır; mevcut yüzde ölçek kontrolüyle değişir. Kaydedilmiş nesnelerin açık `geometry.scale` değeri korunur, eski krokiler otomatik küçültülmez.
 
-Yazı ölçüsü gömülü font tablosuyla hesaplanır; font yüklenmeden de belge geometrisi kararlıdır. Kerning/ligatür kapalıdır, harfler `textLength` ile sıkıştırılmaz. Sürükleme sırasında yeniden SVG parse veya DOM ölçümü yapılmaz. Dinamik yerleşim yalnız bu aileye uygulanır; mevcut sabit levhalar kendi davranışlarını korur.
+Yazı ölçüsü gömülü font tablosuyla hesaplanır; font yüklenmeden de belge geometrisi kararlıdır. Kerning/ligatür kapalıdır, harfler `textLength` ile sıkıştırılmaz. Sürükleme sırasında yeniden SVG parse veya DOM ölçümü yapılmaz. Dinamik yerleşim yalnız bu iki aileye uygulanır; mevcut sabit levhalar kendi davranışlarını korur.
 
-Katalog `layout` tanımı modelde `metadata.signLayout` olarak, metin ise `metadata.signTextFields.message` içinde saklanır. JSON/SVG açılışında en yeniden hesaplanır; katalog kaydı bulunmazsa gömülü art ve yerleşim tanımı kullanılır. Mevcut SVG/PNG dışa aktarımı levha fontunu dosyaya gömer.
+Katalog `layout` tanımı modelde `metadata.signLayout` olarak saklanır. Metin, tek mesajda `metadata.signTextFields.message`, çift mesajda `message1` ve `message2` alanlarındadır. JSON/SVG açılışında en yeniden hesaplanır; katalog kaydı bulunmazsa gömülü art ve yerleşim tanımı kullanılır. Mevcut SVG/PNG dışa aktarımı levha fontunu dosyaya gömer.
 
-Doğrulama: 36 mevcut smoke testi geçti. `scripts/direction-sign-browser.cjs` kütüphane/UI, üç yönde 27 metin senaryosu, Türkçe karakterler, kısa/uzun/boş metin, 120 karakter, gerçek harf genişliği, boşluklar, hit-test, dönüş, kopya, sürüklemede DOM yeniden kullanımını, undo/redo, JSON ve SVG round-trip, font gömme ve tablet düzenini kontrol eder. `TEST_BASE_URL` verilirse aynı kontrol yayında çalışır. Görseller ve dışa aktarılan örnek `.tmp/direction-signs/` altındadır.
+Doğrulama: `scripts/direction-sign-browser.cjs` kütüphane/UI, altı levhada 51 metin senaryosu, bağımsız çift satır düzenleme, en uzun satıra göre genişleme, yarıya indirilmiş ekleme ölçeği, eski kayıtların ölçülerini koruma, Türkçe karakterler, kısa/uzun/boş metin, 120 karakter, gerçek harf genişliği, boşluklar, hit-test, dönüş, kopya, sürüklemede DOM yeniden kullanımını, undo/redo, JSON ve SVG round-trip, font gömme ve tablet düzenini kontrol eder. `TEST_BASE_URL` verilirse aynı kontrol yayında çalışır. Görseller ve dışa aktarılan örnek `.tmp/direction-signs/` altındadır.
 
 ## Belirsiz
 
