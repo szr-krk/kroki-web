@@ -85,7 +85,7 @@ Etkin katalogda standart dışı kırmızı kullanan 83 levha kaydı düzeltildi
 
 - Kaynak: `139.pdf`; anahtar `3-bilgi-levhalari/sehir-merkezi-levhasi`, ad `ŞEHİR MERKEZİ LEVHASI`. Kaynakta ayrı bir kod yoktur.
 - Ölçü oranı `1980 × 684`; kaynak `a=24`, katalogda `a=100` için `8250 × 2850` ve başlangıç ölçeği `0.02`.
-- Metin, simge ve genişlik sabittir; Abc paneli açılmaz. Şehir Merkezi yazısı PDF'nin özgün konturlarından alınır; tekrarlı dolgu üçgenleri taşınmaz.
+- Metin, simge ve genişlik sabittir; Abc paneli açılmaz. Şehir Merkezi yazısı PDF'nin özgün konturlarından alınır; tekrarlı dolgu üçgenleri taşınmaz. Satırlar basılı 150 harf yüksekliği / 96 satır aralığı ölçülerine hizalanır; kaynak çizimde ikinci satırın yaklaşık 35 birimlik aşağı kayması taşınmaz.
 - Yuvarlak simge kullanıcı isteğiyle SVG `A` arc komutlarından oluşur: dış çap 300, halka kalınlığı 12, merkez çapı 120. Çerçevenin yuvarlak köşeleri de arc kullanır.
 - `traffic-signs-direction.js` içinde, B-5a 8'in ardından kayıtlıdır. Tam SVG art yaklaşık 4.3 KB; bitmap ve yeni font dosyası eklenmez.
 

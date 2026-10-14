@@ -304,6 +304,8 @@ const server = http.createServer((req, res) => {
       const symbol = m.getElement(city.id).querySelector('[data-sign-part="city-symbol"]').getAttribute("d");
       check((symbol.match(/A/g) || []).length === 6 && !/[CL]/.test(symbol), "city circles consist of six SVG arc segments");
       check(citySign.art.length < 8000, "compact fixed city artwork");
+      const letteringBox = m.getElement(city.id).querySelector('[data-sign-part="city-lettering"]').getBBox();
+      near(letteringBox.y + letteringBox.height, 540, "city lower baseline follows the printed 150/96/150 dimensions", 1);
       near(a.getBounds(city).width / a.getBounds(city).height, 1980 / 684, "fixed city aspect ratio", 0.000001);
       const cityCopy = m.clone(city.id, { skipHistory: true });
       check(a.editableTextFields(cityCopy).length === 0, "city copy remains fixed"); m.remove(cityCopy.id, { skipHistory: true });

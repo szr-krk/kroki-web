@@ -115,7 +115,10 @@ def city_text(source):
         paths.extend(commands)
     unit = 1980 / (441.547 - 160.117)
     def point(p):
-        return f"{(p[0]-160.117)*unit:.2f} {(p[1]-610.192)*unit:.2f}"
+        # Use the printed 144/390 row tops (150-high letters, 96 gap).
+        # The PDF's lower row is drawn about 35 units below its dimension label.
+        row_top, target_top = (670.632433203, 390) if p[1] > 660 else (630.621469605, 144)
+        return f"{(p[0]-160.117)*unit:.2f} {target_top+(p[1]-row_top)*unit:.2f}"
     return " ".join(cmd[0].upper() + " ".join(point(p) for p in cmd[1:]) for cmd in paths)
 
 data = {"sources": [{"file": source.name, "page": 1, "sha256": hashlib.sha256(source.read_bytes()).hexdigest()} for source in sources],
