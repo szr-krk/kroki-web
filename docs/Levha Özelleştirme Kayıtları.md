@@ -2271,3 +2271,16 @@ Kaynak SHA-256:
 - `147.pdf`: `c9df23d351d97cdeb463f460a2795a0aa6df85328fb48fd56b79b3c31cbd4744`
 - `150.pdf`: `e6facabf0e7fcab4fbe85e2900b3a6b5332265d0e51e35b69cae90af29c4c4a7`
 - `151.pdf`: `d7b51c174f4761739d49667605f1b1b635117851d3ca8b3704b0d8b0370689f0`
+
+
+## B-12e–i ve B-13b — 14.10.2026
+
+- B-12e: `line2=Köroğlu`, `line3=Dinlenme Parkı`; KARAYOLLARI kilitli.
+- B-12f: `line2=6. Bölge Sınırı`, `line3=64. Şube Sınırı`; KARAYOLLARI kilitli.
+- B-12g: `number=64` (8 rakam); nokta, Şube, Sınırı ve KARAYOLLARI kilitli.
+- B-12h: KARAYOLLARI / Sorumluluk Sahası / Başlangıcı; bütün satırlar kilitli.
+- B-12i: KARAYOLLARI / Sorumluluk Sahası / Sonu; bütün satırlar kilitli.
+- B-13a: iptal; hiçbir varyantı eklenmez.
+- B-13b: `place1=Bolu`, `distance1=28`, `place2=İstanbul`, `distance2=290`; dört ayrı metin alanı (120 karakter). İçeriğe göre genişler, minimum genişlik 48a; iki satır sabittir.
+- Başlangıç ölçeği 0.02; sabit levhalarda uzun metin sığdırılır, satırlar artırılmaz.
+- Kaynak: `152 153 154 155.pdf`, SHA-256: `7244ca70e6362758928672c44ed9c075bafc95703b833b6d9d37ba836eebad35`.

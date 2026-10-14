@@ -14,7 +14,13 @@
     ["B-12a", "region", "KARAYOLLARI TEŞKİLATINA AİT BİLGİ LEVHASI (Bölge Merkezi)", 150],
     ["B-12b", "branch", "KARAYOLLARI TEŞKİLATINA AİT BİLGİ LEVHASI (Şube Merkezi)", 150],
     ["B-12c", "maintenance", "KARAYOLLARI TEŞKİLATINA AİT BİLGİ LEVHASI (Bakımevi)", 151],
-    ["B-12d", "construction", "KARAYOLLARI TEŞKİLATINA AİT BİLGİ LEVHASI (Şantiye)", 151]
+    ["B-12d", "construction", "KARAYOLLARI TEŞKİLATINA AİT BİLGİ LEVHASI (Şantiye)", 151],
+    ["B-12e", "restPark", "KARAYOLLARI TEŞKİLATINA AİT BİLGİ LEVHASI (Dinlenme Parkı)", "152 153 154 155"],
+    ["B-12f", "regionBoundary", "KARAYOLLARI TEŞKİLATINA AİT BİLGİ LEVHASI (Bölge Sınırı)", "152 153 154 155"],
+    ["B-12g", "branchBoundary", "KARAYOLLARI TEŞKİLATINA AİT BİLGİ LEVHASI (Şube Sınırı)", "152 153 154 155"],
+    ["B-12h", "responsibilityStart", "KARAYOLLARI TEŞKİLATINA AİT BİLGİ LEVHASI (Sorumluluk Sahası Başlangıcı)", "152 153 154 155"],
+    ["B-12i", "responsibilityEnd", "KARAYOLLARI TEŞKİLATINA AİT BİLGİ LEVHASI (Sorumluluk Sahası Sonu)", "152 153 154 155"],
+    ["B-13b", "distanceBoard", "MESAFE LEVHASI", "152 153 154 155"]
   ];
   const catalog = window.KrokiTrafficSignCatalog;
   const signs = entries.map(([code, profile, name, pdf]) => {

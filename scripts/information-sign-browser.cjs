@@ -32,8 +32,9 @@ const server = http.createServer((req, res) => {
       const K = window.Kroki, m = K.EditorObjectManager, a = K.ShapeRegistry.get("trafficSign");
       const signs = K.TrafficSignCatalog.all().filter(s => s.layout?.family === "information-v1");
       const check = (ok, message) => { if (!ok) throw new Error(message); };
-      check(signs.length === 13, "Exactly 13 variants");
-      const expected = { village: 2, villageArrow: 2, airport: 0, airportArrow: 0, camp: 1, country: 0, province: 1, town: 1, townEnd: 1, region: 1, branch: 1, maintenance: 2, construction: 4 };
+      check(signs.length === 19, "Exactly 19 variants");
+      const expected = { village: 2, villageArrow: 2, airport: 0, airportArrow: 0, camp: 1, country: 0, province: 1, town: 1, townEnd: 1, region: 1, branch: 1, maintenance: 2, construction: 4, restPark: 2, regionBoundary: 2, branchBoundary: 1, responsibilityStart: 0, responsibilityEnd: 0, distanceBoard: 4 };
+      check(!K.TrafficSignCatalog.all().some(s => s.code === "B-13a"), "B-13a must be absent");
       const previews = [];
       signs.forEach((sign, i) => {
         const profile = sign.layout.profile, model = m.create("trafficSign", { sign, center: { x: 200 + i % 3 * 350, y: 150 + Math.floor(i / 3) * 180 } }, { skipHistory: true });
@@ -46,6 +47,23 @@ const server = http.createServer((req, res) => {
           check(blank < width - 10, `${profile} empty distance removes gap`);
           set("distance", "13"); check(a.getBounds(get()).width > blank, "distance restores width");
           set("name", "Büyükavşar");
+        }
+        if (profile === "distanceBoard") {
+          const original = Object.fromEntries(a.editableTextFields(get()).map(f => [f.id, f.value]));
+          for (const field of ["place1", "place2", "distance1", "distance2"]) {
+            set(field, "ÇOK UZUN BİR METİN ".repeat(5));
+            check(a.getBounds(get()).width > width, `${field} expands board`);
+            a.editableTextFields(get()).filter(f => f.id !== field).forEach(f => check(f.value === original[f.id], "Independent distance fields"));
+            const texts = [...el().querySelectorAll("text")];
+            for (let row = 0; row < 2; row++) {
+              const left = texts[row * 2].getBBox(), right = texts[row * 2 + 1].getBBox();
+              check(left.x + left.width + 700 < right.x, "Distance column gap");
+            }
+            set(field, original[field]);
+          }
+          Object.keys(original).forEach(f => set(f, ""));
+          check(Math.abs(a.getBounds(get()).width - 96) < .01, "Distance board minimum width");
+          Object.entries(original).forEach(([f, text]) => set(f, text));
         }
         if (profile === "province") {
           set("name", "VAN"); check(Math.abs(a.getBounds(get()).width - width) < .001, "province minimum width");
@@ -63,7 +81,7 @@ const server = http.createServer((req, res) => {
             set("name", "KAHRAMANMARAŞ");
           }
         }
-        if (["camp", "region", "branch", "maintenance", "construction"].includes(profile)) {
+        if (["camp", "region", "branch", "maintenance", "construction", "restPark", "regionBoundary", "branchBoundary"].includes(profile)) {
           a.editableTextFields(get()).forEach(f => set(f.id, f.type === "number" ? "12345678" : "ÇIĞ ŞÜ İÖ W".repeat(12)));
           check(Math.abs(a.getBounds(get()).width - width) < .001, `${profile} fixed width`);
           check(el().querySelectorAll("text").length === textCount, "fixed line count");
@@ -83,7 +101,7 @@ const server = http.createServer((req, res) => {
         previews.push({ name: sign.name, viewBox: resolved.viewBox, art: art.outerHTML });
       });
       const json = K.DocumentSerializer.toJson(); check(K.DocumentSerializer.fromJson(json).ok, "JSON reload");
-      check(m.getAll().filter(x => x.type === "trafficSign").length === 13, "JSON count");
+      check(m.getAll().filter(x => x.type === "trafficSign").length === 19, "JSON count");
       return previews;
     });
     await page.click("#btnEditorMenu");
@@ -95,7 +113,7 @@ const server = http.createServer((req, res) => {
     assert.ok(svg.includes("data:font/ttf;base64,"));
     const pending = page.evaluate(text => window.KrokiMainMenu.importKrokiSvgText(text), svg);
     await page.locator(".kroki-dialog-btn.primary").click(); await pending;
-    assert.equal(await page.evaluate(() => window.Kroki.EditorObjectManager.getAll().filter(x => x.type === "trafficSign").length), 13);
+    assert.equal(await page.evaluate(() => window.Kroki.EditorObjectManager.getAll().filter(x => x.type === "trafficSign").length), 19);
     // Full-size contact sheet for comparing actual rendered art with the PDFs.
     await page.evaluate(items => {
       const board = document.createElement("div"); board.id = "sign-review";
@@ -106,10 +124,9 @@ const server = http.createServer((req, res) => {
         const s = document.createElementNS("http://www.w3.org/2000/svg", "svg"); s.setAttribute("viewBox", item.viewBox); s.style.cssText = "width:100%;height:190px"; s.innerHTML = item.art; tile.append(s); board.append(tile);
       } document.body.append(board);
     }, result);
-    await page.setViewportSize({ width: 1600, height: 1350 });
+    await page.setViewportSize({ width: 1600, height: 1900 });
     await page.screenshot({ path: path.join(output, "preview.png") });
     assert.deepEqual(errors, []);
-    console.log("PASS: 13 signs; optional distance, minimum/variable width, locked labels, fixed rows, long/empty text, stripe behind text, drag reuse, clone, JSON/SVG and embedded font.");
+    console.log("PASS: 19 signs; optional distance, minimum/variable width, locked labels, fixed rows, long/empty text, stripe behind text, drag reuse, clone, JSON/SVG and embedded font.");
   } finally { await browser.close(); server.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
-

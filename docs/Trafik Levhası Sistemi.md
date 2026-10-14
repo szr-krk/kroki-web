@@ -37,7 +37,7 @@ Yedi generated dosya `window.KrokiTrafficSignCatalog` dizisine kayıtlarını pu
 
 taşır. `art`, dış `<svg>` olmadan iç SVG grubu; `svg` tam kaynak string'idir. Çalışma zamanı katalog API'si yalnız `key` ve `art` olan kayıtları döndürür.
 
-Mevcut katalog toplam 338 levha kaydı taşır. PDF'de en ve boy birlikte açıkça verilmemiş levhalar içeriğe göre genişleyen, açık ölçü çifti verilenler sabit olarak uygulanır. Kullanıcının kilitli Havalimanı ve minimum genişlikli İl Sınırı istisnaları aşağıdaki bilgi levhası profillerinde korunur.
+Mevcut katalog toplam 344 levha kaydı taşır. PDF'de en ve boy birlikte açıkça verilmemiş levhalar içeriğe göre genişleyen, açık ölçü çifti verilenler sabit olarak uygulanır. Kullanıcının kilitli Havalimanı ve minimum genişlikli İl Sınırı istisnaları aşağıdaki bilgi levhası profillerinde korunur.
 
 ## Kütüphane davranışı
 
@@ -131,3 +131,10 @@ Doğrulama: `scripts/direction-sign-browser.cjs` kütüphane/UI, dokuz dinamik l
 `trafficSignInformationLayout.js`, `TrafficSignLayout.registerFamily` üzerinden `information-v1` ailesini bağlar. Native ölçülerle hesaplanan düğümler yalnız metin değiştiğinde güncellenir; WeakMap önbelleği hareket sırasında tekrar hesaplamayı engeller. `traffic-signs-information.js` 13 kaydı B-5c sonrasına ekler. Alan kuralları ve kaynak hashleri [[Levha Özelleştirme Kayıtları]] içindedir.
 
 Doğrulama: `node scripts/information-sign-browser.cjs`; isteğe bağlı `TEST_BASE_URL` ile canlı yayına karşı çalışır. 13 kayıt, boş mesafenin kapanması, il adı minimum genişliği, sabit yazılar/satırlar, uzun metnin çerçeveye sığması, kırmızı çizginin sırası ve boyut değişimi, sürüklemede DOM yeniden kullanımı, kopya, JSON/SVG aktarımı ve font gömme kontrol edilir.
+
+
+### PDF 152–155 ekleri (14.10.2026)
+
+B-12e/f: KARAYOLLARI kilitli, diğer iki satır bağımsız. B-12g: yalnız şube numarası. B-12h/i: bütün yazılar kilitli. Sabit levha ölçüleri sırasıyla 1984×800, 1955×800, 1752×800 ve 1970×800'dür. B-12h için PDF başlığındaki Sonu yerine çizimdeki Başlangıcı esas alınır.
+
+B-13a kullanıcının isteğiyle eklenmedi. B-13b iki yer adı ve iki mesafe için dört bağımsız text alanı içerir; mesafeler sağa hizalıdır. a=100, minimum genişlik 4800, yükseklik 2950, sütun arası en az 9a; genişlik en uzun ad ve en uzun mesafeye göre hesaplanır. Satır sayısı sabittir. `information-sign-browser.cjs` artık 19 profili, B-13a yokluğunu ve B-13b'nin dört alanının bağımsızlığını/genişlemesini de doğrular.

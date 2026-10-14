@@ -7,6 +7,11 @@
   const escape = value => String(value).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]);
   // Native dimensions from PDFs 141–151; a is normalized to 100 at the root.
   const profiles = {
+    restPark: { a: 20, fields: [["line2", "2. satır", "Köroğlu"], ["line3", "3. satır", "Dinlenme Parkı"]] },
+    regionBoundary: { a: 20, fields: [["line2", "2. satır", "6. Bölge Sınırı"], ["line3", "3. satır", "64. Şube Sınırı"]] },
+    branchBoundary: { a: 20, fields: [["number", "Şube numarası", "64", "number"]] },
+    responsibilityStart: { a: 20, fields: [] }, responsibilityEnd: { a: 20, fields: [] },
+    distanceBoard: { a: 100, fields: [["place1", "1. yer adı", "Bolu"], ["distance1", "1. mesafe", "28"], ["place2", "2. yer adı", "İstanbul"], ["distance2", "2. mesafe", "290"]] },
     village: { a: 16, fields: [["name", "Yer adı", "Beşbıçak"], ["distance", "Mesafe (isteğe bağlı)", "8", "number"]] },
     villageArrow: { a: 16, fields: [["name", "Yer adı", "Hamitler"], ["distance", "Mesafe (isteğe bağlı)", "9", "number"]] },
     airport: { a: 16, fields: [] }, airportArrow: { a: 16, fields: [] },
@@ -109,20 +114,35 @@
         path(`M${x} ${top + r}V${top}H${x + r}A${r} ${r} 0 0 0 ${x} ${top + r}Z M${right - r} ${top}H${right}V${top + r}A${r} ${r} 0 0 0 ${right - r} ${top}Z M${right} ${y - r}V${y}H${right - r}A${r} ${r} 0 0 0 ${right} ${y - r}Z M${x + r} ${y}H${x}V${y - r}A${r} ${r} 0 0 0 ${x + r} ${y}Z`, "#fff");
       }
       centered(value("name"), 1125, 625, "#fff", "name", w - 10 * a);
+    } else if (profile === "distanceBoard") {
+      const names = Math.max(metric(value("place1")).width, metric(value("place2")).width);
+      const distances = Math.max(metric(value("distance1")).width, metric(value("distance2")).width);
+      w = Math.max(4800, names + distances + 23 * a); h = 2950;
+      frame(blue, "#fff");
+      [1, 2].forEach((row, index) => {
+        const y = 7 * a + 625 + index * (625 + 4 * a);
+        lettering(value(`place${row}`), 7 * a, y, 625, "#fff", `place${row}`);
+        const distance = value(`distance${row}`);
+        lettering(distance, w - 7 * a - metric(distance).width, y, 625, "#fff", `distance${row}`);
+      });
     } else {
-      w = profile === "maintenance" ? 2062 : profile === "construction" ? 2320 : 1752;
+      w = ({ maintenance: 2062, construction: 2320, restPark: 1984, regionBoundary: 1955, responsibilityStart: 1970, responsibilityEnd: 1970 })[profile] || 1752;
       h = profile === "construction" ? 1300 : 800; frame(orange, "#000");
       centered("KARAYOLLARI", profile === "construction" ? 260 : 245, 125, "#000");
-      if (profile === "region" || profile === "branch") {
+      if (profile === "region" || profile === "branch" || profile === "branchBoundary") {
         const digits = value("number"), suffix = profile === "region" ? ". Bölge" : ". Şube";
         const first = metric(digits, 125), last = metric(suffix, 125), gap = a * 1.3;
         const total = first.width + gap + last.width, scale = Math.min(1, (w - 12 * a) / total);
         const x = (w - total * scale) / 2;
         lettering(digits, x, 465, 125, "#000", "number", first.width * scale);
         lettering(suffix, x + (first.width + gap) * scale, 465, 125, "#000", null, last.width * scale);
-        centered(profile === "region" ? "Müdürlüğü" : "Şefliği", 680, 125, "#000");
-      } else if (profile === "maintenance") {
-        centered(value("line2"), 475, 125, "#000", "line2"); centered(value("line3"), 680, 100, "#000", "line3");
+        centered(profile === "region" ? "Müdürlüğü" : profile === "branchBoundary" ? "Sınırı" : "Şefliği", 680, 125, "#000");
+      } else if (["maintenance", "restPark", "regionBoundary"].includes(profile)) {
+        centered(value("line2"), profile === "maintenance" ? 475 : 465, 125, "#000", "line2");
+        centered(value("line3"), 680, profile === "regionBoundary" ? 125 : 100, "#000", "line3");
+      } else if (profile === "responsibilityStart" || profile === "responsibilityEnd") {
+        centered("Sorumluluk Sahası", 465, 100, "#000");
+        centered(profile === "responsibilityStart" ? "Başlangıcı" : "Sonu", 680, 100, "#000");
       } else {
         [["line2", 505, 125], ["line3", 750, 125], ["line4", 970, 100], ["line5", 1170, 100]].forEach(([id, y, cap]) => centered(value(id), y, cap, "#000", id));
       }
