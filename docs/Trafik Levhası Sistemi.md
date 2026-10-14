@@ -138,3 +138,10 @@ Doğrulama: `node scripts/information-sign-browser.cjs`; isteğe bağlı `TEST_B
 B-12e/f: KARAYOLLARI kilitli, diğer iki satır bağımsız. B-12g: yalnız şube numarası. B-12h/i: bütün yazılar kilitli. Sabit levha ölçüleri sırasıyla 1984×800, 1955×800, 1752×800 ve 1970×800'dür. B-12h için PDF başlığındaki Sonu yerine çizimdeki Başlangıcı esas alınır.
 
 B-13a kullanıcının isteğiyle eklenmedi. B-13b iki yer adı ve iki mesafe için dört bağımsız text alanı içerir; mesafeler sağa hizalıdır. a=100, minimum genişlik 4800, yükseklik 2950, sütun arası en az 9a; genişlik en uzun ad ve en uzun mesafeye göre hesaplanır. Satır sayısı sabittir. `information-sign-browser.cjs` artık 19 profili, B-13a yokluğunu ve B-13b'nin dört alanının bağımsızlığını/genişlemesini de doğrular.
+
+
+### Grup oranlı boyutlandırma düzeltmesi — 15.10.2026
+
+Grup dönüşümünde levha ölçeğinin ayrı ayrı 0.005–4 aralığına sıkıştırılması kaldırıldı. Özellikle başlangıç ölçeği 0.02 olan yeni levhalar %25 altında sabit alt sınıra takılırken grup çerçevesi küçülmeye devam ediyordu. Adapter geçerli pozitif ölçeği çizim, kopyalama ve yüklemede korur; tek levha boyut panelinin styleManager sınırları değişmedi. Diğer sembol/araç dönüşümleri değiştirilmedi.
+
+Regresyon testi: `scripts/traffic-sign-group-resize-browser.cjs`. Eski TT-1 ile yeni B-5a/B-12h/B-13b aynı grupta %1/%10/%50/%100/%400 oranlarında denenir; ölçü, grup çerçevesi, geri dönüş, undo/redo ve JSON yükleme kontrol edilir. Ayrı senaryo 4 üstü ölçeğin grup/kopya/yüklemede korunmasını doğrular. Düzeltme öncesi B-13b %10 genişliği 13.46099 yerine 33.652475 olarak ölçüldü. Geri dönüş commit'i: d96b8283a147cf202f1cb8effa625c9ddff2bab0.

@@ -999,7 +999,12 @@
       const center = transformPoint({ x: geometry.cx, y: geometry.cy }, mapper);
       geometry.cx = center.x;
       geometry.cy = center.y;
-      geometry.scale = Math.min(4, Math.max(0.005, Number(geometry.scale || 0.08) * scale));
+      const nextScale = Number(geometry.scale || 0.08) * scale;
+      // Clamping an individual sign independently makes it escape the group
+      // frame once the shared resize crosses that sign's scale limit.
+      geometry.scale = source.type === "trafficSign"
+        ? nextScale
+        : Math.min(4, Math.max(0.005, nextScale));
       applyRotation();
       return draft;
     }

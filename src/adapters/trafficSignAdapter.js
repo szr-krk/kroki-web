@@ -6,8 +6,6 @@
   const styleManager = Kroki.StyleManager;
   if (!utils || !registry || !catalog || !styleManager) return;
 
-  const MIN_SCALE = 0.005;
-  const MAX_SCALE = 4;
   const SELECTION_FRAME_SCALE = 1.12;
   const MULTI_SELECTION_STROKE_WIDTH = 4;
   // Standard triangular sign canvases are ~1.138; more elongated canvases use their rectangular frame.
@@ -526,10 +524,11 @@
     "bilgi-levhalari/b-63b-karayolu-denetim-istasyonu-bilgi-levhalari"
   ]);
 
-  function clampScale(value) {
+  function normalizeScale(value) {
     const scale = Number(value);
-    if (!Number.isFinite(scale)) return 0.08;
-    return Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale));
+    // Group transforms must retain their exact ratio, including after reload.
+    // Individual sign controls enforce their own UI limits in styleManager.
+    return Number.isFinite(scale) && scale > 0 ? scale : 0.08;
   }
 
   function signFromModel(model) {
@@ -1152,7 +1151,7 @@
   function metricsFor(model) {
     const sign = signFromModel(model);
     const geometry = model.geometry || {};
-    const scale = clampScale(geometry.scale);
+    const scale = normalizeScale(geometry.scale);
     const cacheKey = [
       sign.key || "",
       sign.viewBox || "",
@@ -1415,7 +1414,7 @@
         geometry: {
           cx: utils.numberOr(geometry.cx ?? center.x ?? initialData.x, 0),
           cy: utils.numberOr(geometry.cy ?? center.y ?? initialData.y, 0),
-          scale: clampScale(geometry.scale ?? initialData.scale ?? baseScale),
+          scale: normalizeScale(geometry.scale ?? initialData.scale ?? baseScale),
           rotation: utils.normalizeRotation(geometry.rotation ?? initialData.rotation)
         },
         style: initialData.style,
@@ -1435,7 +1434,7 @@
         geometry: {
           cx: utils.numberOr(element.dataset.cx, 0),
           cy: utils.numberOr(element.dataset.cy, 0),
-          scale: clampScale(element.dataset.scale),
+          scale: normalizeScale(element.dataset.scale),
           rotation: utils.normalizeRotation(element.dataset.rotation)
         },
         style: {},
