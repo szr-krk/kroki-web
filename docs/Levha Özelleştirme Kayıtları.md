@@ -2241,3 +2241,33 @@ Panel kataloğundaki 40 levhanın tamamı tarandı. SVG içinde text bulunan 14 
 
 #### Projedeki mevcut durum
 ```
+
+
+## PDF 141–151 bilgi levhaları — 14.10.2026
+
+13 kayıt `src/data/traffic-signs-information.js`, geometri `src/core/trafficSignInformationLayout.js` içindedir. Başlangıç ölçeği 0.02; kaynak a değeri 100'e normalize edilir. Harfler SVG text, daireler arc; hareket sırasında DOM ölçümü yapılmaz.
+
+| PDF / kod | Alanlar ve davranış |
+|---|---|
+| 141 / B-5d 1–2 | Beşbıçak/Büyükavşar tek parmak levha, Hamitler ayrı oklu levha. Yer adı ve isteğe bağlı sayısal mesafe; boş mesafe kendi genişliğini ve 9a boşluğu kaldırır. |
+| 142 / B-6 1–2 | Havalimanı sabit beyaz dolgulu siyah konturlu text; iki yön biçimi. |
+| 142 / B-7 | Sabit 1580×500; yalnız 500 m metni değişir, uzun metin kullanılabilir alana sığar. |
+| 143 / B-8a | Sabit 2450×1700; bayrak ve kilitli TÜRKİYE. |
+| 144 / B-8b | Minimum 1587×600; yalnız il adı değişir ve gerektiğinde genişler, İl sınırı kilitli. |
+| 146 / B-9 | Üç örnek yerine tek yer adı profili, içerikle genişler. |
+| 147 / B-10 | Aynı profil, kırmızı 3a çizgi metnin arkasında; genişlik değişince iç çerçevenin köşegenini takip eder. |
+| 150 / B-12a–b | Sabit 1752×800; yalnız bölge/şube numarası değişir. Nokta ve tüm kelimeler kilitli. |
+| 151 / B-12c | Sabit 2062×800; KARAYOLLARI kilitli, diğer iki satır değişir. |
+| 151 / B-12d | Sabit 2320×1300; KARAYOLLARI kilitli, diğer dört satır değişir. |
+
+Satır sayıları sabittir; boş satır silinmez ve yükseklik daralmaz. Sayısal alanlar 8, metin alanları 120 karakterdir. Çok uzun metinler sabit levhalarda yatay olarak sığdırılır. B-5b Turistik Mahal için de boş mesafe artık gereksiz genişlik bırakmaz.
+
+Kaynak SHA-256:
+- `141.pdf`: `8cbd6a2cbf998d2fe0708235365da34d648a46ecd408a42bf50d155df3d93237`
+- `142.pdf`: `1c8113ce265008ae37b56022ac72e520fa8c55534e904d9ab328682673665ac6`
+- `143.pdf`: `750329c294cd58cbf563f2151c82476a25bc9c628797178df4aa136f6bdc5d22`
+- `144.pdf`: `3125c1995cf54bd9d777f7ae90052961de194ab4193f730dedbbc60bc5ac5686`
+- `146.pdf`: `7d4ed18b7bdc9460d0ba5c400e0a36538919de0af9bc0e291c2624dd85676d2e`
+- `147.pdf`: `c9df23d351d97cdeb463f460a2795a0aa6df85328fb48fd56b79b3c31cbd4744`
+- `150.pdf`: `e6facabf0e7fcab4fbe85e2900b3a6b5332265d0e51e35b69cae90af29c4c4a7`
+- `151.pdf`: `d7b51c174f4761739d49667605f1b1b635117851d3ca8b3704b0d8b0370689f0`

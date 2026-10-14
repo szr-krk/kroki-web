@@ -21,15 +21,16 @@
     ] }
   };
   const modelCache = new WeakMap();
+  const extensions = new Map();
   const number = value => String(Math.round(value * 1000) / 1000);
   const escape = value => String(value).replace(/[&<>"']/g, char => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;"
   })[char]);
 
-  function textMetrics(text) {
+  function textMetrics(text, capHeight = data.capHeight, spacing = data.unit) {
     // Match the bundled font without layout reads or font-loading races.
     // Kerning and ligatures are disabled on this family's SVG text.
-    const scale = data.capHeight / data.fontCapHeight;
+    const scale = capHeight / data.fontCapHeight;
     let cursor = 0, left = Infinity, right = -Infinity;
     for (const char of Array.from(text)) {
       const glyph = data.glyphs[char.codePointAt(0)] || data.fallbackGlyph;
@@ -37,7 +38,7 @@
         left = Math.min(left, cursor + glyph[1] * scale);
         right = Math.max(right, cursor + glyph[2] * scale);
       }
-      cursor += glyph[0] * scale + data.unit;
+      cursor += glyph[0] * scale + spacing;
     }
     return Number.isFinite(left) ? { left, width: right - left } : { left: 0, width: 0 };
   }
@@ -52,7 +53,7 @@
       return { ...field, text, metrics: textMetrics(text) };
     });
     const nameWidth = profile.tourist ? Math.max(rows[0].metrics.width, rows[1].metrics.width) : 0;
-    const textWidth = profile.tourist ? nameWidth + 9 * a + rows[2].metrics.width : Math.max(...rows.map(row => row.metrics.width));
+    const textWidth = profile.tourist ? nameWidth + (rows[2].text.trim() ? 9 * a + rows[2].metrics.width : 0) : Math.max(...rows.map(row => row.metrics.width));
     const lineCount = profile.tourist ? 2 : rows.length;
     const height = lineCount * data.capHeight + (12 + 4 * (lineCount - 1)) * a;
     const width = profile.finger ? textWidth + 13 * a + height / 2 : textWidth + arrow.width + 16 * a;
@@ -98,6 +99,8 @@
   }
 
   function resolve(sign, model) {
+    const extension = extensions.get(sign?.layout?.family);
+    if (extension) return extension.resolve(sign, model);
     const profile = FAMILIES[sign?.layout?.family];
     if (!profile) return sign;
     const values = model?.metadata?.signTextFields || {};
@@ -113,6 +116,8 @@
   }
 
   function apply(group, sign) {
+    const extension = extensions.get(sign?.layout?.family);
+    if (extension) return extension.apply(group, sign);
     const layout = sign?.resolvedLayout;
     if (!layout) return false;
     for (const [role, inset] of [["board", 0], ["outer-frame", data.unit], ["inner-frame", 2 * data.unit]]) {
@@ -129,5 +134,6 @@
     return true;
   }
 
-  Kroki.TrafficSignLayout = { template, resolve, apply };
+  Kroki.TrafficSignLayout = { template, resolve, apply, measureText: textMetrics,
+    registerFamily: (family, handler) => extensions.set(family, handler) };
 })();
