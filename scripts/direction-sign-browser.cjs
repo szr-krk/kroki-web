@@ -303,9 +303,13 @@ const server = http.createServer((req, res) => {
       check(a.editableTextFields(city).length === 0 && !citySign.layout, "city sign fixed");
       const symbol = m.getElement(city.id).querySelector('[data-sign-part="city-symbol"]').getAttribute("d");
       check((symbol.match(/A/g) || []).length === 6 && !/[CL]/.test(symbol), "city circles consist of six SVG arc segments");
-      check(citySign.art.length < 8000, "compact fixed city artwork");
-      const letteringBox = m.getElement(city.id).querySelector('[data-sign-part="city-lettering"]').getBBox();
-      near(letteringBox.y + letteringBox.height, 540, "city lower baseline follows the printed 150/96/150 dimensions", 1);
+      check(citySign.art.length < 1500, "compact fixed city artwork");
+      const lettering = m.getElement(city.id).querySelector('[data-sign-part="city-lettering"]');
+      const fixedTexts = Array.from(lettering.querySelectorAll("text"));
+      check(!lettering.querySelector("path") && fixedTexts.length === 2, "city lettering uses text, never glyph paths");
+      check(fixedTexts.map(text => text.textContent).join(" ") === "Şehir Merkezi", "fixed city text content");
+      check(fixedTexts.every(text => text.dataset.editableText === "false"), "both city text nodes are locked");
+      near(Number(fixedTexts[1].getAttribute("y")), 540, "city lower baseline follows printed dimensions", 0.001);
       near(a.getBounds(city).width / a.getBounds(city).height, 1980 / 684, "fixed city aspect ratio", 0.000001);
       const cityCopy = m.clone(city.id, { skipHistory: true });
       check(a.editableTextFields(cityCopy).length === 0, "city copy remains fixed"); m.remove(cityCopy.id, { skipHistory: true });
@@ -347,6 +351,8 @@ const server = http.createServer((req, res) => {
       if (fingers.length !== 2 || !fingers.some(m => m.metadata.signTextFields.message2 === "GAZİANTEP")) throw new Error("SVG import lost finger rows");
       const city = models.find(m => m.metadata.signKey.endsWith("sehir-merkezi-levhasi"));
       if (window.Kroki.ShapeRegistry.get("trafficSign").editableTextFields(city).length) throw new Error("City sign became editable");
+      const cityTexts = window.Kroki.EditorObjectManager.getElement(city.id).querySelectorAll('text[data-editable-text="false"]');
+      if (cityTexts.length !== 2 || Array.from(cityTexts).map(text => text.textContent).join(" ") !== "Şehir Merkezi") throw new Error("SVG import lost fixed city text nodes");
     });
     // Touch layout keeps text fields usable on a tablet.
     await page.setViewportSize({ width: 768, height: 1024 });
@@ -358,7 +364,7 @@ const server = http.createServer((req, res) => {
     await page.screenshot({ path: path.join(output, "tablet.png") });
     assert.deepEqual(errors, [], "page errors");
     console.log(JSON.stringify({ base, titles, results }, null, 2));
-    console.log("PASS: eight dynamic signs + fixed city sign, SVG arc circles, compact source lettering, PDF finger geometry, half-sized insertion, independent rows, longest-row width, long/empty/Turkish text, hit tests, rotation, copy, drag reuse, undo/redo, JSON/SVG roundtrip, font export, tablet.");
+    console.log("PASS: eight dynamic signs + fixed city sign, SVG arc circles, compact non-editable text labels, PDF finger geometry, half-sized insertion, independent rows, longest-row width, long/empty/Turkish text, hit tests, rotation, copy, drag reuse, undo/redo, JSON/SVG roundtrip, font export, tablet.");
   } catch (error) {
     await page.screenshot({ path: path.join(output, "failure.png") });
     console.error("Diagnostics", JSON.stringify(await page.evaluate(() => ({

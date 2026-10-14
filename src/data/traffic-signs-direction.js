@@ -25,7 +25,7 @@
     };
   });
   // Fixed 1980 x 684 drawing from 139.pdf, normalized from a=24 to a=100.
-  // Original letter contours are compact paths; both circles use SVG arcs.
+  // Fixed labels use the existing sign font; both circles use SVG arcs.
   signs.push({
     key: "3-bilgi-levhalari/sehir-merkezi-levhasi", code: "", name: "ŞEHİR MERKEZİ LEVHASI",
     category: "3 BİLGİ LEVHALARI", categoryKey: "3-bilgi-levhalari", file: "sehir-merkezi.svg",
@@ -35,7 +35,10 @@
       <path d="M96 24H1628.059L1946.059 342 1628.059 660H96A72 72 0 0 1 24 588V96A72 72 0 0 1 96 24Z"/>
       <path fill="#fff" d="M96 48H1566L1788 342 1566 636H96A48 48 0 0 1 48 588V96A48 48 0 0 1 96 48Z"/>
       <path data-sign-part="city-symbol" fill-rule="evenodd" d="M1248 342A150 150 0 1 0 1548 342A150 150 0 1 0 1248 342Z M1260 342A138 138 0 1 0 1536 342A138 138 0 1 0 1260 342Z M1338 342A60 60 0 1 0 1458 342A60 60 0 1 0 1338 342Z"/>
-      <path data-sign-part="city-lettering" fill-rule="evenodd" d="${window.KrokiDirectionSignData.cityTextPath}"/>
+      <g data-sign-part="city-lettering" font-family="KrokiSignNarrow, Arial Narrow, Arial, sans-serif" font-size="209.55" font-weight="700" letter-spacing="24" text-anchor="middle">
+        <text data-editable-text="false" x="648" y="294" textLength="696" lengthAdjust="spacingAndGlyphs">Şehir</text>
+        <text data-editable-text="false" x="648" y="540" textLength="1008" lengthAdjust="spacingAndGlyphs">Merkezi</text>
+      </g>
     </g>`
   });
   const afterB4 = catalog.findIndex(sign => sign.key === "3-bilgi-levhalari/b-4-kavsak-oncesi-serit-secimi-levhasi");
