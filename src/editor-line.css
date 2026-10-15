@@ -228,6 +228,10 @@
   stroke: none;
 }
 
+.editor-object-cp.is-catalog-control .editor-object-cp-rotate-icon {
+  fill-opacity: .85;
+}
+
 .editor-object-cp-role-road-segment-boundary .editor-object-cp-segment-visual {
   fill: #38bdf8;
   fill-opacity: .5;

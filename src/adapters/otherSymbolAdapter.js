@@ -209,7 +209,7 @@
 
   function cpPoint(model, metrics) {
     const geometry = model.geometry;
-    const radius = radiusFor(model);
+    const radius = selectionRadiusFor(model);
     const distance = radius + (metrics?.handleGap || 0);
     const radians = utils.normalizeRotation(geometry.rotation) * Math.PI / 180;
     return {
@@ -308,6 +308,7 @@
     getControlPoints(model, metrics) {
       return [{
         id: "rotate",
+        catalogControl: true,
         ...cpPoint(model, metrics),
         role: "rotate",
         cursor: "grab"

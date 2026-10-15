@@ -1237,7 +1237,10 @@
   function cpPoint(model, metrics) {
     const geometry = model.geometry;
     const signMetrics = metricsFor(model);
-    const edgeDistance = signMetrics.frameShape === "circle" ? signMetrics.radius : signMetrics.halfWidth;
+    // Intersect the local right-facing ray with the visible selection outline.
+    const edgeDistance = (signMetrics.frameShape === "circle" ? signMetrics.radius
+      : signMetrics.frameShape.startsWith("triangle") ? signMetrics.halfWidth / 2
+      : signMetrics.halfWidth) * SELECTION_FRAME_SCALE;
     const distance = edgeDistance + (metrics?.handleGap || 0);
     const radians = utils.normalizeRotation(geometry.rotation) * Math.PI / 180;
     return {
@@ -1484,6 +1487,7 @@
     getControlPoints(model, metrics) {
       return [{
         id: "rotate",
+        catalogControl: true,
         ...cpPoint(model, metrics),
         role: "rotate",
         cursor: "grab"

@@ -201,7 +201,7 @@
     const rotateIcon = handle.querySelector("path.editor-object-cp-rotate-icon");
     visualCircle?.setAttribute("r", String(sizes.visibleRadius));
     if (rotateIcon) {
-      const iconScale = ROTATE_ICON_SIZE_PX * sizes.unit / ROTATE_ICON_VIEWBOX_SIZE;
+      const iconScale = (cp.catalogControl ? 42 : ROTATE_ICON_SIZE_PX) * sizes.unit / ROTATE_ICON_VIEWBOX_SIZE;
       const iconOffset = -ROTATE_ICON_VIEWBOX_SIZE * iconScale / 2;
       rotateIcon.setAttribute("transform", `translate(${iconOffset} ${iconOffset}) scale(${iconScale})`);
     }
@@ -264,6 +264,7 @@
     const rotation = !isRotate && Number.isFinite(cp.angle) ? ` rotate(${cp.angle})` : "";
     utils.setAttributeIfChanged(handle, "transform", `translate(${cp.x} ${cp.y})${rotation}`);
     handle.classList.toggle("is-preselect", mode === "preselect");
+    handle.classList.toggle("is-catalog-control", !!cp.catalogControl);
     if (cp.cursor && handle.style.cursor !== cp.cursor) handle.style.cursor = cp.cursor;
   }
 

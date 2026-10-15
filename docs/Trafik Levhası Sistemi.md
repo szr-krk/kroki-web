@@ -145,3 +145,10 @@ B-13a kullanıcının isteğiyle eklenmedi. B-13b iki yer adı ve iki mesafe iç
 Grup dönüşümünde levha ölçeğinin ayrı ayrı 0.005–4 aralığına sıkıştırılması kaldırıldı. Özellikle başlangıç ölçeği 0.02 olan yeni levhalar %25 altında sabit alt sınıra takılırken grup çerçevesi küçülmeye devam ediyordu. Adapter geçerli pozitif ölçeği çizim, kopyalama ve yüklemede korur; tek levha boyut panelinin styleManager sınırları değişmedi. Diğer sembol/araç dönüşümleri değiştirilmedi.
 
 Regresyon testi: `scripts/traffic-sign-group-resize-browser.cjs`. Eski TT-1 ile yeni B-5a/B-12h/B-13b aynı grupta %1/%10/%50/%100/%400 oranlarında denenir; ölçü, grup çerçevesi, geri dönüş, undo/redo ve JSON yükleme kontrol edilir. Ayrı senaryo 4 üstü ölçeğin grup/kopya/yüklemede korunmasını doğrular. Düzeltme öncesi B-13b %10 genişliği 13.46099 yerine 33.652475 olarak ölçüldü. Geri dönüş commit'i: d96b8283a147cf202f1cb8effa625c9ddff2bab0.
+
+
+### Kütüphane kontrol noktalarında zoom — 15.10.2026
+
+Levha ve diğer sembollerin rotate CP uzaklığı seçim çerçevesinden hesaplanır; ekranda 48 px boşluk korunur. Üçgende merkezden sağa giden ışının çerçeve kesişimi kullanılır; daire/dikdörtgende ilgili kenar esas alınır. Araçların mevcut uzaklık hesabı korunur. Kütüphane nesneleri `catalogControl` ile işaretlenir: rotate ikon kutusu 36 yerine 42 px, opaklık .50 yerine .85; dokunma alanı 72 px kalır. Çizim araçları ve yollar bu görsel değişikliğe dahil değildir. Yeni resize CP eklenmez; mevcut boyut butonları korunur.
+
+Test: `scripts/catalog-control-zoom-browser.cjs`; dört zoom düzeyinde gerçek DOM ekran ölçüleri, çerçeve boşluğu, döndürülmüş nesne, ön seçim/düzenleme ve çizim araçlarının kapsam dışında kalması kontrol edilir.

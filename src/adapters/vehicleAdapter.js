@@ -724,6 +724,7 @@
     getControlPoints(model, metrics) {
       return [{
         id: "rotate",
+        catalogControl: true,
         ...cpPoint(model, metrics),
         role: "rotate",
         cursor: "grab"
