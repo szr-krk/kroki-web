@@ -126,3 +126,11 @@ Terminal olarak kavşağa giren yol ile devam eden host yol ayrımında bazı `m
 - “Sol” ve “sağ” kullanıcı anlamı merkez çizgisinin parametre yönüne bağlı normal eksenden türetilir. Yol başlangıç/bitiş yönü ters çevrilirse görsel taraf algısının ürün beklentisiyle nasıl eşleştirileceği ayrıca doğrulanmalıdır.
 - Boundary kimliklerinin kesit sayısı değişiminde stilleri semantic olarak taşıması kodda uygulanmamıştır; mevcut indeks tabanlı davranışın istenen ürün kararı olup olmadığı belirsizdir.
 
+
+
+### 2026-10-16 — Ada girişlerinde otomatik kesikli banket çizgisi
+Ada dış çapıyla örtüşme, normal yolun iç boundary çizgilerini artık silmez. Fiziksel ada iç çapının içinde kalan çizgiler gizlenir. Dış banket (`shoulder`) ile taşıt şeridi (`lane`) arasındaki edge çizgisi, ada iç/dış çapları arasındaki örtüşmede otomatik kesikli gösterilir. Şerit ayırıcı, orta refüj ve iç banket bu otomatik stil değişimine dahil değildir; banketsiz yolda şerit ayırıcı yanlışlıkla seçilmez.
+
+Bu görünüm `islandMouthDashedRangesForLine` ile türetilir; kalıcı boundary segmentlerine yazılmaz. Kullanıcının `none` segmentleri, çizgi kalınlıkları ve örtüşme dışındaki stilleri korunur. Ada taşındığında/çapı değiştiğinde ve undo/redo/import sonrasında yeniden hesaplanır. Normal yol–yol kesişimleri ve Q dış kontur birleşimleri korunur; ada içeren karma kümelerde normal yol çiftlerinin kırpma kuralları ayrıca geçerlidir.
+
+Doğrulama: `scripts/island-mouth-browser.cjs` (isteğe bağlı `KROKI_FIXTURE` imzalı SVG yolu), Q/cep/ayrılan yol smoke kontrolleri.

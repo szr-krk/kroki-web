@@ -189,3 +189,11 @@ Her bariyer şunları taşır:
 - Yol, çizgi, yay ve Bezier uç noktası taşınırken karşı uca yatay/dikey yaklaşma toleransı ekranda 10 pikseldir. Yakalanan eksende hizalama, ızgara/uç nokta snap değerini ezer; serbest eksen normal snap kullanır. Ctrl/Meta geçici olarak devre dışı bırakır. Bağlı çıkış yolunun bağlantı başlangıcı kendi host kuralını korur.
 - Görünür ekran merkezi snap kapsamı bütün olarak taşınan daire, elips, dikdörtgen ve gerçekten kapalı çokgenleri de içerir. Açık şekiller ve kontrol noktası hareketleri dahil değildir.
 - Merkezde tek eksen yakalanınca kesikli çizgi kırmızı; iki eksen birlikte yakalanınca iki çizgi mavi olur. Merkez artısı kırmızı kalır. Yardımcılar kayda veya SVG çıktısına girmez.
+
+
+### 2026-10-16 — Ada girişlerinde otomatik kesikli banket çizgisi
+Ada dış çapıyla örtüşme, normal yolun iç boundary çizgilerini artık silmez. Fiziksel ada iç çapının içinde kalan çizgiler gizlenir. Dış banket (`shoulder`) ile taşıt şeridi (`lane`) arasındaki edge çizgisi, ada iç/dış çapları arasındaki örtüşmede otomatik kesikli gösterilir. Şerit ayırıcı, orta refüj ve iç banket bu otomatik stil değişimine dahil değildir; banketsiz yolda şerit ayırıcı yanlışlıkla seçilmez.
+
+Bu görünüm `islandMouthDashedRangesForLine` ile türetilir; kalıcı boundary segmentlerine yazılmaz. Kullanıcının `none` segmentleri, çizgi kalınlıkları ve örtüşme dışındaki stilleri korunur. Ada taşındığında/çapı değiştiğinde ve undo/redo/import sonrasında yeniden hesaplanır. Normal yol–yol kesişimleri ve Q dış kontur birleşimleri korunur; ada içeren karma kümelerde normal yol çiftlerinin kırpma kuralları ayrıca geçerlidir.
+
+Doğrulama: `scripts/island-mouth-browser.cjs` (isteğe bağlı `KROKI_FIXTURE` imzalı SVG yolu), Q/cep/ayrılan yol smoke kontrolleri.

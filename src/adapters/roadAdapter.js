@@ -2194,10 +2194,13 @@
         : departureDashRanges.length
         ? baseRanges.flatMap((range) => rangesWithoutHidden(range.from, range.to, departureDashRanges))
         : baseRanges;
-      const appendRange = (range, forceDash = false) => {
+      const islandDashRanges = Kroki.RoadIntersectionEngine?.islandMouthDashedRangesForLine?.(
+        model.id, lineOffset, segment.from, segment.to, boundary
+      ) || [];
+      const appendRange = (range, forceDash = false, islandDash = false) => {
         if (!range || range.to <= range.from) return;
-        const effectiveDashed = forceDash || derivedShoulderDash || dashed;
-        const derivedClassName = forceDash
+        const effectiveDashed = islandDash || forceDash || derivedShoulderDash || dashed;
+        const derivedClassName = islandDash ? `${className} editor-road-island-mouth-dash` : forceDash
           ? `${className} editor-road-departure-banket-dash`
           : derivedShoulderDash
           ? `${className} editor-road-intersection-shoulder-dash`
@@ -2208,13 +2211,18 @@
           path.dataset.visibleFrom = String(range.from);
           path.dataset.visibleTo = String(range.to);
           if (boundary?.id) path.dataset.roadBoundaryId = String(boundary.id);
+          if (islandDash) path.dataset.islandMouthDash = "true";
           if (forceDash) path.dataset.roadDepartureBanketDash = "true";
           if (derivedShoulderDash) {
             path.dataset.intersectionShoulderDash = "true";
           }
         }
       };
-      regularRanges.forEach((range) => appendRange(range, false));
+      regularRanges.forEach((range) => {
+        if (!islandDashRanges.length) appendRange(range);
+        else rangesWithoutHidden(range.from, range.to, islandDashRanges).forEach((piece) => appendRange(piece));
+      });
+      intersectRanges(regularRanges, islandDashRanges).forEach((range) => appendRange(range, false, true));
       if (departureDashRanges.length) {
         const dashRanges = derivedContourOwnsRegularLine
           ? intersectRanges(

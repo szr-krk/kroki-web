@@ -24,6 +24,7 @@
   let patchDone = false;
   let renderingRoads = false;
   let lastRoadSurfaces = [];
+  let lastIslandSurfaces = [];
   let lastOuterContours = [];
   let lastIntersectionShapes = [];
   let lastSmoothedContours = [];
@@ -210,6 +211,7 @@
     clearLayer();
     if (options.classes !== false) clearClasses();
     lastRoadSurfaces = [];
+    lastIslandSurfaces = [];
     lastOuterContours = [];
     lastIntersectionShapes = [];
     lastSmoothedContours = [];
@@ -1781,7 +1783,17 @@
       memberIds.add(a.id);
       memberIds.add(b.id);
     });
-    return { shapes: mergeIntersectionShapeClusters(shapes), memberIds, candidatePairCount: candidates.length };
+    const merged = mergeIntersectionShapeClusters(shapes);
+    if (lastIslandSurfaces.length) {
+      // Keep ordinary multi-road clipping even when an island joins its cluster.
+      const ordinaryPairs = shapes.filter((shape) => !shape.roadIds.some(isIslandRoadId));
+      if (ordinaryPairs.length > 1 && ordinaryPairs.length < shapes.length) {
+        mergeIntersectionShapeClusters(ordinaryPairs).filter((shape) => shape.clustered).forEach((shape) => {
+          if (!merged.some((item) => item.clustered && item.roadIds.join("|") === shape.roadIds.join("|"))) merged.push(shape);
+        });
+      }
+    }
+    return { shapes: merged, memberIds, candidatePairCount: candidates.length };
   }
 
   function pointInsideOtherSurfaces(point, sourceId, surfaces) {
@@ -2040,7 +2052,11 @@
 
   function roadClipShapesFor(id, boundary = null) {
     const allowCluster = boundary?.role === "marking" || isRoadShoulderBoundary(boundary);
-    return roadShapesFor(id).filter((shape) => !shape.clustered || allowCluster);
+    return roadShapesFor(id).filter((shape) => {
+      // Island overlap must not turn a multi-road hull into a marking eraser.
+      if (lastIslandSurfaces.length && shape.clustered && !isIslandRoadId(id) && shape.roadIds.some(isIslandRoadId)) return false;
+      return !shape.clustered || allowCluster;
+    });
   }
 
   function pointInsideRoadShapes(id, point) {
@@ -2071,6 +2087,7 @@
     const roadSurface = lastRoadSurfaces.find((surface) => surface.id === id);
     if (!roadSurface) return false;
     return roadClipShapesFor(id).some((shape) => {
+      if (isIslandPairForRoad(id, shape)) return false;
       if (shouldPreserveLaneSplitShoulderForShape(id, boundary, shape)) return false;
       const terminalIds = Array.isArray(shape?.terminalRoadIds) ? shape.terminalRoadIds : [];
       if (!terminalIds.includes(id)) return false;
@@ -2114,10 +2131,47 @@
     });
   }
 
+  function isIslandPairForRoad(id, shape) {
+    return lastIslandSurfaces.length > 0 && !shape.clustered && shape.roadIds?.includes(id)
+      && !isIslandRoadId(id) && shape.roadIds.some(isIslandRoadId);
+  }
+
+  function pointInsidePhysicalIsland(point, sourceId) {
+    return lastIslandSurfaces.some((surface) => {
+      const center = surface.islandCenterMask;
+      return surface.id !== sourceId && center
+        && Math.hypot(point.x - center.cx, point.y - center.cy) < center.radius;
+    });
+  }
+
+  function pointInsideIslandMouth(id, point, boundary) {
+    if (!isRoadShoulderBoundary(boundary) || isIslandRoadId(id)) return false;
+    return roadClipShapesFor(id, boundary).some((shape) => {
+      if (!isIslandPairForRoad(id, shape)) return false;
+      return shape.roadIds.some((otherId) => {
+        const surface = roadSurfaceForId(otherId), center = surface?.islandCenterMask;
+        if (!center) return false;
+        const distance = Math.hypot(point.x - center.cx, point.y - center.cy);
+        return distance >= center.radius && distance < surface.model.geometry.outerDiameter / 2;
+      });
+    });
+  }
+
+  function islandMouthDashedRangesForLine(id, offset = 0, from = 0, to = 1, boundary = null) {
+    if (!lastIslandSurfaces.length || !isRoadShoulderBoundary(boundary) || isIslandRoadId(id)) return [];
+    if (!roadClipShapesFor(id, boundary).some((shape) => isIslandPairForRoad(id, shape))) return [];
+    return cachedRanges(visibleRangeCacheKey("island-mouth", id, offset, from, to, boundary), () => (
+      lineRangesByIntersectionState(id, offset, from, to,
+        (point) => pointInsideIslandMouth(id, point, boundary) && !pointInsideRoadShapesForLine(id, point, boundary), true)
+    ));
+  }
+
   function pointInsideRoadShapesForLine(id, point, boundary = null) {
+    if (lastIslandSurfaces.length && !isIslandRoadId(id) && pointInsidePhysicalIsland(point, id)) return true;
     if (pointInsideTerminalHostSurfaceForLine(id, point, boundary)) return true;
     if (isIslandOuterEdgeBoundary(id, boundary)) return pointInsideOtherSurfacePolygon(point, id);
     return roadClipShapesFor(id, boundary).some((shape) => {
+      if (isIslandPairForRoad(id, shape) && boundary?.before && boundary?.after) return false;
       if (shouldPreserveLaneSplitShoulderForShape(id, boundary, shape)) return false;
       if (shouldPreserveBoundaryForShape(id, boundary, shape)) return false;
       return pointInPolygon(point, shape.points);
@@ -3046,6 +3100,7 @@
     const surfaces = collectRoads();
     phaseStartedAt = mark("collectRoadsMs", phaseStartedAt);
     lastRoadSurfaces = surfaces;
+    lastIslandSurfaces = surfaces.filter((surface) => surface.isIsland);
     buildLaneSplitMetadata(surfaces);
     updateContourMask(layer, surfaces);
     lastIntersectionShapes = [];
@@ -3239,6 +3294,7 @@
     isRoadMember(id) { return Boolean(!suspended && lastMemberIds.has(id)); },
     visibleRangesForLine,
     terminalHostDashedRangesForLine,
+    islandMouthDashedRangesForLine,
     getLastRoadSurfaces() { return lastRoadSurfaces.map((surface) => ({ id: surface.id, width: surface.width, polygon: surface.polygon.slice() })); },
     getLastOuterContours() { return lastOuterContours.map((item) => ({ points: item.points.slice(), closed: Boolean(item.closed), d: item.d, rawD: item.rawD, strokeWidth: item.strokeWidth })); },
     getLastIntersectionShapes() { return lastIntersectionShapes.map((item) => ({ roadIds: item.roadIds.slice(), points: item.points.slice(), d: item.d })); },
