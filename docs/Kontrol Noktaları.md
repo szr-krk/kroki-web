@@ -69,3 +69,7 @@ Kavşak Q tutamaçları da engine tarafından `roadIntersectionContourLayer` iç
 
 - Genel kontrol noktaları 48/72 px gibi dokunmatik odaklı büyük boyutlardadır. Mouse kullanımında beklenen ürün ölçüsü koddan ayrı bir ayarla tanımlanmamıştır.
 - Ellipse köşe tutamaçları sınırın tam köşesinde, rectangle tutamaçları sınırdan ek offset ile çizilir; bu farkın bilinçli UX kararı olup olmadığı belirtilmemiştir.
+
+
+### 2026-10-16 — Dokunmatik sayı düğmeleri
+Ortak `bindHoldAction`, touch/pen basışlarında en fazla 220 ms bekler ve mevcut tekrar aralığını yarıya indirir (alt sınır 8 ms). Fare zamanlaması ve tek basış adımı korunur. Bırakma, iptal, düğmeden ayrılma, capture kaybı ve pencere odağı kaybı tekrarı durdurur; disabled veya DOM’dan kaldırılmış düğme tekrar etmez.

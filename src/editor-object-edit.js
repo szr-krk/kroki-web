@@ -66,10 +66,17 @@ function bindHoldAction(button, action, options = {}) {
     window.clearTimeout(suppressClickTimer);
     suppressClick = true;
     clearTimers();
+    const touch = event.pointerType === "touch" || event.pointerType === "pen";
+    const holdDelay = touch ? Math.min(startDelay, 220) : startDelay;
+    const interval = touch ? Math.max(8, Math.round(repeatDelay / 2)) : repeatDelay;
+    const repeat = () => {
+      if (isDisabledControl(button) || !button.isConnected) { clearTimers(); return; }
+      action();
+    };
     action();
     startTimer = window.setTimeout(() => {
-      repeatTimer = window.setInterval(action, repeatDelay);
-    }, startDelay);
+      repeatTimer = window.setInterval(repeat, interval);
+    }, holdDelay);
     event.preventDefault();
   }
 
@@ -82,6 +89,9 @@ function bindHoldAction(button, action, options = {}) {
   button.addEventListener("pointerup", end);
   button.addEventListener("pointercancel", end);
   button.addEventListener("pointerleave", end);
+  button.addEventListener("lostpointercapture", end);
+  button.addEventListener("contextmenu", (event) => event.preventDefault());
+  window.addEventListener("blur", end);
   button.addEventListener("click", (event) => {
     if (isDisabledControl(button)) return;
     if (suppressClick) {
