@@ -523,7 +523,7 @@
   }
 
   function departureLaneSpan(config) {
-    return (config?.laneWidths || []).reduce((sum, width) => sum + widthOr(width, config.laneWidth || DEFAULT_POCKET_WIDTH, 0, 180), 0);
+    return (config?.laneWidths || []).reduce((sum, width) => sum + widthOr(width, config.laneWidth || DEFAULT_POCKET_WIDTH, 0, 1000), 0);
   }
 
   function departureWidthScaleAt(model, t) {
@@ -546,7 +546,7 @@
 
   function normalizePocket(source, fallbackWidth = DEFAULT_POCKET_WIDTH) {
     if (!source || typeof source !== "object") return null;
-    const width = widthOr(source.width, fallbackWidth, 10, 180);
+    const width = widthOr(source.width, fallbackWidth, 10, 1000);
     const outerFrom = clamp(numberOr(source.outerFrom, 0.08), 0, 0.78);
     const outerTo = clamp(numberOr(source.outerTo, 0.92), outerFrom + 0.11, 1);
     const innerFrom = clamp(numberOr(source.innerFrom, 0.27), outerFrom + 0.025, outerTo - 0.085);
@@ -576,7 +576,7 @@
 
   function normalizeWidthList(source, count, fallbackWidth) {
     const list = Array.isArray(source) ? source : [];
-    return Array.from({ length: count }, (_, index) => widthOr(list[index], fallbackWidth, 10, 180));
+    return Array.from({ length: count }, (_, index) => widthOr(list[index], fallbackWidth, 10, 1000));
   }
 
   function normalizeMarkingStyle(value) {
@@ -777,7 +777,7 @@
   function normalizeRoadConfig(source = {}) {
     const base = DEFAULT_ROAD_CONFIG;
     const laneCount = clampInt(source.laneCount, 1, MAX_LANES, base.laneCount);
-    const laneWidth = widthOr(source.laneWidth, base.laneWidth, 10, 180);
+    const laneWidth = widthOr(source.laneWidth, base.laneWidth, 10, 1000);
     const config = {
       version: 1,
       laneCount,
@@ -3889,7 +3889,7 @@
     const sign = departureSideSign(side);
     const hostSide = departureSideSectionInfo(hostConfig, side);
     const laneCount = clampInt(options.laneCount, 1, MAX_DEPARTURE_LANES, DEFAULT_DEPARTURE_LANE_COUNT);
-    const laneWidth = widthOr(options.laneWidth, hostConfig.laneWidth || DEFAULT_POCKET_WIDTH, 10, 180);
+    const laneWidth = widthOr(options.laneWidth, hostConfig.laneWidth || DEFAULT_POCKET_WIDTH, 10, 1000);
     const laneWidths = Array.from({ length: laneCount }, () => laneWidth);
     const branchWidth = laneWidths.reduce((sum, width) => sum + width, 0);
     const hostLength = Math.max(120, centerlineLength(hostModel));
@@ -4221,7 +4221,7 @@
   }
 
   function setSectionWidth(config, sectionId, width) {
-    const nextWidth = widthOr(width, config.laneWidth || DEFAULT_ROAD_CONFIG.laneWidth, 10, 180);
+    const nextWidth = widthOr(width, config.laneWidth || DEFAULT_ROAD_CONFIG.laneWidth, 10, 1000);
     const parts = String(sectionId || "").split(":");
     if (parts.length === 2) {
       if (parts[0] === "pocket" && config.pockets?.[parts[1]]) {

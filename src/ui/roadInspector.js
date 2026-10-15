@@ -230,12 +230,12 @@
 
   function resizedWidths(widths, count, fallback) {
     const source = Array.isArray(widths) ? widths : [];
-    return Array.from({ length: count }, (_, index) => clamp(source[index], 10, 180, fallback));
+    return Array.from({ length: count }, (_, index) => clamp(source[index], 10, 1000, fallback));
   }
 
   function setLaneCount(config, count) {
     const laneCount = clampInt(count, 1, 5, config.laneCount || 2);
-    const laneWidth = clamp(config.laneWidth, 10, 180, 50);
+    const laneWidth = clamp(config.laneWidth, 10, 1000, 50);
     config.laneCount = laneCount;
     config.laneWidths = resizedWidths(config.laneWidths, laneCount, laneWidth);
     config.dividedLaneWidths = {
@@ -245,7 +245,7 @@
   }
 
   function setLaneWidth(config, width) {
-    const laneWidth = clamp(width, 10, 180, config.laneWidth || 50);
+    const laneWidth = clamp(width, 10, 1000, config.laneWidth || 50);
     config.laneWidth = laneWidth;
     config.laneWidths = Array.from({ length: config.laneCount }, () => laneWidth);
     config.dividedLaneWidths = {
