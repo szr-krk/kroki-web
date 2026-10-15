@@ -170,3 +170,16 @@ Her bariyer şunları taşır:
 - `metadata.road.barrier` tekil legacy alanı normalize ediliyor, fakat güncel render `barriers` dizisini kullanıyor. Bu alanın gelecekteki amacı koddan kesinleşmiyor.
 - `segments` genel yol segment listesi normalize ediliyor; güncel boundary render esas olarak `boundaryStyles[boundaryId].segments` kullanıyor. Legacy/gelecek uyumluluk rolü belirsiz.
 - `bridge` ve `autoIntersection` config alanları destekleniyor, ancak mevcut Inspector/Builder bunları kullanıcıya açmıyor.
+
+
+## Ekran merkezi ve taşıma hizalaması — 15.10.2026
+
+- Çizim alanı ortasında 20 px kırmızı + bulunur. Bu, ekrana bağlı geçici (0,0) referansıdır; belge koordinatları ve kamera değiştirilmez. Pan/zoom ile dünya koordinatı değişir, ekrandaki konumu değişmez.
+- Yardımcı HTML katmanı `editorCanvas` dışındadır; nesne/CP önizlemelerinin üstünde, tıklamaları geçiren katmandadır. SVG/PNG/JSON dışa aktarıma veya içerik bbox hesabına girmez.
+- Yalnız bütün `road` nesnesi (ada `islandRing` dahil) sürüklenirken bbox merkezi kullanılır. Kontrol noktaları, diğer nesneler, gruplar, boyutlandırma, simetri ve döndürme etkilenmez. Sadece tıklama yakalamayı başlatmaz.
+- Farede 12 px, dokunmada 18 px yaklaşım eşiği. X/Y bağımsız yakalanır; ikisi yakalanınca merkez + üzerindedir. Yakalanan eksende kırmızı kesikli çizgi gösterilir, hareket bitince veya yakalamadan çıkınca gizlenir.
+- Merkez snap'i normal grid/uç snap hesabından sonra uygulanır; karar ham pointer hareketinden alınır. Yakalanan eksenlerde öncelik merkezdedir. Diğer eksen normal snap davranışını korur. Bu yardımcı grid görünürlüğünden bağımsızdır.
+- Bbox ve kamera dönüşümü gesture başında bir kez hesaplanır. Kamera/alan boyutu gesture ortasında değişirse eski referansa snap edilmez, çizgiler temizlenir; sonraki sürükleme yeni referansı alır.
+- Yeni yol/adanın bbox X merkezi ekranın Y ekseni üzerine yerleşir. Toolbar güvenliği için mevcut dikey yerleşim ve CP sığdırma korunur. Asimetrik virajlarda bbox X merkezi ile uçların orta noktası farklı olabileceğinden aday geometri, sığdırma kontrolünden önce X yönünde düzeltilir.
+- Kaynaklar: `src/core/editorCenterGuide.js`, `selectionManager.js`, `roadBuilder.js`, `index.html`, `editor.css`.
+- Test: `scripts/road-center-guide-browser.cjs`; pan/zoom/letterbox, portre/yatay, gerçek düz/arc/S/ada sürüklemeleri, snap önceliği, tek hesaplanan bbox, undo/redo, kayıt ve export. Eski CP/yol/kavşak testleri de korunur. Geri dönüş sürümü: `36cf256aceb1eabbfbf31453d833961eb3c6c063`.

@@ -90,7 +90,9 @@
     if (!model || !adapter) return false;
 
     if (dragState.type === "object") {
+      const rawPoint = point;
       point = Kroki.EditorGrid?.movePoint(dragState.startPoint, dragState.gridAnchor, point) || point;
+      point = Kroki.EditorCenterGuide?.snap(dragState.centerGuide, rawPoint, point) || point;
       const dx = point.x - dragState.lastPoint.x;
       const dy = point.y - dragState.lastPoint.y;
       if (Math.hypot(dx, dy) <= 0.0001) return true;
@@ -259,6 +261,7 @@
     mode = "";
     cancelQueuedDragFrame(drag);
     if (drag) Kroki.EditorGrid?.endGesture();
+    Kroki.EditorCenterGuide?.end();
     drag = null;
     if (options.silent) {
       setEditorState();
@@ -717,6 +720,7 @@
       lastPoint: point,
       startPoint: point,
       gridAnchor: type === "object" ? Kroki.EditorGrid?.anchorForModel(model, adapter) : null,
+      centerGuide: type === "object" ? Kroki.EditorCenterGuide?.begin(model, adapter, point, event.pointerType) : null,
       startClientX: event.clientX,
       startClientY: event.clientY,
       moved: !(extra.clearOnTap || extra.editTapPoint),
@@ -965,6 +969,7 @@
     cancelQueuedDragFrame(drag);
     clearEndpointAlignmentGuide(drag);
     Kroki.EditorGrid?.endGesture();
+    Kroki.EditorCenterGuide?.end();
     drag = null;
     if (shouldClear) clear();
     if (wasRoadDrag) {

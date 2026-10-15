@@ -175,12 +175,13 @@
     const adapter = manager.getAdapter(model);
     const metrics = Kroki.ControlPointManager.metrics();
     const step = Kroki.EditorGrid?.placementSnapStep?.() || 0;
-    // Every insertion uses the same visible-area anchor, independent of its
-    // profile, direction and control-point envelope. Snap the center once;
-    // symmetric whole-grid half-lengths then keep both endpoints on the grid.
+    // Keep toolbar-safe vertical placement and existing CP fitting. The road's
+    // bbox center starts exactly on the viewport reference Y axis (X takes
+    // priority over grid placement), including asymmetric curved profiles.
     const area = roadPlacementBounds(model, adapter, metrics, true);
     const align = (value) => step ? Math.round(Math.round(value / step) * step * 1e8) / 1e8 : value;
-    const center = { x: align(area.x + area.width / 2), y: align(area.y + area.height / 2) };
+    const reference = Kroki.EditorCenterGuide?.origin();
+    const center = { x: reference?.x ?? align(area.x + area.width / 2), y: align(area.y + area.height / 2) };
     if (model.geometry.profile === "islandRing") {
       manager.updateGeometry(model.id, (draft) => {
         draft.geometry.center = center;
@@ -196,7 +197,12 @@
     const candidateAt = (length, placement) => {
       const { dir, box } = placement;
       const geometry = initialRoadGeometry(model.geometry.profile, center, dir, length);
-      const points = adapter.getControlPoints({ ...model, geometry }, metrics, "edit");
+      const candidate = { ...model, geometry };
+      if (reference) {
+        const bounds = adapter.getBounds(candidate);
+        adapter.move(candidate, reference.x - (bounds.x + bounds.width / 2), 0);
+      }
+      const points = adapter.getControlPoints(candidate, metrics, "edit");
       return points.every((point) => point.x >= box.x - 1e-8 && point.x <= box.x + box.width + 1e-8
         && point.y >= box.y - 1e-8 && point.y <= box.y + box.height + 1e-8) ? geometry : null;
     };
@@ -212,7 +218,14 @@
     }
     const length = lengthStep ? Math.floor(low / lengthStep) * lengthStep : low;
     const fitted = candidateAt(length, placements[horizontal ? 1 : 0]);
-    if (!fitted || length <= 0) return;
+    if (!fitted || length <= 0) {
+      // Preserve the reference axis even when a very thick road cannot fit.
+      if (reference) manager.updateGeometry(model.id, (draft) => {
+        const bounds = adapter.getBounds(draft);
+        adapter.move(draft, reference.x - (bounds.x + bounds.width / 2), 0);
+      }, { skipHistory: true, styleControls: false });
+      return;
+    }
     manager.updateGeometry(model.id, (draft) => {
       draft.geometry = fitted;
     }, { skipHistory: true, styleControls: false });

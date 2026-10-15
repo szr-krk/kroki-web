@@ -1289,3 +1289,29 @@
 .editor-grid-controls button:focus-visible { outline: 2px solid #0f766e; outline-offset: 1px; }
 .editor-grid-controls button svg { width: 18px; height: 18px; }
 .editor-grid-zoom-value { min-height: 10px; color: #475569; font: 700 9px/10px ui-sans-serif, system-ui, sans-serif; letter-spacing: .01em; text-align: center; white-space: nowrap; }
+
+
+/* Viewport reference only: outside the document SVG and its export layers. */
+.editor-center-guide {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+  overflow: hidden;
+}
+.editor-center-guide-cross {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 20px; height: 20px;
+  transform: translate(-50%, -50%);
+  fill: none;
+  stroke: #dc2626;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 1px white);
+}
+.editor-center-guide-axis { position: absolute; display: none; opacity: .85; }
+.editor-center-guide-axis.is-vertical { left: 50%; top: 0; bottom: 0; border-left: 1px dashed #dc2626; }
+.editor-center-guide-axis.is-horizontal { top: 50%; left: 0; right: 0; border-top: 1px dashed #dc2626; }
+.editor-center-guide.is-snapped-x .is-vertical,
+.editor-center-guide.is-snapped-y .is-horizontal { display: block; }
