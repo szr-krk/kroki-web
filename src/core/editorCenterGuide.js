@@ -21,8 +21,10 @@
   }
   function begin(model, adapter, start, pointerType) {
     end();
-    // Only whole road objects, including islandRing. No CP or group gestures.
-    if (model?.type !== "road") return null;
+    // Whole roads and closed drawing shapes only. No CP or group gestures.
+    const eligible = ["road", "circle", "ellipse", "rectangle"].includes(model?.type)
+      || (model?.type === "closedShape" && model.geometry?.closed !== false && model.geometry?.points?.length > 2);
+    if (!eligible) return null;
     const center = origin(), bounds = adapter?.getBounds?.(model);
     const viewport = camera.getViewportMetrics(canvas);
     if (!center || !bounds || !(viewport?.scale > 0)) return null;

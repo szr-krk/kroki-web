@@ -53,38 +53,64 @@ const server = http.createServer((req, res) => {
       const free={x:raw.x+200,y:raw.y+200};check(guide.snap(state,free,free).x===free.x,'Release outside tolerance');
       check(!document.querySelector('#editorCenterGuide').classList.contains('is-snapped-x'),'Guide clears outside tolerance');
       check(guide.begin({type:'vehicle'},adapter,start,'mouse')===null,'Vehicles excluded');
-      check(guide.begin({type:'line'},adapter,start,'mouse')===null,'Drawing tools excluded');
+      check(guide.begin({type:'line'},adapter,start,'mouse')===null,'Open lines excluded');
+      check(guide.begin({type:'closedShape',geometry:{closed:false,points:[{},{},{}]}},adapter,start,'mouse')===null,'Open polygons excluded');
       check(guide.begin({type:'road'},adapter,start,'touch').tolerance===18,'Touch threshold in screen pixels');guide.end();
       check(!K.DocumentSerializer.toJson().includes('editorCenterGuide'),'No guide in serialized document');
       return true;
     });
     assert.equal(initial,true);
+    await page.evaluate(() => {
+      const K=window.Kroki,m=K.EditorObjectManager,camera=window.krokiEditorCamera;
+      const check=(v,t)=>{if(!v)throw Error(t)};
+      for(const width of [500,2500]) {
+        camera.writeViewBox(m.canvas,{x:13.7,y:-28.4,width,height:800});
+        const unit=1/camera.getViewportMetrics(m.canvas).scale;
+        for(const type of ['line','arc','bezier','road'])for(const side of ['start','end']) {
+          const model=m.create(type,{start:{x:123.25,y:87.75},end:{x:400,y:220},geometry:{profile:'arc',start:{x:123.25,y:87.75},end:{x:400,y:220},ratio:.35}},{skipHistory:true});
+          const a=m.getAdapter(model),opposite=model.geometry[side==='start'?'end':'start'];
+          const target={x:opposite.x+250*unit,y:opposite.y+4*unit};
+          const point={...model.geometry[side]};
+          const metrics={endpointOffset:0,minGap:0,unit};
+          K.EditorGrid.beginGesture([model.id]);
+          const startState=a.beginControlPointMove?.(model,side,point,metrics);
+          a.moveControlPoint(model,side,target,{startState,metrics});
+          check(model.geometry[side].y===opposite.y,type+' '+side+' horizontal capture at zoom '+width);
+          K.EditorGrid.endGesture();
+        }
+      }
+      K.SelectionManager.clear();m.clear({skipHistory:true});
+    });
     // Real pointer gestures cover the production preview, commit and history path.
-    for(const [profile,width,axes] of [['arc',1300,'both'],['straight',2100,'x'],['sCurve',950,'y'],['islandRing',1800,'both']]){
+    for(const [profile,width,axes] of [['arc',1300,'both'],['straight',2100,'x'],['sCurve',950,'y'],['islandRing',1800,'both'],['circle',1300,'both'],['ellipse',2100,'x'],['rectangle',950,'both'],['closedShape',1800,'both']]){
       const fixture=await page.evaluate(({profile,width,axes})=>{
-        const K=window.Kroki,m=K.EditorObjectManager,a=K.ShapeRegistry.get('road'),camera=window.krokiEditorCamera;
+        const type=['circle','ellipse','rectangle','closedShape'].includes(profile)?profile:'road';
+        const K=window.Kroki,m=K.EditorObjectManager,a=K.ShapeRegistry.get(type),camera=window.krokiEditorCamera;
         K.SelectionManager.clear();m.clear({skipHistory:true});
         const r=m.canvas.getBoundingClientRect();camera.writeViewBox(m.canvas,{x:157.25,y:-253.75,width,height:width*r.height/r.width});
         const o=K.EditorCenterGuide.origin(),unit=1/camera.getViewportMetrics(m.canvas).scale;
         const geometry=profile==='islandRing'?{profile,center:{x:o.x,y:o.y},innerDiameter:160,outerDiameter:360}
           :{profile,start:{x:o.x-180*unit,y:o.y},end:{x:o.x+180*unit,y:o.y},ratio:.35,controls:[{x:o.x-70*unit,y:o.y-75*unit},{x:o.x+70*unit,y:o.y+75*unit}]};
-        const model=m.create('road',{geometry,metadata:{road:{laneCount:2,laneWidth:50,laneWidths:[50,50],divided:false}}},{skipHistory:true});
+        const shapeGeometry=type==='circle'?{cx:o.x,cy:o.y,r:60}:type==='closedShape'?{points:[{x:o.x-80,y:o.y-60},{x:o.x+80,y:o.y-60},{x:o.x+30,y:o.y+60}],closed:true}:{cx:o.x,cy:o.y,rx:90,ry:55,rotation:27};
+        const model=m.create(type,{geometry:type==='road'?geometry:shapeGeometry,metadata:{road:{laneCount:2,laneWidth:50,laneWidths:[50,50],divided:false}}},{skipHistory:true});
         const b=a.getBounds(model);m.updateGeometry(model.id,draft=>{a.move(draft,o.x-130*unit-b.x-b.width/2,o.y-90*unit-b.y-b.height/2);return draft;},{skipHistory:true});
         K.SelectionManager.edit(model.id);
         const before=JSON.parse(JSON.stringify(m.get(model.id).geometry));
         const start={x:r.left+r.width*.65,y:r.top+r.height*.76};
         const end={x:start.x+(axes==='y'?45:135),y:start.y+(axes==='x'?35:95)};
-        return {id:model.id,start,end,before,origin:o,axes};
+        return {id:model.id,type,start,end,before,origin:o,axes};
       },{profile,width,axes});
       await page.mouse.move(fixture.start.x,fixture.start.y);await page.mouse.down();
       await page.mouse.move(fixture.end.x,fixture.end.y,{steps:4});await page.waitForTimeout(70);
       const active=await page.locator('#editorCenterGuide').getAttribute('class');
       assert.equal(active.includes('is-snapped-x'),axes!=='y',`${profile} x guide`);
       assert.equal(active.includes('is-snapped-y'),axes!=='x',`${profile} y guide`);
+      const color=await page.locator('.editor-center-guide-axis.is-vertical').evaluate(el=>getComputedStyle(el).borderLeftColor);
+      assert.equal(color,axes==='both'?'rgb(37, 99, 235)':'rgb(220, 38, 38)','Both axes blue; single axis red');
       if(profile==='arc')await page.screenshot({path:path.join(output,'snapped-road.png')});
       await page.mouse.up();
-      await page.evaluate(({id,origin,axes,before})=>{
-        const K=window.Kroki,m=K.EditorObjectManager,a=K.ShapeRegistry.get('road'),b=a.getBounds(m.get(id));
+      await page.evaluate(({id,type,origin,axes,before})=>{
+        const K=window.Kroki,m=K.EditorObjectManager,a=K.ShapeRegistry.get(type),b=a.getBounds(m.get(id));
         const check=(v,t)=>{if(!v)throw Error(t)};
         if(axes!=='y')check(Math.abs(b.x+b.width/2-origin.x)<.001,'Committed center x');
         if(axes!=='x')check(Math.abs(b.y+b.height/2-origin.y)<.001,'Committed center y');

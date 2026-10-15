@@ -303,3 +303,14 @@ assert.match(multi, /bindHold\?\.\(groupIpControls\.rotateMinus, \(\) => stepGro
 assert.match(multi, /bindHold\?\.\(groupIpControls\.rotatePlus, \(\) => stepGroupRotation\(1\)/);
 
 console.log("snap control points and move smoke: ok");
+
+const anchor = { x: 123.25, y: 87.75 };
+const horizontal = grid.snapEndpoint({ x: 260, y: 91 }, anchor);
+assert.equal(horizontal.y, anchor.y);
+assert.equal(horizontal.x, grid.snapPoint({ x: 260, y: 91 }).x);
+const vertical = grid.snapEndpoint({ x: 126, y: 220 }, anchor);
+assert.equal(vertical.x, anchor.x);
+assert.equal(vertical.y, grid.snapPoint({ x: 126, y: 220 }).y);
+assert.equal(grid.snapEndpoint({ x: 260, y: 91 }, anchor, {ctrlKey:true}).y, 91);
+assert.equal(grid.snapEndpoint({ x: 260, y: 150 }, anchor).y, grid.snapPoint({x:260,y:150}).y);
+console.log("PASS: endpoint alignment overrides grid only on the captured axis, releases and supports Ctrl bypass");

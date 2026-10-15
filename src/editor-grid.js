@@ -158,6 +158,20 @@
     return { x: round(point.x), y: round(point.y) };
   }
 
+  // Capture from the raw endpoint; grid/endpoint snapping keeps the free axis.
+  function snapEndpoint(point, anchor, modifiers = {}) {
+    const ordinary = snapPoint(point, modifiers);
+    if (!point || !anchor || !gesturePositionSnapEnabled || modifiers.ctrlKey || modifiers.metaKey) return ordinary;
+    const zoom = getViewport().zoom;
+    if (!(zoom > 0)) return ordinary;
+    const dx = Math.abs(point.x - anchor.x), dy = Math.abs(point.y - anchor.y);
+    if (!Number.isFinite(dx + dy) || Math.hypot(dx, dy) <= 1e-7) return ordinary;
+    const tolerance = 10 / zoom;
+    if (dy <= tolerance && dy <= dx) return { ...ordinary, y: anchor.y };
+    if (dx <= tolerance) return { ...ordinary, x: anchor.x };
+    return ordinary;
+  }
+
   function snapAngle(angle, modifiers = {}) {
     const value = Number(angle);
     // Positional snap opt-outs (catalog objects) must not disable the rotation helper.
@@ -385,6 +399,6 @@
   window.addEventListener("resize", resize);
   window.addEventListener("kroki:camera-gesture-start", () => { clearCursor(); endGesture(); });
 
-  Kroki.EditorGrid = Object.freeze({ scaleForZoom, placementSnapStep, snapPoint, snapAngle, anchorForModel, movePoint, pointFromEvent, beginGesture, endGesture });
+  Kroki.EditorGrid = Object.freeze({ scaleForZoom, placementSnapStep, snapPoint, snapEndpoint, snapAngle, anchorForModel, movePoint, pointFromEvent, beginGesture, endGesture });
   syncButtons();
 })();

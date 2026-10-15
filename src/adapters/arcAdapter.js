@@ -315,14 +315,14 @@
           x: startState.geometry.start.x + dx,
           y: startState.geometry.start.y + dy
         };
-        model.geometry.start = Kroki.EditorGrid?.snapPoint(start, modifiers) || start;
+        model.geometry.start = Kroki.EditorGrid?.snapEndpoint?.(start, model.geometry.end, modifiers) || Kroki.EditorGrid?.snapPoint(start, modifiers) || start;
       }
       if (cpId === "end") {
         const end = {
           x: startState.geometry.end.x + dx,
           y: startState.geometry.end.y + dy
         };
-        model.geometry.end = Kroki.EditorGrid?.snapPoint(end, modifiers) || end;
+        model.geometry.end = Kroki.EditorGrid?.snapEndpoint?.(end, model.geometry.start, modifiers) || Kroki.EditorGrid?.snapPoint(end, modifiers) || end;
       }
       model.geometry.ratio = startState.geometry.ratio;
     },

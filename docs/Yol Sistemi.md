@@ -183,3 +183,9 @@ Her bariyer şunları taşır:
 - Yeni yol/adanın bbox X merkezi ekranın Y ekseni üzerine yerleşir. Toolbar güvenliği için mevcut dikey yerleşim ve CP sığdırma korunur. Asimetrik virajlarda bbox X merkezi ile uçların orta noktası farklı olabileceğinden aday geometri, sığdırma kontrolünden önce X yönünde düzeltilir.
 - Kaynaklar: `src/core/editorCenterGuide.js`, `selectionManager.js`, `roadBuilder.js`, `index.html`, `editor.css`.
 - Test: `scripts/road-center-guide-browser.cjs`; pan/zoom/letterbox, portre/yatay, gerçek düz/arc/S/ada sürüklemeleri, snap önceliği, tek hesaplanan bbox, undo/redo, kayıt ve export. Eski CP/yol/kavşak testleri de korunur. Geri dönüş sürümü: `36cf256aceb1eabbfbf31453d833961eb3c6c063`.
+
+
+### 2026-10-16 — hizalama snap önceliği
+- Yol, çizgi, yay ve Bezier uç noktası taşınırken karşı uca yatay/dikey yaklaşma toleransı ekranda 10 pikseldir. Yakalanan eksende hizalama, ızgara/uç nokta snap değerini ezer; serbest eksen normal snap kullanır. Ctrl/Meta geçici olarak devre dışı bırakır. Bağlı çıkış yolunun bağlantı başlangıcı kendi host kuralını korur.
+- Görünür ekran merkezi snap kapsamı bütün olarak taşınan daire, elips, dikdörtgen ve gerçekten kapalı çokgenleri de içerir. Açık şekiller ve kontrol noktası hareketleri dahil değildir.
+- Merkezde tek eksen yakalanınca kesikli çizgi kırmızı; iki eksen birlikte yakalanınca iki çizgi mavi olur. Merkez artısı kırmızı kalır. Yardımcılar kayda veya SVG çıktısına girmez.

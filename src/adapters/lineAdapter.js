@@ -141,11 +141,11 @@
       };
       if (cpId === "start") {
         const start = lineGeometry.endpointFromControl(model.geometry.start, model.geometry.end, "start", control, metrics);
-        model.geometry.start = Kroki.EditorGrid?.snapPoint(start, modifiers) || start;
+        model.geometry.start = Kroki.EditorGrid?.snapEndpoint?.(start, model.geometry.end, modifiers) || Kroki.EditorGrid?.snapPoint(start, modifiers) || start;
       }
       if (cpId === "end") {
         const end = lineGeometry.endpointFromControl(model.geometry.start, model.geometry.end, "end", control, metrics);
-        model.geometry.end = Kroki.EditorGrid?.snapPoint(end, modifiers) || end;
+        model.geometry.end = Kroki.EditorGrid?.snapEndpoint?.(end, model.geometry.start, modifiers) || Kroki.EditorGrid?.snapPoint(end, modifiers) || end;
       }
     },
 
