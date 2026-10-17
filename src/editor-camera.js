@@ -550,6 +550,41 @@
     return false;
   }
 
+  const gestureEvents = [];
+  function recordGesture(reason, duration = 0) {
+    gestureEvents.push({ reason, time: Math.round(performance.now()), duration: Math.round(duration), pointers: activePointers.size, pan: Boolean(activePan), pinch: Boolean(activePinch) });
+    if (gestureEvents.length > 32) gestureEvents.shift();
+  }
+
+  // Bounded, memory-only diagnostics: no drawing data, storage writes or network.
+  window.addEventListener("error", () => recordGesture("script-error"));
+  window.addEventListener("unhandledrejection", () => recordGesture("unhandled-rejection"));
+  if (window.PerformanceObserver?.supportedEntryTypes?.includes("longtask")) {
+    const observer = new window.PerformanceObserver((list) => {
+      list.getEntries().forEach((entry) => { if (entry.duration >= 200) recordGesture("long-task", entry.duration); });
+    });
+    observer.observe({ entryTypes: ["longtask"] });
+  }
+
+  function capturePointer(id) {
+    try { canvas.setPointerCapture?.(id); } catch (_) { recordGesture("capture-failed"); }
+  }
+
+  function resetGesture(reason) {
+    recordGesture(reason);
+    const ids = Array.from(activePointers.keys());
+    activePointers.clear();
+    activePan = null;
+    activePinch = null;
+    spacePressed = false;
+    canvas.classList.remove("is-camera-pan-ready");
+    setGestureActive(false);
+    ids.forEach((id) => {
+      try { if (canvas.hasPointerCapture?.(id)) canvas.releasePointerCapture(id); } catch (_) { /* Pointer already ended. */ }
+    });
+    invalidateViewportRect();
+  }
+
   function beginPan(event) {
     activePinch = null;
     activePan = {
@@ -557,8 +592,8 @@
       lastX: event.clientX,
       lastY: event.clientY
     };
-    canvas.setPointerCapture?.(event.pointerId);
     setGestureActive(true);
+    capturePointer(event.pointerId);
   }
 
   function beginPinch(event) {
@@ -575,8 +610,9 @@
       startCenter: centerOf(pointA, pointB),
       startDistance: distance
     };
-    canvas.setPointerCapture?.(event.pointerId);
+    // End object previews before taking ownership of both fingers.
     setGestureActive(true);
+    activePinch.pointerIds.forEach(capturePointer);
   }
 
   function continuePinch(event) {
@@ -639,6 +675,10 @@
   }
 
   function handlePointerMove(event) {
+    if (event.pointerType === "mouse" && event.buttons === 0 && activePan?.pointerId === event.pointerId) {
+      resetGesture("mouse-release-missed");
+      return;
+    }
     updatePointer(event);
 
     if (activePinch) {
@@ -650,6 +690,8 @@
   }
 
   function handlePointerEnd(event) {
+    if (!activePointers.has(event.pointerId)) return;
+    if (event.type === "pointercancel") { resetGesture("pointer-cancel"); return; }
     forgetPointer(event);
 
     if (activePinch) {
@@ -694,18 +736,29 @@
   canvas.addEventListener("pointermove", handlePointerMove, true);
   canvas.addEventListener("pointerup", handlePointerEnd, true);
   canvas.addEventListener("pointercancel", handlePointerEnd, true);
+  canvas.addEventListener("lostpointercapture", (event) => {
+    if (activePointers.has(event.pointerId) && !canvas.hasPointerCapture?.(event.pointerId)) resetGesture("capture-lost");
+  });
+  ["pointerup", "pointercancel"].forEach((name) => window.addEventListener(name, (event) => {
+    if (!canvas.contains(event.target)) handlePointerEnd(event);
+  }, true));
   canvas.addEventListener("wheel", handleWheel, { passive: false });
   canvas.addEventListener("kroki:viewboxchange", syncExternalViewBox);
   document.addEventListener("keydown", handleKeyDown);
   document.addEventListener("keyup", handleKeyUp);
   new ResizeObserver(invalidateViewportRect).observe(canvas);
   window.addEventListener("resize", invalidateViewportRect);
-  window.addEventListener("blur", () => {
-    spacePressed = false;
-    canvas.classList.remove("is-camera-pan-ready");
+  window.addEventListener("blur", () => resetGesture("blur"));
+  window.addEventListener("pagehide", () => resetGesture("pagehide"));
+  window.addEventListener("orientationchange", () => resetGesture("orientationchange"));
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) resetGesture("hidden");
+    else invalidateViewportRect();
   });
+  document.addEventListener("fullscreenchange", () => resetGesture("fullscreenchange"));
 
   window.krokiEditorCamera = {
+    getGestureDiagnostics() { return { activePointers: activePointers.size, pan: Boolean(activePan), pinch: Boolean(activePinch), events: gestureEvents.map((event) => ({ ...event })) }; },
     readViewBox,
     writeViewBox,
     getViewportMetrics,

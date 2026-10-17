@@ -1125,6 +1125,8 @@
   });
   window.addEventListener("kroki:camera-gesture-start", cancelDrag);
   window.addEventListener("blur", cancelDrag);
+  window.addEventListener("pagehide", cancelDrag);
+  document.addEventListener("visibilitychange", () => { if (document.hidden) cancelDrag(); });
   window.addEventListener("resize", sync);
   manager.canvas.addEventListener("kroki:viewboxchange", syncViewport);
   manager.canvas.addEventListener("lostpointercapture", (event) => {
