@@ -2185,7 +2185,13 @@
       const center = island.model.geometry.center;
       const connected = surfaces.filter((road) => !road.isIsland && boundsOverlap(road.bounds, island.bounds)
         && polygonIntersections(road.polygon, island.polygon).length >= 3);
-      if (connected.length) island.classicEnvelope = convexHull(connected.flatMap((road) => road.polygon));
+      // A single divided road already encloses its channel. Preserve its concave
+      // edge: a convex hull would leave island arcs outside the inside of a bend.
+      if (connected.length === 1 && connected[0].config.divided) {
+        island.classicEnvelope = connected[0].polygon;
+      } else if (connected.length) {
+        island.classicEnvelope = convexHull(connected.flatMap((road) => road.polygon));
+      }
       connected.forEach((road) => {
         let best = Infinity, side = 0;
         for (let i = 1; i < road.samples.length; i++) {

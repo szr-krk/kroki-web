@@ -46,6 +46,39 @@ const server = http.createServer((req, res) => {
  await page.evaluate(()=>{const K=window.Kroki;K.DocumentSerializer.fromJson(K.DocumentSerializer.toJson());K.RoadIntersectionEngine.rebuild()});assert.ok(await page.locator('[data-island-mouth-dash]').count()>0);
  }
  }
+ // Optional real SVG regression: visible exterior must follow the concave road edge.
+ if(process.env.CURVED_ISLAND_FIXTURE){
+ const svg=fs.readFileSync(process.env.CURVED_ISLAND_FIXTURE,'utf8');
+ const doc=JSON.parse(svg.match(/<metadata[^>]*id="krokiProDocument"[^>]*>([\s\S]*?)<\/metadata>/)[1]).document;
+ await page.evaluate(doc=>{
+ const K=window.Kroki,m=K.EditorObjectManager,a=K.ShapeRegistry.get('road');
+ K.DocumentSerializer.fromJson(JSON.stringify(doc));K.RoadIntersectionEngine.rebuild();
+ const road=m.getAll().find(x=>x.geometry.profile==='arc'),island=m.getAll().find(x=>x.geometry.profile==='islandRing');
+ const bs=a.crossSection(a.roadConfig(road)).boundaries,lo=Math.min(...bs.map(b=>b.offset)),hi=Math.max(...bs.map(b=>b.offset));
+ const samples=Array.from({length:2001},(_,i)=>a.pointAt(road,i/2000));
+ const paths=[...document.querySelectorAll('#roadIntersectionContourLayer path'),...m.getElement(island.id).querySelectorAll('path')];
+ let checked=0;
+ for(const path of paths){
+ if(path.closest('defs'))continue;
+ const length=path.getTotalLength();
+ for(let d=0;d<=length;d+=2){
+ const p=path.getPointAtLength(d),c=island.geometry.center;
+ if(Math.hypot(p.x-c.x,p.y-c.y)<=island.geometry.innerDiameter/2+2)continue;
+ let nearest=Infinity,offset=0;
+ for(let i=1;i<samples.length;i++){
+ const a=samples[i-1],b=samples[i],dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy);
+ const t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/(L*L)));
+ const x=p.x-a.x-dx*t,y=p.y-a.y-dy*t,dist=Math.hypot(x,y);
+ if(dist<nearest){nearest=dist;offset=(-dy*x+dx*y)/L;}
+ }
+ if(offset<lo-2||offset>hi+2)throw Error('Visible arc protrudes beyond curved road: '+JSON.stringify({x:p.x,y:p.y,offset,lo,hi}));
+ checked++;
+ }
+ }
+ if(!checked)throw Error('No exterior samples checked');
+ },doc);
+ await page.screenshot({path:path.join(output,'curved-fixture.png')});
+ }
  // Compare unaffected cases to the committed engine in a separate page.
  if(!process.env.TEST_BASE_URL){
  const original=require('node:child_process').execFileSync('git',['show','HEAD:src/core/roadIntersectionEngine.js'],{cwd:root,encoding:'utf8'});
