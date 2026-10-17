@@ -1317,3 +1317,5 @@
 .editor-center-guide.is-snapped-y .is-horizontal { display: block; }
 
 .editor-center-guide.is-snapped-x.is-snapped-y .editor-center-guide-axis { border-color: #2563eb; }
+
+#btnRoadProfileIp.is-roundabout .side-ip-text-mark { font-size: 1rem; }

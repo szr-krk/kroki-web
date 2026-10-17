@@ -981,6 +981,7 @@
       controls.markingStyle?.classList.toggle("gizli", sectionMode || barrierMode);
     }
     if (controls.laneCount) controls.laneCount.max = island ? "3" : "5";
+    controls.profile?.classList.toggle("is-roundabout", island);
     const profile = profileInfo(model.geometry?.profile);
     controls.profile?.setAttribute("title", "Yol profili: " + profile.title);
     controls.profile?.setAttribute("aria-label", "Yol profili: " + profile.title);
