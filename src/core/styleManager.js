@@ -326,6 +326,19 @@
       }
     }
   ];
+
+
+  const INCIDENT_FILLS = [
+    { id: "waterPool", title: "Su birikintisi", defaultFill: "#a9dff0", width: 36, height: 24,
+      draw(p) { p.append(utils.createSvgElement("path", { d: "M-4 7Q2 2 8 7T20 7T32 7T44 7M-10 19Q-4 14 2 19T14 19T26 19T38 19", fill: "none", stroke: "#328db5", "stroke-width": 1.1, opacity: .7 })); } },
+    { id: "mudArea", title: "Çamur", defaultFill: "#bb946c", width: 30, height: 28,
+      draw(p) { p.append(utils.createSvgElement("path", { d: "M3 7Q7 1 13 5T15 13Q9 16 4 12ZM19 21Q22 15 28 19L27 25Q21 27 19 21Z", fill: "#79502f", opacity: .55 }), utils.createSvgElement("path", { d: "M2 22l5-2m14-12l4 2", stroke: "#e3c6a4", "stroke-width": 1.2 })); } },
+    { id: "oilSpill", title: "Yağ / yakıt lekesi", defaultFill: "#a2a2a7", width: 36, height: 30,
+      draw(p) { p.append(utils.createSvgElement("path", { d: "M3 10C1 2 15 1 20 7S32 10 30 17 21 25 14 22 5 18 3 10ZM27 28q4-5 7-1l-2 3Z", fill: "#45454e", opacity: .7 })); } },
+    { id: "sandGravel", title: "Kum / çakıl", defaultFill: "#ddc9a4", width: 24, height: 24,
+      draw(p) { p.append(utils.createSvgElement("path", { d: "M3 5l2-1 1 3-3 1ZM15 3l3 1-1 2-2-1ZM10 16l3-2 2 3-3 2ZM21 20l2-1v3l-2 1Z", fill: "#897359", opacity: .8 })); } }
+  ];
+  FILL_PATTERNS.push(...INCIDENT_FILLS);
   const MARKER_BASE = {
     circle: {
       viewBox: "0 0 10 10",
@@ -1286,9 +1299,11 @@
     controls?.textStylePanel?.classList.toggle("is-shape-family-panel", isShapeFamily);
     controls?.textStylePanel?.classList.toggle("is-callout-panel", isCallout);
     controls?.textStylePanel?.classList.toggle("is-text-object-panel", isTextObject);
+    const patternRow = isLineFamily ? controls?.linePanelCapButton?.parentElement : controls?.shapePanelCapButton?.parentElement;
+    if (patternRow && controls.fillPatternPanelButton?.parentElement !== patternRow) patternRow.append(controls.fillPatternPanelButton);
     controls?.shapePanelCapButton?.classList.toggle("gizli", isLineFamily);
     controls?.lineAdvancedStyleControls?.classList.toggle("gizli", !isLineFamily);
-    controls?.shapeAdvancedStyleControls?.classList.toggle("gizli", !isShapeFamily && !isCallout && !isLineFamily);
+    controls?.shapeAdvancedStyleControls?.classList.toggle("gizli", !isShapeFamily && !isCallout);
     if (controls?.shapeAdvancedStyleLabel) controls.shapeAdvancedStyleLabel.textContent = isCallout ? "Cizgi davranisi" : isLineFamily ? "Hat deseni" : "Dolgu deseni";
     controls?.colorButton?.classList.toggle("gizli", isTextObject || usesRoadControls || isCatalogObject || isVehicleObject);
     controls?.textButton?.classList.toggle("gizli", noText);
@@ -2221,6 +2236,18 @@
   function bindUi() {
     if (bound) return;
     bound = true;
+    const fillChoices = document.querySelector("#fillPatternPanel .fill-pattern-options");
+    INCIDENT_FILLS.forEach(choice => {
+      const button = document.createElement("button");
+      button.type = "button"; button.className = "fill-pattern-option incident-fill-option";
+      button.dataset.fillPattern = choice.id; button.setAttribute("role", "radio");
+      button.setAttribute("aria-checked", "false"); button.setAttribute("title", choice.title);
+      const preview = utils.createSvgElement("svg", { viewBox: `0 0 ${choice.width} ${choice.height}`, "aria-hidden": "true" });
+      preview.append(utils.createSvgElement("rect", { width: choice.width, height: choice.height, fill: choice.defaultFill }));
+      choice.draw(preview);
+      const label = document.createElement("span"); label.textContent = choice.title;
+      button.append(preview, label); fillChoices.append(button);
+    });
     const traceChoices = document.querySelector("#pathPatternChoices");
     Kroki.PathTracePatterns.choices.forEach(choice => {
       const button = document.createElement("button");
@@ -2231,6 +2258,9 @@
       const sample = utils.createSvgElement("path", { d: "M5 22Q45 0 85 18", fill: "none", stroke: choice.base || "#334155", "stroke-width": 15 });
       preview.append(sample);
       preview.append(utils.createSvgElement("path", { d: "M5 18Q45 -4 85 14M5 24Q45 2 85 20", fill: "none", stroke: choice.ink || "#334155", "stroke-width": 2, "stroke-dasharray": choice.id === "tire" ? "5 4" : choice.id === "grit" ? "1 5" : "none" }));
+      if (choice.id === "brake") {
+        preview.replaceChildren(utils.createSvgElement("path", { d: "M5 15Q45 -7 85 11M5 22Q45 0 85 18M5 29Q45 7 85 25", fill: "none", stroke: choice.ink, "stroke-width": 2.2 }));
+      }
       const label = document.createElement("span"); label.textContent = choice.title;
       button.append(preview, label); traceChoices.append(button);
       button.addEventListener("click", () => {
@@ -2530,7 +2560,7 @@
         const patternChoice = choiceById(FILL_PATTERNS, pattern);
         const patch = { fillPattern: pattern };
         if (pattern === "none") patch.fill = "#ffffff";
-        if (pattern !== "none" && (selectedFillTarget || currentStyle.fill === "none" || currentStyle.fill === "#ffffff")) {
+        if (pattern !== "none" && (selectedFillTarget || INCIDENT_FILLS.some(choice => choice.id === pattern) || currentStyle.fill === "none" || currentStyle.fill === "#ffffff")) {
           patch.fill = patternChoice.defaultFill || "#d1d5db";
         }
         updateStyle(patch);

@@ -50,7 +50,7 @@ assert.doesNotMatch(indexSource, /btnSideTextBold|btnSideTextItalic|btnSideTextU
 assert.doesNotMatch(styleManagerSource, /sideTextBold|sideTextItalic|sideTextUnderline|sideTextFormatStack|textObjectControls/);
 assert.match(styleManagerSource, /controls\?\.textAlign\?\.classList\.toggle\("gizli", isTextObject \|\| noText \|\| isCatalogObject \|\| isLineFamily \|\| isShapeFamily \|\| isCallout\)/);
 assert.match(styleManagerSource, /controls\?\.stylePanel\?\.classList\.toggle\("is-callout-panel", isCallout\)/);
-assert.match(styleManagerSource, /controls\?\.shapeAdvancedStyleControls\?\.classList\.toggle\("gizli", !isShapeFamily && !isCallout && !isLineFamily\)/);
+assert.match(styleManagerSource, /controls\?\.shapeAdvancedStyleControls\?\.classList\.toggle\("gizli", !isShapeFamily && !isCallout\)/);
 assert.match(styleManagerSource, /controls\.shapeAdvancedStyleLabel\.textContent = isCallout \? "Cizgi davranisi" : isLineFamily \? "Hat deseni" : "Dolgu deseni"/);
 for (const [id, order] of [["btnLineText", 10], ["btnLineTextStyle", 20], ["btnLineColor", 30], ["calloutTextSizeStepper", 40], ["btnLineStyle", 50]]) {
   assert.match(cssSource, new RegExp(`\\.editor-side-ip\\.is-callout-ip #${id}\\s*\\{\\s*order:\\s*${order};`));

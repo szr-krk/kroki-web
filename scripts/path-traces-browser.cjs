@@ -42,6 +42,7 @@ const server = http.createServer((req, res) => {
  });
  await page.click('#btnLineStyle');
  await page.click('#btnLinePanelFillPattern');
+ assert.ok(await page.evaluate(()=>document.querySelector('#btnLinePanelFillPattern').parentElement===document.querySelector('#btnLinePanelCap').parentElement),'Trace beside line cap');
  assert.equal(await page.locator('[data-path-pattern-choice]:visible').count(),7);
  assert.equal(await page.locator('[data-fill-pattern]:visible').count(),0);
  await page.click('[data-path-pattern-choice="mud"]');
@@ -110,6 +111,19 @@ const server = http.createServer((req, res) => {
  assert.equal(await page.locator('[data-path-pattern-choice]:visible').count(),0);
  await page.click('[data-fill-pattern="grass"]');
  assert.equal(await page.evaluate(()=>Kroki.EditorObjectManager.get(window.testRect).style.fillPattern),'grass');
+ for(const fill of ['waterPool','mudArea','oilSpill','sandGravel']) {
+ await page.click(`[data-fill-pattern="${fill}"]`);
+ assert.equal(await page.evaluate(()=>Kroki.EditorObjectManager.get(window.testRect).style.fillPattern),fill);
+ await page.evaluate(()=>{const K=Kroki,json=K.DocumentSerializer.toJson();K.DocumentSerializer.fromJson(json);K.SelectionManager.edit(window.testRect)});
+ await page.click('#btnLineStyle');await page.click('#btnLinePanelFillPattern');
+ }
+ await page.screenshot({path:path.join(output,'area-fills.png')});
+ await page.evaluate(ids=>{
+ const el=Kroki.EditorObjectManager.getElement(ids[2]);
+ const pattern=document.querySelector(el.getAttribute('stroke').slice(4,-1));
+ if(pattern.querySelector('rect')||pattern.querySelectorAll('path').length!==3)throw Error('Brake must have three separated streaks and no solid base');
+ },ids);
+
  await page.evaluate(()=>{Kroki.SelectionManager.clear();Kroki.EditorObjectManager.remove(window.testRect,{skipHistory:true});document.querySelector('#editorCanvas').setAttribute('viewBox','0 0 1100 800')});
  await page.evaluate(id=>Kroki.EditorObjectManager.updateStyle(id,{pathPattern:'water',pathPatternReverse:false}),ids[0]);
  await page.screenshot({path:path.join(output,'traces.png')});

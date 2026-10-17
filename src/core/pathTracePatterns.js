@@ -5,7 +5,7 @@
     { id: "none", title: "Yok — normal çizgi" },
     { id: "water", title: "Su akıntısı", base: "#91d6ef", ink: "#1677ad" },
     { id: "mud", title: "Çamur akıntısı", base: "#ba926b", ink: "#704622" },
-    { id: "brake", title: "Fren izi", base: "#a5a5a5", ink: "#242424" },
+    { id: "brake", title: "Fren izi", base: "transparent", ink: "#242424" },
     { id: "tire", title: "Kesintili lastik izi", base: "transparent", ink: "#303030" },
     { id: "oil", title: "Yağ / yakıt izi", base: "#a5a5a5", ink: "#44444c" },
     { id: "grit", title: "Kum / çakıl", base: "#ddc9a4", ink: "#897359" }
@@ -68,13 +68,13 @@
       }
       paint("path", { d: dots, fill: choice.ink });
     } else {
-      for (let lane = -2; lane <= 2; lane++) {
+      for (let lane = choice.id === "brake" ? -1 : -2; lane <= (choice.id === "brake" ? 1 : 2); lane++) {
         const d = samples.map((p, i) => {
           const wave = ["water", "mud", "oil"].includes(choice.id) ? Math.sin(p.s / Math.max(width * .65, .01) + lane * 1.8) * (choice.id === "oil" ? .09 : .045) : 0;
-          return (i ? "L" : "M") + xy(position(p, lane * .18 + wave));
+          return (i ? "L" : "M") + xy(position(p, lane * (choice.id === "brake" ? .34 : .18) + wave));
         }).join(" ");
         const extra = choice.id === "tire" ? { "stroke-dasharray": `${width*.5} ${width*.32}`, "stroke-linecap": "butt" } : {};
-        path(d, choice.id === "brake" ? .12 : choice.id === "oil" ? .19 : .065, choice.ink, extra);
+        path(d, choice.id === "brake" ? (lane === 0 ? .075 : .13) : choice.id === "oil" ? .19 : .065, choice.ink, extra);
       }
       if (choice.id === "water" || choice.id === "mud") {
         let arrows = "";
