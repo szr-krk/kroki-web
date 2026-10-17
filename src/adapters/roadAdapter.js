@@ -537,10 +537,10 @@
     return clamp(scaledWidth / Math.max(MIN_WIDTH, section.totalWidth), 0, 1);
   }
 
-  function normalizeShoulder(source, fallback) {
+  function normalizeShoulder(source, fallback, maxWidth = 180) {
     return {
       enabled: boolOr(source?.enabled, fallback.enabled),
-      width: widthOr(source?.width, fallback.width, 0, 180)
+      width: widthOr(source?.width, fallback.width, 0, maxWidth)
     };
   }
 
@@ -791,7 +791,7 @@
       leftShoulder: normalizeShoulder(source.leftShoulder, base.leftShoulder),
       rightShoulder: normalizeShoulder(source.rightShoulder, base.rightShoulder),
       innerShoulder: normalizeShoulder(source.innerShoulder, base.innerShoulder),
-      waterChannel: normalizeShoulder(source.waterChannel, base.waterChannel),
+      waterChannel: normalizeShoulder(source.waterChannel, base.waterChannel, 1000),
       barrier: normalizeShoulder(source.barrier, base.barrier),
       marking: {
         style: normalizeMarkingStyle(source.marking?.style),
