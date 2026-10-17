@@ -39,7 +39,7 @@
   const adapter = {
     elementTag: "line",
     className: "editor-cizgi",
-    capabilities: { arrows: true, fill: false, curvedLabel: false },
+    capabilities: { pathPattern: true, arrows: true, fill: false, curvedLabel: false },
 
     create(initialData = {}) {
       const start = initialData.start || { x: 0, y: 0 };

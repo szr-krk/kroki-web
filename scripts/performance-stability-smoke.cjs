@@ -21,7 +21,7 @@ generatedCatalogFiles.forEach((file) => {
   catalogRecords += records;
   catalogBytes += Buffer.byteLength(source);
 });
-assert.equal(catalogRecords, 353);
+assert.equal(catalogRecords, 354);
 assert.ok(catalogBytes < 800 * 1024, `katalog yuku tekrar buyudu: ${catalogBytes} bayt`);
 
 const shapeRegistry = read("src/core/shapeRegistry.js");

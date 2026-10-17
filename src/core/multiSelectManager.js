@@ -738,6 +738,7 @@
       if ((key === "arrowStart" || key === "arrowEnd") && !capabilities.arrows) return;
       if ((key === "dash" || key === "dashSize" || key === "dashGap" || key === "lineCap") && capabilities.textObject) return;
       if ((key === "stroke" || key === "strokeOpacity" || key === "strokeWidth") && capabilities.textObject) return;
+      if ((key === "pathPattern" || key === "pathPatternReverse") && !capabilities.pathPattern) return;
       next[key] = value;
     });
     return Object.keys(next).length ? next : null;

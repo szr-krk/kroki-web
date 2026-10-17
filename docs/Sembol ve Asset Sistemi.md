@@ -66,7 +66,7 @@ Dosyalar:
 - `src/ui/otherSymbolLibrary.js`
 - `src/adapters/otherSymbolAdapter.js`
 
-Mevcut generated katalog 40 semboldür. Kategoriler insan, hayvan ve çevre elemanlarıdır.
+Mevcut generated katalog 41 semboldür. Kategoriler insan, hayvan ve çevre elemanlarıdır.
 
 Generator kaynak XML içindeki SVG tanımlarını okur, her sembole şu metadata'yı verir:
 
@@ -140,3 +140,6 @@ Sınırlamalar:
 ## Offline paket kuralı
 
 Uygulama offline çalışmalıdır. Yeni asset veya ikon için CDN, remote image, web font, API veya runtime network fetch eklenmemelidir. Tüm görsel kaynaklar repo içinde ya generated JS'e gömülü ya da local dosya olarak paketlenmiş olmalıdır.
+
+### 2026-10-17 — Kan izi
+Çevre Elemanları kategorisinde Çarpma Noktası hemen ardından Kan İzi eklendi. Kaynak XML ve generated katalog birlikte güncellendi. Koyu kırmızı kompakt SVG lekeler standart otherSymbol adapter ile büyütülür, döndürülür, gruplanır ve kaydedilir; ayrıca kapalı dolgu seçeneği eklenmedi.

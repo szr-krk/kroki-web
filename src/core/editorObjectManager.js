@@ -668,6 +668,7 @@
     const adapter = adapterFor(model);
     if (!model || !element || !adapter) return null;
     adapter.render(model, element);
+    if (adapter.capabilities?.pathPattern && model.style.pathPattern !== "none") Kroki.PathTracePatterns.ensure(canvas, model, adapter, model.style);
     if (options.labels !== false && !adapter.capabilities?.ownsLabel && !adapter.capabilities?.noText && !adapter.capabilities?.textObject) {
       renderLabel(model);
     }

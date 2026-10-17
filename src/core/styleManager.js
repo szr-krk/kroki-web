@@ -487,7 +487,7 @@
   }
 
   function supportsFillPatternTarget(adapter, model) {
-    return supportsFillPattern(adapter) || Boolean(pocketIslandInfo(adapter, model)) || Boolean(islandCenterInfo(adapter, model));
+    return Boolean(adapter?.capabilities?.pathPattern) || supportsFillPattern(adapter) || Boolean(pocketIslandInfo(adapter, model)) || Boolean(islandCenterInfo(adapter, model));
   }
 
   function defaultStyleFor(type) {
@@ -524,6 +524,8 @@
       strokeOpacity: normalizeOpacity(source.strokeOpacity ?? source.strokeAlpha ?? legacyOpacity ?? base.strokeOpacity),
       fillOpacity: type === "callout" ? 1 : normalizeOpacity(source.fillOpacity ?? source.fillAlpha ?? legacyOpacity ?? base.fillOpacity),
       fillPattern: isShapeWithFill(type) ? normalizeFillPattern(merged.fillPattern || merged.fillTexture || merged.patternFill) : "none",
+      pathPattern: isLineToolType(type) ? (Kroki.PathTracePatterns?.normalize(merged.pathPattern) || "none") : "none",
+      pathPatternReverse: isLineToolType(type) && merged.pathPatternReverse === true,
       dash: dashPattern,
       dashSize: normalizeDashSize(merged.dashSize, defaults.dashSize),
       dashGap: normalizeDashGap(merged.dashGap, defaults.dashGap),
@@ -571,6 +573,8 @@
       stroke: element.dataset.strokeColor || element.style.stroke || element.getAttribute("stroke"),
       fill: element.dataset.fillColor || element.style.fill || element.getAttribute("fill"),
       fillPattern: element.dataset.fillPattern || element.getAttribute("data-fill-pattern"),
+      pathPattern: element.dataset.pathPattern,
+      pathPatternReverse: element.dataset.pathPatternReverse === "true",
       opacity: element.dataset.opacity || element.style.opacity || element.getAttribute("opacity"),
       strokeOpacity: element.dataset.strokeOpacity || element.style.strokeOpacity || element.getAttribute("stroke-opacity") || element.dataset.opacity || element.style.opacity || element.getAttribute("opacity"),
       fillOpacity: element.dataset.fillOpacity || element.style.fillOpacity || element.getAttribute("fill-opacity") || element.dataset.opacity || element.style.opacity || element.getAttribute("opacity"),
@@ -693,6 +697,10 @@
       return;
     }
 
+    if (style.pathPattern && style.pathPattern !== "none") {
+      element.dataset.pathPattern = style.pathPattern;
+      element.dataset.pathPatternReverse = String(style.pathPatternReverse);
+    } else { delete element.dataset.pathPattern; delete element.dataset.pathPatternReverse; }
     delete element.dataset.fillColor;
     delete element.dataset.fillPattern;
     delete element.dataset.opacity;
@@ -916,6 +924,7 @@
     const usedIds = new Set();
     canvas.querySelectorAll("#editorObjects [data-kroki-object='true'], #editorObjects [fill]").forEach((element) => {
       collectPaintId(element, "fill", usedIds);
+      collectPaintId(element, "stroke", usedIds);
     });
     defs.querySelectorAll("pattern[id^='editor-fill-pattern-']").forEach((pattern) => {
       if (!usedIds.has(pattern.id)) pattern.remove();
@@ -1042,6 +1051,14 @@
     applyStroke(element, styleForStrokeHelpers(style));
     applyDash(element, styleForStrokeHelpers(style));
     applyGeometryStrokeScaling(element);
+    if (adapter?.capabilities?.pathPattern) {
+      const trace = Kroki.PathTracePatterns.ensure(canvas, model, adapter, style);
+      if (trace) {
+        const paint = "url(#" + trace.id + ")";
+        element.setAttribute("stroke", paint);
+        element.style.stroke = paint;
+      }
+    }
 
     if (adapter?.capabilities?.fill) {
       const pattern = supportsFillPattern(adapter) ? ensureFillPattern(canvas, model, style) : null;
@@ -1250,8 +1267,8 @@
     const trafficSignFieldText = isTrafficSign && trafficSignEditableFields({ adapter, model }).length > 0;
     controls?.shapeOnlyControls?.forEach((control) => control.classList.toggle("gizli", !hasFill));
     controls?.fillButton?.classList.toggle("gizli", !hasFill || isCallout);
-    controls?.fillPatternButton?.classList.toggle("gizli", !hasFillPattern || isShapeFamily);
-    controls?.fillPatternPanelButton?.classList.toggle("gizli", !hasFillPattern || !isShapeFamily);
+    controls?.fillPatternButton?.classList.toggle("gizli", !hasFillPattern || isShapeFamily || isLineFamily);
+    controls?.fillPatternPanelButton?.classList.toggle("gizli", !hasFillPattern || (!isShapeFamily && !isLineFamily));
     controls?.closedShapeControls?.forEach((control) => control.classList.toggle("gizli", !hasPointEdit));
     controls?.objectRotationControl?.classList.toggle("gizli", !hasRotationPicker);
     controls?.roadOnlyControls?.forEach((control) => control.classList.toggle("gizli", !usesRoadControls));
@@ -1269,9 +1286,10 @@
     controls?.textStylePanel?.classList.toggle("is-shape-family-panel", isShapeFamily);
     controls?.textStylePanel?.classList.toggle("is-callout-panel", isCallout);
     controls?.textStylePanel?.classList.toggle("is-text-object-panel", isTextObject);
+    controls?.shapePanelCapButton?.classList.toggle("gizli", isLineFamily);
     controls?.lineAdvancedStyleControls?.classList.toggle("gizli", !isLineFamily);
-    controls?.shapeAdvancedStyleControls?.classList.toggle("gizli", !isShapeFamily && !isCallout);
-    if (controls?.shapeAdvancedStyleLabel) controls.shapeAdvancedStyleLabel.textContent = isCallout ? "Cizgi davranisi" : "Dolgu deseni";
+    controls?.shapeAdvancedStyleControls?.classList.toggle("gizli", !isShapeFamily && !isCallout && !isLineFamily);
+    if (controls?.shapeAdvancedStyleLabel) controls.shapeAdvancedStyleLabel.textContent = isCallout ? "Cizgi davranisi" : isLineFamily ? "Hat deseni" : "Dolgu deseni";
     controls?.colorButton?.classList.toggle("gizli", isTextObject || usesRoadControls || isCatalogObject || isVehicleObject);
     controls?.textButton?.classList.toggle("gizli", noText);
     controls?.textStyleButton?.classList.toggle("gizli", !usesStructuredTextStylePanel(model?.type) || noText);
@@ -1930,7 +1948,8 @@
     const label = adapter?.effectiveLabel?.(model) || normalizeLabel(model.label, model.type);
     const dashPattern = choiceById(DASH_PATTERNS, style.dash);
     const lineCap = choiceById(LINE_CAPS, style.lineCap);
-    const fillPattern = choiceById(FILL_PATTERNS, style.fillPattern);
+    const isTrace = Boolean(adapter?.capabilities?.pathPattern);
+    const fillPattern = isTrace ? choiceById(Kroki.PathTracePatterns.choices, style.pathPattern) : choiceById(FILL_PATTERNS, style.fillPattern);
     const strokeOpacityValue = opacityPercent(style.strokeOpacity);
     const fillOpacityValue = opacityPercent(style.fillOpacity);
     const labelOpacityValue = opacityPercent(label.opacity);
@@ -1962,7 +1981,18 @@
     controls.colorButton?.setAttribute("aria-label", primaryColorLabel);
     controls.fillButton?.setAttribute("title", model.type === "callout" ? "Metin arka plan rengi" : "Dolgu rengi");
     controls.fillButton?.setAttribute("aria-label", model.type === "callout" ? "Metin arka plan rengi" : "Dolgu rengi");
-    const fillPatternLabel = fillPattern.id === "none" ? "Dolgu deseni" : "Dolgu deseni: " + fillPattern.title;
+    const fillPatternLabel = isTrace ? "Hat deseni: " + fillPattern.title : fillPattern.id === "none" ? "Dolgu deseni" : "Dolgu deseni: " + fillPattern.title;
+    controls.fillPatternPanel?.classList.toggle("is-trace-panel", isTrace);
+    controls.pathPatternChoices?.classList.toggle("gizli", !isTrace);
+    controls.pathPatternStatus.textContent = fillPatternLabel;
+    controls.pathPatternButtons.forEach(button => {
+      const selected = button.dataset.pathPatternChoice === style.pathPattern;
+      button.classList.toggle("is-selected", selected);
+      button.setAttribute("aria-checked", String(selected));
+    });
+    const reverse = controls.pathPatternReverse;
+    reverse.classList.toggle("gizli", !isTrace || !["water", "mud"].includes(style.pathPattern));
+    reverse.setAttribute("aria-pressed", String(style.pathPatternReverse));
     controls.fillPatternButtons?.forEach((button) => {
       button.classList.toggle("is-active", fillPattern.id !== "none");
       button.setAttribute("title", fillPatternLabel);
@@ -2191,7 +2221,33 @@
   function bindUi() {
     if (bound) return;
     bound = true;
+    const traceChoices = document.querySelector("#pathPatternChoices");
+    Kroki.PathTracePatterns.choices.forEach(choice => {
+      const button = document.createElement("button");
+      button.type = "button"; button.className = "path-pattern-option";
+      button.dataset.pathPatternChoice = choice.id;
+      button.setAttribute("role", "radio"); button.setAttribute("aria-checked", "false");
+      const preview = utils.createSvgElement("svg", { viewBox: "0 0 90 30", "aria-hidden": "true" });
+      const sample = utils.createSvgElement("path", { d: "M5 22Q45 0 85 18", fill: "none", stroke: choice.base || "#334155", "stroke-width": 15 });
+      preview.append(sample);
+      preview.append(utils.createSvgElement("path", { d: "M5 18Q45 -4 85 14M5 24Q45 2 85 20", fill: "none", stroke: choice.ink || "#334155", "stroke-width": 2, "stroke-dasharray": choice.id === "tire" ? "5 4" : choice.id === "grit" ? "1 5" : "none" }));
+      const label = document.createElement("span"); label.textContent = choice.title;
+      button.append(preview, label); traceChoices.append(button);
+      button.addEventListener("click", () => {
+        const entry = activeEntry();
+        if (!entry?.adapter?.capabilities?.pathPattern) return;
+        updateStyle({ pathPattern: choice.id });
+      });
+    });
+    document.querySelector("#btnPathPatternReverse").addEventListener("click", () => {
+      const entry = activeEntry();
+      if (entry?.adapter?.capabilities?.pathPattern) updateStyle({ pathPatternReverse: !entry.model.style.pathPatternReverse });
+    });
     controls = {
+      pathPatternChoices: traceChoices,
+      pathPatternButtons: Array.from(traceChoices.children),
+      pathPatternStatus: document.querySelector("#pathPatternStatus"),
+      pathPatternReverse: document.querySelector("#btnPathPatternReverse"),
       strokeMinus: document.querySelector("#btnLineStrokeWidthMinus"),
       strokePlus: document.querySelector("#btnLineStrokeWidthPlus"),
       strokeInput: document.querySelector("#lineStrokeWidthInput"),

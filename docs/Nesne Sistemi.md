@@ -182,3 +182,10 @@ Grup etkileşimi: [[Seçim Sistemi#Gruplar]].
 
 - Text bounding box font metriklerini yaklaşıklar; `Arial Narrow` dosyası depoda olsa da text adapter `Roboto, Arial, sans-serif` kullanır. Font dosyasının mevcut rolü koddan görünmüyor.
 - Manager `syncFromDom()` legacy SVG öğelerini modele alabilir; bunun kullanıcıya açık SVG import özelliğiyle nasıl bağlanacağı henüz tanımlı değildir.
+
+### 2026-10-17 — Hattı takip eden iz desenleri
+Line, arc ve quadratic/cubic bezier adapter'ları `pathPattern` capability taşır. Ortak stil panelindeki dolgu düğmesi bu nesnelerde isimli Hat deseni panelini açar: su, çamur, fren, kesintili lastik, yağ/yakıt ve kum/çakıl. Yok normal çizgiye döner; genişlik `strokeWidth`, saydamlık mevcut stroke saydamlığıdır. Su/çamur yönü ters çevrilebilir. Callout ve bariyer dahil değildir; kapalı dolgular mevcut kalır.
+
+`style.pathPattern` ve `pathPatternReverse` plain JSON alanlarıdır. `pathTracePatterns.js`, adapter `pointAt` geometrisinden en fazla 160 aralık örnekler; nesneye özgü SVG stroke pattern üretir. Renkler desenin sabit paletidir; normal stroke rengi Yok seçeneği için saklanır. Orijinal line/path değişmediği için hit-test, kontrol noktaları, grup ve stroke genişliği aynı kalır. Türetilen paint tanımı belge modeline eklenmez; SVG çıktısında defs korunur. Geometri önizleme ve manager renderGeometry yolları paint'i günceller; aynı geometri cache'den döner, pan/zoom yeniden üretmez, çizim düğümleri tekrar kullanılır. Kullanılmayan paint tanımları mevcut defs temizliğine dahildir.
+
+Doğrulama: `scripts/path-traces-browser.cjs` (24 tür/desen, canlı CP, grup, undo/redo, kopyalama/silme, serializer, gerçek SVG export, kapalı dolgu ve 4x CPU dokunmatik kontrolleri).

@@ -197,7 +197,7 @@
   const adapter = {
     elementTag: "path",
     className: "editor-cizgi",
-    capabilities: { arrows: true, fill: false, curvedLabel: true },
+    capabilities: { pathPattern: true, arrows: true, fill: false, curvedLabel: true },
 
     create(initialData = {}) {
       const start = initialData.start || { x: 0, y: 0 };

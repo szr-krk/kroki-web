@@ -353,6 +353,7 @@
     if (!dragState || !model || !adapter) return;
     if (dragState.lineElement?.isConnected && typeof adapter.render === "function") {
       adapter.render(model, dragState.lineElement);
+      if (adapter.capabilities?.pathPattern && model.style.pathPattern !== "none") Kroki.PathTracePatterns.ensure(manager.canvas, model, adapter, model.style);
     }
     if (dragState.lineSelectionElement?.isConnected && typeof adapter.renderSelection === "function") {
       adapter.renderSelection(dragState.lineSelectionElement, model, model.style, mode);

@@ -1813,3 +1813,14 @@
   font-weight: 900;
   line-height: 1.05;
 }
+
+/* Named, path-following trace choices share the existing fill panel. */
+.path-pattern-status { font-size: .85rem; padding: .35rem; font-weight: 600; }
+.fill-pattern-panel.is-trace-panel { width: 18rem; max-height: 75vh; overflow-y: auto; }
+.fill-pattern-panel.is-trace-panel > .fill-pattern-options { display: none; }
+.path-pattern-choices { display: grid; grid-template-columns: 1fr; gap: .3rem; }
+.path-pattern-option { display: flex; align-items: center; gap: .65rem; min-height: 2.8rem; padding: .3rem .5rem; border: 1px solid #cbd5e1; border-radius: .45rem; background: #fff; color: #102033; text-align: left; font: inherit; font-size: .85rem; cursor: pointer; }
+.path-pattern-option svg { width: 4.2rem; height: 1.7rem; flex: none; }
+.path-pattern-option.is-selected { border-color: #0f766e; background: #e5f5f2; box-shadow: inset 0 0 0 1px #0f766e; }
+.path-pattern-reverse { width: 100%; margin-top: .5rem; padding: .6rem; border: 1px solid #94a3b8; border-radius: .4rem; background: #fff; font: inherit; font-size: .85rem; }
+.path-pattern-reverse[aria-pressed="true"] { background: #e5f5f2; border-color: #0f766e; }
