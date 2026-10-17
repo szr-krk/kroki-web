@@ -1803,6 +1803,7 @@
       if (!pointInPolygon(point, surface.polygon)) return false;
       if (surface.isIsland) {
         if (surface.config.islandMode !== "modern" && sourceSurface && !sourceSurface.isIsland) {
+          if (surface.classicChannels?.has(sourceId)) return false;
           const nearest = sourceSurface.samples.reduce((best, sample) => dist(sample.center, point) < dist(best.center, point) ? sample : best);
           const offset = (point.x - nearest.center.x) * nearest.normal.x + (point.y - nearest.center.y) * nearest.normal.y;
           const side = surface.classicSides?.get(sourceId);
@@ -1810,6 +1811,7 @@
         }
         return true;
       }
+      if (sourceSurface?.isIsland && pointInClassicChannel(sourceSurface, surface, point)) return false;
       if (sourceSurface && areLaneSplitSiblingsAtPoint(sourceSurface, surface, point)) return true;
       const attachments = sourceSurface ? surfaceTerminalAttachments(surface, sourceSurface) : [];
       if (attachments.length && !attachments.some((attachment) => isOnAttachmentOpenSide(attachment, point, INTERSECTION_PAD))) return false;
@@ -1881,7 +1883,7 @@
     const segments = [];
     surfaces.forEach((surface) => {
       const poly = surface.polygon;
-      const cutters = surface.classicEnvelope ? [...surfaces, { id: "classic-envelope", polygon: surface.classicEnvelope, bounds: boundsOfPoints(surface.classicEnvelope) }] : surfaces;
+      const cutters = surface.classicEnvelope ? [...surfaces, ...surface.classicChannels.values(), { id: "classic-envelope", polygon: surface.classicEnvelope, bounds: boundsOfPoints(surface.classicEnvelope) }] : surfaces;
       for (let i = 0; i < poly.length; i += 1) {
         const a = poly[i];
         const b = poly[(i + 1) % poly.length];
@@ -2137,6 +2139,7 @@
     return lastRoadSurfaces.some((surface) => {
       if (surface.id === sourceId) return false;
       if (!boundsOverlap(surface.bounds, { minX: point.x, maxX: point.x, minY: point.y, maxY: point.y }, 0.5)) return false;
+      if (pointInClassicChannel(roadSurfaceForId(sourceId), surface, point)) return false;
       return pointInPolygon(point, surface.polygon);
     });
   }
@@ -2146,10 +2149,38 @@
     return Boolean(surface?.isIsland && surface.config.islandMode !== "modern");
   }
 
+  function signedOffsetOnSurface(road, point) {
+    let best = Infinity, offset = 0;
+    for (let i = 1; i < road.samples.length; i++) {
+      const a = road.samples[i - 1].center, b = road.samples[i].center;
+      const dx = b.x - a.x, dy = b.y - a.y, length = Math.hypot(dx, dy);
+      if (!length) continue;
+      const t = clamp(((point.x - a.x) * dx + (point.y - a.y) * dy) / (length * length), 0, 1);
+      const x = a.x + dx * t, y = a.y + dy * t, distance = Math.hypot(point.x - x, point.y - y);
+      if (distance < best) { best = distance; offset = ((point.x - x) * -dy + (point.y - y) * dx) / length; }
+    }
+    return offset;
+  }
+
+  function pointInClassicChannel(island, road, point) {
+    const channel = island?.classicChannels?.get(road.id);
+    if (!channel) return false;
+    const offset = signedOffsetOnSurface(road, point);
+    return offset > channel.startOffset && offset < channel.endOffset;
+  }
+
+  function isIslandEntryBoundary(id, boundary) {
+    if (isRoadShoulderBoundary(boundary)) return true;
+    const roles = [boundary?.before?.role, boundary?.after?.role];
+    return roles.includes("lane") && (roles.includes("innerShoulder") || roles.includes("waterChannel"))
+      && lastIslandSurfaces.some((island) => island.classicChannels?.has(id));
+  }
+
   function prepareClassicIslands(surfaces) {
     surfaces.filter((s) => s.isIsland).forEach((island) => {
       island.classicEnvelope = null;
       island.classicSides = new Map();
+      island.classicChannels = new Map();
       if (island.config.islandMode === "modern") return;
       const center = island.model.geometry.center;
       const connected = surfaces.filter((road) => !road.isIsland && boundsOverlap(road.bounds, island.bounds)
@@ -2166,6 +2197,16 @@
           if (distance < best) { best = distance; const signed = ((center.x - x) * -dy + (center.y - y) * dx) / (Math.hypot(dx, dy) || 1); side = Math.abs(signed) < 0.001 ? 0 : Math.sign(signed); }
         }
         island.classicSides.set(road.id, side);
+        if (road.config.divided && road.config.waterChannel?.enabled) {
+          const section = manager.getAdapter(road.model).crossSection(road.config);
+          const channel = section.sections.find((item) => item.role === "waterChannel");
+          const offset = signedOffsetOnSurface(road, center);
+          if (channel && offset > channel.startOffset && offset < channel.endOffset) {
+            const edge = (value) => road.samples.map((sample) => ({ x: sample.center.x + sample.normal.x * value, y: sample.center.y + sample.normal.y * value }));
+            const polygon = [...edge(channel.startOffset), ...edge(channel.endOffset).reverse()];
+            island.classicChannels.set(road.id, { ...channel, polygon, bounds: boundsOfPoints(polygon), id: "channel:" + road.id });
+          }
+        }
       });
     });
   }
@@ -2188,15 +2229,20 @@
   }
 
   function pointInsideIslandMouth(id, point, boundary) {
-    if (!isRoadShoulderBoundary(boundary) || isIslandRoadId(id)) return false;
+    if (!isIslandEntryBoundary(id, boundary) || isIslandRoadId(id)) return false;
     return roadClipShapesFor(id, boundary).some((shape) => {
       if (!isIslandPairForRoad(id, shape)) return false;
       return shape.roadIds.some((otherId) => {
         const surface = roadSurfaceForId(otherId), center = surface?.islandCenterMask;
         if (!center || !isClassicIslandId(otherId)) return false;
         // Only the shoulder facing the physical island is an entry/exit boundary.
-        const side = surface.classicSides?.get(id);
-        if (side == null || (side !== 0 && Math.sign(boundary.offset) !== side)) return false;
+        if (surface.classicChannels?.has(id)) {
+          const roles = [boundary.before?.role, boundary.after?.role];
+          if (!roles.includes("lane") || (!roles.includes("innerShoulder") && !roles.includes("waterChannel"))) return false;
+        } else {
+          const side = surface.classicSides?.get(id);
+          if (side == null || (side !== 0 && Math.sign(boundary.offset) !== side)) return false;
+        }
         const distance = Math.hypot(point.x - center.cx, point.y - center.cy);
         return distance >= center.radius && distance < surface.model.geometry.outerDiameter / 2;
       });
@@ -2204,7 +2250,7 @@
   }
 
   function islandMouthDashedRangesForLine(id, offset = 0, from = 0, to = 1, boundary = null) {
-    if (!lastIslandSurfaces.length || !isRoadShoulderBoundary(boundary) || isIslandRoadId(id)) return [];
+    if (!lastIslandSurfaces.length || !isIslandEntryBoundary(id, boundary) || isIslandRoadId(id)) return [];
     if (!roadClipShapesFor(id, boundary).some((shape) => isIslandPairForRoad(id, shape))) return [];
     return cachedRanges(visibleRangeCacheKey("island-mouth", id, offset, from, to, boundary), () => (
       lineRangesByIntersectionState(id, offset, from, to,
@@ -2218,7 +2264,16 @@
     if (isClassicIslandId(id) && outsideClassicEnvelope(roadSurfaceForId(id), point)) return true;
     if (isIslandOuterEdgeBoundary(id, boundary)) return pointInsideOtherSurfacePolygon(point, id);
     return roadClipShapesFor(id, boundary).some((shape) => {
-      if (isIslandPairForRoad(id, shape) && boundary?.before && boundary?.after) return false;
+      if (isIslandPairForRoad(id, shape) && boundary?.before && boundary?.after) {
+        // Open the channel edge; keep the adjacent inner shoulder as entry dashes.
+        if (boundary.role === "channel" && [boundary.before.role, boundary.after.role].includes("innerShoulder")) {
+          return shape.roadIds.some((otherId) => {
+            const island = roadSurfaceForId(otherId);
+            return island?.classicChannels?.has(id) && Math.hypot(point.x - island.model.geometry.center.x, point.y - island.model.geometry.center.y) < island.model.geometry.outerDiameter / 2;
+          });
+        }
+        return false;
+      }
       if (shouldPreserveLaneSplitShoulderForShape(id, boundary, shape)) return false;
       if (shouldPreserveBoundaryForShape(id, boundary, shape)) return false;
       return pointInPolygon(point, shape.points);

@@ -180,3 +180,8 @@ Yeni eklenen ada `metadata.road.islandMode = "modern"` ile başlar. Eski kayıtt
 Modern mod önceki ada-yol kesişim temizliğini ve gerçek dış çemberi kullanır. Döner (`classic`) modunda iç yol çizgileri korunur; yalnız adaya bakan dış banket/şerit sınırı örtüşmede kesikli gösterilir. Karşı kenar korunur. Bağlı yolların örneklenmiş yüzeylerinden oluşturulan dış zarfın dışında kalan ada çizgileri kırpılır; fiziksel ada sınırı korunur. Bağlantısız ada düzenlenebilir tam halka olarak görünür. Seçim çemberi ve çap kontrol noktaları gerçek çapı göstermeye devam eder; bunlar çizim çıktısına dahil değildir. `classicEnvelope` ve taraf eşlemesi yalnız yeniden hesaplanan yüzey state'idir, belgeye yazılmaz.
 
 Test: `scripts/roundabout-modes-browser.cjs`, `scripts/island-mouth-browser.cjs` ve Q/cep/ayrılan yol regresyonları.
+
+### 2026-10-17 — Su kanalı içindeki Döner kavşak
+Döner modunda ada merkezi bölünmüş yolun etkin su kanalı içinde kalıyorsa girişler kanal tarafındaki şerit/iç banket sınırında kesikli gösterilir. İç banket yoksa şerit/kanal sınırı kullanılır. Kanal kenarı girişte açılır; dış banket, dış kontur ve şerit ayırıcılar korunur. Kanal, ada dış yaylarının görünürlüğünde boşluk kabul edilir. Modern mod ve kanal dışında kalan adaların davranışı değişmez. `classicChannels` yalnız türetilen yüzey verisidir; belgeye kaydedilmez.
+
+Doğrulama: `scripts/divided-island-browser.cjs` ile 12 geometri/yön/iç banket kombinasyonu, taşıma, undo ve kayıt yükleme; modern ve kanal dışı durumlarda önceki motorla sonuç karşılaştırması. Mevcut ada, kavşak türü, Q, cep ve ayrılan yol testleri de çalıştırılır.
