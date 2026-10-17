@@ -10,6 +10,16 @@
     { id: "oil", title: "Yağ / yakıt izi", base: "#a5a5a5", ink: "#44444c" },
     { id: "grit", title: "Kum / çakıl", base: "#ddc9a4", ink: "#897359" }
   ];
+  // Vehicle catalog uses 50 units per 3.5 metres. One path is one tyre.
+  const brakeWidths = [
+    { id: "thin", title: "İnce", width: 1.8 },
+    { id: "normal", title: "Normal", width: 3.2 },
+    { id: "wide", title: "Geniş", width: 4.8 }
+  ];
+  const brakeWidthChoice = value => brakeWidths.find(c => c.id === value) || brakeWidths[1];
+  const strokeWidth = style => style?.pathPattern === "brake"
+    ? brakeWidthChoice(style.brakeWidth).width * Math.max(.001, Number(style.brakeScale) || 1)
+    : style.strokeWidth;
   const cache = new WeakMap();
   const normalize = value => choices.some(c => c.id === value) ? value : "none";
   const fmt = n => String(Math.round(n * 100) / 100);
@@ -25,10 +35,10 @@
     const id = "editor-fill-pattern-trace-" + String(model.id).replace(/[^a-zA-Z0-9_-]/g, "_");
     let pattern = Array.from(defs.children).find(p => p.id === id);
     if (!pattern) { pattern = U.createSvgElement("pattern", { id }); defs.append(pattern); }
-    const key = JSON.stringify([model.geometry, style.strokeWidth, choice.id, style.pathPatternReverse]);
+    const key = JSON.stringify([model.geometry, strokeWidth(style), choice.id, style.pathPatternReverse]);
     if (cache.get(pattern) === key) return pattern;
     cache.set(pattern, key);
-    const width = Math.max(.01, style.strokeWidth);
+    const width = Math.max(.01, strokeWidth(style));
     const rough = Array.from({ length: 33 }, (_, i) => adapter.pointAt(model, i / 32));
     const length = rough.slice(1).reduce((n, p, i) => n + Math.hypot(p.x - rough[i].x, p.y - rough[i].y), 0);
     const count = Math.min(160, Math.max(24, Math.ceil(length / Math.max(3, width * .22))));
@@ -60,7 +70,19 @@
     if (choice.base !== "transparent") paint("rect", { x: minX, y: minY, width: w, height: h, fill: choice.base });
     const position = (p, offset) => ({ x: p.x + p.nx * offset * width, y: p.y + p.ny * offset * width });
     const path = (d, thickness, color, extra = {}) => paint("path", { d, fill: "none", stroke: color, "stroke-width": width * thickness, "stroke-linecap": "round", "stroke-linejoin": "round", ...extra });
-    if (choice.id === "grit") {
+    if (choice.id === "brake") {
+      // Staggered irregular micro-dashes follow each offset curve. Seven paths
+      // provide grain without thousands of individual DOM nodes or raster assets.
+      const scale = Math.max(.001, Number(style.brakeScale) || 1);
+      for (let rail = -3; rail <= 3; rail++) {
+        const d = samples.map((p, i) => (i ? "L" : "M") + xy(position(p, rail * .14))).join(" ");
+        const grain = [.58, .43, .92, .67, .38, .61, .74, .49].map((v, i) => fmt(v * scale * (1 + Math.sin(rail * 3.7 + i * 1.9) * .22))).join(" ");
+        path(d, .105, rail % 2 ? "#262626" : "#454545", {
+          "stroke-dasharray": grain, "stroke-dashoffset": fmt(rail * .71 * scale),
+          "stroke-linecap": "butt", opacity: Math.abs(rail) === 3 ? .38 : Math.abs(rail) === 2 ? .7 : .92
+        });
+      }
+    } else if (choice.id === "grit") {
       let dots = "";
       for (let i = 1; i < count; i += 2) {
         const p = position(samples[i], Math.sin(i * 12.9898) * .42), r = width * (.02 + .018 * (1 + Math.sin(i * 7)));
@@ -68,13 +90,13 @@
       }
       paint("path", { d: dots, fill: choice.ink });
     } else {
-      for (let lane = choice.id === "brake" ? -1 : -2; lane <= (choice.id === "brake" ? 1 : 2); lane++) {
+      for (let lane = -2; lane <= 2; lane++) {
         const d = samples.map((p, i) => {
           const wave = ["water", "mud", "oil"].includes(choice.id) ? Math.sin(p.s / Math.max(width * .65, .01) + lane * 1.8) * (choice.id === "oil" ? .09 : .045) : 0;
-          return (i ? "L" : "M") + xy(position(p, lane * (choice.id === "brake" ? .34 : .18) + wave));
+          return (i ? "L" : "M") + xy(position(p, lane * .18 + wave));
         }).join(" ");
         const extra = choice.id === "tire" ? { "stroke-dasharray": `${width*.5} ${width*.32}`, "stroke-linecap": "butt" } : {};
-        path(d, choice.id === "brake" ? (lane === 0 ? .075 : .13) : choice.id === "oil" ? .19 : .065, choice.ink, extra);
+        path(d, choice.id === "oil" ? .19 : .065, choice.ink, extra);
       }
       if (choice.id === "water" || choice.id === "mud") {
         let arrows = "";
@@ -92,5 +114,5 @@
     while (pattern.children.length > childIndex) pattern.lastElementChild.remove();
     return pattern;
   }
-  K.PathTracePatterns = { choices, normalize, ensure };
+  K.PathTracePatterns = { choices, normalize, ensure, brakeWidths, brakeWidthChoice, strokeWidth };
 })();

@@ -77,6 +77,31 @@ const server = http.createServer((req, res) => {
  for(const type of ['callout','barrier','rectangle','road'])if(K.StyleManager.normalizeStyle({pathPattern:'water'},type).pathPattern!=='none')throw Error('Unsupported pattern accepted');
  K.SelectionManager.clear();
  },ids);
+ // Brake is independent of ordinary stroke width; preset UI and history are explicit.
+ await page.evaluate(id=>Kroki.SelectionManager.edit(id),ids[2]);
+ assert.equal(await page.locator('#lineStrokeWidthStepper:visible').count(),0);
+ assert.equal(await page.locator('#btnBrakeWidth:visible').count(),1);
+ assert.equal(await page.locator('#btnBrakeWidth').textContent(),'Normal');
+ const ordinary=await page.evaluate(id=>Kroki.EditorObjectManager.get(id).style.strokeWidth,ids[2]);
+ await page.click('#btnBrakeWidth');
+ assert.equal(await page.evaluate(id=>Kroki.EditorObjectManager.get(id).style.brakeWidth,ids[2]),'wide');
+ await page.evaluate(()=>Kroki.HistoryManager.undo());
+ assert.equal(await page.evaluate(id=>Kroki.EditorObjectManager.get(id).style.brakeWidth,ids[2]),'normal');
+ await page.evaluate(()=>Kroki.HistoryManager.redo());
+ await page.click('#btnBrakeWidth');
+ assert.equal(await page.evaluate(id=>Kroki.EditorObjectManager.get(id).style.brakeWidth,ids[2]),'thin');
+ await page.click('#btnBrakeWidth');
+ await page.evaluate(({id,ordinary})=>{
+ const K=Kroki,m=K.EditorObjectManager,el=m.getElement(id);
+ if(m.get(id).style.strokeWidth!==ordinary)throw Error('Width button changed ordinary stroke');
+ const width=Number(el.getAttribute('stroke-width'));
+ if(width!==3.2)throw Error('Default tyre width');
+ m.updateStyle(id,{strokeWidth:1000},{skipHistory:true});
+ if(Number(el.getAttribute('stroke-width'))!==width)throw Error('Brake depends on stroke');
+ m.updateStyle(id,{pathPattern:'water'},{skipHistory:true});
+ if(Number(el.getAttribute('stroke-width'))!==1000)throw Error('Other traces lost stroke width');
+ m.updateStyle(id,{strokeWidth:ordinary,pathPattern:'brake'},{skipHistory:true});
+ },{id:ids[2],ordinary});
  // Every trace on straight, arc, quadratic and cubic; zero-length remains finite.
  await page.evaluate(()=>{
  const K=Kroki,m=K.EditorObjectManager;
@@ -99,8 +124,10 @@ const server = http.createServer((req, res) => {
  await page.evaluate(ids=>{
  const K=Kroki,m=K.EditorObjectManager,x=K.MultiSelectManager;
  x.selectIds([ids[0],ids[2],ids[6]],{mode:'edit'});x.createGroup();
- const old=m.get(ids[0]).style.strokeWidth;x.setGroupScalePercent(150);x.setGroupRotation(35);x.moveSelected(25,30);
+ const old=m.get(ids[0]).style.strokeWidth,brake=K.StyleManager.effectiveStrokeWidth(m.get(ids[2]).style);x.setGroupScalePercent(150);x.setGroupRotation(35);x.moveSelected(25,30);
  if(m.get(ids[0]).style.strokeWidth<=old)throw Error('Group width did not scale');
+ if(Math.abs(K.StyleManager.effectiveStrokeWidth(m.get(ids[2]).style)-brake*1.5)>.001)throw Error('Brake group ratio');
+ if(Math.abs(Number(m.getElement(ids[2]).getAttribute('stroke-width'))-brake*1.5)>.001)throw Error('Brake group paint width');
  const json=K.DocumentSerializer.toJson();K.DocumentSerializer.fromJson(json);
  if(K.GroupManager.getAll().length!==1)throw Error('Group roundtrip');
  },ids);
@@ -121,7 +148,7 @@ const server = http.createServer((req, res) => {
  await page.evaluate(ids=>{
  const el=Kroki.EditorObjectManager.getElement(ids[2]);
  const pattern=document.querySelector(el.getAttribute('stroke').slice(4,-1));
- if(pattern.querySelector('rect')||pattern.querySelectorAll('path').length!==3)throw Error('Brake must have three separated streaks and no solid base');
+ if(pattern.querySelector('rect')||pattern.querySelectorAll('path').length!==7)throw Error('Brake must have seven grain paths and no solid base');
  },ids);
 
  await page.evaluate(()=>{Kroki.SelectionManager.clear();Kroki.EditorObjectManager.remove(window.testRect,{skipHistory:true});document.querySelector('#editorCanvas').setAttribute('viewBox','0 0 1100 800')});
@@ -151,6 +178,13 @@ const server = http.createServer((req, res) => {
  await page.click('#btnLineStyle');await page.click('#btnLinePanelFillPattern');
  const box=await page.locator('#fillPatternPanel').boundingBox();assert.ok(box.x>=0&&box.y>=0&&box.x+box.width<=1025&&box.y+box.height<=769,'Panel fits tablet');
  await page.screenshot({path:path.join(output,'tablet.png')});
+ // Close-up for grain and preset visual review at vehicle-relative widths.
+ const reviewDoc=await page.evaluate(()=>Kroki.DocumentSerializer.toJson());
+ await page.evaluate(()=>{const K=Kroki,m=K.EditorObjectManager;K.SelectionManager.clear();m.clear({skipHistory:true});
+ for(const [i,preset] of K.PathTracePatterns.brakeWidths.entries())m.create('bezier',{start:{x:20,y:30+i*35},end:{x:150,y:30+i*35},style:{pathPattern:'brake',brakeWidth:preset.id,strokeWidth:100},label:{text:preset.title,size:2}},{skipHistory:true});
+ m.canvas.setAttribute('viewBox','0 0 180 140');});
+ await page.screenshot({path:path.join(output,'brake-widths.png')});
+ await page.evaluate(json=>Kroki.DocumentSerializer.fromJson(json),reviewDoc);
  const touchContext=await browser.newContext({viewport:{width:1024,height:768},hasTouch:true});
  const touch=await touchContext.newPage();touch.on('pageerror',e=>errors.push(e.message));
  const cdp=await touch.context().newCDPSession(touch);await cdp.send('Emulation.setCPUThrottlingRate',{rate:4});

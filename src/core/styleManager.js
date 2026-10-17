@@ -539,6 +539,8 @@
       fillPattern: isShapeWithFill(type) ? normalizeFillPattern(merged.fillPattern || merged.fillTexture || merged.patternFill) : "none",
       pathPattern: isLineToolType(type) ? (Kroki.PathTracePatterns?.normalize(merged.pathPattern) || "none") : "none",
       pathPatternReverse: isLineToolType(type) && merged.pathPatternReverse === true,
+      brakeWidth: Kroki.PathTracePatterns?.brakeWidthChoice(merged.brakeWidth).id || "normal",
+      brakeScale: Math.max(.001, numberOr(merged.brakeScale, 1)),
       dash: dashPattern,
       dashSize: normalizeDashSize(merged.dashSize, defaults.dashSize),
       dashGap: normalizeDashGap(merged.dashGap, defaults.dashGap),
@@ -549,6 +551,10 @@
     };
     if (normalized.dash === "dot") normalized.lineCap = "round";
     return normalized;
+  }
+
+  function effectiveStrokeWidth(style) {
+    return Kroki.PathTracePatterns?.strokeWidth(style) ?? style.strokeWidth;
   }
 
   function normalizeLabel(label, type, style) {
@@ -587,6 +593,8 @@
       fill: element.dataset.fillColor || element.style.fill || element.getAttribute("fill"),
       fillPattern: element.dataset.fillPattern || element.getAttribute("data-fill-pattern"),
       pathPattern: element.dataset.pathPattern,
+      brakeWidth: element.dataset.brakeWidth,
+      brakeScale: element.dataset.brakeScale,
       pathPatternReverse: element.dataset.pathPatternReverse === "true",
       opacity: element.dataset.opacity || element.style.opacity || element.getAttribute("opacity"),
       strokeOpacity: element.dataset.strokeOpacity || element.style.strokeOpacity || element.getAttribute("stroke-opacity") || element.dataset.opacity || element.style.opacity || element.getAttribute("opacity"),
@@ -712,8 +720,10 @@
 
     if (style.pathPattern && style.pathPattern !== "none") {
       element.dataset.pathPattern = style.pathPattern;
+      element.dataset.brakeWidth = style.brakeWidth;
+      element.dataset.brakeScale = String(style.brakeScale);
       element.dataset.pathPatternReverse = String(style.pathPatternReverse);
-    } else { delete element.dataset.pathPattern; delete element.dataset.pathPatternReverse; }
+    } else { delete element.dataset.pathPattern; delete element.dataset.pathPatternReverse; delete element.dataset.brakeWidth; delete element.dataset.brakeScale; }
     delete element.dataset.fillColor;
     delete element.dataset.fillPattern;
     delete element.dataset.opacity;
@@ -790,7 +800,7 @@
   function lineEndpointMarkerOffset(model, pointId) {
     const style = normalizeStyle(model?.style, model?.type);
     const type = pointId === "start" ? style.arrowStart : style.arrowEnd;
-    return markerTipOffset(type, style.strokeWidth, style.markerScale);
+    return markerTipOffset(type, effectiveStrokeWidth(style), style.markerScale);
   }
 
   function markerMetricKey(value) {
@@ -996,6 +1006,7 @@
   let markerPlacementSequence = 0;
 
   function applyMarkers(element, style, adapter, canvas, placements = null) {
+    style = { ...style, strokeWidth: effectiveStrokeWidth(style) };
     if (!adapter?.capabilities?.arrows) {
       element.removeAttribute("marker-start");
       element.removeAttribute("marker-end");
@@ -1019,7 +1030,8 @@
   }
 
   function applyStyleToElement(element, model, adapter, canvas) {
-    const style = normalizeStyle(model.style, model.type);
+    const normalized = normalizeStyle(model.style, model.type);
+    const style = { ...normalized, strokeWidth: effectiveStrokeWidth(normalized) };
     if (adapter?.capabilities?.textObject) {
       applyOpacity(element, style.opacity);
       element.removeAttribute("stroke");
@@ -1338,7 +1350,8 @@
       document.querySelector("#strokeColorPanel")?.classList.add("gizli");
       controls?.colorButton?.setAttribute("aria-expanded", "false");
     }
-    controls?.strokeStepper?.classList.toggle("gizli", isCallout || usesRoadControls || isCatalogObject || isVehicleObject);
+    controls?.brakeWidthButton?.classList.toggle("gizli", !isLineFamily || model?.style?.pathPattern !== "brake");
+    controls?.strokeStepper?.classList.toggle("gizli", isCallout || usesRoadControls || isCatalogObject || isVehicleObject || model?.style?.pathPattern === "brake");
     controls?.styleButton?.classList.toggle("gizli", isTextObject || usesRoadControls || isCatalogObject || isVehicleObject);
   }
 
@@ -1963,6 +1976,10 @@
     const label = adapter?.effectiveLabel?.(model) || normalizeLabel(model.label, model.type);
     const dashPattern = choiceById(DASH_PATTERNS, style.dash);
     const lineCap = choiceById(LINE_CAPS, style.lineCap);
+    const brakeChoice = Kroki.PathTracePatterns.brakeWidthChoice(style.brakeWidth);
+    controls.brakeWidthButton.textContent = brakeChoice.title;
+    controls.brakeWidthButton.setAttribute("aria-label", "Fren izi geni\u015fli\u011fi: " + brakeChoice.title);
+    controls.brakeWidthButton.title = "Fren izi geni\u015fli\u011fi: " + brakeChoice.title;
     const isTrace = Boolean(adapter?.capabilities?.pathPattern);
     const fillPattern = isTrace ? choiceById(Kroki.PathTracePatterns.choices, style.pathPattern) : choiceById(FILL_PATTERNS, style.fillPattern);
     const strokeOpacityValue = opacityPercent(style.strokeOpacity);
@@ -2248,6 +2265,13 @@
       const label = document.createElement("span"); label.textContent = choice.title;
       button.append(preview, label); fillChoices.append(button);
     });
+    document.querySelector("#btnBrakeWidth").addEventListener("click", () => {
+      const entry = activeEntry();
+      if (entry?.model?.style?.pathPattern !== "brake") return;
+      const widths = Kroki.PathTracePatterns.brakeWidths;
+      const index = widths.findIndex(c => c.id === entry.model.style.brakeWidth);
+      updateStyle({ brakeWidth: widths[(index + 1) % widths.length].id });
+    });
     const traceChoices = document.querySelector("#pathPatternChoices");
     Kroki.PathTracePatterns.choices.forEach(choice => {
       const button = document.createElement("button");
@@ -2259,7 +2283,7 @@
       preview.append(sample);
       preview.append(utils.createSvgElement("path", { d: "M5 18Q45 -4 85 14M5 24Q45 2 85 20", fill: "none", stroke: choice.ink || "#334155", "stroke-width": 2, "stroke-dasharray": choice.id === "tire" ? "5 4" : choice.id === "grit" ? "1 5" : "none" }));
       if (choice.id === "brake") {
-        preview.replaceChildren(utils.createSvgElement("path", { d: "M5 15Q45 -7 85 11M5 22Q45 0 85 18M5 29Q45 7 85 25", fill: "none", stroke: choice.ink, "stroke-width": 2.2 }));
+        preview.replaceChildren(utils.createSvgElement("path", { d: "M5 15Q45 -7 85 11M5 19Q45 -3 85 15M5 23Q45 1 85 19M5 27Q45 5 85 23", fill: "none", stroke: choice.ink, "stroke-width": 1.6, "stroke-dasharray": "1.2 1 .7 .9", opacity: .8 }));
       }
       const label = document.createElement("span"); label.textContent = choice.title;
       button.append(preview, label); traceChoices.append(button);
@@ -2274,6 +2298,7 @@
       if (entry?.adapter?.capabilities?.pathPattern) updateStyle({ pathPatternReverse: !entry.model.style.pathPatternReverse });
     });
     controls = {
+      brakeWidthButton: document.querySelector("#btnBrakeWidth"),
       pathPatternChoices: traceChoices,
       pathPatternButtons: Array.from(traceChoices.children),
       pathPatternStatus: document.querySelector("#pathPatternStatus"),
@@ -2706,6 +2731,7 @@
   Kroki.StyleManager = {
     constants: { ARROW_TYPES, TEXT_SIDES, TEXT_ANCHORS, TEXT_ALIGNS, TEXT_ROTATE_MODES, FILL_PATTERNS },
     normalizeStyle,
+    effectiveStrokeWidth,
     normalizeLabel,
     normalizeLabelText,
     normalizeLabelSize,

@@ -356,7 +356,7 @@
 
     renderSelection(element, model, style, mode) {
       utils.setAttributeIfChanged(element, "d", renderedGeometry(model, style).path);
-      utils.setAttributeIfChanged(element, "stroke-width", String(style.strokeWidth + 4));
+      utils.setAttributeIfChanged(element, "stroke-width", String((styleManager.effectiveStrokeWidth?.(style) ?? style.strokeWidth) + 4));
       utils.setAttributeIfChanged(element, "stroke-linecap", style.lineCap);
       element.classList.toggle("is-edit", mode === "edit");
       element.classList.toggle("is-preselect", mode === "preselect");

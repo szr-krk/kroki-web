@@ -1828,3 +1828,5 @@
 .fill-pattern-panel { max-height: 80vh; overflow-y: auto; }
 .incident-fill-option { height: auto; min-height: 4rem; padding: .3rem; gap: .25rem; font-size: .65rem; }
 .incident-fill-option svg { width: 2.8rem; height: 1.8rem; }
+
+.editor-side-ip.is-line-family-ip #btnBrakeWidth { order: 40; font-size: .8rem; font-weight: 700; overflow-wrap: anywhere; }

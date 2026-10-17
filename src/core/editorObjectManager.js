@@ -216,7 +216,7 @@
       return 0;
     }
 
-    const strokeWidth = Math.max(0, Number(model?.style?.strokeWidth) || 0);
+    const strokeWidth = Math.max(0, Number(styleManager.effectiveStrokeWidth?.(model.style) ?? model?.style?.strokeWidth) || 0);
     let pad = strokeWidth / 2;
     if (capabilities.arrows && (hasArrow(model?.style?.arrowStart) || hasArrow(model?.style?.arrowEnd))) {
       const visualStroke = Math.max(3, strokeWidth);
@@ -419,7 +419,7 @@
     label.textContent = text;
 
     const unit = utils.svgUnitsPerScreenPx(canvas);
-    const clearance = (model.style.strokeWidth / 2 + LABEL_LINE_GAP_PX) * unit;
+    const clearance = ((styleManager.effectiveStrokeWidth?.(model.style) ?? model.style.strokeWidth) / 2 + LABEL_LINE_GAP_PX) * unit;
     const metrics = labelVerticalMetrics(label, model.label.size);
     let offset = 0;
     if (side.id === "above") offset = -(metrics.bottom + clearance);
@@ -458,7 +458,7 @@
     textPath.textContent = text;
 
     const unit = utils.svgUnitsPerScreenPx(canvas);
-    const clearance = (model.style.strokeWidth / 2 + LABEL_LINE_GAP_PX) * unit;
+    const clearance = ((styleManager.effectiveStrokeWidth?.(model.style) ?? model.style.strokeWidth) / 2 + LABEL_LINE_GAP_PX) * unit;
     let offset = 0;
     if (side.id === "above") offset = -(model.label.size * 0.5 + clearance);
     if (side.id === "below") offset = model.label.size * 0.5 + clearance;

@@ -83,7 +83,7 @@
 
     hitTest(model, point, tolerance) {
       const { start, end } = renderedEndpoints(model);
-      const halfStroke = Math.max(0, utils.numberOr(model.style.strokeWidth, 0)) / 2;
+      const halfStroke = Math.max(0, utils.numberOr(styleManager.effectiveStrokeWidth?.(model.style) ?? model.style.strokeWidth, 0)) / 2;
       const direction = lineGeometry.normalizedVector(start, end);
       if (model.style.lineCap === "round") {
         return lineGeometry.distanceToSegment(start, end, point) <= halfStroke + tolerance;
@@ -157,7 +157,7 @@
     },
 
     getBounds(model) {
-      const pad = Math.max(0, utils.numberOr(model.style.strokeWidth, 0)) / 2;
+      const pad = Math.max(0, utils.numberOr(styleManager.effectiveStrokeWidth?.(model.style) ?? model.style.strokeWidth, 0)) / 2;
       const x = Math.min(model.geometry.start.x, model.geometry.end.x);
       const y = Math.min(model.geometry.start.y, model.geometry.end.y);
       return {
@@ -179,7 +179,7 @@
     renderSelection(element, model, style, mode) {
       const geometry = renderedEndpoints(model, style);
       utils.setAttributeIfChanged(element, "d", lineGeometry.pathData(geometry.start, geometry.end));
-      utils.setAttributeIfChanged(element, "stroke-width", String(style.strokeWidth + 4));
+      utils.setAttributeIfChanged(element, "stroke-width", String((styleManager.effectiveStrokeWidth?.(style) ?? style.strokeWidth) + 4));
       utils.setAttributeIfChanged(element, "stroke-linecap", style.lineCap);
       element.classList.toggle("is-edit", mode === "edit");
       element.classList.toggle("is-preselect", mode === "preselect");

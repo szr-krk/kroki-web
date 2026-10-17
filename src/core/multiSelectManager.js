@@ -738,7 +738,7 @@
       if ((key === "arrowStart" || key === "arrowEnd") && !capabilities.arrows) return;
       if ((key === "dash" || key === "dashSize" || key === "dashGap" || key === "lineCap") && capabilities.textObject) return;
       if ((key === "stroke" || key === "strokeOpacity" || key === "strokeWidth") && capabilities.textObject) return;
-      if ((key === "pathPattern" || key === "pathPatternReverse") && !capabilities.pathPattern) return;
+      if ((key === "pathPattern" || key === "pathPatternReverse" || key === "brakeWidth" || key === "brakeScale") && !capabilities.pathPattern) return;
       next[key] = value;
     });
     return Object.keys(next).length ? next : null;
@@ -901,7 +901,7 @@
   function scaleStyle(style, scale) {
     if (!style || !Number.isFinite(Number(scale)) || Math.abs(scale - 1) < 0.000001) return style;
     const next = clonePlain(style);
-    ["strokeWidth", "dashSize", "dashGap"].forEach((key) => {
+    ["strokeWidth", "dashSize", "dashGap", "brakeScale"].forEach((key) => {
       if (Number.isFinite(Number(next[key]))) next[key] = Number(next[key]) * scale;
     });
     next.markerScale = Number.isFinite(Number(next.markerScale))
