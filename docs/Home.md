@@ -61,3 +61,7 @@ Hazır çizim kartları ilk kez ilgili sekme açılınca hazırlanır. Kayıtlı
 React, paket yöneticisi, derleme adımı, CDN veya başka bir çalışma zamanı kütüphanesi yoktur. Yeni kod Chrome 90 tabanına uygun API ve CSS kullanır. Kart oranı için Chrome 88'den beri desteklenen `aspect-ratio` kullanılır; Chrome 90 sonrası API'lere bağımlılık eklenmez.
 
 Bağlantılar: [[Editör]], [[Menü Sistemi]], [[Serializer]], [[Performans Kriterleri]].
+
+
+### 2026-10-17 — Hazır çizimleri gerektiğinde yükleme
+`ready-drawings.js` ilk sayfa açılışında indirilmez. Home scriptinin `data-ready-source` adresi yalnız Hazır Çizimler sekmesi ilk açıldığında yüklenir; aynı oturumda yeniden indirilmez. Ağ hatasında yeniden deneme düğmesi sunulur. Paket henüz yüklenmediyse bu bölüm için bağlantı gerekir; HTTP önbelleğinin kullanılabilirliği tarayıcıya bağlıdır. GitHub Pages gzip sıkıştırması ve `max-age=600` HTTP önbelleği canlı yanıtlarla doğrulanmıştır; özel açma kodu veya servis çalışanı eklenmemiştir.

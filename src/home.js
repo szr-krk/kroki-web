@@ -15,6 +15,8 @@
   const titles = { recent: "Son Krokiler", template: "Şablonlarım", ready: "Hazır Çizimler" };
   let activeTab = "recent";
   let readyRendered = false;
+  let readyLoading = null;
+  const readySource = document.currentScript?.dataset.readySource;
   let modalFocus = null;
   let uploadKind = "svg";
   let selectedFile = null;
@@ -67,6 +69,33 @@
     document.querySelector("#homeListeAdet").textContent = document.getElementById(panels[activeTab]).dataset.count || "0";
   }
 
+  function loadReady() {
+    if (readyRendered) return Promise.resolve();
+    if (readyLoading) return readyLoading;
+    readyList.textContent = "Hazır çizimler yükleniyor…";
+    readyLoading = new Promise((resolve, reject) => {
+      if (Array.isArray(Kroki.ReadyDrawings)) { resolve(); return; }
+      if (!readySource) { reject(new Error("Ready drawing source missing")); return; }
+      const script = document.createElement("script");
+      script.src = readySource;
+      script.onload = () => {
+        script.remove();
+        if (Array.isArray(Kroki.ReadyDrawings)) resolve();
+        else reject(new Error("Ready drawings unavailable"));
+      };
+      script.onerror = () => { script.remove(); reject(new Error("Ready drawings failed to load")); };
+      document.head.append(script);
+    }).then(() => { renderReady(); syncCount(); }).catch(() => {
+      readyList.textContent = "Hazır çizimler yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin. ";
+      const retry = document.createElement("button");
+      retry.type = "button";
+      retry.textContent = "Tekrar dene";
+      retry.addEventListener("click", () => { void loadReady(); });
+      readyList.append(retry);
+    }).finally(() => { readyLoading = null; });
+    return readyLoading;
+  }
+
   function renderReady() {
     if (readyRendered) return;
     const items = (Kroki.ReadyDrawings || []).filter((item) => item && item.svg);
@@ -105,7 +134,7 @@
   function selectTab(kind) {
     if (!panels[kind]) return;
     activeTab = kind;
-    if (kind === "ready") renderReady();
+    if (kind === "ready") void loadReady();
     home.querySelectorAll("[data-home-tab]").forEach((button) => {
       const selected = button.dataset.homeTab === kind;
       button.classList.toggle("is-active", selected);
