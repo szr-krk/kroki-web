@@ -49,7 +49,7 @@ const server = http.createServer((req, res) => {
     K.SelectionManager.clear();m.clear({skipHistory:true});
     const road=m.create('road',{geometry:{profile,start:{x:0,y:0},end:{x:1000,y:0},ratio:.1,controls:[{x:300,y:-60},{x:700,y:60}]},metadata:{road:{laneCount:2,laneWidth:50,laneWidths:[50,50],divided,dividedLaneWidths:{left:[50,50],right:[50,50]},leftShoulder:{enabled:shoulder,width:20},rightShoulder:{enabled:shoulder,width:20}}}},{skipHistory:true});
     const center=a.pointAt(road,.5);
-    const island=m.create('road',{geometry:{profile:'islandRing',center:{x:center.x,y:center.y+180},innerDiameter:100,outerDiameter:600}},{skipHistory:true});
+    const island=m.create('road',{geometry:{profile:'islandRing',center:{x:center.x,y:center.y+180},innerDiameter:100,outerDiameter:600},metadata:{road:{islandMode:"classic"}}},{skipHistory:true});
     e.rebuild();
     const boundaries=a.crossSection(road.metadata.road).boundaries;
     for(const b of boundaries.filter(b=>b.role==='marking')){
@@ -81,7 +81,7 @@ const server = http.createServer((req, res) => {
    // A physical island still masks otherwise protected lane markings.
    m.clear({skipHistory:true});
    const road=m.create('road',{start:{x:0,y:0},end:{x:1000,y:0},metadata:{road:{laneCount:2,laneWidth:50}}},{skipHistory:true});
-   m.create('road',{geometry:{profile:'islandRing',center:{x:500,y:0},innerDiameter:160,outerDiameter:400}},{skipHistory:true});e.rebuild();
+   m.create('road',{geometry:{profile:'islandRing',center:{x:500,y:0},innerDiameter:160,outerDiameter:400},metadata:{road:{islandMode:"classic"}}},{skipHistory:true});e.rebuild();
    const b=a.crossSection(road.metadata.road).boundaries.find(b=>b.role==='marking');
    check(!contains(e.visibleRangesForLine(road.id,b.offset,0,1,b),.5),'Physical island excludes marking');
    // A normal crossing next to an island must still clip normal road markings.
@@ -90,7 +90,7 @@ const server = http.createServer((req, res) => {
    m.create('road',{start:{x:500,y:-400},end:{x:500,y:400},metadata:{road:{laneCount:2,laneWidth:50}}},{skipHistory:true});e.rebuild();
    const marking=a.crossSection(host.metadata.road).boundaries.find(b=>b.role==='marking');
    const ordinary=e.visibleRangesForLine(host.id,marking.offset,0,1,marking);
-   m.create('road',{geometry:{profile:'islandRing',center:{x:600,y:180},innerDiameter:100,outerDiameter:600}},{skipHistory:true});e.rebuild();
+   m.create('road',{geometry:{profile:'islandRing',center:{x:600,y:180},innerDiameter:100,outerDiameter:600},metadata:{road:{islandMode:"classic"}}},{skipHistory:true});e.rebuild();
    check(JSON.stringify(e.visibleRangesForLine(host.id,marking.offset,0,1,marking))===JSON.stringify(ordinary),'Mixed island/normal crossing retains normal clipping');
    const edge=a.crossSection(host.metadata.road).boundaries.find(b=>b.role==='edge'&&b.before&&b.after);
    m.updateModel(host.id,d=>{d.metadata.road.boundaryStyles[edge.id]={style:'solid',width:3,segments:[{from:0,to:.4,style:'solid',width:3},{from:.4,to:.6,style:'none',width:3},{from:.6,to:1,style:'doubleSolid',width:3}]};return d;},{skipHistory:true});e.rebuild();

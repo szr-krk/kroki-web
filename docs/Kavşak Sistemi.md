@@ -172,3 +172,11 @@ Ada dış çapıyla örtüşme, normal yolun iç boundary çizgilerini artık si
 Bu görünüm `islandMouthDashedRangesForLine` ile türetilir; kalıcı boundary segmentlerine yazılmaz. Kullanıcının `none` segmentleri, çizgi kalınlıkları ve örtüşme dışındaki stilleri korunur. Ada taşındığında/çapı değiştiğinde ve undo/redo/import sonrasında yeniden hesaplanır. Normal yol–yol kesişimleri ve Q dış kontur birleşimleri korunur; ada içeren karma kümelerde normal yol çiftlerinin kırpma kuralları ayrıca geçerlidir.
 
 Doğrulama: `scripts/island-mouth-browser.cjs` (isteğe bağlı `KROKI_FIXTURE` imzalı SVG yolu), Q/cep/ayrılan yol smoke kontrolleri.
+
+
+### 2026-10-17 — Kullanıcının seçtiği döner kavşak türü
+Yeni eklenen ada `metadata.road.islandMode = "modern"` ile başlar. Eski kayıtta alan yoksa `classic` kabul edilir. Yan panelde yol profili düğmesi adada Modern/Döner tür geçişi yapar; geometri ve çaplar değişmez, işlem geçmişe girer. Tür çap/ölçek ile otomatik değişmez.
+
+Modern mod önceki ada-yol kesişim temizliğini ve gerçek dış çemberi kullanır. Döner (`classic`) modunda iç yol çizgileri korunur; yalnız adaya bakan dış banket/şerit sınırı örtüşmede kesikli gösterilir. Karşı kenar korunur. Bağlı yolların örneklenmiş yüzeylerinden oluşturulan dış zarfın dışında kalan ada çizgileri kırpılır; fiziksel ada sınırı korunur. Bağlantısız ada düzenlenebilir tam halka olarak görünür. Seçim çemberi ve çap kontrol noktaları gerçek çapı göstermeye devam eder; bunlar çizim çıktısına dahil değildir. `classicEnvelope` ve taraf eşlemesi yalnız yeniden hesaplanan yüzey state'idir, belgeye yazılmaz.
+
+Test: `scripts/roundabout-modes-browser.cjs`, `scripts/island-mouth-browser.cjs` ve Q/cep/ayrılan yol regresyonları.

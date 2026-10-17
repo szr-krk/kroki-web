@@ -1784,9 +1784,9 @@
       memberIds.add(b.id);
     });
     const merged = mergeIntersectionShapeClusters(shapes);
-    if (lastIslandSurfaces.length) {
+    if (lastIslandSurfaces.some((surface) => surface.config.islandMode !== "modern")) {
       // Keep ordinary multi-road clipping even when an island joins its cluster.
-      const ordinaryPairs = shapes.filter((shape) => !shape.roadIds.some(isIslandRoadId));
+      const ordinaryPairs = shapes.filter((shape) => !shape.roadIds.some(isClassicIslandId));
       if (ordinaryPairs.length > 1 && ordinaryPairs.length < shapes.length) {
         mergeIntersectionShapeClusters(ordinaryPairs).filter((shape) => shape.clustered).forEach((shape) => {
           if (!merged.some((item) => item.clustered && item.roadIds.join("|") === shape.roadIds.join("|"))) merged.push(shape);
@@ -1801,7 +1801,15 @@
     return surfaces.some((surface) => {
       if (surface.id === sourceId || !boundsOverlap(surface.bounds, { minX: point.x, maxX: point.x, minY: point.y, maxY: point.y }, 0.5)) return false;
       if (!pointInPolygon(point, surface.polygon)) return false;
-      if (surface.isIsland) return true;
+      if (surface.isIsland) {
+        if (surface.config.islandMode !== "modern" && sourceSurface && !sourceSurface.isIsland) {
+          const nearest = sourceSurface.samples.reduce((best, sample) => dist(sample.center, point) < dist(best.center, point) ? sample : best);
+          const offset = (point.x - nearest.center.x) * nearest.normal.x + (point.y - nearest.center.y) * nearest.normal.y;
+          const side = surface.classicSides?.get(sourceId);
+          if (side == null || (side !== 0 && Math.sign(offset) !== side)) return false;
+        }
+        return true;
+      }
       if (sourceSurface && areLaneSplitSiblingsAtPoint(sourceSurface, surface, point)) return true;
       const attachments = sourceSurface ? surfaceTerminalAttachments(surface, sourceSurface) : [];
       if (attachments.length && !attachments.some((attachment) => isOnAttachmentOpenSide(attachment, point, INTERSECTION_PAD))) return false;
@@ -1873,16 +1881,18 @@
     const segments = [];
     surfaces.forEach((surface) => {
       const poly = surface.polygon;
+      const cutters = surface.classicEnvelope ? [...surfaces, { id: "classic-envelope", polygon: surface.classicEnvelope, bounds: boundsOfPoints(surface.classicEnvelope) }] : surfaces;
       for (let i = 0; i < poly.length; i += 1) {
         const a = poly[i];
         const b = poly[(i + 1) % poly.length];
         if (dist(a, b) < EPS) continue;
-        const params = splitSegmentByPolygonIntersections(a, b, surface.id, surfaces);
+        const params = splitSegmentByPolygonIntersections(a, b, surface.id, cutters);
         for (let p = 0; p < params.length - 1; p += 1) {
           const fromT = params[p];
           const toT = params[p + 1];
           if (toT - fromT < EPS) continue;
           const mid = interpolate(a, b, (fromT + toT) / 2);
+          if (outsideClassicEnvelope(surface, mid)) continue;
           if (isTerminalClosedSideBoundary(surface, mid, surfaces)) continue;
           if (pointInsideOtherSurfaces(mid, surface.id, surfaces)) continue;
           const sourceMeta = sourceMetaForSurfaceSegment(surface, i);
@@ -2054,7 +2064,7 @@
     const allowCluster = boundary?.role === "marking" || isRoadShoulderBoundary(boundary);
     return roadShapesFor(id).filter((shape) => {
       // Island overlap must not turn a multi-road hull into a marking eraser.
-      if (lastIslandSurfaces.length && shape.clustered && !isIslandRoadId(id) && shape.roadIds.some(isIslandRoadId)) return false;
+      if (lastIslandSurfaces.length && shape.clustered && !isIslandRoadId(id) && shape.roadIds.some(isClassicIslandId)) return false;
       return !shape.clustered || allowCluster;
     });
   }
@@ -2131,9 +2141,42 @@
     });
   }
 
+  function isClassicIslandId(id) {
+    const surface = roadSurfaceForId(id);
+    return Boolean(surface?.isIsland && surface.config.islandMode !== "modern");
+  }
+
+  function prepareClassicIslands(surfaces) {
+    surfaces.filter((s) => s.isIsland).forEach((island) => {
+      island.classicEnvelope = null;
+      island.classicSides = new Map();
+      if (island.config.islandMode === "modern") return;
+      const center = island.model.geometry.center;
+      const connected = surfaces.filter((road) => !road.isIsland && boundsOverlap(road.bounds, island.bounds)
+        && polygonIntersections(road.polygon, island.polygon).length >= 3);
+      if (connected.length) island.classicEnvelope = convexHull(connected.flatMap((road) => road.polygon));
+      connected.forEach((road) => {
+        let best = Infinity, side = 0;
+        for (let i = 1; i < road.samples.length; i++) {
+          const a = road.samples[i - 1], b = road.samples[i];
+          const dx = b.center.x - a.center.x, dy = b.center.y - a.center.y;
+          const t = clamp(((center.x - a.center.x) * dx + (center.y - a.center.y) * dy) / (dx * dx + dy * dy || 1), 0, 1);
+          const x = a.center.x + dx * t, y = a.center.y + dy * t;
+          const distance = Math.hypot(center.x - x, center.y - y);
+          if (distance < best) { best = distance; const signed = ((center.x - x) * -dy + (center.y - y) * dx) / (Math.hypot(dx, dy) || 1); side = Math.abs(signed) < 0.001 ? 0 : Math.sign(signed); }
+        }
+        island.classicSides.set(road.id, side);
+      });
+    });
+  }
+
+  function outsideClassicEnvelope(surface, point) {
+    return Boolean(surface?.classicEnvelope && !pointInPolygon(point, surface.classicEnvelope));
+  }
+
   function isIslandPairForRoad(id, shape) {
     return lastIslandSurfaces.length > 0 && !shape.clustered && shape.roadIds?.includes(id)
-      && !isIslandRoadId(id) && shape.roadIds.some(isIslandRoadId);
+      && !isIslandRoadId(id) && shape.roadIds.some(isClassicIslandId);
   }
 
   function pointInsidePhysicalIsland(point, sourceId) {
@@ -2150,7 +2193,10 @@
       if (!isIslandPairForRoad(id, shape)) return false;
       return shape.roadIds.some((otherId) => {
         const surface = roadSurfaceForId(otherId), center = surface?.islandCenterMask;
-        if (!center) return false;
+        if (!center || !isClassicIslandId(otherId)) return false;
+        // Only the shoulder facing the physical island is an entry/exit boundary.
+        const side = surface.classicSides?.get(id);
+        if (side == null || (side !== 0 && Math.sign(boundary.offset) !== side)) return false;
         const distance = Math.hypot(point.x - center.cx, point.y - center.cy);
         return distance >= center.radius && distance < surface.model.geometry.outerDiameter / 2;
       });
@@ -2169,6 +2215,7 @@
   function pointInsideRoadShapesForLine(id, point, boundary = null) {
     if (lastIslandSurfaces.length && !isIslandRoadId(id) && pointInsidePhysicalIsland(point, id)) return true;
     if (pointInsideTerminalHostSurfaceForLine(id, point, boundary)) return true;
+    if (isClassicIslandId(id) && outsideClassicEnvelope(roadSurfaceForId(id), point)) return true;
     if (isIslandOuterEdgeBoundary(id, boundary)) return pointInsideOtherSurfacePolygon(point, id);
     return roadClipShapesFor(id, boundary).some((shape) => {
       if (isIslandPairForRoad(id, shape) && boundary?.before && boundary?.after) return false;
@@ -2272,7 +2319,7 @@
           offset,
           start,
           end,
-          (point) => pointInsideOtherSurfacePolygon(point, id),
+          (point) => pointInsideOtherSurfacePolygon(point, id) || (isClassicIslandId(id) && outsideClassicEnvelope(roadSurfaceForId(id), point)),
           false
         );
         return visibleLineRangesOutsideQ(id, offset, ranges, boundary);
@@ -3101,6 +3148,7 @@
     phaseStartedAt = mark("collectRoadsMs", phaseStartedAt);
     lastRoadSurfaces = surfaces;
     lastIslandSurfaces = surfaces.filter((surface) => surface.isIsland);
+    prepareClassicIslands(surfaces);
     buildLaneSplitMetadata(surfaces);
     updateContourMask(layer, surfaces);
     lastIntersectionShapes = [];

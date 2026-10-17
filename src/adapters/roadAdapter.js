@@ -804,6 +804,7 @@
       boundaryStyles: normalizeBoundaryStyles(source.boundaryStyles),
       pockets: normalizePockets(source.pockets, laneWidth),
       islandCenterStyle: normalizeIslandCenterStyle(source.islandCenterStyle),
+      islandMode: source.islandMode === "modern" ? "modern" : "classic",
       barriers: [],
       autoIntersection: boolOr(source.autoIntersection, base.autoIntersection),
       bridge: boolOr(source.bridge, base.bridge),
@@ -2146,7 +2147,7 @@
   function isIslandProtectedBoundary(model, boundary) {
     if (!isIslandGeometry(model?.geometry)) return false;
     // Ada şerit ayırıcısı tam halka olarak kalır; yalnız dış kenar bağlantı ağızlarında kırpılabilir.
-    if (boundary?.role === "marking") return true;
+    if (boundary?.role === "marking") return roadConfig(model).islandMode !== "classic";
     return boundary?.role === "edge" && numberOr(boundary.offset, 0) < 0;
   }
 
@@ -4446,7 +4447,7 @@
       const geometry = normalizeGeometry(initialData.geometry || initialData);
       const metadata = {
         ...(initialData.metadata || {}),
-        road: normalizeRoadConfig(initialData.metadata?.road || initialData.road || {})
+        road: normalizeRoadConfig({ islandMode: "modern", ...(initialData.metadata?.road || initialData.road || {}) })
       };
       const departure = normalizeRoadDeparture(initialData.metadata?.roadDeparture || initialData.roadDeparture);
       if (departure) metadata.roadDeparture = departure;

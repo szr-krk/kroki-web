@@ -965,7 +965,7 @@
       syncBarrierControls(barrier);
     }
     if (island) {
-      controls.profile?.classList.add("gizli");
+      controls.profile?.classList.toggle("gizli", sectionMode || barrierMode);
       controls.pocket?.classList.add("gizli");
       controls.departure?.classList.add("gizli");
       controls.sCurveControls?.classList.add("gizli");
@@ -985,6 +985,13 @@
     controls.profile?.setAttribute("title", "Yol profili: " + profile.title);
     controls.profile?.setAttribute("aria-label", "Yol profili: " + profile.title);
     if (controls.profileLabel) controls.profileLabel.textContent = profile.short;
+    if (island) {
+      const modern = config.islandMode === "modern";
+      const title = modern ? "Modern döner kavşak" : "Döner kavşak";
+      controls.profile?.setAttribute("title", title + " — türü değiştir");
+      controls.profile?.setAttribute("aria-label", title + " — türü değiştir");
+      if (controls.profileLabel) controls.profileLabel.textContent = modern ? "Modern" : "Döner";
+    }
     const pocket = pocketState(model);
     controls.pocket?.setAttribute("title", pocket.title);
     controls.pocket?.setAttribute("aria-label", pocket.title);
@@ -1038,7 +1045,9 @@
   controls.laneWidth?.addEventListener("change", commitLaneWidthPicker);
   controls.laneWidth?.addEventListener("blur", commitLaneWidthPicker);
   controls.profile?.addEventListener("click", () => updateActiveRoadModel((draft, adapter) => {
-    adapter?.setProfile?.(draft, nextProfile(draft.geometry?.profile));
+    if (isIslandRoad(draft)) {
+      draft.metadata.road.islandMode = draft.metadata.road.islandMode === "modern" ? "classic" : "modern";
+    } else adapter?.setProfile?.(draft, nextProfile(draft.geometry?.profile));
   }, "Yol profili"));
   controls.pocket?.addEventListener("click", () => updateActiveRoadModel((draft, adapter) => {
     if (draft.geometry?.profile !== "straight") return;

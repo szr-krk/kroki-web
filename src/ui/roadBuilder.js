@@ -371,7 +371,7 @@
       window.krokiEditorRail?.resetCizimAraci?.();
       const model = manager.create("road", {
         geometry,
-        metadata: { road: roadConfig }
+        metadata: { road: geometry.profile === "islandRing" ? { ...roadConfig, islandMode: "modern" } : roadConfig }
       }, { skipHistory: true, beforeNode: roadInsertBeforeNode() });
       if (!model) return;
       window.krokiEditorRail?.closeRailMenus?.();
