@@ -14,7 +14,7 @@
   const PREVIEW_S_CURVE_SAMPLE_COUNT = 22;
   const PREVIEW_ISLAND_SAMPLE_COUNT = 28;
   const MIN_WIDTH = 2;
-  const MAX_LANES = 5;
+  const MAX_LANES = 20;
   const DEFAULT_ARC_RATIO = 0.20;
   const ROAD_LINE_COLOR = "#000000";
   const MIN_S_CURVE_CONTROLS = 2;

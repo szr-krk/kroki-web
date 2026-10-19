@@ -92,7 +92,7 @@ Yeni yol görünür viewBox'ın merkezine eklenir. Düz/viraj/S profillerinde ek
 - Profil: düz, viraj, S viraj, ada.
 - Yerleşim: yatay/dikey; ada seçiliyken gizlenir.
 - Tür: normal/bölünmüş; ada seçiliyken gizlenir.
-- Normal şerit sayısı: 1–5.
+- Normal şerit sayısı: 1–20.
 - Bölünmüş yol: `laneCount` sabit 2 olur ve form alanı devre dışıdır. Bu sayı her yön için kullanılan `dividedLaneWidths.left/right` dizilerinin uzunluğudur; sonuçta iki yönün her birinde iki lane bölümü oluşur.
 - Ada şerit sayısı: 1–3.
 - Başlangıç şerit genişliği 50, banket genişliği 20, bariyer direk aralığı 42'dir.
@@ -208,3 +208,6 @@ Test: `scripts/roundabout-modes-browser.cjs`, `scripts/island-mouth-browser.cjs`
 
 ## 19.10.2026 — Inspector performansı
 Segment paneli mevcut düğmeleri ve odağı korur; değişen stil ikonu/başlığı güncellenir. Geçici yol seçim metadata değişiklikleri kavşak hesabını baştan çalıştırmaz. Yol modeli, şerit/segment davranışı ve kalıcı format değişmez. Ayrıntılar: [[Şerit Sistemi]], [[Performans Kriterleri]].
+
+## 19.10.2026 — Normal yol şerit sınırı
+Normal yol oluşturma ve düzenleme sınırı 20 oldu. Bölünmüş yolun mevcut düzenleme sayısı da her yön için en fazla 20 kabul eder. Ada (3) ve bağlı ayrılma yolu (2) özel sınırları korunur.

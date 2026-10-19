@@ -69,7 +69,7 @@
 
   function laneCountFromInputs() {
     if (isIslandRoad()) return intFrom(fields.laneCount, 1, 1, 3);
-    return isDividedRoad() ? DIVIDED_LANE_COUNT : intFrom(fields.laneCount, 2, 1, 5);
+    return isDividedRoad() ? DIVIDED_LANE_COUNT : intFrom(fields.laneCount, 2, 1, 20);
   }
 
   function viewBoxRect() {
@@ -344,7 +344,7 @@
         fields.laneCount.max = "3";
         fields.laneCount.value = String(laneCountFromInputs());
       } else {
-        fields.laneCount.max = "5";
+        fields.laneCount.max = "20";
         if (divided) fields.laneCount.value = String(DIVIDED_LANE_COUNT);
       }
       fields.laneCount.disabled = divided;
@@ -356,7 +356,7 @@
 
   function stepLaneCount(delta) {
     if (!fields.laneCount || isDividedRoad()) return;
-    const max = isIslandRoad() ? 3 : 5;
+    const max = isIslandRoad() ? 3 : 20;
     fields.laneCount.value = String(Math.min(max, Math.max(1, intFrom(fields.laneCount, isIslandRoad() ? 1 : 2, 1, max) + delta)));
   }
 

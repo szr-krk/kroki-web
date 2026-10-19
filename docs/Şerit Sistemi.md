@@ -24,7 +24,7 @@ Bağlantılar: [[Yol Sistemi]], [[Kavşak Sistemi]], [[Kontrol Noktaları]].
 - `edgeLine`: dış/kenar çizgisi `{ enabled, width }`.
 - `boundaryStyles`: boundary kimliğine göre override ve segment listesi.
 
-Şerit adedi 1–5, şerit/kesit genişliği 10–180 arasında normalize edilir. Ada lane adedi 1–3'tür; dış çap toplam lane genişliğinin iki katı kadar iç çaptan büyüktür.
+Şerit adedi 1–20, şerit/kesit genişliği 10–180 arasında normalize edilir. Ada lane adedi 1–3'tür; dış çap toplam lane genişliğinin iki katı kadar iç çaptan büyüktür.
 
 ## Enkesit üretimi
 
@@ -137,3 +137,6 @@ Doğrulama: `scripts/island-mouth-browser.cjs` (isteğe bağlı `KROKI_FIXTURE` 
 
 ## 19.10.2026 — Segment panelinin DOM kararlılığı
 Boundary segment düğmeleri `syncBoundaryPanel` içinde yeniden yaratılmaz. Adet azaldığında son düğmeler kaldırılır, arttığında gerekenler eklenir; kalan düğmelerin ikon ve erişilebilir başlıkları güncellenir. Listener güncel boundary ve güncel segment indeksini kullanır. Stil dokunuşu odağı korur; farklı kesit/boundary ve undo/redo mevcut modeli yeniden okur.
+
+## 19.10.2026 — Normal yol şerit sınırı
+Normal yol oluşturma ve düzenleme sınırı 20 oldu. Bölünmüş yolun mevcut düzenleme sayısı da her yön için en fazla 20 kabul eder. Ada (3) ve bağlı ayrılma yolu (2) özel sınırları korunur.

@@ -234,7 +234,7 @@
   }
 
   function setLaneCount(config, count) {
-    const laneCount = clampInt(count, 1, 5, config.laneCount || 2);
+    const laneCount = clampInt(count, 1, 20, config.laneCount || 2);
     const laneWidth = clamp(config.laneWidth, 10, 1000, 50);
     config.laneCount = laneCount;
     config.laneWidths = resizedWidths(config.laneWidths, laneCount, laneWidth);
@@ -994,7 +994,7 @@
       controls.rightShoulder?.classList.toggle("gizli", sectionMode || barrierMode);
       controls.markingStyle?.classList.toggle("gizli", sectionMode || barrierMode);
     }
-    if (controls.laneCount) controls.laneCount.max = island ? "3" : "5";
+    if (controls.laneCount) controls.laneCount.max = island ? "3" : "20";
     controls.profile?.classList.toggle("is-roundabout", island);
     const profile = profileInfo(model.geometry?.profile);
     controls.profile?.setAttribute("title", "Yol profili: " + profile.title);
