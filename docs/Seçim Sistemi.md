@@ -98,3 +98,6 @@ Tekli state `{ id, mode }`; çoklu state `{ ids, mode, activeGroupId }` olarak c
 Pan/pinch; capture kaybı, pointercancel, blur, pagehide, gizlenme, yön ve tam ekran değişiminde sıfırlanır. Canvas dışında gelen pointerup da temizlenir. Pinch başlangıcında nesne sürükleme önce tamamlanır, sonra iki parmağın capture sahipliği alınır. Normal pinch → tek parmak pan devam eder. Seçim önizlemeleri pagehide/gizlenmede de tamamlanır; gizlenmiş kaynak ve askıya alınmış kavşak görünümü geri gelir.
 
 `krokiEditorCamera.getGestureDiagnostics()` son 32 hareket/iptal, script hatası ve 200 ms üzeri uzun görev olayını yalnız bellekte tutar. Çizim içeriği veya koordinat kaydı, kalıcı depolama ve ağ aktarımı yoktur. Gerçek tablette bildirilen tüm ekranın kısa süre kaybolmasının kök nedeni henüz doğrulanmamıştır; bu düzeltme bilinen iptal/yakalama açıklarını kapatır.
+
+## 19.10.2026 — Viewport senkronizasyonu
+Pan sırasında aktif kontrol noktaları ölçek değişmediğinde tekrar çizilmez. Normal seçim/model düzenlemesi tam senkronizasyonu korur; zoom ölçüleri yeniden hesaplar. Ayrıntı: [[Kontrol Noktaları]].

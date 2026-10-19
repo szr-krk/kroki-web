@@ -91,3 +91,6 @@ Projede kullanıcıya ait commit edilmemiş değişiklikler bulunabilir. Görevl
 
 - Hedef tarayıcı/işletim sistemi ve resmi test matrisi kodda tanımlı değildir.
 - Dağıtım, versiyonlama ve generated katalog üretim komutları depoda belgelenmemiştir.
+
+## Tablet performans regresyonları (19.10.2026)
+`node scripts/contour-index-smoke.cjs` kontur indeksinin eski sürümle eşdeğerliğini ve işlem sayısını denetler. Playwright erişilebilirken `tablet-performance-browser.cjs --baseline 654ca08` ve `tablet-pan-ui-browser.cjs --baseline 654ca08` tarayıcı karşılaştırmasını çalıştırır. İlk testte `CPU_RATE` (varsayılan 6) ve virgülle ayrılmış `CASES` seçilebilir. Süre ölçümlerini başka CPU testleriyle paralel çalıştırma; geometri, Q, stiller, kayıt ve undo/redo eşitliğini koru. `.tmp` raporları teslimat dosyası değildir.

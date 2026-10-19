@@ -16,6 +16,7 @@
   const elementMap = new Map();
   let idSeed = 1;
   let viewportLabelFrame = 0;
+  let viewportLabelUnit = null;
   let sceneVersion = 0;
   let objectOrderCache = null;
 
@@ -632,6 +633,7 @@
   }
 
   function renderViewportDependentLabels() {
+    viewportLabelUnit = utils.svgUnitsPerScreenPx(canvas);
     objectMap.forEach((model) => {
       if (labelDependsOnViewport(model)) renderLabel(model);
     });
@@ -644,7 +646,9 @@
       : (callback) => window.setTimeout(callback, 16);
     viewportLabelFrame = schedule(() => {
       viewportLabelFrame = 0;
-      renderViewportDependentLabels();
+      // Panning changes only the origin. Label clearance depends on scale.
+      const unit = utils.svgUnitsPerScreenPx(canvas);
+      if (unit !== viewportLabelUnit) renderViewportDependentLabels();
     });
   }
 
@@ -1037,6 +1041,7 @@
   }
 
   canvas.addEventListener("kroki:viewboxchange", scheduleViewportDependentLabels);
+  if (window.ResizeObserver) new ResizeObserver(scheduleViewportDependentLabels).observe(canvas);
 
   Kroki.EditorObjectManager = {
     canvas,

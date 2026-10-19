@@ -67,7 +67,7 @@
   function syncViewportNow() {
     viewportSyncFrame = 0;
     if (!activeId) return;
-    controlPoints.sync();
+    controlPoints.sync({ viewportOnly: true });
   }
 
   function syncViewport() {

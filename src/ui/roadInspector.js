@@ -488,7 +488,8 @@
   }
 
   function renderLineStyleIcon(svg, style) {
-    if (!svg) return;
+    if (!svg || svg.dataset.lineStyle === String(style)) return;
+    svg.dataset.lineStyle = style;
     svg.replaceChildren();
     if (style === "none") {
       svg.append(
@@ -835,9 +836,22 @@
     togglePressed(controls.lowerLine, activeBoundaryKey === "end");
     const count = segmentCount(config, boundary.id);
     if (controls.segmentCount && controls.segmentCount.value !== String(count)) controls.segmentCount.value = String(count);
-    controls.segmentButtons?.replaceChildren();
+    const container = controls.segmentButtons;
+    if (!container) return;
+    while (container.children.length > count) container.lastElementChild.remove();
     for (let index = 0; index < count; index += 1) {
-      controls.segmentButtons?.append(makeSegmentButton(config, boundary, index));
+      let button = container.children[index];
+      if (!button) {
+        button = makeSegmentButton(config, boundary, index);
+        container.append(button);
+      }
+      const segment = boundarySegmentAt(config, boundary.id, boundary.role, index);
+      const title = `S${index + 1}: ${MARKING_STYLES[styleIndex(segment.style)].title}`;
+      if (button.title !== title) {
+        button.title = title;
+        button.setAttribute("aria-label", title);
+      }
+      renderLineStyleIcon(button.querySelector("svg"), segment.style);
     }
   }
 

@@ -132,3 +132,14 @@ Kamera viewport ölçüsü de pencere/canvas boyutu değişene kadar saklanır; 
 Izgara, ayrı opak Canvas 2D/compositor katmanında önbelleklenir; nesne taşımak grid'i yeniden çizmez. Cetvel etiketleri tekrar kullanılır. Hareketli canvas arkasını örnekleyen geçmiş çubuğu `backdrop-filter` efekti kaldırılmıştır. Uç yakalama indeksi gesture başında bir kez hazırlanır; pointer move sırasında belge taraması veya artwork kopyalaması yoktur.
 
 Altı zoom seviyesinde ızgara dışındaki mevcut uca tam birleştirme, self-exclusion ve Ctrl/gizli ızgara bypass kontrolleri geçti. Karşılaştırma betiği ve eski kaynak kopyaları teslim edilen depoda tutulmaz.
+
+## 19.10.2026 — Tablet etkileşim maliyeti
+
+- Kavşak rebuild içinde yol/host terminal bağlantıları yüzey çifti başına bir kez hesaplanır. Q kesim bölgelerinin tüketilen izleri ve yönleri Q başına saklanır; uzak noktalar toleransları kapsayan muhafazakâr sınır kutusuyla elenir. Örnek sayısı, toleranslar, Q ve yol geometrisi değiştirilmez. Önbellekler her rebuild başında yenilenir.
+- Sadece geçici yol seçimi/düzenleme metadata değişiklikleri yeni kavşak rebuild'i planlamaz. Diğer model değişiklikleri mevcut invalidation yolundan geçer.
+- Kamera pan hareketinde ölçek aynıysa yazılar, aktif kontrol noktaları ve kavşak Q tutamaçları tekrar çizilmez. Zoom/resize ölçek değişimini yeniler; normal model düzenlemesi her zaman güncellenir.
+- Boundary segment düğmeleri adet değişmediğinde korunur; yalnız değişen ikon/etiket güncellenir. Bu, dokunma ve klavye odağının kaybolmasını engeller.
+
+Karşılaştırma: `scripts/tablet-performance-browser.cjs --baseline 654ca08` ve `scripts/tablet-pan-ui-browser.cjs --baseline 654ca08` (Playwright, NODE_PATH ve gerekirse CHROME_PATH). Varsayılan CPU kısıtlaması 6x; fiziksel tablet testi yerine geçmez. 30 yazılı nesne, 40 pan adımı: yazı DOM mutasyonu 15000 → 0, aktif tutamaç mutasyonu 240 → 0; zoom çıktısı eski sürümle aynıdır. Stil undo/redo ve düğme odağı ayrıca denetlenir.
+
+Dış kontur çizgi parçaları stil anahtarı ve uç nokta hücresine göre indekslenir. Birleştirme yalnız mevcut tolerans içindeki komşu hücrelerde aday arar; orijinal parça sırası ve eşit mesafe önceliği korunur. `scripts/contour-index-smoke.cjs` 300 deterministik veri kümesinde ve 1000 parçalık zincirde sadeleştirme öncesi nokta dizilerinin eşitliğini denetler. Zincirde mesafe hesabı 1998999 → 6035; bu işlem sayısıdır, FPS ölçümü değildir.

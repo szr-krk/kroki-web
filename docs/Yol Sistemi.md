@@ -205,3 +205,6 @@ Yeni eklenen ada `metadata.road.islandMode = "modern"` ile başlar. Eski kayıtt
 Modern mod önceki ada-yol kesişim temizliğini ve gerçek dış çemberi kullanır. Döner (`classic`) modunda iç yol çizgileri korunur; yalnız adaya bakan dış banket/şerit sınırı örtüşmede kesikli gösterilir. Karşı kenar korunur. Bağlı yolların örneklenmiş yüzeylerinden oluşturulan dış zarfın dışında kalan ada çizgileri kırpılır; fiziksel ada sınırı korunur. Bağlantısız ada düzenlenebilir tam halka olarak görünür. Seçim çemberi ve çap kontrol noktaları gerçek çapı göstermeye devam eder; bunlar çizim çıktısına dahil değildir. `classicEnvelope` ve taraf eşlemesi yalnız yeniden hesaplanan yüzey state'idir, belgeye yazılmaz.
 
 Test: `scripts/roundabout-modes-browser.cjs`, `scripts/island-mouth-browser.cjs` ve Q/cep/ayrılan yol regresyonları.
+
+## 19.10.2026 — Inspector performansı
+Segment paneli mevcut düğmeleri ve odağı korur; değişen stil ikonu/başlığı güncellenir. Geçici yol seçim metadata değişiklikleri kavşak hesabını baştan çalıştırmaz. Yol modeli, şerit/segment davranışı ve kalıcı format değişmez. Ayrıntılar: [[Şerit Sistemi]], [[Performans Kriterleri]].

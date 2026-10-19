@@ -37,12 +37,18 @@
   let qEndpointDrag = null;
   let qInteractivityNodes = [];
   let qMetricSyncFrame = 0;
+  let qRenderedUnit = null;
   let lastDiagnostics = null;
   let dirtyRoadIds = new Set();
   let fullRoadRerenderNeeded = true;
   let laneSplitTerminals = new Map();
   let laneSplitSiblingRegions = new Map();
   const roadSurfaceCache = new Map();
+  // Derived data lives for one rebuild only; geometry and Q edits invalidate it.
+  let terminalAttachmentCache = new WeakMap();
+  let qCutCache = new WeakMap();
+  let terminalAttachmentComputations = 0;
+  let terminalAttachmentCacheHits = 0;
 
   function createSvgElement(tag, attrs = {}) {
     if (utils?.createSvgElement) return utils.createSvgElement(tag, attrs);
@@ -575,8 +581,15 @@
 
   function surfaceTerminalAttachments(surface, hostSurface) {
     if (!surface || !hostSurface || surface.id === hostSurface.id) return [];
+    let hosts = terminalAttachmentCache.get(surface);
+    if (!hosts) terminalAttachmentCache.set(surface, hosts = new WeakMap());
+    if (hosts.has(hostSurface)) {
+      terminalAttachmentCacheHits += 1;
+      return hosts.get(hostSurface);
+    }
+    terminalAttachmentComputations += 1;
     const tolerance = Math.max(2, INTERSECTION_PAD * 2);
-    return surfaceTerminalEndpoints(surface).map((endpoint) => {
+    const attachments = surfaceTerminalEndpoints(surface).map((endpoint) => {
       if (!terminalCapTouchesHost(endpoint, hostSurface, tolerance)) return null;
       if (isWiderMutualTerminalDuplicate(surface, hostSurface, endpoint, tolerance)) return null;
       const openSign = terminalOpenSign(surface, hostSurface, endpoint);
@@ -591,6 +604,8 @@
         openSign
       };
     }).filter(Boolean);
+    hosts.set(hostSurface, attachments);
+    return attachments;
   }
 
   function surfacePairKey(aId, bId) {
@@ -2456,20 +2471,38 @@
     return parts;
   }
 
+  function qCutData(q) {
+    let data = qCutCache.get(q);
+    if (data) return data;
+    const entryPoints = consumedTrackPoints(q, "entry");
+    const exitPoints = consumedTrackPoints(q, "exit");
+    data = {
+      entryPoints, exitPoints,
+      bounds: boundsOfPoints([q.control, q.entry, q.exit, ...entryPoints, ...exitPoints]),
+      entryDir: normalizeVector({ x: q.entry.x - q.control.x, y: q.entry.y - q.control.y }),
+      exitDir: normalizeVector({ x: q.exit.x - q.control.x, y: q.exit.y - q.control.y }),
+      entryLimit: dist(q.control, q.entry) + 0.65,
+      exitLimit: dist(q.control, q.exit) + 0.65
+    };
+    qCutCache.set(q, data);
+    return data;
+  }
+
   function isPointInQCutZone(point, qSegments = lastQSegments) {
     if (!point || !Array.isArray(qSegments) || !qSegments.length) return false;
     return qSegments.some((q) => {
+      const data = qCutData(q);
+      const bounds = data.bounds;
+      // Conservative envelope covers the 2.4px tracks and extended 1.4px rays.
+      if (point.x < bounds.minX - 3 || point.x > bounds.maxX + 3 ||
+          point.y < bounds.minY - 3 || point.y > bounds.maxY + 3) return false;
       if (isPointNearConsumedQTrack(point, q, "entry") || isPointNearConsumedQTrack(point, q, "exit")) return true;
       const entryDistance = perpendicularDistanceToLine(point, q.control, q.entry);
       const exitDistance = perpendicularDistanceToLine(point, q.control, q.exit);
-      const entryDir = normalizeVector({ x: q.entry.x - q.control.x, y: q.entry.y - q.control.y });
-      const exitDir = normalizeVector({ x: q.exit.x - q.control.x, y: q.exit.y - q.control.y });
-      const entryProjection = (point.x - q.control.x) * entryDir.x + (point.y - q.control.y) * entryDir.y;
-      const exitProjection = (point.x - q.control.x) * exitDir.x + (point.y - q.control.y) * exitDir.y;
-      const entryLimit = dist(q.control, q.entry) + 0.65;
-      const exitLimit = dist(q.control, q.exit) + 0.65;
-      return (entryProjection >= -0.65 && entryProjection <= entryLimit && entryDistance <= 1.4)
-        || (exitProjection >= -0.65 && exitProjection <= exitLimit && exitDistance <= 1.4);
+      const entryProjection = (point.x - q.control.x) * data.entryDir.x + (point.y - q.control.y) * data.entryDir.y;
+      const exitProjection = (point.x - q.control.x) * data.exitDir.x + (point.y - q.control.y) * data.exitDir.y;
+      return (entryProjection >= -0.65 && entryProjection <= data.entryLimit && entryDistance <= 1.4)
+        || (exitProjection >= -0.65 && exitProjection <= data.exitLimit && exitDistance <= 1.4);
     });
   }
 
@@ -2509,7 +2542,8 @@
   }
 
   function isPointNearConsumedQTrack(point, q, side, tolerance = 2.4) {
-    const points = consumedTrackPoints(q, side);
+    const data = qCutData(q);
+    const points = side === "entry" ? data.entryPoints : data.exitPoints;
     if (points.length < 2) return false;
     for (let index = 0; index < points.length - 1; index += 1) {
       if (distanceToSegment(point, points[index], points[index + 1]) <= tolerance) return true;
@@ -2648,15 +2682,42 @@
   }
 
   function assembleLinePieces(pieces) {
-    const unused = (pieces || []).map((piece, index) => ({ ...piece, index }));
+    const records = (pieces || []).map((piece, index) => ({ ...piece, index, used: false }));
     const paths = [];
     const tolerance = SNAP_TOLERANCE * 2.5;
-    while (unused.length) {
-      const first = unused.shift();
+    const grids = new Map();
+    const cell = (point) => [Math.floor(point.x / tolerance), Math.floor(point.y / tolerance)];
+    records.forEach((item) => {
+      let grid = grids.get(item.key);
+      if (!grid) grids.set(item.key, grid = new Map());
+      [item.a, item.b].forEach((point) => {
+        const key = cell(point).join(":");
+        let bucket = grid.get(key);
+        if (!bucket) grid.set(key, bucket = new Set());
+        bucket.add(item);
+      });
+    });
+    function nearby(key, head, tail) {
+      const grid = grids.get(key);
+      const found = new Set();
+      [head, tail].forEach((point) => {
+        const [x, y] = cell(point);
+        for (let dx = -1; dx <= 1; dx += 1) {
+          for (let dy = -1; dy <= 1; dy += 1) {
+            grid.get(`${x + dx}:${y + dy}`)?.forEach((item) => {
+              if (!item.used) found.add(item);
+            });
+          }
+        }
+      });
+      // Preserve the original scan order, including equal-distance tie breaks.
+      return Array.from(found).sort((a, b) => a.index - b.index);
+    }
+    records.forEach((first) => {
+      if (first.used) return;
+      first.used = true;
       const points = [first.a, first.b];
-      const key = first.key;
-      const width = first.width;
-      const dashed = first.dashed;
+      const { key, width, dashed } = first;
       let guard = 0;
       let changed = true;
       while (changed && guard < 10000) {
@@ -2665,9 +2726,7 @@
         const head = points[0];
         const tail = points[points.length - 1];
         let best = null;
-        for (let i = 0; i < unused.length; i += 1) {
-          const item = unused[i];
-          if (item.key !== key) continue;
+        nearby(key, head, tail).forEach((item) => {
           const candidates = [
             { at: "tail", point: item.b, distance: dist(tail, item.a) },
             { at: "tail", point: item.a, distance: dist(tail, item.b) },
@@ -2675,18 +2734,18 @@
             { at: "head", point: item.a, distance: dist(head, item.b) }
           ];
           candidates.forEach((candidate) => {
-            if (!best || candidate.distance < best.distance) best = { ...candidate, index: i };
+            if (!best || candidate.distance < best.distance) best = { ...candidate, item };
           });
-        }
+        });
         if (best && best.distance <= tolerance) {
-          unused.splice(best.index, 1);
+          best.item.used = true;
           if (best.at === "tail") addPointIfFar(points, best.point, 0.08);
           else if (dist(points[0], best.point) >= 0.08) points.unshift(best.point);
           changed = true;
         }
       }
       if (points.length >= 2) paths.push({ points: simplifyPolylineRdp(points, 0.25), width, dashed });
-    }
+    });
     return paths;
   }
 
@@ -2885,6 +2944,8 @@
     const layer = manager.canvas?.querySelector?.("#roadIntersectionContourLayer");
     if (!layer) return;
     const sizes = qHandleSizes();
+    if (sizes.unit === qRenderedUnit) return;
+    qRenderedUnit = sizes.unit;
 
     layer.querySelectorAll(".road-intersection-q-hit").forEach((node) => {
       node.setAttribute("stroke-width", fmt(sizes.hitStroke));
@@ -3114,6 +3175,7 @@
     const items = (Array.isArray(segments) ? segments : []).filter(isEditableQSegment);
     if (selectedQKey && !items.some((item) => item.key === selectedQKey)) selectedQKey = "";
     const sizes = qHandleSizes();
+    qRenderedUnit = sizes.unit;
     items.forEach((item) => {
       const isSelected = item.key === selectedQKey;
       const hit = appendPath(layer, {
@@ -3197,6 +3259,10 @@
     };
     cancelScheduledRefresh();
     if (suspended) return;
+    terminalAttachmentCache = new WeakMap();
+    qCutCache = new WeakMap();
+    terminalAttachmentComputations = 0;
+    terminalAttachmentCacheHits = 0;
     let phaseStartedAt = performance.now();
     const layer = contourLayer();
     layer.replaceChildren();
@@ -3284,7 +3350,9 @@
       memberRoadCount: memberIds.size,
       contourCount: contours.length,
       qSegmentCount: lastQSegments.length,
-      affectedRoadCount: affectedIds.size
+      affectedRoadCount: affectedIds.size,
+      terminalAttachmentComputations,
+      terminalAttachmentCacheHits
     };
   }
 
@@ -3354,6 +3422,14 @@
     return true;
   }
 
+  function intersectionInputKey(model) {
+    if (!isRoadModel(model)) return "";
+    const metadata = { ...model.metadata };
+    ["pointEdit", "roadSelection", "roadBoundaryEdit", "roadBarrierEdit",
+      "roadPocketEdit", "roadPocketIslandEdit"].forEach((key) => delete metadata[key]);
+    return JSON.stringify({ ...model, metadata });
+  }
+
   function patchManager() {
     if (patchDone || !manager) return;
     patchDone = true;
@@ -3367,7 +3443,10 @@
         const beforeModel = (name === "updateModel" || name === "updateGeometry" || name === "remove")
           ? manager.get?.(args[0])
           : null;
+        const beforeKey = isRoadModel(beforeModel) && (name === "updateModel" || name === "updateGeometry")
+          ? intersectionInputKey(beforeModel) : null;
         const result = original.apply(this, args);
+        if (beforeKey !== null && beforeKey === intersectionInputKey(result)) return result;
         if (!renderingRoads && managerMutationTouchesRoad(name, args, result, beforeModel)) {
           if (name === "clear" || name === "replaceAll") {
             fullRoadRerenderNeeded = true;

@@ -195,3 +195,6 @@ Fren izi saydam zemin uzerinde uc ayri surtunme cizgisidir; dolu serit uretmez. 
 
 ### 2026-10-18 - Bagimsiz fren izi genisligi
 Fren izi seciliyken stroke picker gizlenir, yerine Ince/Normal/Genis dongu dugmesi gosterilir. Bir hat bir lastigi temsil eder: 1.8/3.2/4.8 birim (arac katalog olcegi 50/3.5 birim/metre). style.brakeWidth secimi ve brakeScale grup carpani kaydedilir; normal strokeWidth korunur ve diger desene gecince tekrar kullanilir. Gorunen stroke, line hit-test/bounds, secim ve etiket acikligi etkin genisligi kullanir. Grup resize brakeScale alanini da oranli degistirir. Fren dokusu saydam zeminde yedi paralel mikro izden olusur; duzensiz dash araliklari ve kenar saydamligi tanecikli surtunme hissi verir. Kamera hareketinde yeniden uretilmez.
+
+## 19.10.2026 — Pan sırasında yazı yenileme
+Viewport kaynaklı yazı yenilemesi SVG birimi/ekran pikseli oranı değiştiğinde çalışır. Yalnız x/y pan değişimi yazı DOM'una dokunmaz. Canvas ResizeObserver ölçek değişimini yakalar. Model/stil düzenlemesi ve açık `renderViewportDependentLabels()` çağrısı normal render yolunu korur.

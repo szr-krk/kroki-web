@@ -134,3 +134,6 @@ Ada dış çapıyla örtüşme, normal yolun iç boundary çizgilerini artık si
 Bu görünüm `islandMouthDashedRangesForLine` ile türetilir; kalıcı boundary segmentlerine yazılmaz. Kullanıcının `none` segmentleri, çizgi kalınlıkları ve örtüşme dışındaki stilleri korunur. Ada taşındığında/çapı değiştiğinde ve undo/redo/import sonrasında yeniden hesaplanır. Normal yol–yol kesişimleri ve Q dış kontur birleşimleri korunur; ada içeren karma kümelerde normal yol çiftlerinin kırpma kuralları ayrıca geçerlidir.
 
 Doğrulama: `scripts/island-mouth-browser.cjs` (isteğe bağlı `KROKI_FIXTURE` imzalı SVG yolu), Q/cep/ayrılan yol smoke kontrolleri.
+
+## 19.10.2026 — Segment panelinin DOM kararlılığı
+Boundary segment düğmeleri `syncBoundaryPanel` içinde yeniden yaratılmaz. Adet azaldığında son düğmeler kaldırılır, arttığında gerekenler eklenir; kalan düğmelerin ikon ve erişilebilir başlıkları güncellenir. Listener güncel boundary ve güncel segment indeksini kullanır. Stil dokunuşu odağı korur; farklı kesit/boundary ve undo/redo mevcut modeli yeniden okur.

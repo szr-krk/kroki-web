@@ -188,3 +188,10 @@ Doğrulama: `scripts/divided-island-browser.cjs` ile 12 geometri/yön/iç banket
 
 ### 2026-10-17 — Virajlı bölünmüş yolda dış çember çıkıntısı
 Tek bölünmüş yola bağlı Döner kavşakta dış zarf yolun gerçek örneklenmiş poligonudur. Konveks zarf virajın içbükey tarafındaki boşluğu doldurduğu için dış çemberden yol dışına taşan parçalar bırakıyordu. Çok yollu bağlantılar ve Modern mod mevcut hesabı korur. `scripts/divided-island-browser.cjs` isteğe bağlı `CURVED_ISLAND_FIXTURE` SVG dosyasını yükleyip görünen dış çizgileri yol kenarlarına göre örnekleyerek taşma kontrolü yapar. Kullanıcının 20261017_161742 örneği düzeltme öncesinde başarısız, sonrasında başarılıdır.
+
+## 19.10.2026 — Yenileme içi önbellekler
+Terminal bağlantısı ve Q kesim bölgesi hesapları rebuild ömürlü WeakMap önbelleklerinde tutulur. Her yeni geometri/Q rebuild önbelleği sıfırlar. Q bölgelerinin sınır kutusu yalnız kesin uzak noktaları eler; mevcut kesin mesafe ve kesim hesapları korunur. Tanılamaya `terminalAttachmentComputations` ve `terminalAttachmentCacheHits` eklendi. Yalnız geçici seçim metadata değişiminde kavşak rebuild planlanmaz; gerçek model değişiklikleri, clear/replaceAll, import ve undo/redo mevcut akışı korur. Q tutamaç ölçüleri yalnız ölçek değişince güncellenir.
+
+`tablet-performance-browser.cjs` düz, T, üç yol, eğri, ada/çakışan adalar ve bölünmüş sahnelerde eski sürümle yüzey, kontur, görünür aralık, segment stil, Q düzenleme, taşıma ve serializer sonuçlarını karşılaştırır.
+
+Dış kontur çizgi parçaları stil anahtarı ve uç nokta hücresine göre indekslenir. Birleştirme yalnız mevcut tolerans içindeki komşu hücrelerde aday arar; orijinal parça sırası ve eşit mesafe önceliği korunur. `scripts/contour-index-smoke.cjs` 300 deterministik veri kümesinde ve 1000 parçalık zincirde sadeleştirme öncesi nokta dizilerinin eşitliğini denetler. Zincirde mesafe hesabı 1998999 → 6035; bu işlem sayısıdır, FPS ölçümü değildir.

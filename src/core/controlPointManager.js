@@ -268,6 +268,8 @@
     if (cp.cursor && handle.style.cursor !== cp.cursor) handle.style.cursor = cp.cursor;
   }
 
+  let lastRenderedUnit = null;
+
   function sync(options = {}) {
     if (!activeId) return;
     const model = manager.get(activeId);
@@ -280,6 +282,8 @@
 
     const sizes = options.reuseMetrics && cachedMetrics ? cachedMetrics : computeMetrics();
     cachedMetrics = sizes;
+    if (options.viewportOnly && sizes.unit === lastRenderedUnit) return;
+    lastRenderedUnit = sizes.unit;
     if (activeType !== model.type) {
       removeOwnedElements();
       activeType = model.type;

@@ -73,3 +73,6 @@ Kavşak Q tutamaçları da engine tarafından `roadIntersectionContourLayer` iç
 
 ### 2026-10-16 — Dokunmatik sayı düğmeleri
 Ortak `bindHoldAction`, touch/pen basışlarında en fazla 220 ms bekler ve mevcut tekrar aralığını yarıya indirir (alt sınır 8 ms). Fare zamanlaması ve tek basış adımı korunur. Bırakma, iptal, düğmeden ayrılma, capture kaybı ve pencere odağı kaybı tekrarı durdurur; disabled veya DOM’dan kaldırılmış düğme tekrar etmez.
+
+## 19.10.2026 — Pan sırasında tutamaç yenileme
+SelectionManager viewport güncellemesi `sync({ viewportOnly: true })` kullanır. Ölçek değişmemişse kontrol noktaları yeniden çizilmez; normal model güncellemesi bu kısayolu kullanmaz. Zoom sonrası ekran pikseli sabit tutamaç ölçüleri yenilenir.
