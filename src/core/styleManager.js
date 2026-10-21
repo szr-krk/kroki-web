@@ -1077,7 +1077,7 @@
     applyDash(element, styleForStrokeHelpers(style));
     applyGeometryStrokeScaling(element);
     if (adapter?.capabilities?.pathPattern) {
-      const trace = Kroki.PathTracePatterns.ensure(canvas, model, adapter, style);
+      const trace = Kroki.PathTracePatterns.ensure(canvas, model, adapter, style, element);
       if (trace) {
         const paint = "url(#" + trace.id + ")";
         element.setAttribute("stroke", paint);

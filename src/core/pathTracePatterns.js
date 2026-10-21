@@ -27,7 +27,7 @@
 
   // One SVG paint tile per object. Geometry stays on the original line/path,
   // so hit testing, controls, groups and export retain their existing contracts.
-  function ensure(canvas, model, adapter, style) {
+  function ensure(canvas, model, adapter, style, element) {
     const choice = choices.find(c => c.id === style.pathPattern);
     if (!choice || choice.id === "none" || !adapter.pointAt || !canvas) return null;
     let defs = canvas.querySelector("#editorFillPatternDefs");
@@ -35,20 +35,24 @@
     const id = "editor-fill-pattern-trace-" + String(model.id).replace(/[^a-zA-Z0-9_-]/g, "_");
     let pattern = Array.from(defs.children).find(p => p.id === id);
     if (!pattern) { pattern = U.createSvgElement("pattern", { id }); defs.append(pattern); }
-    const key = JSON.stringify([model.geometry, strokeWidth(style), choice.id, style.pathPatternReverse]);
+    // Endpoint markers can trim or reshape the visible path. Sample that same
+    // geometry, and include it in the cache key when arrow settings change.
+    const marked = element && (style.arrowStart !== "none" || style.arrowEnd !== "none");
+    const rendered = marked ? ["d", "x1", "y1", "x2", "y2"].map(name => element.getAttribute(name)) : null;
+    const key = JSON.stringify([model.geometry, strokeWidth(style), choice.id, style.pathPatternReverse, rendered]);
     if (cache.get(pattern) === key) return pattern;
     cache.set(pattern, key);
     const width = Math.max(.01, strokeWidth(style));
-    const rough = Array.from({ length: 33 }, (_, i) => adapter.pointAt(model, i / 32));
-    const length = rough.slice(1).reduce((n, p, i) => n + Math.hypot(p.x - rough[i].x, p.y - rough[i].y), 0);
+    const rough = marked ? null : Array.from({ length: 33 }, (_, i) => adapter.pointAt(model, i / 32));
+    const length = marked ? element.getTotalLength() : rough.slice(1).reduce((n, p, i) => n + Math.hypot(p.x - rough[i].x, p.y - rough[i].y), 0);
     const count = Math.min(160, Math.max(24, Math.ceil(length / Math.max(3, width * .22))));
-    const points = Array.from({ length: count + 1 }, (_, i) => adapter.pointAt(model, i / count));
+    const points = Array.from({ length: count + 1 }, (_, i) => marked ? element.getPointAtLength(length * i / count) : adapter.pointAt(model, i / count));
     let distance = 0;
     const samples = points.map((p, i) => {
       if (i) distance += Math.hypot(p.x - points[i - 1].x, p.y - points[i - 1].y);
       const a = points[Math.max(0, i - 1)], b = points[Math.min(count, i + 1)];
       const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
-      return { ...p, nx: -(b.y - a.y) / len, ny: (b.x - a.x) / len, s: distance };
+      return { x: p.x, y: p.y, nx: -(b.y - a.y) / len, ny: (b.x - a.x) / len, s: distance };
     });
     const minX = Math.min(...points.map(p => p.x)) - width * 2;
     const minY = Math.min(...points.map(p => p.y)) - width * 2;

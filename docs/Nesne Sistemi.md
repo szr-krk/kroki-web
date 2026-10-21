@@ -198,3 +198,7 @@ Fren izi seciliyken stroke picker gizlenir, yerine Ince/Normal/Genis dongu dugme
 
 ## 19.10.2026 — Pan sırasında yazı yenileme
 Viewport kaynaklı yazı yenilemesi SVG birimi/ekran pikseli oranı değiştiğinde çalışır. Yalnız x/y pan değişimi yazı DOM'una dokunmaz. Canvas ResizeObserver ölçek değişimini yakalar. Model/stil düzenlemesi ve açık `renderViewportDependentLabels()` çağrısı normal render yolunu korur.
+
+
+## Oklu iz desenleri (21.10.2026)
+Fren ve diğer yol izleri, ok uçları varken adapter tarafından oluşturulan görünür SVG geometrisinden örneklenir. Desen önbelleği görünür geometriyi de içerir; ok değiştirme ve kontrol noktası sürükleme aynı deseni günceller. Ok olmayan çizimlerde mevcut model örneklemesi korunur. `scripts/trace-arrows-touch-browser.cjs` çizgi, yay, ikinci ve üçüncü derece eğrilerde hizayı, genişliği ve kayıt/açmayı denetler.

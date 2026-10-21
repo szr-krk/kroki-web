@@ -1,3 +1,16 @@
+/* Drawing gestures must not start native selection or touch callouts. */
+#editor, #editor * {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+#editor input, #editor textarea, #editor [contenteditable="true"],
+#editor [contenteditable="true"] * {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 #editor {
   background: #ffffff;
   --editor-ruler-size: 32px;

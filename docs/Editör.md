@@ -112,3 +112,7 @@ Fotoğraf içe aktarıldığında sol altta `btnEditorSnap` yanına `btnEditorPh
 Pan/pinch; capture kaybı, pointercancel, blur, pagehide, gizlenme, yön ve tam ekran değişiminde sıfırlanır. Canvas dışında gelen pointerup da temizlenir. Pinch başlangıcında nesne sürükleme önce tamamlanır, sonra iki parmağın capture sahipliği alınır. Normal pinch → tek parmak pan devam eder. Seçim önizlemeleri pagehide/gizlenmede de tamamlanır; gizlenmiş kaynak ve askıya alınmış kavşak görünümü geri gelir.
 
 `krokiEditorCamera.getGestureDiagnostics()` son 32 hareket/iptal, script hatası ve 200 ms üzeri uzun görev olayını yalnız bellekte tutar. Çizim içeriği veya koordinat kaydı, kalıcı depolama ve ağ aktarımı yoktur. Gerçek tablette bildirilen tüm ekranın kısa süre kaybolmasının kök nedeni henüz doğrulanmamıştır; bu düzeltme bilinen iptal/yakalama açıklarını kapatır.
+
+
+## Tablet uzun basma (21.10.2026)
+Editörün çizim ve kontrol alanlarında yerel bağlam menüsü ile metin seçimi engellenir. Canvas touchstart varsayılanı iptal edilir; çizim ve pan/pinch Pointer Events üzerinden sürer. Metin giriş alanlarında yerel seçim ve düzenleme menüsü korunur. Uygulamada titreşim çağrısı yoktur; fiziksel cihazın işletim sistemi titreşimi masaüstü testinde ölçülemez. Uzun basma, tekrar düğmeleri ve kamera regresyonları tarayıcı testleriyle denetlenir.

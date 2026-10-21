@@ -732,6 +732,15 @@
     canvas.classList.remove("is-camera-pan-ready");
   }
 
+  // Stop the browser's long-press menu before it can interrupt a drawing
+  // gesture. Keep native text editing menus available in the property panels.
+  document.querySelector("#editor")?.addEventListener("contextmenu", (event) => {
+    if (!isEditableTarget(event.target)) event.preventDefault();
+  }, true);
+  canvas.addEventListener("touchstart", (event) => {
+    if (event.cancelable) event.preventDefault();
+  }, { passive: false });
+
   canvas.addEventListener("pointerdown", handlePointerDown, true);
   canvas.addEventListener("pointermove", handlePointerMove, true);
   canvas.addEventListener("pointerup", handlePointerEnd, true);
