@@ -200,5 +200,5 @@ Fren izi seciliyken stroke picker gizlenir, yerine Ince/Normal/Genis dongu dugme
 Viewport kaynaklı yazı yenilemesi SVG birimi/ekran pikseli oranı değiştiğinde çalışır. Yalnız x/y pan değişimi yazı DOM'una dokunmaz. Canvas ResizeObserver ölçek değişimini yakalar. Model/stil düzenlemesi ve açık `renderViewportDependentLabels()` çağrısı normal render yolunu korur.
 
 
-## Oklu iz desenleri (21.10.2026)
-Fren ve diğer yol izleri, ok uçları varken adapter tarafından oluşturulan görünür SVG geometrisinden örneklenir. Desen önbelleği görünür geometriyi de içerir; ok değiştirme ve kontrol noktası sürükleme aynı deseni günceller. Ok olmayan çizimlerde mevcut model örneklemesi korunur. `scripts/trace-arrows-touch-browser.cjs` çizgi, yay, ikinci ve üçüncü derece eğrilerde hizayı, genişliği ve kayıt/açmayı denetler.
+## Çizgi deseni ve ok uçları (21.10.2026)
+Çizgi, yay ve eğrilerde herhangi bir iz deseni seçilince iki ok ucu da kalıcı olarak `none` yapılır. Stil normalizasyonu kayıt açma, kopyalama ve programatik güncellemelerde de bu kuralı uygular. Desen varken iki ok düğmesi disabled/aria-disabled durumundadır. Desen kaldırılınca düğmeler açılır; eski oklar geri getirilmez. Undo/redo ilgili işlemin önceki/sonraki durumunu geri yükler. `scripts/trace-arrows-touch-browser.cjs` bütün desenlerde bu kuralı, düğmeleri, eski kayıtları ve dokunma korumasını denetler.

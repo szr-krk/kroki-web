@@ -28,34 +28,35 @@ const server = http.createServer((req, res) => {
  await page.click('#btnYeniKroki');
  const count=await page.evaluate(()=>{
  const K=Kroki,m=K.EditorObjectManager;let cases=0;
- function validate(id) {
-  const el=m.getElement(id),url=el.getAttribute('stroke'),pattern=document.querySelector(url.slice(4,-1));
-  const center=pattern.children[3];
-  const coords=center.getAttribute('d').match(/-?\d+(?:\.\d+)?/g).map(Number);
-  const n=coords.length/2-1,length=el.getTotalLength();
-  for(let i=0;i<=n;i++){
-   const p=el.getPointAtLength(length*i/n);
-   if(Math.hypot(coords[i*2]-p.x,coords[i*2+1]-p.y)>.025)throw Error('Trace diverges from '+m.get(id).type+' at '+i);
+ const buttons=()=>[document.querySelector('#btnLinePanelStartArrow'),document.querySelector('#btnLinePanelEndArrow')];
+ function validate(id, patterned) {
+  const model=m.get(id),el=m.getElement(id);
+  K.SelectionManager.edit(id);K.StyleManager.syncControls();
+  if(patterned && (model.style.arrowStart!=='none'||model.style.arrowEnd!=='none'||el.hasAttribute('marker-start')||el.hasAttribute('marker-end')))throw Error('Pattern retained arrows');
+  for(const button of buttons()){
+   if(button.disabled!==patterned||button.getAttribute('aria-disabled')!==String(patterned))throw Error('Incorrect arrow control state');
+   if(patterned)button.click();
   }
-  if(pattern.children.length!==7||/NaN|Infinity/.test(pattern.innerHTML))throw Error('Invalid texture');
-  const html=pattern.innerHTML;m.updateStyle(id,{}, {skipHistory:true});
-  if(pattern.innerHTML!==html)throw Error('Unstable cached trace');
+  if(patterned && (model.style.arrowStart!=='none'||model.style.arrowEnd!=='none'))throw Error('Disabled control added arrow');
   cases++;
  }
  for(const type of ['line','arc','quadratic','cubic']){
-  const model=m.create(type==='quadratic'||type==='cubic'?'bezier':type,{start:{x:100,y:200},end:{x:500,y:400},bezierType:type==='cubic'?'cubic':'quadratic',style:{strokeWidth:18,arrowEnd:'triangle'}},{skipHistory:true});
-  if(model.type==='bezier')m.updateGeometry(model.id,d=>{d.geometry.q={x:120,y:500};d.geometry.c1={x:120,y:500};d.geometry.c2={x:450,y:70};return d;},{skipHistory:true});
-  m.updateStyle(model.id,{pathPattern:'brake'},{skipHistory:true});validate(model.id);
-  for(const arrows of [{arrowStart:'triangle',arrowEnd:'none'},{arrowStart:'circle',arrowEnd:'triangle2'},{arrowStart:'none',arrowEnd:'none'},{arrowStart:'none',arrowEnd:'triangle'}]){
-   m.updateStyle(model.id,arrows,{skipHistory:true});
-   // No-arrow curves use parameter sampling rather than arc-length sampling.
-   if(arrows.arrowStart!=='none'||arrows.arrowEnd!=='none')validate(model.id);
+  const model=m.create(type==='quadratic'||type==='cubic'?'bezier':type,{start:{x:100,y:200},end:{x:500,y:400},bezierType:type==='cubic'?'cubic':'quadratic',style:{arrowStart:'triangle',arrowEnd:'triangle'}},{skipHistory:true});
+  for(const choice of K.PathTracePatterns.choices.filter(c=>c.id!=='none')){
+   m.updateStyle(model.id,{pathPattern:'none',arrowStart:'triangle',arrowEnd:'circle'},{skipHistory:true});validate(model.id,false);
+   m.updateStyle(model.id,{pathPattern:choice.id},{skipHistory:true});validate(model.id,true);
+   m.updateStyle(model.id,{arrowStart:'triangle',arrowEnd:'triangle'},{skipHistory:true});validate(model.id,true);
+   m.updateStyle(model.id,{pathPattern:'none'},{skipHistory:true});validate(model.id,false);
+   if(m.get(model.id).style.arrowStart!=='none'||m.get(model.id).style.arrowEnd!=='none')throw Error('Old arrows restored');
+   buttons()[1].click();
+   if(m.get(model.id).style.arrowEnd==='none')throw Error('Re-enabled arrow does not work');
   }
-  m.updateGeometry(model.id,d=>{K.ShapeRegistry.get(d.type).move(d,27,-19);return d;},{skipHistory:true});validate(model.id);
-  m.updateStyle(model.id,{brakeWidth:'wide',brakeScale:1.5},{skipHistory:true});validate(model.id);
+  m.updateStyle(model.id,{pathPattern:'brake'},{skipHistory:true});
  }
- const json=K.DocumentSerializer.toJson();K.DocumentSerializer.fromJson(json);
- for(const o of K.DocumentSerializer.exportDocument().objects)validate(o.id);
+ const saved=K.DocumentSerializer.exportDocument();
+ for(const o of saved.objects){o.style.arrowStart='triangle';o.style.arrowEnd='circle';}
+ K.DocumentSerializer.fromJson(JSON.stringify(saved));
+ for(const o of saved.objects)validate(o.id,true);
  const editor=document.querySelector('#editor'),input=document.createElement('textarea');editor.append(input);
  const menu=target=>{const e=new MouseEvent('contextmenu',{bubbles:true,cancelable:true});target.dispatchEvent(e);return e.defaultPrevented;};
  if(!menu(m.canvas)||!menu(document.querySelector('#btnLineStyle'))||menu(input))throw Error('Context menu scope');
@@ -64,6 +65,20 @@ const server = http.createServer((req, res) => {
  if(!touch.defaultPrevented)throw Error('Native touch gesture was not cancelled');
  input.remove();return cases;
  });
+ // Exercise the actual pattern picker and history transaction as well.
+ await page.click('#btnLineStyle');
+ await page.click('#btnLinePanelFillPattern');
+ await page.click('[data-path-pattern-choice="none"]');
+ await page.click('#btnLineStyle');
+ await page.click('#btnLinePanelEndArrow');
+ await page.click('#btnLinePanelFillPattern');
+ await page.click('[data-path-pattern-choice="brake"]');
+ assert.ok(await page.locator('#btnLinePanelEndArrow').isDisabled());
+ await page.evaluate(()=>Kroki.HistoryManager.undo());
+ assert.ok(await page.locator('#btnLinePanelEndArrow').isEnabled());
+ assert.ok(await page.evaluate(()=>Array.from(document.querySelectorAll('#editorObjects [data-kroki-object=\"true\"]')).some(el=>el.hasAttribute('marker-end'))));
+ await page.evaluate(()=>Kroki.HistoryManager.redo());
+ assert.ok(await page.locator('#btnLinePanelEndArrow').isDisabled());
  const cdp=await page.context().newCDPSession(page);
  const box=await page.locator('#editorCanvas').boundingBox();
  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:box.x+100,y:box.y+100}]});
@@ -71,6 +86,6 @@ const server = http.createServer((req, res) => {
  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
  await page.screenshot({path:path.join(output,'arrow-traces-touch.png')});
  assert.deepEqual(errors,[]);
- console.log('PASS:',count,'arrow/trace geometry cases, live move, width, cache, save/load, native menu/selection protection and touch long hold');
+ console.log('PASS:',count,'pattern/arrow exclusion cases, disabled controls, import, picker, undo/redo and touch long hold');
  }finally{await browser.close();server.close();}
 })().catch(e=>{console.error(e);process.exitCode=1});

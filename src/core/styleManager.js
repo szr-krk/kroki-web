@@ -549,6 +549,12 @@
       arrowEnd: normalizeArrowType(merged.arrowEnd || merged.endArrow),
       markerScale: Math.max(0.001, numberOr(merged.markerScale ?? merged.arrowScale, 1))
     };
+    // Trace textures and endpoint arrows are mutually exclusive, including
+    // imported documents and programmatic style updates.
+    if (normalized.pathPattern !== "none") {
+      normalized.arrowStart = "none";
+      normalized.arrowEnd = "none";
+    }
     if (normalized.dash === "dot") normalized.lineCap = "round";
     return normalized;
   }
@@ -2085,6 +2091,17 @@
     controls.linePanelStartArrow?.setAttribute("aria-label", `Baslangic ok ucu: ${startArrowTitle}. Kaldirmak icin uzun bas.`);
     controls.linePanelEndArrow?.setAttribute("title", `Bitis: ${endArrowTitle}. Kaldirmak icin uzun bas.`);
     controls.linePanelEndArrow?.setAttribute("aria-label", `Bitis ok ucu: ${endArrowTitle}. Kaldirmak icin uzun bas.`);
+    const arrowsDisabled = isTrace && style.pathPattern !== "none";
+    [controls.linePanelStartArrow, controls.linePanelEndArrow].forEach((button) => {
+      if (!button) return;
+      button.disabled = arrowsDisabled;
+      button.setAttribute("aria-disabled", String(arrowsDisabled));
+      if (arrowsDisabled) {
+        const message = "Ok eklemek için önce çizgi desenini kaldırın.";
+        button.setAttribute("title", message);
+        button.setAttribute("aria-label", message);
+      }
+    });
     const pointEditActive = selection.getMode?.() === "edit" && Boolean(model.metadata?.pointEdit);
     controls.closedShapeEdit?.classList.toggle("is-active", pointEditActive);
     controls.closedShapeEdit?.setAttribute("aria-pressed", String(pointEditActive));
@@ -2611,14 +2628,14 @@
       };
 
       button.addEventListener("pointerdown", (event) => {
-        if (event.button != null && event.button !== 0) return;
+        if (button.disabled || (event.button != null && event.button !== 0)) return;
         clearLongPress();
         suppressClick = false;
         longPressTimer = window.setTimeout(() => {
           longPressTimer = 0;
           suppressClick = true;
           button.classList.add("is-long-press");
-          if (activeEntry()?.model.style) updateStyle({ [styleKey]: "none" });
+          if (!button.disabled && activeEntry()?.model.style) updateStyle({ [styleKey]: "none" });
         }, 500);
       });
       button.addEventListener("pointerup", clearLongPress);
@@ -2626,6 +2643,7 @@
       button.addEventListener("pointerleave", clearLongPress);
       button.addEventListener("contextmenu", (event) => event.preventDefault());
       button.addEventListener("click", (event) => {
+        if (button.disabled) return;
         if (suppressClick) {
           suppressClick = false;
           event.preventDefault();

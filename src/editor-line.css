@@ -1830,3 +1830,8 @@
 .incident-fill-option svg { width: 2.8rem; height: 1.8rem; }
 
 .editor-side-ip.is-line-family-ip #btnBrakeWidth { order: 40; font-size: .8rem; font-weight: 700; overflow-wrap: anywhere; }
+
+.line-style-arrow-btn:disabled {
+  opacity: .35;
+  cursor: default;
+}
