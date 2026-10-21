@@ -4,7 +4,7 @@ const path = require("node:path");
 const http = require("node:http");
 const { chromium } = require("playwright");
 const root = path.resolve(__dirname, "..");
-const output = path.join(root, "outputs");
+const output = path.join(root, ".tmp", "guide-review");
 fs.mkdirSync(output, { recursive: true });
 const server = http.createServer((req, res) => {
   const name = decodeURIComponent(new URL(req.url, "http://localhost").pathname).replace(/^\/+/, "") || "index.html";
@@ -25,35 +25,54 @@ const server = http.createServer((req, res) => {
     for (const viewport of [{ width: 1440, height: 1000 }, { width: 768, height: 1024 }, { width: 390, height: 844 }]) {
       const page = await browser.newPage({ viewport });
       page.on("pageerror", error => errors.push(error.message));
-      await page.goto(`${base}/kilavuz.html?verify=20261002`);
+      await page.goto(`${base}/kilavuz.html?verify=20261021`);
       await page.evaluate(() => document.fonts.ready);
       const check = await page.evaluate(() => ({
         overflow: document.documentElement.scrollWidth > innerWidth + 1,
         brokenAnchors: Array.from(document.querySelectorAll('a[href^="#"]')).filter(a => !document.getElementById(a.hash.slice(1))).map(a => a.hash),
         missingIcons: Array.from(document.querySelectorAll('use[href^="#"]')).filter(e => !document.getElementById(e.getAttribute("href").slice(1))).length,
         sections: document.querySelectorAll("main section").length,
+        brokenPaints: Array.from(document.querySelectorAll('.pattern-card [fill], .pattern-card [stroke]')).flatMap(el=>['fill','stroke'].map(prop=>getComputedStyle(el)[prop])).filter(value=>value.startsWith('url(')).filter(value=>{const match=value.match(/#([^"')]+)/);return !match||!document.getElementById(match[1]);}),
+        duplicateIds: Array.from(document.querySelectorAll('[id]')).map(el=>el.id).filter((id,i,all)=>all.indexOf(id)!==i),
+        fills: Array.from(document.querySelectorAll('[data-guide-fill]')).map(el=>el.dataset.guideFill),
+        traces: Array.from(document.querySelectorAll('[data-guide-trace]')).map(el=>el.dataset.guideTrace),
         text: document.body.innerText
       }));
       assert.equal(check.overflow, false, `Guide overflow at ${viewport.width}`);
       assert.deepEqual(check.brokenAnchors, []);
       assert.equal(check.missingIcons, 0);
-      assert.equal(check.sections, 11);
+      assert.equal(check.sections, 16);
+      assert.deepEqual(check.duplicateIds, []);assert.deepEqual(check.brokenPaints, [], "All visual samples resolve their paints");
+      assert.equal(check.fills.length,16);assert.equal(check.traces.length,7);
+      for(const phrase of ['21 Ekim 2026','İnce → Normal → Geniş','Yok — normal çizgi','Su birikintisi','Yağ / yakıt lekesi','Modern döner kavşak','KAN İZİ','20 şerit','Çizim türünü dönüştürme','SVG Kodu Yapıştır','SVG Kodunu Kopyala','Şablonu Sil']) assert.ok(check.text.includes(phrase), 'Missing guide topic: '+phrase);
+      assert.ok(check.text.includes('Cetvel ve ızgara açık, yapışma kapalı'));
       assert.match(check.text, /Yeni çizginin kalınlığı 2/);
       assert.match(check.text, /Çizimi Kurtar/);
       await page.locator('summary').first().click();
       assert.equal(await page.locator('details').first().getAttribute('open'), "");
       await page.screenshot({ path: path.join(output, `guide-${viewport.width}.png`), fullPage: false });
+      for (const id of ['dolgular','iz-desenleri','adalar']) {
+        await page.locator('#'+id).scrollIntoViewIfNeeded();
+        await page.screenshot({path:path.join(output, `guide-${id}-${viewport.width}.png`)});
+      }
       await page.emulateMedia({ media: "print" });
       assert.equal(await page.locator('#btnPrintGuide').isVisible(), false);
+      await page.evaluate(()=>window.dispatchEvent(new Event('beforeprint')));
+      assert.equal(await page.locator('details:not([open])').count(),0,'All help answers included when printing');
+      await page.evaluate(()=>window.dispatchEvent(new Event('afterprint')));
       await page.close();
     }
     const page = await browser.newPage({ viewport: { width: 1180, height: 850 } });
     page.on("pageerror", error => errors.push(error.message));
-    await page.goto(`${base}/?verify=20261002-guide`);
+    await page.goto(`${base}/?verify=20261021-guide`);
     await page.click('#btnKlavuz');
     await page.frameLocator('#homeGuideFrame').locator('#fotograf-kurtarma').waitFor();
     await page.locator('#homeGuideModal button').first().click();
     await page.click('#btnYeniKroki');
+    const inventory=await page.evaluate(()=>({fills:Kroki.StyleManager.constants.FILL_PATTERNS.map(c=>c.id),traces:Kroki.PathTracePatterns.choices.map(c=>c.id)}));
+    const guide=await browser.newPage();await guide.goto(`${base}/kilavuz.html`);
+    const documented=await guide.evaluate(()=>({fills:Array.from(document.querySelectorAll('[data-guide-fill]')).map(el=>el.dataset.guideFill),traces:Array.from(document.querySelectorAll('[data-guide-trace]')).map(el=>el.dataset.guideTrace)}));
+    assert.deepEqual(documented,inventory,'Every current fill and trace is documented');await guide.close();
     const result = await page.evaluate(() => {
       const K = window.Kroki, m = K.EditorObjectManager, hits = K.HitTestManager;
       const types = ['line','arc','bezier','circle','ellipse','rectangle','closedShape','callout','road','barrier'];

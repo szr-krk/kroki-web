@@ -39,7 +39,7 @@ Araç ve diğer sembol sağ ray panelleri katalog verisiyle çalışır. Diğer 
 
 ### Kılavuz
 
-Home Kılavuz düğmesi yalnız dialog mesajı verir. İçerik/route/panel tanımlı değildir.
+Kılavuz Home penceresine bağlıdır. 21.10.2026 güncellemesi 16 bölüm, bütün dolgu/çizgi desenleri, ada/cep dolguları, paylaşma ve güncel kullanım adımlarını kapsar; artık bekleyen bağlantı değildir.
 
 ## Çekirdekte olup UI'da görünmeyen seçenekler
 

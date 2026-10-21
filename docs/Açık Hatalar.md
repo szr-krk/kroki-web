@@ -17,9 +17,9 @@ Bağlantılar: [[Home]], [[Menü Sistemi]], [[Serializer]], [[Kavşak Sistemi]],
 
 Home içinde Hazır Kavşaklar ve Hazır Yollar modalları bulunur, fakat gerçek şablon/veri ve canvas'a yerleştirme akışı yoktur. Kavşak ayrı nesne olmadığı için hazır kavşak özelliği birden çok yol + Q state + konumlandırma/id eşleme olarak tasarlanmalıdır.
 
-### Kılavuz içerik olarak bağlı değil
+### Kılavuz bağlantısı — giderildi
 
-Home Kılavuz düğmesi yalnız özel dialog ile sonraki aşamada bağlanacağını söyler. Gerçek kılavuz sayfası/paneli yoktur.
+Home Kılavuz düğmesi kilavuz.html sayfasını iframe penceresinde açar. İçerik 21.10.2026 tarihinde desenler ve güncel kullanım akışlarıyla yenilendi; gömülü açılış tarayıcı testiyle doğrulandı.
 
 ### Genel JSON dosya import/export UI'si yok
 

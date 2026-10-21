@@ -65,3 +65,7 @@ Bağlantılar: [[Editör]], [[Menü Sistemi]], [[Serializer]], [[Performans Krit
 
 ### 2026-10-17 — Hazır çizimleri gerektiğinde yükleme
 `ready-drawings.js` ilk sayfa açılışında indirilmez. Home scriptinin `data-ready-source` adresi yalnız Hazır Çizimler sekmesi ilk açıldığında yüklenir; aynı oturumda yeniden indirilmez. Ağ hatasında yeniden deneme düğmesi sunulur. Paket henüz yüklenmediyse bu bölüm için bağlantı gerekir; HTTP önbelleğinin kullanılabilirliği tarayıcıya bağlıdır. GitHub Pages gzip sıkıştırması ve `max-age=600` HTTP önbelleği canlı yanıtlarla doğrulanmıştır; özel açma kodu veya servis çalışanı eklenmemiştir.
+
+
+## 21.10.2026 — Güncel kullanım kılavuzu
+Kılavuz 16 bölüm halinde güncellendi; 16 dolgu seçeneği ve 7 çizgi deseni seçeneği gerçek SVG örnekleriyle belgelenir. Ada/cep dolguları, fren genişliği, desen-ok dışlaması, şekil dönüştürme, levha metin alanları, paylaşma/kod yükleme, merkezleme ve görünüm tercihleri kapsanır. Home iframe URL sürümü ve home.js yükleme sürümü birlikte güncellenir. Yazdırma öncesi kapalı soru yanıtları açılır, sonrasında eski durumuna döner. `guide-and-selection-browser.cjs` mobil/tablet/masaüstü, gerçek desen envanteri, SVG boya referansları, bağlantı/ikon kimlikleri ve gömülü açılışı doğrular.

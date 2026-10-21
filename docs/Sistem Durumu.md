@@ -98,4 +98,4 @@ Home'da hazır yollar ve hazır kavşaklar modalı vardır, fakat gerçek şablo
 2. Yol/kavşak görsel doğruluğu ve T/Y kavşak edge kuralları.
 3. Serializer geçici metadata temizliği ve import viewBox olayı.
 4. Kayıt/import güven modeli.
-5. Hazır yol/kavşak ve kılavuz gibi ürün akışı eksikleri.
+5. Hazır yol/kavşak gibi ürün akışı eksikleri. Kılavuz bağlıdır ve 21.10.2026 tarihinde güncellenmiştir.
