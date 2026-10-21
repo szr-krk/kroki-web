@@ -116,3 +116,7 @@ Pan/pinch; capture kaybı, pointercancel, blur, pagehide, gizlenme, yön ve tam 
 
 ## Tablet uzun basma (21.10.2026)
 Editörün çizim ve kontrol alanlarında yerel bağlam menüsü ile metin seçimi engellenir. Canvas touchstart varsayılanı iptal edilir; çizim ve pan/pinch Pointer Events üzerinden sürer. Metin giriş alanlarında yerel seçim ve düzenleme menüsü korunur. Uygulamada titreşim çağrısı yoktur; fiziksel cihazın işletim sistemi titreşimi masaüstü testinde ölçülemez. Uzun basma, tekrar düğmeleri ve kamera regresyonları tarayıcı testleriyle denetlenir.
+
+
+## İlk açılış görünümü (21.10.2026)
+İlk kullanımda ızgara ve cetvel açık, yapışma kapalıdır. Üç düğmenin son tercihleri tarayıcıda `kroki.editor.viewPreferences.v1` anahtarıyla saklanır; belge verisine eklenmez. Izgara kapatılınca yapışma da kapanır; yapışma açılınca ızgara açılır. Depolama kullanılamazsa kontroller oturum boyunca çalışır.

@@ -13,9 +13,21 @@
   const gridButton = document.querySelector("#btnEditorGrid");
   const snapButton = document.querySelector("#btnEditorSnap");
   const rulerButton = document.querySelector("#btnEditorRulers");
-  let gridVisible = true;
-  let snapEnabled = true;
-  let rulersVisible = true;
+  const VIEW_PREFERENCES_KEY = "kroki.editor.viewPreferences.v1";
+  let preferences = {};
+  try {
+    const stored = JSON.parse(localStorage.getItem(VIEW_PREFERENCES_KEY));
+    if (stored && typeof stored === "object") preferences = stored;
+  } catch (_) { /* Use defaults when browser storage is unavailable. */ }
+  let gridVisible = typeof preferences.grid === "boolean" ? preferences.grid : true;
+  let snapEnabled = gridVisible && preferences.snap === true;
+  let rulersVisible = typeof preferences.rulers === "boolean" ? preferences.rulers : true;
+
+  function savePreferences() {
+    try {
+      localStorage.setItem(VIEW_PREFERENCES_KEY, JSON.stringify({ grid: gridVisible, snap: snapEnabled, rulers: rulersVisible }));
+    } catch (_) { /* Controls still work without persistent storage. */ }
+  }
   let frame = 0;
   let viewportDirty = true;
   let viewport = null;
@@ -358,15 +370,18 @@
   gridButton.addEventListener("click", () => {
     gridVisible = !gridVisible;
     if (!gridVisible) snapEnabled = false;
+    savePreferences();
     syncButtons();
   });
   snapButton.addEventListener("click", () => {
     snapEnabled = !snapEnabled;
     if (snapEnabled) gridVisible = true;
+    savePreferences();
     syncButtons();
   });
   rulerButton.addEventListener("click", () => {
     rulersVisible = !rulersVisible;
+    savePreferences();
     cursor = null;
     rectDirty = true;
     syncButtons();
