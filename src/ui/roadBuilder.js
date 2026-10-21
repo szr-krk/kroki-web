@@ -175,13 +175,12 @@
     const adapter = manager.getAdapter(model);
     const metrics = Kroki.ControlPointManager.metrics();
     const step = Kroki.EditorGrid?.placementSnapStep?.() || 0;
-    // Keep toolbar-safe vertical placement and existing CP fitting. The road's
-    // bbox center starts exactly on the viewport reference Y axis (X takes
-    // priority over grid placement), including asymmetric curved profiles.
+    // Center the visible bounds on both viewport axes independently of grid
+    // and ruler visibility. Fit the handles around that fixed center.
     const area = roadPlacementBounds(model, adapter, metrics, true);
     const align = (value) => step ? Math.round(Math.round(value / step) * step * 1e8) / 1e8 : value;
     const reference = Kroki.EditorCenterGuide?.origin();
-    const center = { x: reference?.x ?? align(area.x + area.width / 2), y: align(area.y + area.height / 2) };
+    const center = { x: reference?.x ?? align(area.x + area.width / 2), y: reference?.y ?? align(area.y + area.height / 2) };
     if (model.geometry.profile === "islandRing") {
       manager.updateGeometry(model.id, (draft) => {
         draft.geometry.center = center;
@@ -200,7 +199,7 @@
       const candidate = { ...model, geometry };
       if (reference) {
         const bounds = adapter.getBounds(candidate);
-        adapter.move(candidate, reference.x - (bounds.x + bounds.width / 2), 0);
+        adapter.move(candidate, reference.x - (bounds.x + bounds.width / 2), reference.y - (bounds.y + bounds.height / 2));
       }
       const points = adapter.getControlPoints(candidate, metrics, "edit");
       return points.every((point) => point.x >= box.x - 1e-8 && point.x <= box.x + box.width + 1e-8
@@ -222,7 +221,7 @@
       // Preserve the reference axis even when a very thick road cannot fit.
       if (reference) manager.updateGeometry(model.id, (draft) => {
         const bounds = adapter.getBounds(draft);
-        adapter.move(draft, reference.x - (bounds.x + bounds.width / 2), 0);
+        adapter.move(draft, reference.x - (bounds.x + bounds.width / 2), reference.y - (bounds.y + bounds.height / 2));
       }, { skipHistory: true, styleControls: false });
       return;
     }

@@ -211,3 +211,7 @@ Segment paneli mevcut düğmeleri ve odağı korur; değişen stil ikonu/başlı
 
 ## 19.10.2026 — Normal yol şerit sınırı
 Normal yol oluşturma ve düzenleme sınırı 20 oldu. Bölünmüş yolun mevcut düzenleme sayısı da her yön için en fazla 20 kabul eder. Ada (3) ve bağlı ayrılma yolu (2) özel sınırları korunur.
+
+
+## 21.10.2026 — İlk eklemede iki eksende merkezleme
+Yeni düz, yay, S yol ve ada görünen çizim alanının merkezine, görünür sınır kutusunun her iki ekseniyle hizalanır. Izgara yapışması veya cetvel görünürlüğü ilk merkez konumunu değiştirmez. Kontrol noktası sığdırması bu sabit merkezin çevresinde yapılır. `road-center-guide-browser.cjs` yatay/dikey yönlerde, portre/yatay ekranlarda ve dört ızgara/cetvel görünürlüğünde X/Y merkezini kontrol eder.

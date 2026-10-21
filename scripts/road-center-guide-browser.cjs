@@ -125,6 +125,9 @@ const server = http.createServer((req, res) => {
     // Builder: profile/orientation/shoulders fit safely and bbox center sits on Y axis.
     for(const viewport of [{width:1440,height:1000},{width:600,height:1000}]) {
       await page.setViewportSize(viewport);
+      for(const aids of [{grid:true,rulers:true},{grid:false,rulers:true},{grid:true,rulers:false},{grid:false,rulers:false}]) {
+      await page.evaluate(({grid,rulers})=>{for(const [id,want] of [['btnEditorGrid',grid],['btnEditorRulers',rulers]]){const b=document.getElementById(id);if((b.getAttribute('aria-pressed')==='true')!==want)b.click();}},aids);
+      await page.waitForTimeout(80);
       for(const profile of ['straight','arc','sCurve','islandRing'])for(const orientation of ['horizontal','vertical']){
         const insertion=await page.evaluate(async({profile,orientation})=>{
           const K=window.Kroki,m=K.EditorObjectManager;K.SelectionManager.clear();m.clear({skipHistory:true});
@@ -133,16 +136,17 @@ const server = http.createServer((req, res) => {
           document.querySelectorAll('[data-road-orientation]').forEach(el=>el.classList.toggle('is-active',el.dataset.roadOrientation===orientation));
           K.RoadBuilder.addRoad();await new Promise(r=>setTimeout(r,100));
           const model=m.getAll().find(x=>x.type==='road'),a=m.getAdapter(model),b=a.getBounds(model),o=K.EditorCenterGuide.origin();
-          return {error:b.x+b.width/2-o.x,profile,orientation,count:m.getAll().length};
+          return {error:b.x+b.width/2-o.x,errorY:b.y+b.height/2-o.y,profile,orientation,count:m.getAll().length};
         },{profile,orientation});
-        assert.equal(insertion.count,1);assert.ok(Math.abs(insertion.error)<.01,JSON.stringify(insertion));
+        assert.equal(insertion.count,1);assert.ok(Math.abs(insertion.error)<.01 && Math.abs(insertion.errorY)<.01,JSON.stringify({...insertion,...aids}));
       }
+    }
     }
     await page.setViewportSize({width:1440,height:1000});
     await page.evaluate(() => window.Kroki.SelectionManager.clear());
     await page.click('#btnEditorMenu');const pending=page.waitForEvent('download');await page.click('[data-menu-action="export-svg"]');
     const download=await pending,target=path.join(output,'road.svg');await download.saveAs(target);
     assert.ok(!fs.readFileSync(target,'utf8').includes('id="editorCenterGuide"'),'Overlay excluded from SVG');
-    assert.deepEqual(errors,[]);console.log('PASS: fixed cross, screen-space snap thresholds, grid precedence, real road/island drags, axis guides, undo/redo, save/export, insertion on Y axis, portrait/landscape.');
+    assert.deepEqual(errors,[]);console.log('PASS: fixed cross, screen-space snap thresholds, grid precedence, real road/island drags, axis guides, undo/redo, save/export, insertion on both center axes with all grid/ruler visibility combinations, portrait/landscape.');
   } finally {await browser.close();server.close();}
 })().catch(error=>{console.error(error);process.exitCode=1});
