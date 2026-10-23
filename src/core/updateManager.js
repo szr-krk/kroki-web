@@ -1,4 +1,5 @@
 (() => {
+  if (window.parent !== window && new URLSearchParams(location.search).get("_krokiPreview") === "1") return;
   const K = window.Kroki = window.Kroki || {};
   const version = document.querySelector('meta[name="kroki-version"]')?.content || "2.0";
   const build = document.querySelector('meta[name="kroki-build"]')?.content || "";

@@ -133,8 +133,9 @@
 
   async function hydrateRecord(record, assetMap = null, options = {}) {
     if (!record?.entry) return null;
-    const entry = clonePlain(record.entry);
-    if (options.summary) delete entry.document;
+    const source = options.summary ? { ...record.entry } : record.entry;
+    if (options.summary) delete source.document;
+    const entry = clonePlain(source);
     if (!record.photoAssetId) return entry;
     let asset = assetMap?.get(record.photoAssetId) || null;
     if (!asset) {

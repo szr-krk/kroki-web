@@ -19,6 +19,7 @@
   const REPRESENTATIVE_STROKE = "#111827";
   const REPRESENTATIVE_STROKE_WIDTH = 0.3;
   const metricsCache = new WeakMap();
+  const frameCache = new WeakMap();
 
   function clampScale(value) {
     const scale = Number(value);
@@ -563,11 +564,11 @@
   function rigRectangles(metrics, expansion = 1) {
     const r = metrics.rig;
     const rectangle = (dimensions, hitch, angle, y) => {
-      const corners = [ [-1,-1], [1,-1], [1,1], [-1,1] ];
-      return corners.map(([sx, sy]) => {
-        const offset = rotatedOffset({ x: -hitch + sx * dimensions.width * expansion / 2,
-          y: sy * dimensions.height * expansion / 2 }, angle);
-        return { x: r.hitchX + offset.x, y: y + offset.y };
+      const radians = angle * Math.PI / 180, cos = Math.cos(radians), sin = Math.sin(radians);
+      const halfWidth = dimensions.width * expansion / 2, halfHeight = dimensions.height * expansion / 2;
+      return [ [-1,-1], [1,-1], [1,1], [-1,1] ].map(([sx, sy]) => {
+        const x = -hitch + sx * halfWidth, dy = sy * halfHeight;
+        return { x: r.hitchX + x * cos - dy * sin, y: y + x * sin + dy * cos };
       });
     };
     return [rectangle(r.tractor, r.tractorHitch, r.angle, r.tractorY), rectangle(r.trailer, r.trailerHitch, 0, r.trailerY)];
@@ -602,15 +603,25 @@
   }
 
   function frameVertices(model, metrics, scale = 1) {
-    if (metrics.rig) return rigRectangles(metrics, scale).flat().map(point => bodyWorldPoint(model, point, metrics));
-    const halfWidth = metrics.width * scale / 2;
-    const halfHeight = metrics.height * scale / 2;
-    return [
-      localToWorld(model, -halfWidth, -halfHeight),
-      localToWorld(model, halfWidth, -halfHeight),
-      localToWorld(model, halfWidth, halfHeight),
-      localToWorld(model, -halfWidth, halfHeight)
+    const geometry = model.geometry || {}, metadata = model.metadata || {};
+    const rotation = utils.normalizeRotation(geometry.rotation || 0);
+    const flipX = Boolean(metadata.vehicleFlipX), flipY = Boolean(metadata.vehicleFlipY);
+    const cached = frameCache.get(model);
+    if (cached && cached.metrics === metrics && cached.scale === scale && cached.cx === geometry.cx
+      && cached.cy === geometry.cy && cached.rotation === rotation && cached.flipX === flipX && cached.flipY === flipY) return cached.vertices;
+    const radians = rotation * Math.PI / 180, cos = Math.cos(radians), sin = Math.sin(radians);
+    const sx = metrics.rig ? metrics.scale * (flipY ? -1 : 1) : 1;
+    const sy = metrics.rig ? metrics.scale * (flipX ? -1 : 1) : 1;
+    const local = metrics.rig ? rigRectangles(metrics, scale).flat() : [
+      { x: -metrics.width * scale / 2, y: -metrics.height * scale / 2 },
+      { x: metrics.width * scale / 2, y: -metrics.height * scale / 2 },
+      { x: metrics.width * scale / 2, y: metrics.height * scale / 2 },
+      { x: -metrics.width * scale / 2, y: metrics.height * scale / 2 }
     ];
+    const vertices = local.map(point => ({ x: geometry.cx + point.x * sx * cos - point.y * sy * sin,
+      y: geometry.cy + point.x * sx * sin + point.y * sy * cos }));
+    frameCache.set(model, { metrics, scale, cx: geometry.cx, cy: geometry.cy, rotation, flipX, flipY, vertices });
+    return vertices;
   }
 
   function polygonBounds(vertices) {
@@ -624,14 +635,12 @@
   }
 
   function selectionPath(model, metrics) {
-    if (metrics.rig) return rigRectangles(metrics, SELECTION_FRAME_SCALE).map(rectangle => {
-      const vertices = rectangle.map(point => bodyWorldPoint(model, point, metrics));
-      return vertices.map((point, index) => `${index ? "L" : "M"} ${roundSvgNumber(point.x)} ${roundSvgNumber(point.y)}`).join(" ") + " Z";
-    }).join(" ");
-    const vertices = frameVertices(model, metrics, SELECTION_FRAME_SCALE);
-    return `${vertices.map((point, index) => (
-      `${index ? "L" : "M"} ${roundSvgNumber(point.x)} ${roundSvgNumber(point.y)}`
-    )).join(" ")} Z`;
+    const vertices = frameVertices(model, metrics, SELECTION_FRAME_SCALE), cached = frameCache.get(model);
+    if (!cached.path) {
+      const polygon = points => points.map((point, index) => `${index ? "L" : "M"} ${roundSvgNumber(point.x)} ${roundSvgNumber(point.y)}`).join(" ") + " Z";
+      cached.path = metrics.rig ? polygon(vertices.slice(0, 4)) + " " + polygon(vertices.slice(4)) : polygon(vertices);
+    }
+    return cached.path;
   }
 
   function cpPoint(model, metrics) {
@@ -910,7 +919,9 @@
     },
 
     getBounds(model) {
-      return polygonBounds(frameVertices(model, baseMetrics(model), SELECTION_FRAME_SCALE));
+      const vertices = frameVertices(model, baseMetrics(model), SELECTION_FRAME_SCALE), cached = frameCache.get(model);
+      if (!cached.bounds) cached.bounds = polygonBounds(vertices);
+      return { ...cached.bounds };
     },
 
     clone(model) {

@@ -122,3 +122,10 @@ Birleştirilen ayrı dorsenin metadatası `vehicleTrailerMetadata`, çizgi stili
 etiketi `vehicleTrailerLabel` altında saklanır. Çekici ve dorsenin renkleri/araç etiketleri birleşikken de çizilir.
 DOM aktarımında bu ek alanlar `data-vehicle-trailer-settings` JSON alanında korunur. Ayırma, kayıtlı parça
 verisini ve bileşik dönüşümden hesaplanan dünya koordinatlarını iki bağımsız araç modeline aktarır.
+
+### Güncelleme önizlemelerinin onarımı
+
+`prepareUpdate()` önce belgeyi kaydeder ve doğrular; ardından SVG önizlemesini ekler. Eski `update_` kayıtlarında
+önizleme eksikse ana ekranda `ensureStoredPreview()` çağrısı, ayrı iç çizim görünümünde önizlemeyi oluşturur ve
+belge/zaman alanlarını değiştirmeden kayda ekler. Bu görünüm `renderDocumentPreview()` yolunu kullanır;
+normal düzenleyicide belge yükleme, kurtarma kaydı veya geçmiş değişikliği yapmaz.

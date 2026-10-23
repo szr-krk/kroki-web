@@ -92,3 +92,12 @@ Engine `setDebug` ve `resetQEndpointEdits` API'lerini açar. UI düğmesi yoktur
 - Renk, temsili görünüm, görünüş veya dorse türü değiştiğinde görsel gerektiği gibi yeniden çizilir.
 - Lastik hizası için ilk kullanımda yapılan SVG ölçümü saklanır; hareket boyunca `getBBox()` tekrarlanmaz.
 - 4 kat yavaşlatılmış Chrome ölçümünde 120 çekici açısı güncellemesinin ortanca süresi yaklaşık 305 ms'den 85 ms'ye düştü (yaklaşık %72). Bu ölçüm tüm uygulama için genel hız garantisi değildir.
+
+### İkinci akıcılık incelemesi ve güncelleme kaydı önizlemesi
+
+- Düzenleyici ölçeği kamera hesaplamasından alınır; sık `getScreenCTM()` okumaları azaltılmıştır.
+- Küçük çizimlerde seçim sınırları sahne/ölçek değişene kadar saklanır. Araç seçim köşeleri; konum, dönüş, görünüm veya boyut değiştiğinde yenilenen model önbelleğini kullanır.
+- Ana ekran listelerinin özetleri alınırken tüm belge verisinin gereksiz JSON kopyası oluşturulmaz.
+- Yeni güncelleme kontrol kayıtları gerçek SVG önizlemesi içerir. Önizleme başarısızlığı doğrulanmış çizim kaydını engellemez.
+- Eski `update_` kayıtlarında boş önizleme, ana ekranda görünür olduğunda sırayla ve aynı çizim motoruyla ayrı bir görünmeyen çerçevede oluşturulur; sonuç kayda yazılır. Düzenleyici açılırsa işlem durdurulur. Açık belge/geçmiş değiştirilmez.
+- `_krokiPreview=1` yalnız iç önizleme çerçevesinde kullanılır. Bu çerçeve güncelleme kontrolünü, oturum geri yüklemesini ve ana ekran kayıt taramasını çalıştırmaz.

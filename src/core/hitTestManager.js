@@ -14,6 +14,7 @@
   let grid = new Map();
   let largeEntries = [];
   let unboundedEntries = [];
+  let linearVersion = -1, linearUnits = 0, linearEntries = [];
   let warmupHandle = 0;
   let warmupUsesIdleCallback = false;
 
@@ -74,7 +75,11 @@
   }
 
   function linearHitTest(point, objects, unitsPerPx) {
-    const entries = new Array(objects.length);
+    const version = manager.getSceneVersion?.() ?? -1;
+    if (linearVersion !== version || linearUnits !== unitsPerPx || linearEntries.length !== objects.length) {
+      linearVersion = version; linearUnits = unitsPerPx; linearEntries = new Array(objects.length);
+    }
+    const entries = linearEntries;
     return prioritizedHitTest(point, objects.length, (priorityIndex, roadPass) => {
       const objectIndex = objects.length - priorityIndex - 1;
       // Skip the other pass before constructing bounds for an unused object.
@@ -212,7 +217,8 @@
     hitTestEvent,
     invalidate() {
       cancelWarmup();
-      indexVersion = -1;
+      indexVersion = linearVersion = -1;
+      linearEntries = [];
       indexEntries = [];
       grid = new Map();
       largeEntries = [];

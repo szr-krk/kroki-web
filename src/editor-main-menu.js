@@ -4,6 +4,7 @@
   const serializer = Kroki.DocumentSerializer;
   const documentStorage = Kroki.DocumentStorage;
   if (!manager || !serializer || !documentStorage) return;
+  const previewRendererMode = window.parent !== window && new URLSearchParams(location.search).get("_krokiPreview") === "1";
   const uiPx = Kroki.uiPx || ((value) => Number(value) || 0);
 
   const SVG_NS = "http://www.w3.org/2000/svg";
@@ -247,6 +248,7 @@
   }
 
   function showEditor() {
+    cancelPreviewRepair?.();
     closeHomeModals();
     closePreview();
     homeScreen?.classList.add("gizli");
@@ -948,6 +950,67 @@
     }
   }
 
+  const previewRepairs = new Map();
+  let previewRepairQueue = Promise.resolve(), cancelPreviewRepair = null;
+
+  async function withPreviewTimeout(promise, milliseconds) {
+    let timer;
+    try { return await Promise.race([promise, new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error("preview-timeout")), milliseconds);
+    })]); } finally { clearTimeout(timer); }
+  }
+
+  async function renderSavedPreview(doc) {
+    if (homeScreen?.classList.contains("gizli")) return null;
+    const frame = document.createElement("iframe");
+    frame.setAttribute("aria-hidden", "true"); frame.tabIndex = -1;
+    frame.style.cssText = "position:fixed;left:-20000px;top:0;width:1200px;height:800px;visibility:hidden;border:0;pointer-events:none";
+    const url = new URL("index.html", document.baseURI);
+    url.searchParams.set("_krokiPreview", "1");
+    url.searchParams.set("v", document.querySelector('meta[name="kroki-build"]')?.content || "");
+    let polling, stopped = false;
+    const aborted = new Promise((_, reject) => { cancelPreviewRepair = () => { stopped = true; reject(new Error("preview-paused")); }; });
+    try {
+      const ready = new Promise(resolve => {
+        polling = setInterval(() => {
+          try { if (frame.contentWindow?.KrokiMainMenu?.renderDocumentPreview) resolve(frame.contentWindow.KrokiMainMenu); } catch { /* Await same-origin renderer. */ }
+        }, 50);
+      });
+      frame.src = url.href;
+      document.body.append(frame);
+      const task = (async () => {
+        const renderer = await ready;
+        if (stopped || homeScreen?.classList.contains("gizli")) return null;
+        return renderer.renderDocumentPreview(doc);
+      })();
+      return await withPreviewTimeout(Promise.race([task, aborted]), 15000);
+    } finally { stopped = true; clearInterval(polling); cancelPreviewRepair = null; frame.remove(); }
+  }
+
+  function ensureStoredPreview(entry) {
+    if (previewRendererMode || entry.previewSvg || !String(entry.id || "").startsWith("update_")) return Promise.resolve(entry);
+    const kind = normalizedEntryKind(entry.previewKind || "recent"), key = `${kind}:${entry.id}`;
+    if (previewRepairs.has(key)) return previewRepairs.get(key);
+    const repair = previewRepairQueue.catch(() => {}).then(async () => {
+      if (homeScreen?.classList.contains("gizli")) return entry;
+      const stored = await documentStorage.get(kind, entry.id);
+      if (!stored?.document || stored.previewSvg) return stored || entry;
+      const preview = await renderSavedPreview(stored.document);
+      if (!preview?.svg) return stored;
+      const latest = await documentStorage.get(kind, entry.id);
+      if (!latest || latest.previewSvg || JSON.stringify(latest.document) !== JSON.stringify(stored.document)) return latest || stored;
+      const repaired = { ...latest, previewSvg: preview.svg, previewViewBox: preview.viewBox };
+      await documentStorage.put(kind, repaired);
+      return repaired;
+    }).catch(error => {
+      if (error.message !== "preview-paused") console.warn("Güncelleme kaydı önizlemesi hazırlanamadı.", error);
+      return entry;
+    }).finally(() => previewRepairs.delete(key));
+    previewRepairQueue = repair;
+    previewRepairs.set(key, repair);
+    return repair;
+  }
+
   function renderPreviewPlaceholder(target) {
     const placeholder = document.createElement("span");
     placeholder.textContent = "Önizleme";
@@ -956,6 +1019,12 @@
 
   async function renderPreviewInto(target, entry) {
     target.replaceChildren();
+    if (!entry.previewSvg) {
+      const repaired = await ensureStoredPreview(entry);
+      entry.previewSvg = repaired.previewSvg;
+      entry.previewViewBox = repaired.previewViewBox;
+      if (!target.isConnected) return;
+    }
     if (entry.previewSvg) {
       const image = document.createElement("img");
       image.alt = "";
@@ -987,10 +1056,10 @@
     const preview = document.createElement("span");
     preview.className = "stored-doc-thumb";
     if (previewObserver) {
-      pendingPreviews.set(preview, entry);
+      pendingPreviews.set(preview, { ...entry, previewKind: options.kind });
       previewObserver.observe(preview);
     } else {
-      void renderPreviewInto(preview, entry);
+      void renderPreviewInto(preview, { ...entry, previewKind: options.kind });
     }
 
     const meta = document.createElement("span");
@@ -1692,6 +1761,11 @@
     if (!saved || JSON.stringify(saved.document) !== JSON.stringify(doc)) {
       throw new Error("update-checkpoint-verification-failed");
     }
+    // The verified drawing is already safe. A preview failure must not discard it or block the update.
+    try {
+      const preview = await withPreviewTimeout(previewSnapshot(), 5000);
+      if (preview?.svg) await documentStorage.put("recent", { ...saved, previewSvg: preview.svg, previewViewBox: preview.viewBox });
+    } catch (error) { console.warn("Güncelleme kaydı önizlemesi daha sonra hazırlanacak.", error); }
     return { resume: true, id };
   }
 
@@ -1706,6 +1780,13 @@
   window.KrokiMainMenu = {
     prepareUpdate,
     restoreUpdate,
+    renderDocumentPreview: previewRendererMode ? async (doc) => {
+      homeScreen?.classList.add("gizli"); editorScreen?.classList.remove("gizli");
+      if (!serializer.importDocument(doc, { skipHistory: true })?.ok) throw new Error("preview-document-invalid");
+      Kroki.RoadIntersectionEngine?.rebuild?.();
+      if (containsSignFont(canvas)) await prepareExportSignFont();
+      return previewSnapshot();
+    } : undefined,
     saveRecent,
     saveTemplate,
     renderStoredLists,
@@ -1776,7 +1857,9 @@
     }
   }
 
-  void showRecoveryRecords();
-  void renderStoredLists();
-  markDocumentSaved();
+  if (!previewRendererMode) {
+    void showRecoveryRecords();
+    void renderStoredLists();
+    markDocumentSaved();
+  }
 })();
