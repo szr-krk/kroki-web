@@ -416,6 +416,26 @@
     });
   }
 
+  function drawSideCoupling(group, metrics, metadata) {
+    if (metrics.view !== "side") return;
+    const { rig: r, parts } = metrics;
+    const deckY = { "09/cekici": 34.673, "09/uc-dingil-cekici": 35 };
+    const floorY = { "09/uc-dingil-dorse": 37.4, "09/tanker-yari-romork": 37, "09/silobas-kasa-yari-romork": 36.811 };
+    const fittedY = (variant, dimensions, y) => {
+      const box = parseViewBox(variant.views.side.viewBox);
+      const fit = Math.min(dimensions.width / box.width, dimensions.height / box.height);
+      return -box.height * fit / 2 + (y - box.y) * fit;
+    };
+    const top = r.trailerY + fittedY(parts.trailer, r.trailer, floorY[parts.trailer.key]);
+    const bottom = r.tractorY + fittedY(parts.tractor, r.tractor, deckY[parts.tractor.key]);
+    // The fifth-wheel mounting fills the vertical joint while both axle lines stay level.
+    const mount = append(group, "g", { class: "editor-rig-coupling" });
+    append(mount, "rect", { x: r.hitchX - 5, y: top + 0.35, width: 10,
+      height: Math.max(0.5, bottom - top - 0.35), rx: 0.5,
+      fill: metadata.vehicleGhost ? "#ffffff" : "#111827", stroke: "#111827", "stroke-width": 0.3 });
+    applyRepresentativeStyle(mount, metrics, metadata);
+  }
+
   function drawVehicleArt(group, metrics, metadata = {}) {
     if (metrics.rig) {
       const { rig, parts, view } = metrics;
@@ -425,6 +445,7 @@
       });
       drawVehicleArt(tractor, { variant: parts.tractor, view, kind: parts.tractor.kind,
         baseWidth: rig.tractor.width, baseHeight: rig.tractor.height }, metadata);
+      drawSideCoupling(group, metrics, metadata);
       const trailer = append(group, "g", { class: "editor-rig-trailer", transform: `translate(${rig.hitchX - rig.trailerHitch} ${rig.trailerY})` });
       drawVehicleArt(trailer, { variant: parts.trailer, view, kind: parts.trailer.kind,
         baseWidth: rig.trailer.width, baseHeight: rig.trailer.height }, { ...metadata, ...(metadata.vehicleTrailerMetadata || {}) });

@@ -82,5 +82,5 @@ Engine `setDebug` ve `resetQEndpointEdits` API'lerini açar. UI düğmesi yoktur
 - Sağdaki araç özelliklerinde birleşik tır için **Ayır**, ayrı çekici veya dorse için **Birleştir** bulunur.
 - Ayırma, her parçanın ekrandaki yerini, dönüşünü ve aynalamasını korur; parçalar bağımsız düzenlenebilir.
 - Birleştirme, çizimdeki karşı parçanın seçilip Tamam ile onaylanmasıyla yapılır. Seçili parça sabit kalır; birleşik araç üst görünümde düz kurulur ve seçili parçanın ölçeğini kullanır.
-- İşlemler tek adımlı belge geçmişiyle geri alınır. Renkler ve etiketler korunur; yan görünüm bağlantısındaki boşluk azaltılmıştır.
+- İşlemler tek adımlı belge geçmişiyle geri alınır. Renkler ve etiketler korunur; yan görünümün yatay yerleşimi korunur ve bağlantı tablasıyla düşey açıklık daraltılır.
 - İşlem ve eş seçme arayüzü: `src/ui/vehicleCoupling.js`; parça dönüşümleri: `VehicleRenderer.componentModelsFor()`.

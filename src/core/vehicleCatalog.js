@@ -107,10 +107,7 @@
     const tractor = dimensionsForView(parts.tractor, view);
     const trailer = dimensionsForView(parts.trailer, view);
     const trailerHitch = trailer.width / 2 - metersToUnits(0.75);
-    const cabRear = { "09/cekici": 46.783 / 73.785, "09/uc-dingil-cekici": 57 / 87 };
-    const tractorHitch = view === "side"
-      ? tractor.width * (cabRear[parts.tractor.key] - 0.5) - metersToUnits(0.75) - 0.7
-      : tractor.width * (TRACTOR_HITCHES[parts.tractor.key] - 0.5);
+    const tractorHitch = tractor.width * (TRACTOR_HITCHES[parts.tractor.key] - 0.5);
     const min = Math.min(-tractorHitch - tractor.width / 2, -trailerHitch - trailer.width / 2);
     const max = Math.max(-tractorHitch + tractor.width / 2, -trailerHitch + trailer.width / 2);
     const hitchX = -(min + max) / 2;
