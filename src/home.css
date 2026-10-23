@@ -258,7 +258,7 @@ select {
 @media (max-width: 560px) {
   .home-ust { gap: 8px; }
   .home-ust-baslik { font-size: 18px; }
-  .home-alt-baslik { display: none; }
+  .home-alt-baslik { display: block; font-size: 11px; line-height: 1.4; max-width: 245px; }
   .home-ust-btn { padding: 8px; }
   .home-ust-btn span { display: none; }
   .home-ust-btn svg { width: 22px; height: 22px; }
@@ -835,7 +835,7 @@ select {
 .recovery-row span { flex: 1 1 140px; }
 .recovery-row button { padding: 10px 14px; border: 1px solid #c4ad7c; border-radius: 8px; background: white; color: #302719; cursor: pointer; }
 
-.home-version { display: inline-block; padding: 2px 7px; border: 1px solid #b8d4d0; border-radius: 7px; font-size: 12px; font-weight: 700; vertical-align: middle; color: #0c6b64; background: #e4f4f1; }
+.home-version { color: inherit; font-size: inherit; font-weight: 400; white-space: nowrap; }
 .kroki-update-saving { position: fixed; inset: 0; z-index: 100000; display: grid; place-items: center; background: rgba(241,245,249,.96); color: #102033; font: 600 16px/1.5 Arial,sans-serif; padding: 24px; text-align: center; }
 
 .kroki-dialog-panel.is-update { width: min(480px, calc(100vw - 32px)); padding: 20px; gap: 16px; border-width: 2px; border-radius: 8px; }

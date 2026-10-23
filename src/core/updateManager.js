@@ -4,7 +4,7 @@
   const build = document.querySelector('meta[name="kroki-build"]')?.content || "";
   const versionLabel = document.querySelector("#homeVersion");
   if (versionLabel) {
-    versionLabel.textContent = version;
+    versionLabel.textContent = "(Versiyon: " + version + ")";
     versionLabel.setAttribute("aria-label", "Sürüm " + version);
     versionLabel.title = "Yayın " + build;
   }
