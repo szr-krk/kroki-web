@@ -8,17 +8,28 @@
     "10/yolcu-otobusu": "10/otobus"
   };
 
-  function typeList() {
+  let catalogIndex = null;
+  function index() {
+    if (catalogIndex) return catalogIndex;
     const unsupported = new Set(data.upsideDownUnsupported || []);
-    return (Array.isArray(data.types) ? data.types : []).map((type) => ({
-      ...type,
-      supportsUpsideDown: !unsupported.has(type.id)
+    const types = (Array.isArray(data.types) ? data.types : []).map(type => ({
+      ...type, supportsUpsideDown: !unsupported.has(type.id)
     }));
+    const byType = new Map(), byKey = new Map(), variants = [];
+    types.forEach(type => {
+      const items = (type.variants || []).map(variant => normalizeVariant(type, variant));
+      byType.set(type.id, items);
+      items.forEach(variant => {
+        variants.push(variant);
+        byKey.set(variant.key, variant);
+        if (!byKey.has(variant.id)) byKey.set(variant.id, variant);
+      });
+    });
+    catalogIndex = { types, byType, byKey, variants };
+    return catalogIndex;
   }
-
-  function typeById(typeId) {
-    return typeList().find((type) => type.id === String(typeId || "")) || null;
-  }
+  function typeList() { return index().types.slice(); }
+  function typeById(typeId) { return index().types.find(type => type.id === String(typeId || "")) || null; }
 
   function normalizeVariant(type, variant) {
     const supportsUpsideDown = variant.supportsUpsideDown != null
@@ -34,25 +45,11 @@
     };
   }
 
-  function variantsForType(typeId) {
-    const type = typeById(typeId);
-    return (type?.variants || []).map((variant) => normalizeVariant(type, variant));
-  }
-
-  function allVariants() {
-    return typeList().flatMap((type) => variantsForType(type.id));
-  }
-
+  function variantsForType(typeId) { return (index().byType.get(String(typeId || "")) || []).slice(); }
+  function allVariants() { return index().variants.slice(); }
   function findVariant(keyOrTypeId, variantId) {
-    if (variantId) {
-      const requestedKey = `${String(keyOrTypeId || "")}/${String(variantId || "")}`;
-      const aliasedKey = LEGACY_VARIANT_ALIASES[requestedKey];
-      if (aliasedKey) return allVariants().find((variant) => variant.key === aliasedKey) || null;
-      return variantsForType(keyOrTypeId).find((variant) => variant.id === variantId) || null;
-    }
-    const key = String(keyOrTypeId || "");
-    const normalizedKey = LEGACY_VARIANT_ALIASES[key] || key;
-    return allVariants().find((variant) => variant.key === normalizedKey || variant.id === normalizedKey) || null;
+    const key = variantId ? `${String(keyOrTypeId || "")}/${String(variantId)}` : String(keyOrTypeId || "");
+    return index().byKey.get(LEGACY_VARIANT_ALIASES[key] || key) || null;
   }
 
   function metersToUnits(value) {

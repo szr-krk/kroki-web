@@ -84,3 +84,11 @@ Engine `setDebug` ve `resetQEndpointEdits` API'lerini açar. UI düğmesi yoktur
 - Birleştirme, çizimdeki karşı parçanın seçilip Tamam ile onaylanmasıyla yapılır. Seçili parça sabit kalır; birleşik araç üst görünümde düz kurulur ve seçili parçanın ölçeğini kullanır.
 - İşlemler tek adımlı belge geçmişiyle geri alınır. Renkler ve etiketler korunur; yan görünümün yatay yerleşimi korunur ve lastiklerin gerçek alt kenarları aynı çizgiye hizalanır; araya dolgu eklenmez.
 - İşlem ve eş seçme arayüzü: `src/ui/vehicleCoupling.js`; parça dönüşümleri: `VehicleRenderer.componentModelsFor()`.
+
+### Araç düzenlemede akıcılık
+
+- Çekici açısı değişirken SVG parçaları yeniden üretilmez; mevcut çekici grubunun dönüşümü güncellenir.
+- Araç kataloğu bir kez indekslenir. Etiket konumları için her karede tam parça modeli / stil kopyası oluşturulmaz.
+- Renk, temsili görünüm, görünüş veya dorse türü değiştiğinde görsel gerektiği gibi yeniden çizilir.
+- Lastik hizası için ilk kullanımda yapılan SVG ölçümü saklanır; hareket boyunca `getBBox()` tekrarlanmaz.
+- 4 kat yavaşlatılmış Chrome ölçümünde 120 çekici açısı güncellemesinin ortanca süresi yaklaşık 305 ms'den 85 ms'ye düştü (yaklaşık %72). Bu ölçüm tüm uygulama için genel hız garantisi değildir.

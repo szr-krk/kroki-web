@@ -277,10 +277,10 @@
     handle.classList.toggle("is-catalog-control", !!cp.catalogControl);
     if (cp.cursor && handle.style.cursor !== cp.cursor) handle.style.cursor = cp.cursor;
     if (cp.title) {
-      handle.setAttribute("aria-label", cp.title);
+      utils.setAttributeIfChanged(handle, "aria-label", cp.title);
       let title = handle.querySelector("title");
       if (!title) { title = utils.createSvgElement("title"); handle.append(title); }
-      title.textContent = cp.title;
+      if (title.textContent !== cp.title) title.textContent = cp.title;
     }
   }
 

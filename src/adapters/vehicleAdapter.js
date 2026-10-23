@@ -475,7 +475,6 @@
       metrics.baseWidth,
       metrics.baseHeight,
       metrics.parts?.trailer.key || "",
-      metrics.rig?.angle || 0,
       metadata.vehicleTrailerMetadata?.vehicleColor || "",
       metadata.vehicleTrailerMetadata?.vehicleGhost ?? "",
       metadata.vehicleColor || "",
@@ -493,7 +492,12 @@
       drawVehicleArt(group, metrics, metadata);
       element.insertBefore(group, element.firstChild);
     }
-    group.setAttribute("transform", vehicleBodyTransform(model, metrics, metadata));
+    utils.setAttributeIfChanged(group, "transform", vehicleBodyTransform(model, metrics, metadata));
+    if (metrics.rig) {
+      const r = metrics.rig;
+      const tractor = group.querySelector(":scope > .editor-rig-tractor");
+      utils.setAttributeIfChanged(tractor, "transform", `translate(${r.hitchX} ${r.tractorY}) rotate(${r.angle}) translate(${-r.tractorHitch} 0)`);
+    }
     return group;
   }
 
@@ -715,11 +719,12 @@
       });
       parent.append(label);
     }
-    label.setAttribute("font-size", String(vehicleLabelFontSize(metrics)));
-    label.style.fontSize = `${vehicleLabelFontSize(metrics)}px`;
-    label.setAttribute("x", String(point.x));
-    label.setAttribute("y", String(point.y));
-    label.setAttribute("transform", `rotate(${angle} ${point.x} ${point.y})`);
+    utils.setAttributeIfChanged(label, "font-size", vehicleLabelFontSize(metrics));
+    const fontSize = `${vehicleLabelFontSize(metrics)}px`;
+    if (label.style.fontSize !== fontSize) label.style.fontSize = fontSize;
+    utils.setAttributeIfChanged(label, "x", point.x);
+    utils.setAttributeIfChanged(label, "y", point.y);
+    utils.setAttributeIfChanged(label, "transform", `rotate(${angle} ${point.x} ${point.y})`);
     if (label.textContent !== text) label.textContent = text;
   }
 
@@ -730,27 +735,54 @@
     } catch { return {}; }
   }
 
-  function componentModelsFor(model) {
-    const metrics = baseMetrics(model), r = metrics.rig;
-    if (!r) return null;
-    const metadata = model.metadata || {}, geometry = model.geometry || {};
+  function componentGeometryFor(model, metrics) {
+    const r = metrics.rig, metadata = model.metadata || {}, geometry = model.geometry || {};
     const tractorOffset = rotatedOffset({ x: -r.tractorHitch, y: 0 }, r.angle);
     const tractorCenter = bodyWorldPoint(model, { x: r.hitchX + tractorOffset.x, y: r.tractorY + tractorOffset.y }, metrics);
     const trailerCenter = bodyWorldPoint(model, { x: r.hitchX - r.trailerHitch, y: r.trailerY }, metrics);
     const handedness = (metadata.vehicleFlipX ? -1 : 1) * (metadata.vehicleFlipY ? -1 : 1);
-    const make = (variant, center, rotation, source, style, label) => ({
-      type: "vehicle",
-      geometry: { cx: center.x, cy: center.y, rotation: utils.normalizeRotation(rotation), scale: metrics.scale, articulationAngle: 0 },
+    const make = (center, rotation) => ({ cx: center.x, cy: center.y,
+      rotation: utils.normalizeRotation(rotation), scale: metrics.scale, articulationAngle: 0 });
+    return {
+      tractor: make(tractorCenter, utils.numberOr(geometry.rotation, 0) + handedness * r.angle),
+      trailer: make(trailerCenter, utils.numberOr(geometry.rotation, 0))
+    };
+  }
+
+  function componentModelsFor(model) {
+    const metrics = baseMetrics(model);
+    if (!metrics.rig) return null;
+    const metadata = model.metadata || {}, geometry = componentGeometryFor(model, metrics);
+    const make = (variant, partGeometry, source, style, label) => ({
+      type: "vehicle", geometry: partGeometry,
       metadata: catalog.metadataForPart(variant, { ...source, vehicleView: metrics.view,
         vehicleFlipX: Boolean(metadata.vehicleFlipX), vehicleFlipY: Boolean(metadata.vehicleFlipY) }),
       style: utils.clonePlain(style), label: utils.clonePlain(label)
     });
     return {
-      tractor: make(metrics.parts.tractor, tractorCenter, utils.numberOr(geometry.rotation, 0) + handedness * r.angle, metadata, model.style, model.label),
-      trailer: make(metrics.parts.trailer, trailerCenter, utils.numberOr(geometry.rotation, 0),
+      tractor: make(metrics.parts.tractor, geometry.tractor, metadata, model.style, model.label),
+      trailer: make(metrics.parts.trailer, geometry.trailer,
         metadata.vehicleTrailerMetadata || { ...metadata, vehicleLabelText: "" },
         metadata.vehicleTrailerStyle || model.style, metadata.vehicleTrailerLabel || {})
     };
+  }
+
+  function renderRigLabels(element, model, metrics, metadata) {
+    const trailerMetadata = metadata.vehicleTrailerMetadata || {};
+    const tractorText = normalizeVehicleLabelText(metadata.vehicleLabelText).trim();
+    const trailerText = normalizeVehicleLabelText(trailerMetadata.vehicleLabelText).trim();
+    let trailerLabel = element.querySelector(":scope > .editor-rig-trailer-label");
+    if (!tractorText) vehicleLabelFor(element)?.remove();
+    if (!trailerText) { trailerLabel?.remove(); trailerLabel = null; }
+    if (!tractorText && !trailerText) return;
+    const geometry = componentGeometryFor(model, metrics);
+    const labelMetrics = dimensions => ({ scale: metrics.scale,
+      width: dimensions.width * metrics.scale, height: dimensions.height * metrics.scale });
+    if (tractorText) renderVehicleLabel(element, { geometry: geometry.tractor }, labelMetrics(metrics.rig.tractor), metadata);
+    if (trailerText) {
+      if (!trailerLabel) { trailerLabel = create("g", { class: "editor-rig-trailer-label" }); element.append(trailerLabel); }
+      renderVehicleLabel(trailerLabel, { geometry: geometry.trailer }, labelMetrics(metrics.rig.trailer), trailerMetadata);
+    }
   }
 
   const adapter = {
@@ -813,13 +845,8 @@
       const metadata = normalizeVehicleMetadata(model.metadata || {});
       const metrics = baseMetrics(model);
       syncVehicleBody(element, model, metrics, metadata);
-      const components = componentModelsFor(model);
-      if (components) {
-        renderVehicleLabel(element, components.tractor, baseMetrics(components.tractor), components.tractor.metadata);
-        let trailerLabel = element.querySelector(":scope > .editor-rig-trailer-label");
-        if (!trailerLabel) { trailerLabel = create("g", { class: "editor-rig-trailer-label" }); element.append(trailerLabel); }
-        renderVehicleLabel(trailerLabel, components.trailer, baseMetrics(components.trailer), components.trailer.metadata);
-      } else {
+      if (metrics.rig) renderRigLabels(element, model, metrics, metadata);
+      else {
         element.querySelector(":scope > .editor-rig-trailer-label")?.remove();
         renderVehicleLabel(element, model, metrics, metadata);
       }
