@@ -342,7 +342,7 @@
   document.querySelector("#btnKlavuz").addEventListener("click", () => {
     openModal(guideModal);
     const frame = document.querySelector("#homeGuideFrame");
-    if (!frame.getAttribute("src")) frame.src = "kilavuz.html?v=20261023.5";
+    if (!frame.getAttribute("src")) frame.src = "kilavuz.html?v=20261023.6";
   });
   document.querySelector("#homeGuideFrame").addEventListener("load", (event) => {
     event.target.contentWindow.addEventListener("keydown", (keyEvent) => { if (keyEvent.key === "Escape") closeModals(); });

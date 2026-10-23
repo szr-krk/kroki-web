@@ -103,7 +103,34 @@
     const angle = Number(value);
     return Number.isFinite(angle) ? Math.max(-120, Math.min(120, angle)) : 0;
   }
-  function rigLayout(parts, view = "top", angle = 0) {
+  const sideOutlineCache = new Map();
+  function sideGround(variant, dimensions, ghost = false) {
+    const view = variant.views.side;
+    let outlines = sideOutlineCache.get(variant.key);
+    if (!outlines) {
+      const ns = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(ns, "svg");
+      svg.style.cssText = "position:fixed;width:0;height:0;visibility:hidden;pointer-events:none";
+      document.body.append(svg);
+      try {
+        outlines = view.paths.filter(path => path.d).map(source => {
+          const path = document.createElementNS(ns, "path");
+          path.setAttribute("d", source.d);
+          svg.append(path);
+          const box = path.getBBox();
+          return { bottom: box.y + box.height, stroke: source.stroke === "none" ? 0 : (source.strokeWidth || 3),
+            ghostHidden: source.ghost === "hide" };
+        });
+        sideOutlineCache.set(variant.key, outlines);
+      } finally { svg.remove(); }
+    }
+    const [, y, width, height] = view.viewBox.trim().split(/[\s,]+/).map(Number);
+    const fit = Math.min(dimensions.width / width, dimensions.height / height);
+    return Math.max(...outlines.filter(outline => !ghost || !outline.ghostHidden).map(outline =>
+      (outline.bottom - y - height / 2) * fit + (outline.stroke ? (ghost ? 0.15 : outline.stroke * fit / 2) : 0)));
+  }
+
+  function rigLayout(parts, view = "top", angle = 0, appearance = {}) {
     const tractor = dimensionsForView(parts.tractor, view);
     const trailer = dimensionsForView(parts.trailer, view);
     const trailerHitch = trailer.width / 2 - metersToUnits(0.75);
@@ -112,11 +139,15 @@
     const max = Math.max(-tractorHitch + tractor.width / 2, -trailerHitch + trailer.width / 2);
     const hitchX = -(min + max) / 2;
     const height = Math.max(tractor.height, trailer.height);
+    const tractorGround = view === "side" ? sideGround(parts.tractor, tractor, Boolean(appearance.vehicleGhost)) : 0;
+    const trailerGround = view === "side" ? sideGround(parts.trailer, trailer,
+      Boolean(appearance.vehicleTrailerMetadata?.vehicleGhost ?? appearance.vehicleGhost)) : 0;
+    const ground = Math.max(tractorGround, trailerGround);
     // Articulation is a plan-view angle; side elevation remains straight.
     return { tractor, trailer, tractorHitch, trailerHitch, hitchX,
       angle: view === "side" ? 0 : articulationAngle(angle),
-      tractorY: view === "side" ? (height - tractor.height) / 2 : 0,
-      trailerY: view === "side" ? (height - trailer.height) / 2 : 0,
+      tractorY: ground - tractorGround,
+      trailerY: ground - trailerGround,
       width: max - min, height };
   }
 
