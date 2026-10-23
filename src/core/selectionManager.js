@@ -704,7 +704,7 @@
     const adapter = manager.getAdapter(model);
     const positionSnap = type === "object"
       ? adapter?.capabilities?.gridSnap !== false
-      : extra.cpId !== "rotate";
+      : extra.cpId !== "rotate" && extra.cpId !== "tractorRotate";
     Kroki.EditorGrid?.beginGesture([model.id], event.pointerType, { positionSnap });
     const metricSnapshot = type === "control" ? controlPoints.metrics() : null;
     const liveRoadObjectPreview = false;

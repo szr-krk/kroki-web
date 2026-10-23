@@ -1332,3 +1332,11 @@
 .editor-center-guide.is-snapped-x.is-snapped-y .editor-center-guide-axis { border-color: #2563eb; }
 
 #btnRoadProfileIp.is-roundabout .side-ip-text-mark { font-size: 1rem; }
+
+.vehicle-coupling { flex: 0 0 auto; display: grid; grid-template-columns: auto minmax(0, 1fr) 180px; align-items: center; gap: 8px 12px; padding: 12px 16px; border-top: 1px solid var(--editor-menu-yellow-border); font-size: 14px; }
+.vehicle-coupling label { font-weight: 700; }
+.vehicle-coupling select { min-width: 0; width: 100%; min-height: 40px; padding: 6px; font: inherit; color: #111827; background: white; border: 1px solid #94a3b8; border-radius: 6px; }
+.vehicle-coupling p { grid-column: 1 / -1; margin: 0; font-size: 12px; line-height: 1.4; }
+.vehicle-coupling-preview svg { width: 180px; height: 48px; display: block; }
+.editor-object-cp-label { fill: #0f766e; stroke: white; stroke-width: 3px; paint-order: stroke; font-weight: 700; text-anchor: middle; pointer-events: none; }
+@media (max-width: 600px) { .vehicle-coupling { grid-template-columns: auto minmax(0, 1fr); padding: 8px; } .vehicle-coupling-preview { grid-column: 1 / -1; justify-self: center; } }

@@ -26,8 +26,8 @@ JS/CSS ve font dosyaları önbellekte tutulabilir. Adreslerdeki `?v=` değeri ye
 
 ## Yeni sürüm yayımlama
 
-1. `index.html` içindeki `kroki-version` değerini örneğin `2.1` yapın. `kroki-build` değerini yeni ve artan bir yayın kimliğiyle değiştirin; biçim `YYYYMMDD.sıra` şeklindedir. Örnek: `20261105.1`.
-2. Aynı dosyadaki `src/` dosya adreslerinin `?v=` değerlerini yeni build ile değiştirin. Eski build metni bu alanlarda ortak olduğu için dosya içinde bul/değiştir kullanılabilir. Gerekirse `src/home.js` içindeki kılavuz adresini de güncelleyin.
+1. Küçük geliştirme güncellemelerinde `index.html` içindeki `kroki-version` değeri `2.0` kalabilir; yeni bir sürüm kararı verildiğinde örneğin `2.1` yapılır. Her yayında `kroki-build` değerini yeni ve artan bir yayın kimliğiyle değiştirin; biçim `YYYYMMDD.sıra` şeklindedir. Örnek: `20261105.1`.
+2. Aynı dosyadaki değişen JS/CSS dosyalarının `?v=` değerlerini yeni build ile değiştirin. Değişmeyen dosyaların adresleri korunabilir; böylece tarayıcı önbelleği kullanılmaya devam eder. Kılavuz değiştiyse `src/home.js` içindeki kılavuz adresini ve `index.html` içindeki `home.js` adresini de güncelleyin.
 3. `src/version.json` içindeki `version` ve `build`, HTML ile aynı olmalıdır. `app` değeri `Kroki` olarak kalır.
 4. Önce uygulama dosyalarını, sonra `index.html` dosyasını, **en son `src/version.json` dosyasını** yayımlayın. Mümkünse bütün yayını tek seferde değiştirin. Böylece sürüm duyurusu dosyalardan önce gitmez.
 5. Yeni bir tarayıcı sekmesinde ana ekrandaki sürümü ve temel kaydetme/açma işlemini kontrol edin.

@@ -87,6 +87,39 @@
     return views[(index + 1) % views.length] || "top";
   }
 
+  // Hitch positions are measured from the rear along each top-view drawing.
+  const TRACTOR_HITCHES = { "09/cekici": 0.22, "09/uc-dingil-cekici": 0.25 };
+  const TRAILER_KEYS = ["09/uc-dingil-dorse", "09/tanker-yari-romork", "09/silobas-kasa-yari-romork"];
+
+  function isTractor(variant) { return Object.hasOwn(TRACTOR_HITCHES, variant?.key || ""); }
+  function isTrailer(variant) { return TRAILER_KEYS.includes(variant?.key); }
+  function rigParts(variant, metadata = {}) {
+    const tractor = variant?.key === "09/cekici-ve-dorse" ? findVariant("09/cekici") : variant;
+    if (!isTractor(tractor)) return null;
+    const trailer = findVariant(metadata.vehicleTrailerVariantKey || (variant?.key === "09/cekici-ve-dorse" ? TRAILER_KEYS[0] : ""));
+    return isTractor(tractor) && isTrailer(trailer) ? { tractor, trailer } : null;
+  }
+  function articulationAngle(value) {
+    const angle = Number(value);
+    return Number.isFinite(angle) ? Math.max(-120, Math.min(120, angle)) : 0;
+  }
+  function rigLayout(parts, view = "top", angle = 0) {
+    const tractor = dimensionsForView(parts.tractor, view);
+    const trailer = dimensionsForView(parts.trailer, view);
+    const tractorHitch = tractor.width * (TRACTOR_HITCHES[parts.tractor.key] - 0.5);
+    const trailerHitch = trailer.width / 2 - metersToUnits(0.75);
+    const min = Math.min(-tractorHitch - tractor.width / 2, -trailerHitch - trailer.width / 2);
+    const max = Math.max(-tractorHitch + tractor.width / 2, -trailerHitch + trailer.width / 2);
+    const hitchX = -(min + max) / 2;
+    const height = Math.max(tractor.height, trailer.height);
+    // Articulation is a plan-view angle; side elevation remains straight.
+    return { tractor, trailer, tractorHitch, trailerHitch, hitchX,
+      angle: view === "side" ? 0 : articulationAngle(angle),
+      tractorY: view === "side" ? (height - tractor.height) / 2 : 0,
+      trailerY: view === "side" ? (height - trailer.height) / 2 : 0,
+      width: max - min, height };
+  }
+
   function metadataFor(variant, patch = {}) {
     const normalized = variant?.key ? variant : findVariant(variant?.typeId, variant?.id);
     return {
@@ -121,6 +154,7 @@
     supportsView,
     normalizeView,
     nextView,
-    metadataFor
+    metadataFor,
+    isTractor, isTrailer, rigParts, rigLayout, articulationAngle
   };
 })();

@@ -80,6 +80,8 @@
       metadata.vehicleTypeId || "",
       metadata.vehicleVariantId || "",
       metadata.vehicleView || "top",
+      metadata.vehicleTrailerVariantKey || "",
+      catalog.articulationAngle(geometry.articulationAngle),
       scale
     ].join("|");
     const cached = metricsCache.get(model);
@@ -87,8 +89,11 @@
 
     const variant = vehicleFromModel(model);
     const view = vehicleView(model, variant);
-    const dimensions = catalog.dimensionsForView(variant, view);
+    const parts = catalog.rigParts(variant, metadata);
+    const rig = parts ? catalog.rigLayout(parts, view, geometry.articulationAngle) : null;
+    const dimensions = rig || catalog.dimensionsForView(variant, view);
     const metrics = {
+      parts, rig,
       variant,
       view,
       kind: variant?.kind || "car",
@@ -412,6 +417,19 @@
   }
 
   function drawVehicleArt(group, metrics, metadata = {}) {
+    if (metrics.rig) {
+      const { rig, parts, view } = metrics;
+      const tractor = append(group, "g", {
+        class: "editor-rig-tractor",
+        transform: `translate(${rig.hitchX} ${rig.tractorY}) rotate(${rig.angle}) translate(${-rig.tractorHitch} 0)`
+      });
+      drawVehicleArt(tractor, { variant: parts.tractor, view, kind: parts.tractor.kind,
+        baseWidth: rig.tractor.width, baseHeight: rig.tractor.height }, metadata);
+      const trailer = append(group, "g", { class: "editor-rig-trailer", transform: `translate(${rig.hitchX - rig.trailerHitch} ${rig.trailerY})` });
+      drawVehicleArt(trailer, { variant: parts.trailer, view, kind: parts.trailer.kind,
+        baseWidth: rig.trailer.width, baseHeight: rig.trailer.height }, metadata);
+      return;
+    }
     if (!drawCustomVehicleArt(group, metrics, metadata)) {
       const { baseWidth: w, baseHeight: h, kind, view } = metrics;
       if (kind === "narrow" && view !== "side") {
@@ -455,6 +473,8 @@
       metrics.kind,
       metrics.baseWidth,
       metrics.baseHeight,
+      metrics.parts?.trailer.key || "",
+      metrics.rig?.angle || 0,
       metadata.vehicleColor || "",
       Boolean(metadata.vehicleGhost) ? "ghost" : "solid"
     ].join("|");
@@ -481,7 +501,9 @@
 
   function renderPreviewSvg(variant, options = {}) {
     const view = catalog.normalizeView(variant, options.view || "side");
-    const dimensions = catalog.dimensionsForView(variant, view);
+    const parts = catalog.rigParts(variant, { vehicleTrailerVariantKey: options.trailerVariantKey });
+    const rig = parts ? catalog.rigLayout(parts, view) : null;
+    const dimensions = rig || catalog.dimensionsForView(variant, view);
     const pad = 1.45;
     const svg = create("svg", {
       viewBox: `${-dimensions.width * pad / 2} ${-dimensions.height * pad / 2} ${dimensions.width * pad} ${dimensions.height * pad}`,
@@ -490,6 +512,7 @@
     });
     const group = append(svg, "g");
     drawVehicleArt(group, {
+      parts, rig,
       variant,
       view,
       kind: variant?.kind || "car",
@@ -519,6 +542,40 @@
     };
   }
 
+  function bodyLocalPoint(model, point, metrics) {
+    const local = localPointFor(model, point);
+    return { x: local.x / metrics.scale * (model.metadata?.vehicleFlipY ? -1 : 1),
+      y: local.y / metrics.scale * (model.metadata?.vehicleFlipX ? -1 : 1) };
+  }
+
+  function bodyWorldPoint(model, point, metrics) {
+    return localToWorld(model, point.x * metrics.scale * (model.metadata?.vehicleFlipY ? -1 : 1),
+      point.y * metrics.scale * (model.metadata?.vehicleFlipX ? -1 : 1));
+  }
+
+  function rigRectangles(metrics, expansion = 1) {
+    const r = metrics.rig;
+    const rectangle = (dimensions, hitch, angle, y) => {
+      const corners = [ [-1,-1], [1,-1], [1,1], [-1,1] ];
+      return corners.map(([sx, sy]) => {
+        const offset = rotatedOffset({ x: -hitch + sx * dimensions.width * expansion / 2,
+          y: sy * dimensions.height * expansion / 2 }, angle);
+        return { x: r.hitchX + offset.x, y: y + offset.y };
+      });
+    };
+    return [rectangle(r.tractor, r.tractorHitch, r.angle, r.tractorY), rectangle(r.trailer, r.trailerHitch, 0, r.trailerY)];
+  }
+
+  function rigHitTest(model, point, tolerance, metrics) {
+    const local = bodyLocalPoint(model, point, metrics), r = metrics.rig;
+    return [[r.tractor, r.tractorHitch, r.angle, r.tractorY], [r.trailer, r.trailerHitch, 0, r.trailerY]].some(([dimensions, hitch, angle, y]) => {
+      const relative = rotatedOffset({ x: local.x - r.hitchX, y: local.y - y }, -angle);
+      const dx = Math.max(Math.abs(relative.x + hitch) - dimensions.width / 2, 0);
+      const dy = Math.max(Math.abs(relative.y) - dimensions.height / 2, 0);
+      return Math.hypot(dx, dy) * metrics.scale <= Math.max(0, tolerance || 0);
+    });
+  }
+
   function rectangleHitTest(model, point, tolerance, metrics) {
     const local = localPointFor(model, point);
     const outsideX = Math.max(Math.abs(local.x) - metrics.width / 2, 0);
@@ -538,6 +595,7 @@
   }
 
   function frameVertices(model, metrics, scale = 1) {
+    if (metrics.rig) return rigRectangles(metrics, scale).flat().map(point => bodyWorldPoint(model, point, metrics));
     const halfWidth = metrics.width * scale / 2;
     const halfHeight = metrics.height * scale / 2;
     return [
@@ -559,6 +617,10 @@
   }
 
   function selectionPath(model, metrics) {
+    if (metrics.rig) return rigRectangles(metrics, SELECTION_FRAME_SCALE).map(rectangle => {
+      const vertices = rectangle.map(point => bodyWorldPoint(model, point, metrics));
+      return vertices.map((point, index) => `${index ? "L" : "M"} ${roundSvgNumber(point.x)} ${roundSvgNumber(point.y)}`).join(" ") + " Z";
+    }).join(" ");
     const vertices = frameVertices(model, metrics, SELECTION_FRAME_SCALE);
     return `${vertices.map((point, index) => (
       `${index ? "L" : "M"} ${roundSvgNumber(point.x)} ${roundSvgNumber(point.y)}`
@@ -566,7 +628,12 @@
   }
 
   function cpPoint(model, metrics) {
-    const distance = baseMetrics(model).width * SELECTION_FRAME_SCALE / 2 + (metrics?.handleGap || 0);
+    const bodyMetrics = baseMetrics(model);
+    if (bodyMetrics.rig) {
+      const r = bodyMetrics.rig;
+      return bodyWorldPoint(model, { x: r.hitchX - r.trailerHitch - r.trailer.width * SELECTION_FRAME_SCALE / 2 - (metrics?.handleGap || 0) / bodyMetrics.scale, y: 0 }, bodyMetrics);
+    }
+    const distance = bodyMetrics.width * SELECTION_FRAME_SCALE / 2 + (metrics?.handleGap || 0);
     const radians = utils.normalizeRotation(model.geometry?.rotation || 0) * Math.PI / 180;
     return {
       x: model.geometry.cx + Math.cos(radians) * distance,
@@ -585,14 +652,18 @@
   }
 
   function vehicleLabelPoint(model, metrics, position) {
-    const halfWidth = metrics.width / 2;
-    const halfHeight = metrics.height / 2;
+    const bounds = metrics.rig ? polygonBounds(rigRectangles(metrics).flat().map(point => ({
+      x: point.x * metrics.scale * (model.metadata?.vehicleFlipY ? -1 : 1),
+      y: point.y * metrics.scale * (model.metadata?.vehicleFlipX ? -1 : 1)
+    }))) : { x: -metrics.width / 2, y: -metrics.height / 2, width: metrics.width, height: metrics.height };
+    const centerX = bounds.x + bounds.width / 2;
+    const centerY = bounds.y + bounds.height / 2;
     const centerClearance = VEHICLE_LABEL_EDGE_CLEARANCE + vehicleLabelFontSize(metrics) / 2;
     const local = {
-      top: { x: 0, y: -halfHeight - centerClearance },
-      right: { x: halfWidth + centerClearance, y: 0 },
-      bottom: { x: 0, y: halfHeight + centerClearance },
-      left: { x: -halfWidth - centerClearance, y: 0 }
+      top: { x: centerX, y: bounds.y - centerClearance },
+      right: { x: bounds.x + bounds.width + centerClearance, y: centerY },
+      bottom: { x: centerX, y: bounds.y + bounds.height + centerClearance },
+      left: { x: bounds.x - centerClearance, y: centerY }
     }[normalizeVehicleLabelPosition(position)];
     const offset = rotatedOffset(local, utils.normalizeRotation(model.geometry?.rotation || 0));
     return {
@@ -665,7 +736,8 @@
           cx: utils.numberOr(geometry.cx ?? center.x ?? initialData.x, 0),
           cy: utils.numberOr(geometry.cy ?? center.y ?? initialData.y, 0),
           scale: clampScale(geometry.scale ?? initialData.scale ?? 1),
-          rotation: utils.normalizeRotation(geometry.rotation ?? initialData.rotation)
+          rotation: utils.normalizeRotation(geometry.rotation ?? initialData.rotation),
+          articulationAngle: catalog.articulationAngle(geometry.articulationAngle)
         },
         style: initialData.style,
         label: initialData.label,
@@ -681,12 +753,14 @@
           cx: utils.numberOr(element.dataset.cx, 0),
           cy: utils.numberOr(element.dataset.cy, 0),
           scale: clampScale(element.dataset.scale),
-          rotation: utils.normalizeRotation(element.dataset.rotation)
+          rotation: utils.normalizeRotation(element.dataset.rotation),
+          articulationAngle: catalog.articulationAngle(element.dataset.articulationAngle)
         },
         style: {},
         label: {},
         metadata: {
           vehicleVariantKey: element.dataset.vehicleVariantKey || "",
+          vehicleTrailerVariantKey: element.dataset.vehicleTrailerVariantKey || "",
           vehicleView: element.dataset.vehicleView || "top",
           vehicleColor: element.dataset.vehicleColor || "#000000",
           vehicleGhost: element.dataset.vehicleGhost === "true",
@@ -707,6 +781,8 @@
       writeDataset(element, "cy", model.geometry.cy);
       writeDataset(element, "scale", metrics.scale);
       writeDataset(element, "rotation", utils.normalizeRotation(model.geometry.rotation));
+      writeDataset(element, "articulationAngle", catalog.articulationAngle(model.geometry.articulationAngle));
+      writeDataset(element, "vehicleTrailerVariantKey", metrics.parts?.trailer.key || "");
       writeDataset(element, "vehicleVariantKey", metadata.vehicleVariantKey || "");
       writeDataset(element, "vehicleView", metrics.view);
       writeDataset(element, "vehicleColor", metadata.vehicleColor || "");
@@ -718,23 +794,39 @@
     },
 
     hitTest(model, point, tolerance) {
-      return rectangleHitTest(model, point, tolerance, baseMetrics(model));
+      const metrics = baseMetrics(model);
+      return metrics.rig ? rigHitTest(model, point, tolerance, metrics) : rectangleHitTest(model, point, tolerance, metrics);
     },
 
     getControlPoints(model, metrics) {
-      return [{
-        id: "rotate",
-        catalogControl: true,
-        ...cpPoint(model, metrics),
-        role: "rotate",
-        cursor: "grab"
+      const bodyMetrics = baseMetrics(model);
+      const points = [{
+        id: "rotate", catalogControl: true, ...cpPoint(model, metrics),
+        role: "rotate", cursor: "grab", title: bodyMetrics.rig ? "Tırın tamamını döndür" : "Aracı döndür"
       }];
+      if (bodyMetrics.rig && bodyMetrics.view !== "side") {
+        const r = bodyMetrics.rig;
+        const front = rotatedOffset({ x: -r.tractorHitch + r.tractor.width * SELECTION_FRAME_SCALE / 2 + (metrics?.handleGap || 0) / bodyMetrics.scale, y: 0 }, r.angle);
+        points.push({ id: "tractorRotate", catalogControl: true, role: "rotate", cursor: "grab",
+          label: "Kafa", title: "Çekici kafasını döndür",
+          ...bodyWorldPoint(model, { x: r.hitchX + front.x, y: front.y }, bodyMetrics) });
+      }
+      return points;
     },
 
     moveControlPoint(model, cpId, worldPoint, modifiers = {}) {
+      const metrics = baseMetrics(model);
+      if (cpId === "tractorRotate" && metrics.rig && metrics.view !== "side") {
+        const point = bodyLocalPoint(model, worldPoint, metrics);
+        let angle = Math.atan2(point.y, point.x - metrics.rig.hitchX) * 180 / Math.PI;
+        angle = Kroki.EditorGrid?.snapAngle(angle, modifiers) ?? angle;
+        model.geometry.articulationAngle = catalog.articulationAngle(Math.abs(angle) < 3 ? 0 : angle);
+        return;
+      }
       if (cpId !== "rotate") return;
       const angle = Math.atan2(worldPoint.y - model.geometry.cy, worldPoint.x - model.geometry.cx) * 180 / Math.PI;
-      model.geometry.rotation = utils.normalizeRotation(Kroki.EditorGrid?.snapAngle(angle, modifiers) ?? angle);
+      const rotation = angle - (metrics.rig && !model.metadata?.vehicleFlipY ? 180 : 0);
+      model.geometry.rotation = utils.normalizeRotation(Kroki.EditorGrid?.snapAngle(rotation, modifiers) ?? rotation);
     },
 
     move(model, dx, dy) {

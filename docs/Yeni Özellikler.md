@@ -67,3 +67,12 @@ Engine `setDebug` ve `resetQEndpointEdits` API'lerini açar. UI düğmesi yoktur
 
 - Öncelik, hedef platform ve kullanıcı seçimli dosya API'si kararı netleşmemiştir; tarayıcı içi kalıcılık IndexedDB ile sağlanır.
 - Hazır yol/kavşak içeriklerinin ürün formatı tanımlı değildir.
+
+## Çekici-dorse eşleştirme ve kafa açısı
+
+- Araç kataloğunda iki çekici ile üç dorse, her iki seçim yönünden eşleştirilebilir (6 kombinasyon).
+- Tır tek `vehicle` nesnesidir; `metadata.vehicleTrailerVariantKey` dorseyi, `geometry.articulationAngle` kafa açısını tutar.
+- `VehicleCatalog.rigParts/rigLayout` ortak bağlantıyı hesaplar. Kafa tutamacı ±120° aralığında döner; dorse sabit kalır.
+- Yan görünüm düz gösterilir; plan açısı korunur. Üst ve ters görünümde kafa kontrolü bulunur.
+- Seçim, sınırlar, aynalama, kopyalama, geri alma ve SVG kaydı her iki parçayı birlikte destekler.
+- Eski tek görselli “Çekici Ve Dorse” katalog seçeneği de iki parçalı çizilir.

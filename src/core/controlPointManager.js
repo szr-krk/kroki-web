@@ -205,6 +205,11 @@
       const iconOffset = -ROTATE_ICON_VIEWBOX_SIZE * iconScale / 2;
       rotateIcon.setAttribute("transform", `translate(${iconOffset} ${iconOffset}) scale(${iconScale})`);
     }
+    const label = handle.querySelector(".editor-object-cp-label");
+    if (label) {
+      label.setAttribute("y", String(sizes.visibleRadius + 16 * sizes.unit));
+      label.setAttribute("font-size", String(13 * sizes.unit));
+    }
     if (visualRect) {
       const width = sizes.visibleRadius * (cp.visualWidthScale || 0.68);
       const height = sizes.visibleRadius * (cp.visualHeightScale || 1.32);
@@ -247,6 +252,11 @@
       utils.createSvgElement("circle", { class: "editor-object-cp-hit" }),
       visual
     );
+    if (cp.label) {
+      const label = utils.createSvgElement("text", { class: "editor-object-cp-label", x: 0 });
+      label.textContent = cp.label;
+      handle.append(label);
+    }
     handle.addEventListener("pointerdown", (event) => {
       event.stopImmediatePropagation?.();
       event.stopPropagation();
@@ -266,6 +276,12 @@
     handle.classList.toggle("is-preselect", mode === "preselect");
     handle.classList.toggle("is-catalog-control", !!cp.catalogControl);
     if (cp.cursor && handle.style.cursor !== cp.cursor) handle.style.cursor = cp.cursor;
+    if (cp.title) {
+      handle.setAttribute("aria-label", cp.title);
+      let title = handle.querySelector("title");
+      if (!title) { title = utils.createSvgElement("title"); handle.append(title); }
+      title.textContent = cp.title;
+    }
   }
 
   let lastRenderedUnit = null;

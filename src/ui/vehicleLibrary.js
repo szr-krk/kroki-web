@@ -12,6 +12,10 @@
   const selectedLabel = document.querySelector("#vehicleSelectedLabel");
   const addButton = document.querySelector("#btnVehicleAdd");
   const panel = document.querySelector("#railMenuArac");
+  const coupling = document.querySelector("#vehicleCoupling");
+  const couplingLabel = document.querySelector("#vehicleCouplingLabel");
+  const couplingSelect = document.querySelector("#vehicleCouplingSelect");
+  const couplingPreview = document.querySelector("#vehicleCouplingPreview");
   const PREVIEW_CACHE_LIMIT = 96;
 
   let activeTypeId = "";
@@ -30,6 +34,36 @@
     }
     addButton?.classList.toggle("gizli", !selectedKey);
     syncTileSelection();
+    renderCoupling(variant);
+  }
+
+  function selectedCombination() {
+    const selected = selectedVariant();
+    const partner = catalog.findVariant(couplingSelect?.value);
+    if (catalog.isTractor(selected) && catalog.isTrailer(partner)) return { tractor: selected, trailer: partner };
+    if (catalog.isTrailer(selected) && catalog.isTractor(partner)) return { tractor: partner, trailer: selected };
+    return null;
+  }
+
+  function refreshCouplingPreview() {
+    const parts = selectedCombination();
+    couplingPreview?.replaceChildren();
+    if (!parts) return;
+    couplingPreview?.append(renderer.renderPreviewSvg(parts.tractor, {
+      view: "top", trailerVariantKey: parts.trailer.key
+    }));
+    if (selectedLabel) selectedLabel.textContent = "Seçilen tır: " + parts.tractor.name + " + " + parts.trailer.name;
+  }
+
+  function renderCoupling(variant) {
+    const tractor = catalog.isTractor(variant), trailer = catalog.isTrailer(variant);
+    coupling?.classList.toggle("gizli", !tractor && !trailer);
+    if (!couplingSelect || (!tractor && !trailer)) return;
+    couplingLabel.textContent = tractor ? "Dorse ekle" : "Çekici ekle";
+    const choices = catalog.allVariants().filter(tractor ? catalog.isTrailer : catalog.isTractor);
+    const solo = new Option(tractor ? "Yalnız çekici" : "Yalnız dorse", "");
+    couplingSelect.replaceChildren(solo, ...choices.map(item => new Option(item.name, item.key)));
+    refreshCouplingPreview();
   }
 
   function syncTileSelection() {
@@ -141,8 +175,10 @@
     event?.stopPropagation();
     const variant = selectedVariant();
     if (!variant) return;
+    const parts = selectedCombination();
     const model = manager.create("vehicle", {
-      variant,
+      variant: parts?.tractor || variant,
+      metadata: parts ? { vehicleTrailerVariantKey: parts.trailer.key } : {},
       center: canvasCenter()
     }, { label: "Arac ekle" });
     if (!model) return;
@@ -160,6 +196,11 @@
     rendered = true;
   }
 
+  couplingSelect?.addEventListener("change", () => {
+    const variant = selectedVariant();
+    if (selectedLabel) selectedLabel.textContent = "Seçilen araç: " + (variant?.name || "Yok");
+    refreshCouplingPreview();
+  });
   addButton?.addEventListener("click", addSelectedVehicle);
   grid?.addEventListener("click", (event) => {
     const tile = event.target.closest?.(".vehicle-variant-tile");

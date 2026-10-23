@@ -110,3 +110,10 @@ Genel JSON dosya import/export UI'si yoktur. Genel SVG import yoktur; yalnız Kr
 
 ## Kroki 2.0 kimlikleri
 Yeni çıktılarda app değeri Kroki, SVG imzası KROKI_DOCUMENT_V1, metadata id krokiDocument ve imza attribute adı data-kroki-signature kullanılır. Beş hazır çizimin imzaları da buna çevrilmiştir. Kullanıcı talebiyle eski kimlikler için geçiş katmanı yoktur. Güncelleme kaydı serialize edilmiş tam belgeyi (fotoğraf, grup, kavşak state ve viewBox dahil) normal recent deposunda tutar; kayıt okunarak eşitliği doğrulanmadan yenileme yapılmaz.
+
+### Çekici-dorse verisi
+
+Tır, ayrı grup veya ikinci nesne gerektirmeyen tek `vehicle` nesnesidir. Çekici kataloğu kimliğine ek olarak
+`metadata.vehicleTrailerVariantKey` dorse kimliğini ve `geometry.articulationAngle` kafa açısını taşır.
+Bu alanlar normal belge, SVG metadata, son krokiler ve güncelleme kontrol kaydı içinde korunur.
+DOM okumasında karşılıkları `data-vehicle-trailer-variant-key` ve `data-articulation-angle` alanlarıdır.
