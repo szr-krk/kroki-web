@@ -106,8 +106,11 @@
   function rigLayout(parts, view = "top", angle = 0) {
     const tractor = dimensionsForView(parts.tractor, view);
     const trailer = dimensionsForView(parts.trailer, view);
-    const tractorHitch = tractor.width * (TRACTOR_HITCHES[parts.tractor.key] - 0.5);
     const trailerHitch = trailer.width / 2 - metersToUnits(0.75);
+    const cabRear = { "09/cekici": 46.783 / 73.785, "09/uc-dingil-cekici": 57 / 87 };
+    const tractorHitch = view === "side"
+      ? tractor.width * (cabRear[parts.tractor.key] - 0.5) - metersToUnits(0.75) - 0.7
+      : tractor.width * (TRACTOR_HITCHES[parts.tractor.key] - 0.5);
     const min = Math.min(-tractorHitch - tractor.width / 2, -trailerHitch - trailer.width / 2);
     const max = Math.max(-tractorHitch + tractor.width / 2, -trailerHitch + trailer.width / 2);
     const hitchX = -(min + max) / 2;
@@ -142,6 +145,15 @@
     };
   }
 
+  function metadataForPart(variant, source = {}) {
+    const result = { ...source, ...metadataFor(variant) };
+    ["vehicleView", "vehicleColor", "vehicleGhost", "vehicleFlipX", "vehicleFlipY", "vehicleLabelText", "vehicleLabelPosition"].forEach(key => {
+      if (source[key] != null) result[key] = source[key];
+    });
+    ["vehicleTrailerVariantKey", "vehicleTrailerMetadata", "vehicleTrailerStyle", "vehicleTrailerLabel"].forEach(key => delete result[key]);
+    return result;
+  }
+
   Kroki.VehicleCatalog = {
     viewOrder: VIEW_ORDER.slice(),
     typeList,
@@ -155,6 +167,6 @@
     normalizeView,
     nextView,
     metadataFor,
-    isTractor, isTrailer, rigParts, rigLayout, articulationAngle
+    isTractor, isTrailer, rigParts, rigLayout, articulationAngle, metadataForPart
   };
 })();

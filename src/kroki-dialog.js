@@ -126,6 +126,30 @@
       body.append(field);
     }
 
+    let select = null;
+    if (options.select) {
+      const field = document.createElement("label");
+      field.className = "kroki-dialog-field";
+      const label = document.createElement("span");
+      label.textContent = options.select.label || "Araç";
+      select = document.createElement("select");
+      select.id = "krokiDialogSelect";
+      select.append(new Option("Bir araç seçin", ""), ...(options.select.choices || []).map(item => new Option(item.label, item.value)));
+      select.value = options.select.value || "";
+      const preview = document.createElement("div");
+      preview.className = "kroki-dialog-select-preview";
+      const refresh = () => {
+        preview.replaceChildren();
+        const node = options.select.preview?.(select.value);
+        if (node) preview.append(node);
+        options.select.onChange?.(select.value);
+      };
+      select.addEventListener("change", refresh);
+      field.append(label, select);
+      body.append(field, preview);
+      refresh();
+    }
+
     const actions = document.createElement("div");
     actions.className = "kroki-dialog-actions";
     (options.actions || [{ label: "Tamam", value: true, variant: "primary" }]).forEach((action) => {
@@ -143,6 +167,13 @@
           close(value);
         }, true);
       }
+      if (action.value === "__select__") {
+        actionButton.addEventListener("click", (event) => {
+          event.stopImmediatePropagation();
+          if (!select?.value) { select?.focus(); return; }
+          close(select.value);
+        }, true);
+      }
       actions.append(actionButton);
     });
 
@@ -152,7 +183,7 @@
     return new Promise((resolve) => {
       activeResolve = resolve;
       window.setTimeout(() => {
-        const focusTarget = input || actions.querySelector(".primary") || actions.querySelector("button");
+        const focusTarget = input || select || actions.querySelector(".primary") || actions.querySelector("button");
         focusTarget?.focus?.({ preventScroll: true });
         input?.select?.();
       }, 0);
@@ -246,6 +277,14 @@
         title: options.title || "Kroki",
         message: options.message || "",
         actions
+      });
+    },
+    select(options = {}) {
+      return open({
+        kind: "coupling", title: options.title || "Birleştir", message: options.message || "",
+        select: { label: options.label, choices: options.choices, value: options.value,
+          preview: options.preview, onChange: options.onChange },
+        actions: [{ label: "İptal", value: null }, { label: "Tamam", value: "__select__", variant: "primary" }]
       });
     },
     confirm(message, title = "Onay") {

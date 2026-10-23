@@ -68,11 +68,19 @@ Engine `setDebug` ve `resetQEndpointEdits` API'lerini açar. UI düğmesi yoktur
 - Öncelik, hedef platform ve kullanıcı seçimli dosya API'si kararı netleşmemiştir; tarayıcı içi kalıcılık IndexedDB ile sağlanır.
 - Hazır yol/kavşak içeriklerinin ürün formatı tanımlı değildir.
 
-## Çekici-dorse eşleştirme ve kafa açısı
+## Çekici-dorse eşleştirme ve çekici açısı
 
 - Araç kataloğunda iki çekici ile üç dorse, her iki seçim yönünden eşleştirilebilir (6 kombinasyon).
-- Tır tek `vehicle` nesnesidir; `metadata.vehicleTrailerVariantKey` dorseyi, `geometry.articulationAngle` kafa açısını tutar.
-- `VehicleCatalog.rigParts/rigLayout` ortak bağlantıyı hesaplar. Kafa tutamacı ±120° aralığında döner; dorse sabit kalır.
-- Yan görünüm düz gösterilir; plan açısı korunur. Üst ve ters görünümde kafa kontrolü bulunur.
+- Tır tek `vehicle` nesnesidir; `metadata.vehicleTrailerVariantKey` dorseyi, `geometry.articulationAngle` çekici açısını tutar.
+- `VehicleCatalog.rigParts/rigLayout` ortak bağlantıyı hesaplar. Öndeki dönüş tutamacı ±120° aralığında döner; dorse sabit kalır.
+- Yan görünüm düz gösterilir; plan açısı korunur. Üst ve ters görünümde çekici dönüş kontrolü bulunur.
 - Seçim, sınırlar, aynalama, kopyalama, geri alma ve SVG kaydı her iki parçayı birlikte destekler.
 - Eski tek görselli “Çekici Ve Dorse” katalog seçeneği de iki parçalı çizilir.
+
+### Ayrı parçaları birleştirme / birleşik tırı ayırma
+
+- Sağdaki araç özelliklerinde birleşik tır için **Ayır**, ayrı çekici veya dorse için **Birleştir** bulunur.
+- Ayırma, her parçanın ekrandaki yerini, dönüşünü ve aynalamasını korur; parçalar bağımsız düzenlenebilir.
+- Birleştirme, çizimdeki karşı parçanın seçilip Tamam ile onaylanmasıyla yapılır. Seçili parça sabit kalır; birleşik araç üst görünümde düz kurulur ve seçili parçanın ölçeğini kullanır.
+- İşlemler tek adımlı belge geçmişiyle geri alınır. Renkler ve etiketler korunur; yan görünüm bağlantısındaki boşluk azaltılmıştır.
+- İşlem ve eş seçme arayüzü: `src/ui/vehicleCoupling.js`; parça dönüşümleri: `VehicleRenderer.componentModelsFor()`.

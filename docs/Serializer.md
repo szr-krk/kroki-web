@@ -114,6 +114,11 @@ Yeni çıktılarda app değeri Kroki, SVG imzası KROKI_DOCUMENT_V1, metadata id
 ### Çekici-dorse verisi
 
 Tır, ayrı grup veya ikinci nesne gerektirmeyen tek `vehicle` nesnesidir. Çekici kataloğu kimliğine ek olarak
-`metadata.vehicleTrailerVariantKey` dorse kimliğini ve `geometry.articulationAngle` kafa açısını taşır.
+`metadata.vehicleTrailerVariantKey` dorse kimliğini ve `geometry.articulationAngle` çekici açısını taşır.
 Bu alanlar normal belge, SVG metadata, son krokiler ve güncelleme kontrol kaydı içinde korunur.
 DOM okumasında karşılıkları `data-vehicle-trailer-variant-key` ve `data-articulation-angle` alanlarıdır.
+
+Birleştirilen ayrı dorsenin metadatası `vehicleTrailerMetadata`, çizgi stili `vehicleTrailerStyle` ve yapılandırılmış
+etiketi `vehicleTrailerLabel` altında saklanır. Çekici ve dorsenin renkleri/araç etiketleri birleşikken de çizilir.
+DOM aktarımında bu ek alanlar `data-vehicle-trailer-settings` JSON alanında korunur. Ayırma, kayıtlı parça
+verisini ve bileşik dönüşümden hesaplanan dünya koordinatlarını iki bağımsız araç modeline aktarır.

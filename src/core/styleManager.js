@@ -1690,7 +1690,14 @@
     selection.promoteToEdit();
     manager.updateModel(entry.model.id, (draft) => {
       const metadata = { ...(draft.metadata || {}) };
-      Object.assign(metadata, factory(metadata, draft) || {});
+      const patch = factory(metadata, draft) || {};
+      Object.assign(metadata, patch);
+      if (metadata.vehicleTrailerMetadata) {
+        metadata.vehicleTrailerMetadata = { ...metadata.vehicleTrailerMetadata };
+        ["vehicleColor", "vehicleGhost"].forEach(key => {
+          if (Object.hasOwn(patch, key)) metadata.vehicleTrailerMetadata[key] = patch[key];
+        });
+      }
       draft.metadata = metadata;
       return draft;
     }, { label: label || "Arac guncelle", ...options });
@@ -1763,6 +1770,7 @@
   }
 
   function syncVehicleControls(model) {
+    Kroki.VehicleCoupling?.sync?.(model);
     const catalog = vehicleCatalog();
     const metadata = model.metadata || {};
     const variant = vehicleVariant(model);

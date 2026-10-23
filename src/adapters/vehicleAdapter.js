@@ -427,7 +427,7 @@
         baseWidth: rig.tractor.width, baseHeight: rig.tractor.height }, metadata);
       const trailer = append(group, "g", { class: "editor-rig-trailer", transform: `translate(${rig.hitchX - rig.trailerHitch} ${rig.trailerY})` });
       drawVehicleArt(trailer, { variant: parts.trailer, view, kind: parts.trailer.kind,
-        baseWidth: rig.trailer.width, baseHeight: rig.trailer.height }, metadata);
+        baseWidth: rig.trailer.width, baseHeight: rig.trailer.height }, { ...metadata, ...(metadata.vehicleTrailerMetadata || {}) });
       return;
     }
     if (!drawCustomVehicleArt(group, metrics, metadata)) {
@@ -475,6 +475,8 @@
       metrics.baseHeight,
       metrics.parts?.trailer.key || "",
       metrics.rig?.angle || 0,
+      metadata.vehicleTrailerMetadata?.vehicleColor || "",
+      metadata.vehicleTrailerMetadata?.vehicleGhost ?? "",
       metadata.vehicleColor || "",
       Boolean(metadata.vehicleGhost) ? "ghost" : "solid"
     ].join("|");
@@ -720,6 +722,36 @@
     if (label.textContent !== text) label.textContent = text;
   }
 
+  function trailerSettingsFromElement(element) {
+    try {
+      const value = JSON.parse(element.dataset.vehicleTrailerSettings || "{}");
+      return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    } catch { return {}; }
+  }
+
+  function componentModelsFor(model) {
+    const metrics = baseMetrics(model), r = metrics.rig;
+    if (!r) return null;
+    const metadata = model.metadata || {}, geometry = model.geometry || {};
+    const tractorOffset = rotatedOffset({ x: -r.tractorHitch, y: 0 }, r.angle);
+    const tractorCenter = bodyWorldPoint(model, { x: r.hitchX + tractorOffset.x, y: r.tractorY + tractorOffset.y }, metrics);
+    const trailerCenter = bodyWorldPoint(model, { x: r.hitchX - r.trailerHitch, y: r.trailerY }, metrics);
+    const handedness = (metadata.vehicleFlipX ? -1 : 1) * (metadata.vehicleFlipY ? -1 : 1);
+    const make = (variant, center, rotation, source, style, label) => ({
+      type: "vehicle",
+      geometry: { cx: center.x, cy: center.y, rotation: utils.normalizeRotation(rotation), scale: metrics.scale, articulationAngle: 0 },
+      metadata: catalog.metadataForPart(variant, { ...source, vehicleView: metrics.view,
+        vehicleFlipX: Boolean(metadata.vehicleFlipX), vehicleFlipY: Boolean(metadata.vehicleFlipY) }),
+      style: utils.clonePlain(style), label: utils.clonePlain(label)
+    });
+    return {
+      tractor: make(metrics.parts.tractor, tractorCenter, utils.numberOr(geometry.rotation, 0) + handedness * r.angle, metadata, model.style, model.label),
+      trailer: make(metrics.parts.trailer, trailerCenter, utils.numberOr(geometry.rotation, 0),
+        metadata.vehicleTrailerMetadata || { ...metadata, vehicleLabelText: "" },
+        metadata.vehicleTrailerStyle || model.style, metadata.vehicleTrailerLabel || {})
+    };
+  }
+
   const adapter = {
     elementTag: "g",
     className: "editor-vehicle",
@@ -746,6 +778,7 @@
     },
 
     readFromElement(element) {
+      const trailerSettings = trailerSettingsFromElement(element);
       return {
         id: element.dataset.objectId,
         type: "vehicle",
@@ -761,6 +794,9 @@
         metadata: {
           vehicleVariantKey: element.dataset.vehicleVariantKey || "",
           vehicleTrailerVariantKey: element.dataset.vehicleTrailerVariantKey || "",
+          vehicleTrailerMetadata: trailerSettings.metadata,
+          vehicleTrailerStyle: trailerSettings.style,
+          vehicleTrailerLabel: trailerSettings.label,
           vehicleView: element.dataset.vehicleView || "top",
           vehicleColor: element.dataset.vehicleColor || "#000000",
           vehicleGhost: element.dataset.vehicleGhost === "true",
@@ -776,13 +812,24 @@
       const metadata = normalizeVehicleMetadata(model.metadata || {});
       const metrics = baseMetrics(model);
       syncVehicleBody(element, model, metrics, metadata);
-      renderVehicleLabel(element, model, metrics, metadata);
+      const components = componentModelsFor(model);
+      if (components) {
+        renderVehicleLabel(element, components.tractor, baseMetrics(components.tractor), components.tractor.metadata);
+        let trailerLabel = element.querySelector(":scope > .editor-rig-trailer-label");
+        if (!trailerLabel) { trailerLabel = create("g", { class: "editor-rig-trailer-label" }); element.append(trailerLabel); }
+        renderVehicleLabel(trailerLabel, components.trailer, baseMetrics(components.trailer), components.trailer.metadata);
+      } else {
+        element.querySelector(":scope > .editor-rig-trailer-label")?.remove();
+        renderVehicleLabel(element, model, metrics, metadata);
+      }
       writeDataset(element, "cx", model.geometry.cx);
       writeDataset(element, "cy", model.geometry.cy);
       writeDataset(element, "scale", metrics.scale);
       writeDataset(element, "rotation", utils.normalizeRotation(model.geometry.rotation));
       writeDataset(element, "articulationAngle", catalog.articulationAngle(model.geometry.articulationAngle));
       writeDataset(element, "vehicleTrailerVariantKey", metrics.parts?.trailer.key || "");
+      writeDataset(element, "vehicleTrailerSettings", JSON.stringify({ metadata: metadata.vehicleTrailerMetadata,
+        style: metadata.vehicleTrailerStyle, label: metadata.vehicleTrailerLabel }));
       writeDataset(element, "vehicleVariantKey", metadata.vehicleVariantKey || "");
       writeDataset(element, "vehicleView", metrics.view);
       writeDataset(element, "vehicleColor", metadata.vehicleColor || "");
@@ -808,7 +855,7 @@
         const r = bodyMetrics.rig;
         const front = rotatedOffset({ x: -r.tractorHitch + r.tractor.width * SELECTION_FRAME_SCALE / 2 + (metrics?.handleGap || 0) / bodyMetrics.scale, y: 0 }, r.angle);
         points.push({ id: "tractorRotate", catalogControl: true, role: "rotate", cursor: "grab",
-          label: "Kafa", title: "Çekici kafasını döndür",
+          title: "Çekiciyi döndür",
           ...bodyWorldPoint(model, { x: r.hitchX + front.x, y: front.y }, bodyMetrics) });
       }
       return points;
@@ -870,6 +917,7 @@
   registry.register("vehicle", adapter);
   Kroki.VehicleRenderer = {
     renderPreviewSvg,
-    metricsForModel: baseMetrics
+    metricsForModel: baseMetrics,
+    componentModelsFor
   };
 })();
