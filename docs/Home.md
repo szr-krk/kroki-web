@@ -69,3 +69,7 @@ Bağlantılar: [[Editör]], [[Menü Sistemi]], [[Serializer]], [[Performans Krit
 
 ## 21.10.2026 — Güncel kullanım kılavuzu
 Kılavuz 16 bölüm halinde güncellendi; 16 dolgu seçeneği ve 7 çizgi deseni seçeneği gerçek SVG örnekleriyle belgelenir. Ada/cep dolguları, fren genişliği, desen-ok dışlaması, şekil dönüştürme, levha metin alanları, paylaşma/kod yükleme, merkezleme ve görünüm tercihleri kapsanır. Home iframe URL sürümü ve home.js yükleme sürümü birlikte güncellenir. Yazdırma öncesi kapalı soru yanıtları açılır, sonrasında eski durumuna döner. `guide-and-selection-browser.cjs` mobil/tablet/masaüstü, gerçek desen envanteri, SVG boya referansları, bağlantı/ikon kimlikleri ve gömülü açılışı doğrular.
+
+
+## 23.10.2026 — Hazır çizim listesinin yenilenmesi
+Önceki altı hazır çizim kaldırıldı; kullanıcının verdiği beş imzalı SVG dosyası içerikleri değiştirilmeden gömüldü. Türkçe alfabetik ve sayı sırası: Diğer Kavşak 1, Diğer Kavşak 2, Dörtlü Kontrolsüz Kavşak 1, Dörtlü Kontrolsüz Kavşak 2, T Kavşak. Dosya adları başlık olarak korunur. Kartlar ve Düzenle işlemi bu beş kaydı kullanır; kişisel Son Krokiler/Şablonlarım kayıtları değişmez. Lazy yükleme korunur; hazır çizim paketinin URL sürümü yenilendi.
