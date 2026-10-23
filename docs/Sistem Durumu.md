@@ -12,7 +12,7 @@ Home ekranı editöre geçiş, fullscreen, modal aç/kapat, son krokiler ve şab
 
 ### Ana menü ve yerel kayıt
 
-Ana menüde kaydetme, kaydet ve çık, kaydetmeden çık, yeni kroki, şablona kaydet, SVG export, PNG export ve alan PNG export akışları bağlıdır. Son krokiler ve şablonlar IndexedDB içinde tutulur; fotoğraf altlığı ayrı Blob olarak bir kez saklanır. SVG export içine Kroki Pro metadata'sı yazılır; import yalnız bu imzalı SVG'yi güvenli belge olarak açar.
+Ana menüde kaydetme, kaydet ve çık, kaydetmeden çık, yeni kroki, şablona kaydet, SVG export, PNG export ve alan PNG export akışları bağlıdır. Son krokiler ve şablonlar IndexedDB içinde tutulur; fotoğraf altlığı ayrı Blob olarak bir kez saklanır. SVG export içine Kroki metadata'sı yazılır; import yalnız bu imzalı SVG'yi güvenli belge olarak açar.
 
 ### SVG editör iskeleti
 
@@ -62,11 +62,11 @@ Serializer import sırasında viewBox'ı doğrudan `setAttribute` ile yazar. Son
 
 ### Schema doğrulama yok
 
-Belge export `schemaVersion: 1` ve `app: "Kroki Pro"` yazar; import bunları doğrulamaz ve migration yapmaz. İleride format büyürse explicit migration gerekir.
+Belge export `schemaVersion: 1` ve `app: "Kroki"` yazar; import bunları doğrulamaz ve migration yapmaz. İleride format büyürse explicit migration gerekir.
 
 ### SVG import güven modeli dar
 
-Genel SVG import yoktur. Güvenli import yalnız Kroki Pro'nun export ettiği ve metadata imzası taşıyan SVG dosyasını belgeye geri çevirir. Dış SVG'yi düzenlenebilir nesnelere dönüştürme sistemi tasarlanmamıştır.
+Genel SVG import yoktur. Güvenli import yalnız Kroki'nin export ettiği ve metadata imzası taşıyan SVG dosyasını belgeye geri çevirir. Dış SVG'yi düzenlenebilir nesnelere dönüştürme sistemi tasarlanmamıştır.
 
 ### Katalog SVG içeriği innerHTML ile parse ediliyor
 
@@ -103,3 +103,7 @@ Home'da hazır yollar ve hazır kavşaklar modalı vardır, fakat gerçek şablo
 
 ## 23.10.2026 — Çevrimiçi teslim kontrolü
 Çevrimiçi ağaç yalnız index.html, kilavuz.html, src uygulama dosyaları, Markdown belgeleri ve .gitignore içerir. 180 geliştirme/yedek dosyası takipten çıkarıldı; yerel kopyaları korunur. Yalnız teslimde kalan dosyaları sunan tarayıcı testinde ana ekran, gömülü kılavuz, araç/levha/sembol oluşturma, dolgu/iz/yol renderı, yazı tipi ve kayıt/açma doğrulandı. Güncel katalog: 343 levha, 39 araç çeşidi, 41 sembol, 16 dolgu seçeneği ve 7 çizgi deseni seçeneği. Kaldırılan script/Obsidian/sunucu/yedek dosyaları test sunucusunda 404 döner. Bu kontrol fiziksel tablet testi değildir.
+
+
+## Kroki 2.0 yayın düzeni
+Ürün adı ve yeni SVG imzası Kroki olarak yenilendi. Henüz kullanıma geçilmediği kullanıcı tarafından belirtildiği için eski dosya/depolama kimliklerine uyumluluk katmanı eklenmedi. Beş hazır çizimin gömülü metadata imzaları da yenilendi. Yerel veri adı kroki.documents.v1, yeni SVG imzası KROKI_DOCUMENT_V1 olur; belge şeması ve çizim geometrileri değişmez. Güncelleme kayıtları normal Son Krokiler deposunda doğrulanır; otomatik açılış anahtarı sessionStorage içindedir. Depo şeması bu özellik için genişletilmez.

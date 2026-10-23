@@ -253,7 +253,7 @@
     const svg = uploadKind === "svg";
     uploadInput.accept = svg ? ".svg,image/svg+xml" : ".jpg,.jpeg,.png,.webp,.gif,.bmp,.avif,image/jpeg,image/png,image/webp,image/gif,image/bmp,image/avif";
     document.querySelector("#homeUploadTitle").textContent = svg ? "SVG Dosyası Yükle" : "Kaza Yeri Fotoğrafı Yükle";
-    document.querySelector("#homeUploadHint").textContent = svg ? "Kroki Pro ile kaydedilmiş çiziminizi açın." : "Fotoğrafı çiziminizin altlığı olarak kullanın.";
+    document.querySelector("#homeUploadHint").textContent = svg ? "Kroki ile kaydedilmiş çiziminizi açın." : "Fotoğrafı çiziminizin altlığı olarak kullanın.";
     document.querySelector("#homeUploadFormats").textContent = svg ? "SVG" : "JPG, PNG, WebP, GIF, BMP, AVIF";
     document.querySelector("#homeUploadTabs").classList.toggle("gizli", !svg);
     document.querySelector("#homeUploadPick").focus({ preventScroll: true });
@@ -342,7 +342,7 @@
   document.querySelector("#btnKlavuz").addEventListener("click", () => {
     openModal(guideModal);
     const frame = document.querySelector("#homeGuideFrame");
-    if (!frame.getAttribute("src")) frame.src = "kilavuz.html?v=20261023-guide-scroll-v2";
+    if (!frame.getAttribute("src")) frame.src = "kilavuz.html?v=20261023.1";
   });
   document.querySelector("#homeGuideFrame").addEventListener("load", (event) => {
     event.target.contentWindow.addEventListener("keydown", (keyEvent) => { if (keyEvent.key === "Escape") closeModals(); });

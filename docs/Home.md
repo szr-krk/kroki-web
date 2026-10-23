@@ -1,6 +1,6 @@
 # Home
 
-Home, Kroki Pro'nun başlangıç ve belge kitaplığı ekranıdır. Görünüm ve gezinme düzeni `kroki-pro` referansından uyarlanmıştır; uygulama saf HTML, CSS ve JavaScript ile çalışır.
+Home, Kroki'nin başlangıç ve belge kitaplığı ekranıdır. Görünüm ve gezinme düzeni önceki arayüz referansından uyarlanmıştır; uygulama saf HTML, CSS ve JavaScript ile çalışır.
 
 ## İlgili dosyalar
 
@@ -35,7 +35,7 @@ SVG Yükle, dosya seç/sürükle ve SVG kodu yapıştır seçeneklerini açar. F
 
 Seçilen fotoğraf veya SVG, `homeUploadSelected` kartında oranı korunmuş ve kırpılmamış önizlemeyle gösterilir; altında dosya adı, boyutu ve açma/değiştirme düğmeleri bulunur. Önizleme yerel Blob URL'sini bir `img` içinde kullanır; SVG içeriği sayfa DOM'una eklenmez. Dosya değiştirilince veya pencere kapanınca önceki önizleme ve Blob URL'si bırakılır. Önizleme çözülemezse kartta bilgi gösterilir; dosya değiştirme ve mevcut import doğrulaması kullanılabilir kalır.
 
-SVG kodu ve dosyası aynı `importKrokiSvgText` doğrulamasını kullanır: yalnız Kroki Pro imzalı belge metadata'sı içeren SVG açılır. Genel SVG parser eklenmemiştir; dış SVG markup'ı doğrudan sayfaya yerleştirilmez.
+SVG kodu ve dosyası aynı `importKrokiSvgText` doğrulamasını kullanır: yalnız Kroki imzalı belge metadata'sı içeren SVG açılır. Genel SVG parser eklenmemiştir; dış SVG markup'ı doğrudan sayfaya yerleştirilmez.
 
 Fotoğraf mevcut `PhotoBackgroundManager.stateFromFile` üzerinden etkileşimsiz altlığa dönüştürülür. Kaynak dosya değiştirilmez. Kaydetme mevcut editör akışında kullanıcı komutuyla yapılır.
 
@@ -45,7 +45,7 @@ Kılavuz, mevcut `kilavuz.html` içeriğini aynı sayfadaki pencerede gösterir.
 
 ## Değişmeyen kayıt sözleşmesi
 
-- IndexedDB adı: `krokiPro.documents.v1`; sürüm: `1`.
+- IndexedDB adı: `kroki.documents.v1`; sürüm: `1`.
 - Depolar: `documents` ve `assets`.
 - Kayıt türleri: `recent` ve `template`.
 - Son krokiler sınırı: `10`.
@@ -77,3 +77,7 @@ Kılavuz 16 bölüm halinde güncellendi; 16 dolgu seçeneği ve 7 çizgi deseni
 
 ## 23.10.2026 — Kılavuz bölüm listesinin bağımsız kaydırılması
 Masaüstünde sol bölüm listesi pencere yüksekliğinden 32 piksel kısa olacak biçimde sınırlandırılır; kendi içinde dikey kayar. Liste sonundaki kaydırma ana metne aktarılmaz. Klavyeyle odaklanabilir. Dar ekranlarda mevcut yatay bölüm şeridi korunur; dikey yükseklik sınırı uygulanmaz. Gömülü kılavuz ve home script URL sürümleri yenilendi.
+
+
+## Kroki 2.0 — Ad, ikon, sürüm ve güncelleme
+Görünen marka Kroki olarak yenilendi; ana ekran ve tarayıcı ikonu gönye/kalem görseli kullanır. Ana ekrandaki sürüm meta verisinden okunur. BT rehberi depo kökündeki 00-BT-Kurulum-ve-Guncelleme-Rehberi.md dosyasıdır. updateManager.js yalnız HTTP(S) açılışında yaklaşık beş dakikada bir version.json kontrol eder. Etkin sürükleme, metin girişi ve açık pencere sırasında bildirim bekletilir. Kullanıcı isterse çizimi yerelde doğrulanan bir güncelleme kaydından yeni sürümde açılır; isterse ana ekrana dönüşe kadar güncelleme ertelenir. Tamam düğmesi güncelleme başlatmaz.

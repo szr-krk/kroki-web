@@ -1,6 +1,6 @@
 # Proje Haritası
 
-Bu vault, Kroki Pro'nun mevcut kaynak kodundan çıkarılan geliştirici haritasıdır. Uygulama derleme adımı olmayan, `index.html` tarafından sırayla yüklenen klasik JavaScript IIFE modüllerinden oluşur. Ortak çalışma alanı `window.Kroki`; eski/arayüz yardımcıları için ayrıca `window.krokiEditorState`, `window.krokiEditorRail`, `window.krokiEditorCamera` ve `window.krokiObjectEditCore` kullanılır.
+Bu vault, Kroki'nin mevcut kaynak kodundan çıkarılan geliştirici haritasıdır. Uygulama derleme adımı olmayan, `index.html` tarafından sırayla yüklenen klasik JavaScript IIFE modüllerinden oluşur. Ortak çalışma alanı `window.Kroki`; eski/arayüz yardımcıları için ayrıca `window.krokiEditorState`, `window.krokiEditorRail`, `window.krokiEditorCamera` ve `window.krokiObjectEditCore` kullanılır.
 
 ## İlk okuma sırası
 

@@ -19,7 +19,7 @@ Ana menü ve Home IndexedDB üzerinden son kroki/şablon kaydı yapar. Eksik ola
 
 ### SVG içe/dışa aktarma
 
-Home'da SVG Yükle, editör ana menüsünde SVG Olarak Kaydet vardır. Mevcut import yalnız Kroki Pro imzalı SVG içindeki belge metadata'sını açar; genel SVG parser, adapter'a dönüşüm politikası ve desteklenmeyen öğe akışı yoktur.
+Home'da SVG Yükle, editör ana menüsünde SVG Olarak Kaydet vardır. Mevcut import yalnız Kroki imzalı SVG içindeki belge metadata'sını açar; genel SVG parser, adapter'a dönüşüm politikası ve desteklenmeyen öğe akışı yoktur.
 
 ### Resim dışa aktarma geliştirmeleri
 

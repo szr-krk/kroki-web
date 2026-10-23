@@ -7,7 +7,7 @@
   const uiPx = Kroki.uiPx || ((value) => Number(value) || 0);
 
   const SVG_NS = "http://www.w3.org/2000/svg";
-  const SVG_SIGNATURE = "KROKI_PRO_DOCUMENT_V1";
+  const SVG_SIGNATURE = "KROKI_DOCUMENT_V1";
   const EXPORT_PADDING = window.krokiEditorFraming?.CONTENT_PADDING_WORLD ?? 25;
   const PNG_MAX_BYTES = 995000;
   const PNG_SCALE_SEARCH_PASSES = 7;
@@ -58,7 +58,7 @@
     return window.KrokiDialog || Kroki.Dialog;
   }
 
-  function notify(message, title = "Kroki Pro") {
+  function notify(message, title = "Kroki") {
     const api = dialog();
     return api?.toast?.(message, title) || api?.alert?.(message, title) || Promise.resolve();
   }
@@ -243,6 +243,7 @@
     homeScreen?.classList.remove("gizli");
     Kroki.Home?.selectTab("recent");
     void renderStoredLists();
+    window.dispatchEvent(new Event("kroki:home-shown"));
   }
 
   function showEditor() {
@@ -409,11 +410,11 @@
       }
       : documentData;
     const metadata = ownerDocument.createElementNS(SVG_NS, "metadata");
-    metadata.id = "krokiProDocument";
-    metadata.setAttribute("data-kroki-pro-signature", SVG_SIGNATURE);
+    metadata.id = "krokiDocument";
+    metadata.setAttribute("data-kroki-signature", SVG_SIGNATURE);
     metadata.textContent = JSON.stringify({
       signature: SVG_SIGNATURE,
-      app: "Kroki Pro",
+      app: "Kroki",
       exportedAt: new Date().toISOString(),
       document: metadataDocument
     });
@@ -427,8 +428,8 @@
     clone.setAttribute("viewBox", viewBoxString(viewBox));
     clone.setAttribute("width", String(Math.max(1, Math.round(viewBox.width))));
     clone.setAttribute("height", String(Math.max(1, Math.round(viewBox.height))));
-    clone.setAttribute("data-kroki-pro-signature", SVG_SIGNATURE);
-    clone.setAttribute("data-kroki-pro-version", "1");
+    clone.setAttribute("data-kroki-signature", SVG_SIGNATURE);
+    clone.setAttribute("data-kroki-version", "1");
     clone.removeAttribute("class");
     clone.removeAttribute("aria-label");
     clone.querySelector("#editorEditLayer")?.remove();
@@ -688,10 +689,10 @@
 
     svgElement.setAttribute("xmlns", SVG_NS);
     svgElement.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
-    svgElement.setAttribute("data-kroki-pro-signature", SVG_SIGNATURE);
-    svgElement.setAttribute("data-kroki-pro-version", "1");
+    svgElement.setAttribute("data-kroki-signature", SVG_SIGNATURE);
+    svgElement.setAttribute("data-kroki-version", "1");
     normalizeDocumentStrokeScaling(svgElement);
-    svgElement.querySelector("#krokiProDocument")?.remove();
+    svgElement.querySelector("#krokiDocument")?.remove();
 
     const metadata = createDocumentMetadata(parsed, entry.document);
     svgElement.insertBefore(metadata, svgElement.firstChild);
@@ -726,7 +727,7 @@
       try {
         await navigator.share({
           title: entry.name || entryPrefix(kind),
-          text: "Kroki Pro SVG dosyası",
+          text: "Kroki SVG dosyası",
           files: [file]
         });
         return true;
@@ -1121,7 +1122,7 @@
     if (!item) return null;
     try {
       const svg = new DOMParser().parseFromString(item.svg, "image/svg+xml");
-      const metadata = svg.querySelector('metadata[data-kroki-pro-signature="' + SVG_SIGNATURE + '"]');
+      const metadata = svg.querySelector('metadata[data-kroki-signature="' + SVG_SIGNATURE + '"]');
       const payload = JSON.parse(metadata?.textContent || "{}");
       if (payload.signature !== SVG_SIGNATURE || !payload.document) return null;
       return { id: item.id, name: item.title, category: item.category, previewSvg: item.svg, document: payload.document };
@@ -1546,18 +1547,18 @@
     if (parsed.querySelector("parsererror")) {
       return notify("SVG dosyası okunamadı.", "SVG Yükle");
     }
-    const metadata = parsed.querySelector(`metadata[data-kroki-pro-signature="${SVG_SIGNATURE}"]`);
+    const metadata = parsed.querySelector(`metadata[data-kroki-signature="${SVG_SIGNATURE}"]`);
     if (!metadata) {
-      return notify("Bu SVG Kroki Pro imzası taşımıyor. Güvenli import için yalnızca Kroki Pro tarafından kaydedilmiş SVG dosyaları açılır.", "SVG Yükle");
+      return notify("Bu SVG Kroki imzası taşımıyor. Güvenli import için yalnızca Kroki tarafından kaydedilmiş SVG dosyaları açılır.", "SVG Yükle");
     }
     let payload = null;
     try {
       payload = JSON.parse(metadata.textContent || "{}");
     } catch {
-      return notify("SVG içindeki Kroki Pro verisi okunamadı.", "SVG Yükle");
+      return notify("SVG içindeki Kroki verisi okunamadı.", "SVG Yükle");
     }
     if (payload?.signature !== SVG_SIGNATURE || !payload.document) {
-      return notify("SVG içindeki Kroki Pro imzası uyumsuz.", "SVG Yükle");
+      return notify("SVG içindeki Kroki imzası uyumsuz.", "SVG Yükle");
     }
     if (payload.document.photoBackground && !payload.document.photoBackground.dataUrl) {
       const photo = parsed.querySelector("[data-kroki-photo-background='true']");
@@ -1600,7 +1601,7 @@
       if (!ok) return false;
       loadDocument({
         schemaVersion: 1,
-        app: "Kroki Pro",
+        app: "Kroki",
         viewport: { viewBox: viewBoxString(DEFAULT_VIEWBOX) },
         objects: [],
         photoBackground,
@@ -1675,7 +1676,36 @@
     }
   });
 
+  async function prepareUpdate() {
+    const editing = editorScreen && !editorScreen.classList.contains("gizli");
+    if (!editing) return { resume: false };
+    if (document.querySelector("#freeTextComposer:not(.gizli)")) Kroki.FreeTextComposer?.complete?.();
+    document.activeElement?.blur?.();
+    const doc = captureDocument();
+    const now = new Date().toISOString();
+    const id = entryId("update");
+    await documentStorage.put("recent", {
+      id, name: "Güncelleme öncesi kroki", createdAt: now, updatedAt: now,
+      document: doc, previewSvg: "", previewViewBox: doc.viewport?.viewBox || ""
+    });
+    const saved = await documentStorage.get("recent", id);
+    if (!saved || JSON.stringify(saved.document) !== JSON.stringify(doc)) {
+      throw new Error("update-checkpoint-verification-failed");
+    }
+    return { resume: true, id };
+  }
+
+  async function restoreUpdate(id) {
+    const entry = await documentStorage.get("recent", id);
+    if (!entry?.document || !loadDocument(entry.document, { currentDocumentId: id, markSaved: false })) {
+      throw new Error("update-checkpoint-unavailable");
+    }
+    return true;
+  }
+
   window.KrokiMainMenu = {
+    prepareUpdate,
+    restoreUpdate,
     saveRecent,
     saveTemplate,
     renderStoredLists,

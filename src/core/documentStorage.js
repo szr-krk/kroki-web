@@ -1,6 +1,6 @@
 (() => {
   const Kroki = window.Kroki = window.Kroki || {};
-  const DATABASE_NAME = "krokiPro.documents.v1";
+  const DATABASE_NAME = "kroki.documents.v1";
   const DATABASE_VERSION = 2;
   const RECOVERY_STORE = "recoverySnapshots";
   const RECOVERY_PHOTOS = "recoveryPhotos";

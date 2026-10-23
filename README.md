@@ -1,4 +1,8 @@
-# Kroki Pro
+# Kroki
+
+[BT Kurulum ve Güncelleme Rehberi](00-BT-Kurulum-ve-Guncelleme-Rehberi.md)
+
+Güncel uygulama sürümü: **2.0**.
 
 Tarayıcıda çalışan SVG kroki editörü. Saf HTML, CSS ve JavaScript kullanır; uygulamayı çalıştırmak için paket kurulumu veya derleme gerekmez.
 

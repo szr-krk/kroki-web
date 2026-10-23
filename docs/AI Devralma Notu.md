@@ -1,6 +1,6 @@
 # AI Devralma Notu
 
-Bu not, projeyi yeni devralan bir yapay zekanın veya geliştiricinin önce resmi haritayı, sonra kodu bozmadan ilerlemesi için yazılmıştır. Kroki Pro, tek sayfalı, build adımı olmayan, offline çalışması hedeflenen bir SVG kroki editörüdür. En kritik ürün hedefi, düşük performanslı Android tabletlerde bile akıcı kalmasıdır.
+Bu not, projeyi yeni devralan bir yapay zekanın veya geliştiricinin önce resmi haritayı, sonra kodu bozmadan ilerlemesi için yazılmıştır. Kroki, tek sayfalı, build adımı olmayan, offline çalışması hedeflenen bir SVG kroki editörüdür. En kritik ürün hedefi, düşük performanslı Android tabletlerde bile akıcı kalmasıdır.
 
 Bağlantılar: [[Proje Haritası]], [[Sistem Durumu]], [[Performans Kriterleri]], [[Yol Sistemi]], [[Kavşak Sistemi]], [[Sembol ve Asset Sistemi]], [[Codex Talimatları]].
 
@@ -73,7 +73,7 @@ Bu yüzden yol/kavşak değişikliğinde yalnız tek dosyaya bakma. En az şu zi
 
 ## Yeni yapay zeka için hızlı zihinsel model
 
-Kroki Pro bir çizim programı gibi görünür ama mimarisi “model -> adapter render -> SVG DOM” hattıdır. DOM tek başına kaynak değildir. Bir nesneyi değiştirmek için doğrudan SVG path attribute'u yazmak yerine `EditorObjectManager.updateModel` veya `updateGeometry` kullanılır. Bu, history, selection, style panel, control point ve kavşak refresh zincirlerini çalıştırır.
+Kroki bir çizim programı gibi görünür ama mimarisi “model -> adapter render -> SVG DOM” hattıdır. DOM tek başına kaynak değildir. Bir nesneyi değiştirmek için doğrudan SVG path attribute'u yazmak yerine `EditorObjectManager.updateModel` veya `updateGeometry` kullanılır. Bu, history, selection, style panel, control point ve kavşak refresh zincirlerini çalıştırır.
 
 Yollar bu genel sistemin özel bir üyesidir. Yol adapter'ı merkez çizgisi, enkesit, lane/banket boundary'leri, cep ve bariyerleri üretir. Kavşak motoru bu yollardan yüzey polygonları çıkarır, çakışma bölgelerini bulur, dış konturu birleştirir, çizgi görünür aralıklarını keser ve Q yumuşatma parçalarını yönetir.
 

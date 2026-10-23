@@ -16,12 +16,12 @@ Bağlantılar: [[Nesne Sistemi]], [[Undo Redo]], [[Kavşak Sistemi]], [[Menü Si
 
 ## Belge şeması
 
-Mevcut sürüm `schemaVersion: 1`, uygulama adı `Kroki Pro`dur.
+Mevcut sürüm `schemaVersion: 1`, uygulama adı `Kroki`dur.
 
 ```js
 {
   schemaVersion: 1,
-  app: "Kroki Pro",
+  app: "Kroki",
   createdAt,
   updatedAt,
   viewport: { viewBox },
@@ -90,10 +90,10 @@ Belgenin `photoBackground` alanı fotoğraf verisini, boyutlarını, sınırlar�
 - Şablon kaydı: IndexedDB `documents` deposunda `template` türü
 - Fotoğraf altlığı: IndexedDB `assets` deposunda Blob; belge ve önizleme içinde yinelenmez
 - SVG export metadata'sı
-- Kroki Pro imzalı SVG import
+- Kroki imzalı SVG import
 - PNG export öncesi preview/kayıt snapshot'ı
 
-Genel JSON dosya import/export UI'si yoktur. Genel SVG import yoktur; yalnız Kroki Pro imzalı SVG içindeki document payload açılır.
+Genel JSON dosya import/export UI'si yoktur. Genel SVG import yoktur; yalnız Kroki imzalı SVG içindeki document payload açılır.
 
 ## Bilinen tutarsızlıklar
 
@@ -106,3 +106,7 @@ Genel JSON dosya import/export UI'si yoktur. Genel SVG import yoktur; yalnız Kr
 - Belge timestamp'lerinin her kayıtta yenilenmesi mi, ilk `createdAt` değerinin korunması mı istendiği belli değildir.
 - Gelecek schema sürümleri için geriye uyumluluk/migration politikası tanımlı değildir.
 - JSON'un güvenilir yerel belge mi, kullanıcıdan veya ağdan gelen içerik mi olacağı belli değildir; levha SVG metadata'sı nedeniyle güven modeli önemlidir.
+
+
+## Kroki 2.0 kimlikleri
+Yeni çıktılarda app değeri Kroki, SVG imzası KROKI_DOCUMENT_V1, metadata id krokiDocument ve imza attribute adı data-kroki-signature kullanılır. Beş hazır çizimin imzaları da buna çevrilmiştir. Kullanıcı talebiyle eski kimlikler için geçiş katmanı yoktur. Güncelleme kaydı serialize edilmiş tam belgeyi (fotoğraf, grup, kavşak state ve viewBox dahil) normal recent deposunda tutar; kayıt okunarak eşitliği doğrulanmadan yenileme yapılmaz.

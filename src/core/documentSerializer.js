@@ -7,7 +7,7 @@
   if (!utils || !registry || !manager || !styleManager) return;
 
   const SCHEMA_VERSION = 1;
-  const APP_NAME = "Kroki Pro";
+  const APP_NAME = "Kroki";
 
   function clonePlain(value) {
     return utils.clonePlain(value);

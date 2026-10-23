@@ -51,7 +51,7 @@ DOM'da şu komutlar vardır ve `editor-main-menu.js` tarafından bağlanır:
 - **Kaydet ve Çık:** recent kaydı alır, belgeyi sıfırlar ve Home'a döner.
 - **Kaydetmeden Çık:** onay alır, belgeyi sıfırlar ve Home'a döner.
 - **Şablonlarıma Kaydet:** ad ister, belgeyi template listesine yazar ve Home'a döner.
-- **SVG Olarak Kaydet:** content bounds'a göre SVG indirir; içine Kroki Pro belge metadata'sı gömer.
+- **SVG Olarak Kaydet:** content bounds'a göre SVG indirir; içine Kroki belge metadata'sı gömer.
 - **Yeni Kroki:** onay alır, belgeyi sıfırlar ve editörde boş belge açar.
 
 Kalıcılık formatı için [[Serializer]], Home listeleri için [[Home]].

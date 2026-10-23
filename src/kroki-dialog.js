@@ -101,7 +101,7 @@
 
     const title = document.createElement("div");
     title.className = "kroki-dialog-title";
-    title.textContent = options.title || "Kroki Pro";
+    title.textContent = options.title || "Kroki";
 
     const body = document.createElement("div");
     body.className = "kroki-dialog-body";
@@ -230,7 +230,7 @@
 
   Kroki.Dialog = {
     toast,
-    alert(message, title = "Kroki Pro") {
+    alert(message, title = "Kroki") {
       return open({
         title,
         message,
@@ -242,7 +242,8 @@
         ? options.actions
         : [{ label: "Tamam", value: true, variant: "primary" }];
       return open({
-        title: options.title || "Kroki Pro",
+        kind: options.kind,
+        title: options.title || "Kroki",
         message: options.message || "",
         actions
       });
@@ -279,6 +280,6 @@
 
   window.KrokiDialog = Kroki.Dialog;
   window.alert = (message) => {
-    void Kroki.Dialog.alert(String(message || ""), "Kroki Pro");
+    void Kroki.Dialog.alert(String(message || ""), "Kroki");
   };
 })();

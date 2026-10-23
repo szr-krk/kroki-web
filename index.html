@@ -7,25 +7,25 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <meta name="kroki-build" content="20261019-lanes-20-v1" />
-  <title>Kroki Pro</title>
-  <link rel="stylesheet" href="src/home.css?v=20260930-recovery-v1" />
-  <link rel="stylesheet" href="src/editor.css?v=20261021-trace-touch-v1" />
-  <link rel="stylesheet" href="src/editor-line.css?v=20261021-pattern-no-arrows-v2" />
-  <link rel="stylesheet" href="src/touch-controls.css?v=20260909-touch-controls-v2" />
+  <meta name="kroki-version" content="2.0" />
+  <meta name="kroki-build" content="20261023.1" />
+  <title>Kroki</title>
+  <link rel="icon" type="image/svg+xml" href="src/kroki-icon.svg?v=20261023.1" />
+  <link rel="stylesheet" href="src/home.css?v=20261023.1" />
+  <link rel="stylesheet" href="src/editor.css?v=20261023.1" />
+  <link rel="stylesheet" href="src/editor-line.css?v=20261023.1" />
+  <link rel="stylesheet" href="src/touch-controls.css?v=20261023.1" />
 </head>
 
 <body>
   <div id="uygulama">
-    <section id="home" class="ekran" aria-label="Kroki Pro ana sayfa">
+    <section id="home" class="ekran" aria-label="Kroki ana sayfa">
       <header class="home-ust">
         <div class="home-marka">
           <span class="home-logo" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="m5 7 1.5-4h11L19 7M5 7h14l2 5v7h-3v-3H6v3H3v-7l2-5ZM3 12h18M7 9h.01M17 9h.01"/>
-            </svg>
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5v22h22L5 5Z"/><path d="M10 17v5h5M5 10h2M5 15h2M5 20h2M12 27v-2M17 27v-2M22 27v-2M14 16 24 6l4 4-10 10-5 1 1-5Z M22 8l4 4"/></svg>
           </span>
-          <div><h1 class="home-ust-baslik">Kroki Pro</h1><p class="home-alt-baslik">Trafik Kaza Krokisi Çizim Sistemi</p></div>
+          <div><h1 class="home-ust-baslik">Kroki <span id="homeVersion" class="home-version" aria-label="Sürüm 2.0">2.0</span></h1><p class="home-alt-baslik">Trafik Kaza Krokisi Çizim Sistemi</p></div>
         </div>
         <div class="home-ust-aksiyonlar">
           <button id="btnHomeTamEkran" class="home-ust-btn" type="button" aria-pressed="false" aria-label="Tam ekran aç"
@@ -133,7 +133,7 @@
       <div id="homeUploadModal" class="modal-panel gizli" role="dialog" aria-modal="true" aria-labelledby="homeUploadTitle">
         <div class="home-modal">
           <header class="home-modal-header">
-            <div><h2 id="homeUploadTitle">SVG Dosyası Yükle</h2><p id="homeUploadHint">Kroki Pro ile kaydedilmiş çiziminizi açın.</p></div>
+            <div><h2 id="homeUploadTitle">SVG Dosyası Yükle</h2><p id="homeUploadHint">Kroki ile kaydedilmiş çiziminizi açın.</p></div>
             <button class="home-icon-btn" type="button" data-modal-close aria-label="Yükleme penceresini kapat">✕</button>
           </header>
           <div id="homeUploadTabs" class="home-upload-tabs" role="tablist" aria-label="SVG yükleme yöntemi">
@@ -174,7 +174,7 @@
       <div id="homeGuideModal" class="modal-panel gizli" role="dialog" aria-modal="true" aria-labelledby="homeGuideTitle">
         <div class="home-modal home-guide-modal">
           <header class="home-modal-header"><h2 id="homeGuideTitle">Kullanım Kılavuzu</h2><button class="home-icon-btn" type="button" data-modal-close aria-label="Kılavuzu kapat">✕</button></header>
-          <iframe id="homeGuideFrame" title="Kroki Pro kullanım kılavuzu"></iframe>
+          <iframe id="homeGuideFrame" title="Kroki kullanım kılavuzu"></iframe>
         </div>
       </div>
       <div id="homeDropOverlay" class="home-drop-overlay gizli" aria-hidden="true"><strong>SVG veya fotoğrafı buraya bırakın</strong></div>
@@ -1461,79 +1461,80 @@
     </section>
   </div>
 
-  <script src="src/responsive-scale.js?v=20260809-line-family-v1"></script>
-  <script src="src/kroki-dialog.js?v=20260803-proportional-responsive-v1"></script>
-  <script src="src/home.js?v=20261023-guide-scroll-v2" data-ready-source="src/data/ready-drawings.js?v=20261023-ready-kavsak-5"></script>
-  <script src="src/editor-state.js"></script>
-  <script src="src/editor-framing.js"></script>
-  <script src="src/editor-rail.js?v=20260801-cp-fit-preselect-v1"></script>
-  <script src="src/editor-camera.js?v=20261021-trace-touch-v1"></script>
-  <script src="src/editor-grid.js?v=20261021-view-preferences-v1"></script>
-  <script src="src/editor-object-edit.js?v=20261016-touch-repeat-v1"></script>
-  <script src="src/editor-stroke-style.js?v=20261002-default-butt-2"></script>
-  <script src="src/data/traffic-signs-1-tanzim-levhalari.generated.js?v=20260810-performance-stability-v1"></script>
-  <script src="src/data/traffic-signs-2-uyari-levhalari.generated.js?v=20260810-performance-stability-v1"></script>
-  <script src="src/data/traffic-signs-3-bilgi-levhalari.generated.js?v=20260810-performance-stability-v1"></script>
-  <script src="src/data/traffic-signs-4-durma-ve-parketme.generated.js?v=20260810-performance-stability-v1"></script>
-  <script src="src/data/traffic-signs-5-yapim-bakim-ve-onarim.generated.js?v=20260810-performance-stability-v1"></script>
-  <script src="src/data/traffic-signs-6-paneller.generated.js?v=20260810-performance-stability-v1"></script>
-  <script src="src/data/traffic-signs-7-kaplama-isaretleri.generated.js?v=20260810-performance-stability-v1"></script>
-  <script src="src/data/traffic-signs-kontrol-kesimi-custom.js?v=20260810-performance-stability-v1"></script>
-  <script src="src/data/other-symbols.generated.js?v=20261018-brake-grain-v1"></script>
-  <script src="src/data/vehicle-catalog-data.js?v=20260817-hafriyat-top-v5"></script>
-  <script src="src/data/traffic-sign-direction-data.generated.js?v=20261014-direction-signs-v6"></script>
-  <script src="src/core/trafficSignLayout.js?v=20261014-information-signs-v8"></script>
-  <script src="src/core/trafficSignInformationLayout.js?v=20261014-information-signs-v8"></script>
-  <script src="src/data/traffic-signs-direction.js?v=20261014-direction-signs-v6"></script>
-  <script src="src/data/traffic-signs-information.js?v=20261014-information-signs-v8"></script>
-  <script src="src/core/trafficSignCatalog.js?v=20261014-direction-signs-v2"></script>
-  <script src="src/core/otherSymbolCatalog.js?v=20260810-performance-stability-v1"></script>
-  <script src="src/core/vehicleCatalog.js?v=20260807-web-sync-v1"></script>
-  <script src="src/core/shapeRegistry.js?v=20260907-barrier-profile-v2"></script>
-  <script src="src/core/pathTracePatterns.js?v=20261021-trace-touch-v1"></script>
-  <script src="src/core/styleManager.js?v=20261021-pattern-no-arrows-v2"></script>
-  <script src="src/core/editorObjectManager.js?v=20261021-trace-touch-v1"></script>
-  <script src="src/core/photoBackgroundManager.js?v=20260911-import-fit-v1"></script>
-  <script src="src/core/documentStorage.js?v=20260930-recovery-v1"></script>
-  <script src="src/core/documentRecovery.js?v=20260930-recovery-v1"></script>
-  <script src="src/core/groupManager.js"></script>
-  <script src="src/core/documentSerializer.js?v=20260809-line-family-v1"></script>
-  <script src="src/core/historyManager.js"></script>
-  <script src="src/core/hitTestManager.js?v=20260906-interaction-performance-v1"></script>
-  <script src="src/core/controlPointManager.js?v=20261019-tablet-performance-v1"></script>
-  <script src="src/core/multiSelectManager.js?v=20261018-brake-grain-v1"></script>
-  <script src="src/core/roadDragPreview.js?v=20260906-top-left-origin-v1"></script>
-  <script src="src/core/editorCenterGuide.js?v=20261016-alignment-snap-v1"></script>
-  <script src="src/core/selectionManager.js?v=20261019-tablet-performance-v1"></script>
-  <script src="src/geometry/lineGeometry.js?v=20260905-visible-arrow-snap-v1"></script>
-  <script src="src/geometry/circleGeometry.js"></script>
-  <script src="src/geometry/ellipseGeometry.js"></script>
-  <script src="src/geometry/rectangleGeometry.js?v=20261002-rotation-bounds"></script>
-  <script src="src/adapters/lineAdapter.js?v=20261018-brake-grain-v1"></script>
-  <script src="src/adapters/arcAdapter.js?v=20261018-brake-grain-v1"></script>
-  <script src="src/adapters/bezierAdapter.js?v=20261018-brake-grain-v1"></script>
-  <script src="src/adapters/circleAdapter.js?v=20260906-interaction-performance-v1"></script>
-  <script src="src/adapters/ellipseAdapter.js?v=20260906-interaction-performance-v1"></script>
-  <script src="src/adapters/rectangleAdapter.js?v=20260906-interaction-performance-v1"></script>
-  <script src="src/adapters/closedShapeAdapter.js?v=20260906-interaction-performance-v1"></script>
-  <script src="src/adapters/calloutAdapter.js?v=20260903-grid-v1"></script>
-  <script src="src/adapters/roadAdapter.js?v=20261019-lanes-20-v1"></script>
-  <script src="src/adapters/barrierAdapter.js?v=20260907-barrier-profile-v2"></script>
-  <script src="src/core/roadIntersectionEngine.js?v=20261019-tablet-performance-v1"></script>
-  <script src="src/adapters/textAdapter.js?v=20260904-control-snap-v1"></script>
-  <script src="src/adapters/trafficSignAdapter.js?v=20261015-catalog-controls-v1"></script>
-  <script src="src/adapters/otherSymbolAdapter.js?v=20261015-catalog-controls-v1"></script>
-  <script src="src/adapters/vehicleAdapter.js?v=20261015-catalog-controls-v1"></script>
-  <script src="src/core/shapeConversionManager.js?v=20260905-shape-family-conversion-v2"></script>
-  <script src="src/ui/editorTextComposer.js?v=20260810-free-text-ip-v2"></script>
-  <script src="src/ui/editorBindings.js?v=20260907-barrier-profile-v2"></script>
-  <script src="src/ui/roadBuilder.js?v=20261021-viewport-center-v1"></script>
-  <script src="src/ui/roadInspector.js?v=20261019-lanes-20-v1"></script>
-  <script src="src/ui/vehicleLibrary.js?v=20260810-performance-stability-v1"></script>
-  <script src="src/ui/trafficSignLibrary.js?v=20260810-performance-stability-v1"></script>
-  <script src="src/ui/otherSymbolLibrary.js?v=20260810-performance-stability-v1"></script>
-  <script src="src/editor-main-menu.js?v=20260930-recovery-v1"></script>
-  <script src="src/ui/touchControlPanel.js?v=20260909-touch-controls-v4"></script>
+  <script src="src/responsive-scale.js?v=20261023.1"></script>
+  <script src="src/kroki-dialog.js?v=20261023.1"></script>
+  <script src="src/home.js?v=20261023.1" data-ready-source="src/data/ready-drawings.js?v=20261023.1"></script>
+  <script src="src/editor-state.js?v=20261023.1"></script>
+  <script src="src/editor-framing.js?v=20261023.1"></script>
+  <script src="src/editor-rail.js?v=20261023.1"></script>
+  <script src="src/editor-camera.js?v=20261023.1"></script>
+  <script src="src/editor-grid.js?v=20261023.1"></script>
+  <script src="src/editor-object-edit.js?v=20261023.1"></script>
+  <script src="src/editor-stroke-style.js?v=20261023.1"></script>
+  <script src="src/data/traffic-signs-1-tanzim-levhalari.generated.js?v=20261023.1"></script>
+  <script src="src/data/traffic-signs-2-uyari-levhalari.generated.js?v=20261023.1"></script>
+  <script src="src/data/traffic-signs-3-bilgi-levhalari.generated.js?v=20261023.1"></script>
+  <script src="src/data/traffic-signs-4-durma-ve-parketme.generated.js?v=20261023.1"></script>
+  <script src="src/data/traffic-signs-5-yapim-bakim-ve-onarim.generated.js?v=20261023.1"></script>
+  <script src="src/data/traffic-signs-6-paneller.generated.js?v=20261023.1"></script>
+  <script src="src/data/traffic-signs-7-kaplama-isaretleri.generated.js?v=20261023.1"></script>
+  <script src="src/data/traffic-signs-kontrol-kesimi-custom.js?v=20261023.1"></script>
+  <script src="src/data/other-symbols.generated.js?v=20261023.1"></script>
+  <script src="src/data/vehicle-catalog-data.js?v=20261023.1"></script>
+  <script src="src/data/traffic-sign-direction-data.generated.js?v=20261023.1"></script>
+  <script src="src/core/trafficSignLayout.js?v=20261023.1"></script>
+  <script src="src/core/trafficSignInformationLayout.js?v=20261023.1"></script>
+  <script src="src/data/traffic-signs-direction.js?v=20261023.1"></script>
+  <script src="src/data/traffic-signs-information.js?v=20261023.1"></script>
+  <script src="src/core/trafficSignCatalog.js?v=20261023.1"></script>
+  <script src="src/core/otherSymbolCatalog.js?v=20261023.1"></script>
+  <script src="src/core/vehicleCatalog.js?v=20261023.1"></script>
+  <script src="src/core/shapeRegistry.js?v=20261023.1"></script>
+  <script src="src/core/pathTracePatterns.js?v=20261023.1"></script>
+  <script src="src/core/styleManager.js?v=20261023.1"></script>
+  <script src="src/core/editorObjectManager.js?v=20261023.1"></script>
+  <script src="src/core/photoBackgroundManager.js?v=20261023.1"></script>
+  <script src="src/core/documentStorage.js?v=20261023.1"></script>
+  <script src="src/core/documentRecovery.js?v=20261023.1"></script>
+  <script src="src/core/groupManager.js?v=20261023.1"></script>
+  <script src="src/core/documentSerializer.js?v=20261023.1"></script>
+  <script src="src/core/historyManager.js?v=20261023.1"></script>
+  <script src="src/core/hitTestManager.js?v=20261023.1"></script>
+  <script src="src/core/controlPointManager.js?v=20261023.1"></script>
+  <script src="src/core/multiSelectManager.js?v=20261023.1"></script>
+  <script src="src/core/roadDragPreview.js?v=20261023.1"></script>
+  <script src="src/core/editorCenterGuide.js?v=20261023.1"></script>
+  <script src="src/core/selectionManager.js?v=20261023.1"></script>
+  <script src="src/geometry/lineGeometry.js?v=20261023.1"></script>
+  <script src="src/geometry/circleGeometry.js?v=20261023.1"></script>
+  <script src="src/geometry/ellipseGeometry.js?v=20261023.1"></script>
+  <script src="src/geometry/rectangleGeometry.js?v=20261023.1"></script>
+  <script src="src/adapters/lineAdapter.js?v=20261023.1"></script>
+  <script src="src/adapters/arcAdapter.js?v=20261023.1"></script>
+  <script src="src/adapters/bezierAdapter.js?v=20261023.1"></script>
+  <script src="src/adapters/circleAdapter.js?v=20261023.1"></script>
+  <script src="src/adapters/ellipseAdapter.js?v=20261023.1"></script>
+  <script src="src/adapters/rectangleAdapter.js?v=20261023.1"></script>
+  <script src="src/adapters/closedShapeAdapter.js?v=20261023.1"></script>
+  <script src="src/adapters/calloutAdapter.js?v=20261023.1"></script>
+  <script src="src/adapters/roadAdapter.js?v=20261023.1"></script>
+  <script src="src/adapters/barrierAdapter.js?v=20261023.1"></script>
+  <script src="src/core/roadIntersectionEngine.js?v=20261023.1"></script>
+  <script src="src/adapters/textAdapter.js?v=20261023.1"></script>
+  <script src="src/adapters/trafficSignAdapter.js?v=20261023.1"></script>
+  <script src="src/adapters/otherSymbolAdapter.js?v=20261023.1"></script>
+  <script src="src/adapters/vehicleAdapter.js?v=20261023.1"></script>
+  <script src="src/core/shapeConversionManager.js?v=20261023.1"></script>
+  <script src="src/ui/editorTextComposer.js?v=20261023.1"></script>
+  <script src="src/ui/editorBindings.js?v=20261023.1"></script>
+  <script src="src/ui/roadBuilder.js?v=20261023.1"></script>
+  <script src="src/ui/roadInspector.js?v=20261023.1"></script>
+  <script src="src/ui/vehicleLibrary.js?v=20261023.1"></script>
+  <script src="src/ui/trafficSignLibrary.js?v=20261023.1"></script>
+  <script src="src/ui/otherSymbolLibrary.js?v=20261023.1"></script>
+  <script src="src/editor-main-menu.js?v=20261023.1"></script>
+  <script src="src/ui/touchControlPanel.js?v=20261023.1"></script>
+  <script src="src/core/updateManager.js?v=20261023.1"></script>
 </body>
 
 </html>
