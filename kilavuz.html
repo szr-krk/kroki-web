@@ -221,7 +221,10 @@
     .contents {
       position: sticky;
       top: 16px;
-      overflow: hidden;
+      max-height: calc(100vh - 32px);
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior-y: contain;
       border: 1px solid var(--line);
       border-radius: 16px;
       background: rgba(255, 255, 255, .92);
@@ -692,7 +695,10 @@
         z-index: 20;
         top: 0;
         display: flex;
+        max-height: none;
         overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-x: contain;
         border-radius: 12px;
       }
 
@@ -1008,7 +1014,7 @@
     </header>
 
     <div class="guide-layout">
-      <nav class="contents" aria-label="Kılavuz bölümleri">
+      <nav class="contents" aria-label="Kılavuz bölümleri" tabindex="0">
         <div class="contents-title">Bölümler</div>
         <a href="#baslangic">İlk kroki</a>
         <a href="#ana-ekran">Ana ekran</a>

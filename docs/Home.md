@@ -73,3 +73,7 @@ Kılavuz 16 bölüm halinde güncellendi; 16 dolgu seçeneği ve 7 çizgi deseni
 
 ## 23.10.2026 — Hazır çizim listesinin yenilenmesi
 Önceki altı hazır çizim kaldırıldı; kullanıcının verdiği beş imzalı SVG dosyası içerikleri değiştirilmeden gömüldü. Türkçe alfabetik ve sayı sırası: Diğer Kavşak 1, Diğer Kavşak 2, Dörtlü Kontrolsüz Kavşak 1, Dörtlü Kontrolsüz Kavşak 2, T Kavşak. Dosya adları başlık olarak korunur. Kartlar ve Düzenle işlemi bu beş kaydı kullanır; kişisel Son Krokiler/Şablonlarım kayıtları değişmez. Lazy yükleme korunur; hazır çizim paketinin URL sürümü yenilendi.
+
+
+## 23.10.2026 — Kılavuz bölüm listesinin bağımsız kaydırılması
+Masaüstünde sol bölüm listesi pencere yüksekliğinden 32 piksel kısa olacak biçimde sınırlandırılır; kendi içinde dikey kayar. Liste sonundaki kaydırma ana metne aktarılmaz. Klavyeyle odaklanabilir. Dar ekranlarda mevcut yatay bölüm şeridi korunur; dikey yükseklik sınırı uygulanmaz. Gömülü kılavuz ve home script URL sürümleri yenilendi.
