@@ -1,5 +1,7 @@
 # Kavşak Sistemi
 
+> Teslim notu — 23.10.2026: Bu sayfada anılan test/üretim scriptleri, ham asset kaynakları ve yerel araçlar çevrimiçi teslim ağacında bulunmaz; yerel geliştirme kopyasında korunur. Çalışan kataloglar `src/data/` içindedir.
+
 Kavşak sistemi, ayrı bir “kavşak nesnesi” oluşturmaz. Uygun yol modellerinin örneklenmiş yüzeylerini karşılaştırır, çakışma bölgelerini ve birleşik dış sınırı türetir, yol çizgilerinin kavşak içinde görünmeyecek parçalarını keser. Sonuçlar `#roadIntersectionContourLayer` içinde çizilir.
 
 ## Devralma özeti

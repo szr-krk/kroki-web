@@ -1,5 +1,7 @@
 # Performans Kriterleri
 
+> Teslim notu — 23.10.2026: Bu sayfada anılan test/üretim scriptleri, ham asset kaynakları ve yerel araçlar çevrimiçi teslim ağacında bulunmaz; yerel geliştirme kopyasında korunur. Çalışan kataloglar `src/data/` içindedir.
+
 Bu projenin performans hedefi, offline çalışan ve düşük donanımlı Android tabletlerde kullanılabilen bir kroki editörüdür. Masaüstünde iyi çalışması yeterli değildir; 4 GB RAM seviyesindeki Android cihazlarda pan, pinch zoom, nesne sürükleme ve yol düzenleme akıcı kalmalıdır.
 
 Bağlantılar: [[AI Devralma Notu]], [[Editör]], [[Yol Sistemi]], [[Kavşak Sistemi]], [[Nesne Sistemi]], [[Sembol ve Asset Sistemi]].

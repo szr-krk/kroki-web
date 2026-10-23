@@ -1,5 +1,7 @@
 # Nesne Sistemi
 
+> Teslim notu — 23.10.2026: Bu sayfada anılan test/üretim scriptleri, ham asset kaynakları ve yerel araçlar çevrimiçi teslim ağacında bulunmaz; yerel geliştirme kopyasında korunur. Çalışan kataloglar `src/data/` içindedir.
+
 Nesne sistemi bütün çizilebilir öğeleri ortak bir model ve adapter sözleşmesinde birleştirir. `EditorObjectManager` belge state'inin çalışma zamanı sahibi, `ShapeRegistry` tip yönlendiricisi, `StyleManager` ise ortak stil/metin normalizasyon katmanıdır.
 
 ## İlgili kod dosyaları

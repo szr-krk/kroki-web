@@ -1,5 +1,7 @@
 # Levha Özelleştirme Kayıtları
 
+> Teslim notu — 23.10.2026: Bu sayfada anılan test/üretim scriptleri, ham asset kaynakları ve yerel araçlar çevrimiçi teslim ağacında bulunmaz; yerel geliştirme kopyasında korunur. Çalışan kataloglar `src/data/` içindedir.
+
 Bu dosya, ham trafik levhası SVG'lerine uygulanması gereken proje özelindeki ayarların kalıcı bakım kaydıdır.
 
 `src/data/traffic-signs-*.generated.js` dosyaları ham SVG klasörlerinden Levha Katalog Üretici ile yeniden oluşturulabilir. Bu nedenle generated JS üzerinde yapılan levha bazlı değişiklikler kalıcı kaynak kabul edilmez. Bir levha grubu yeniden üretileceği zaman aşağıdaki kayıtlar ilgili **ham SVG dosyalarına** uygulanmalı, ardından katalog JS dosyası üretilmelidir.

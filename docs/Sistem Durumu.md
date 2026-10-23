@@ -28,7 +28,7 @@ Line, arc, quadratic/cubic Bezier, circle, ellipse, rectangle, callout, text ve 
 
 ### Nesne ve stil sistemi
 
-`ShapeRegistry`, `EditorObjectManager` ve `StyleManager` ortak model sözleşmesini uygular. Stroke, fill, opacity, pattern, dash, ok marker, metin ve adapter capability filtreleri çalışır. Çizgi benzeri yeni nesnelerde varsayılan `strokeWidth` 1'dir.
+`ShapeRegistry`, `EditorObjectManager` ve `StyleManager` ortak model sözleşmesini uygular. Stroke, fill, opacity, pattern, dash, ok marker, metin ve adapter capability filtreleri çalışır. Çizgi benzeri yeni nesnelerde varsayılan `strokeWidth` 2, çizgi ucu `butt` (düz) değerindedir.
 
 ### Seçim, kontrol noktası, grup
 
@@ -99,3 +99,7 @@ Home'da hazır yollar ve hazır kavşaklar modalı vardır, fakat gerçek şablo
 3. Serializer geçici metadata temizliği ve import viewBox olayı.
 4. Kayıt/import güven modeli.
 5. Hazır yol/kavşak gibi ürün akışı eksikleri. Kılavuz bağlıdır ve 21.10.2026 tarihinde güncellenmiştir.
+
+
+## 23.10.2026 — Çevrimiçi teslim kontrolü
+Çevrimiçi ağaç yalnız index.html, kilavuz.html, src uygulama dosyaları, Markdown belgeleri ve .gitignore içerir. 180 geliştirme/yedek dosyası takipten çıkarıldı; yerel kopyaları korunur. Yalnız teslimde kalan dosyaları sunan tarayıcı testinde ana ekran, gömülü kılavuz, araç/levha/sembol oluşturma, dolgu/iz/yol renderı, yazı tipi ve kayıt/açma doğrulandı. Güncel katalog: 343 levha, 39 araç çeşidi, 41 sembol, 16 dolgu seçeneği ve 7 çizgi deseni seçeneği. Kaldırılan script/Obsidian/sunucu/yedek dosyaları test sunucusunda 404 döner. Bu kontrol fiziksel tablet testi değildir.

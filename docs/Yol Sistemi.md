@@ -1,5 +1,7 @@
 # Yol Sistemi
 
+> Teslim notu — 23.10.2026: Bu sayfada anılan test/üretim scriptleri, ham asset kaynakları ve yerel araçlar çevrimiçi teslim ağacında bulunmaz; yerel geliştirme kopyasında korunur. Çalışan kataloglar `src/data/` içindedir.
+
 Yol sistemi üç parçaya ayrılır: `RoadBuilder` yeni yolun başlangıç verisini kurar, `roadAdapter` yol modelini normalize/render/düzenler, `RoadInspector` seçili yolun bağlamsal UI'sini yönetir. Otomatik kavşak davranışı ayrı [[Kavşak Sistemi]] içindedir.
 
 ## Devralma özeti

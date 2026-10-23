@@ -1,5 +1,7 @@
 # Renault Mégane Cabrio SVG Ölçekleme Kaydı
 
+> Teslim notu — 23.10.2026: Bu sayfada anılan test/üretim scriptleri, ham asset kaynakları ve yerel araçlar çevrimiçi teslim ağacında bulunmaz; yerel geliştirme kopyasında korunur. Çalışan kataloglar `src/data/` içindedir.
+
 Bu belge, kullanıcıdan gelen `top.svg`, `side.svg` ve `reverse.svg` dosyalarının gerçek araç ölçüsüne bağlanırken görüntü oranının bozulmaması için uygulanan yöntemi kaydeder.
 
 ## Araç ve ölçü kaynağı

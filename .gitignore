@@ -3,3 +3,13 @@
 .backups/
 FETCH_HEAD
 packed.html
+
+# Local development sources, verification tools and workspace files are not published.
+/scripts/
+/ARAÇLAR/
+/docs/.obsidian/
+/outputs/
+/BASLAT_TABLET_AG.bat
+/sunucu.ps1
+/inspect_psd.py
+/*.xml

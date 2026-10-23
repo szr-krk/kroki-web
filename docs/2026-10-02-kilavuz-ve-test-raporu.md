@@ -1,5 +1,7 @@
 # 2 Ekim 2026 — Kılavuz, tutarlılık ve performans kontrolü
 
+> Teslim notu — 23.10.2026: Bu sayfada anılan test/üretim scriptleri, ham asset kaynakları ve yerel araçlar çevrimiçi teslim ağacında bulunmaz; yerel geliştirme kopyasında korunur. Çalışan kataloglar `src/data/` içindedir.
+
 ## Sonuç
 
 Kullanım kılavuzu mevcut CSS, renkler, simgeler ve kart düzeni korunarak güncellendi. İlk çizim, seçim, taşıma, dolgu, yol ekleme, kaydetme ve yeniden açma işlemleri somut adımlarla anlatılıyor. Fotoğraf yükleme ve yarım kalan çizimi kurtarma eklendi. Düz uç / 2 kalınlık varsayılanı, dolgulu döndürülmüş şekil ve kalın çizgi seçimi açıklandı. Çoklu seçimin doğrudan taşınabilmesi ve yalnızca düz / yuvarlak uç seçenekleri hakkındaki eski bilgiler düzeltildi.

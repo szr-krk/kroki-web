@@ -86,4 +86,8 @@ Her kayıt aşağıdaki ana alanlara normalize edilir:
 ## Belirsiz
 
 - Depoda `package.json`, test koşucusu veya build tanımı yoktur. Uygulamanın hedef dağıtım ortamı kaynak koddan anlaşılmıyor; mevcut yapı doğrudan tarayıcıda çalışmaya yöneliktir.
-- LocalStorage tabanlı son krokiler/şablonlar bağlıdır; uzun vadeli dosya sistemi, quota yönetimi ve migration politikası hâlâ ürün kararı gerektirir.
+- IndexedDB tabanlı son krokiler/şablonlar bağlıdır; uzun vadeli dosya sistemi, quota yönetimi ve migration politikası hâlâ ürün kararı gerektirir.
+
+
+## Çevrimiçi teslim ağacı (23.10.2026)
+Yayın ve teslim yalnız uygulama giriş HTML dosyaları, src/ kodları ile gerekli font/katalog verileri, Markdown belgeleri ve .gitignore içerir. Bu haritadaki ham asset ve script yolları yerel geliştirme kopyasına aittir. ZIP yedekleri, Obsidian ayarları, test/üretim yardımcıları ve ham XML/SVG çalışma kaynakları çevrimiçi ağaca dahil değildir.

@@ -1,5 +1,7 @@
 # Otomatik kurtarma
 
+> Teslim notu — 23.10.2026: Bu sayfada anılan test/üretim scriptleri, ham asset kaynakları ve yerel araçlar çevrimiçi teslim ağacında bulunmaz; yerel geliştirme kopyasında korunur. Çalışan kataloglar `src/data/` içindedir.
+
 Online uygulama, tamamlanan çizim değişikliklerini cihazdaki IndexedDB'ye kaydeder. Undo geçmişi ve önizleme kaydedilmez. Ana sayfada **Yarım kalan çizimler → Çizimi Kurtar** ile devam edilir. Son kayıt okunamazsa önceki kayıt denenir.
 
 - Değişiklikten yaklaşık 1 saniye sonra boşta çalışma fırsatı beklenir (en fazla 500 ms). En sık 2 saniyede bir yazılır. Sürekli tamamlanan işlemler kaydı en fazla 8 saniye erteler; devam eden dokunma/sürükleme bitmeden kayıt alınmaz.

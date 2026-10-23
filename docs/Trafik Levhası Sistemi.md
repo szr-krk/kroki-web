@@ -1,5 +1,7 @@
 # Trafik Levhası Sistemi
 
+> Teslim notu — 23.10.2026: Bu sayfada anılan test/üretim scriptleri, ham asset kaynakları ve yerel araçlar çevrimiçi teslim ağacında bulunmaz; yerel geliştirme kopyasında korunur. Çalışan kataloglar `src/data/` içindedir.
+
 Trafik levhası sistemi üretilmiş SVG katalog verisini kategori grid'inde gösterir, seçilen levhayı canvas merkezine `trafficSign` nesnesi olarak ekler ve levhanın kendi SVG art'ını model metadata'sıyla birlikte render eder.
 
 ## İlgili kod dosyaları

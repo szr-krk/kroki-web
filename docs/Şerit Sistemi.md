@@ -1,5 +1,7 @@
 # Şerit Sistemi
 
+> Teslim notu — 23.10.2026: Bu sayfada anılan test/üretim scriptleri, ham asset kaynakları ve yerel araçlar çevrimiçi teslim ağacında bulunmaz; yerel geliştirme kopyasında korunur. Çalışan kataloglar `src/data/` içindedir.
+
 Şerit sistemi ayrı nesneler üretmez. Yolun enkesiti `metadata.road` içindeki genişlik dizilerinden hesaplanır; `roadAdapter.crossSection()` lane, banket, iç banket ve su kanalı bölümlerini sağdan sola sıralar ve aralarındaki boundary'leri `b0`, `b1`, ... olarak adlandırır.
 
 ## İlgili kod dosyaları

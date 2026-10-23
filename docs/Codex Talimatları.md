@@ -1,5 +1,7 @@
 # Codex Talimatları
 
+> Teslim notu — 23.10.2026: Bu sayfada anılan test/üretim scriptleri, ham asset kaynakları ve yerel araçlar çevrimiçi teslim ağacında bulunmaz; yerel geliştirme kopyasında korunur. Çalışan kataloglar `src/data/` içindedir.
+
 Bu proje üzerinde çalışacak Codex önce mevcut davranışı korumalı, sonra görev kapsamındaki en küçük modül kümesini değiştirmelidir. Kodda olmayan özelliği varmış gibi kabul etme; bağlı olmayan UI'ları [[Açık Hatalar]] ve [[Yeni Özellikler]] ile karşılaştır.
 
 ## Kullanıcının geçerli koşulları

@@ -1,5 +1,7 @@
 # Sembol ve Asset Sistemi
 
+> Teslim notu — 23.10.2026: Bu sayfada anılan test/üretim scriptleri, ham asset kaynakları ve yerel araçlar çevrimiçi teslim ağacında bulunmaz; yerel geliştirme kopyasında korunur. Çalışan kataloglar `src/data/` içindedir.
+
 Bu sayfa trafik levhaları dışındaki katalog varlıklarını da kapsayan genel asset kılavuzudur. Amaç, yeni levha, araç veya sembol eklerken düşük performanslı Android tablet hedefini bozmadan aynı adapter/katalog mimarisini sürdürmektir.
 
 Bağlantılar: [[Trafik Levhası Sistemi]], [[Nesne Sistemi]], [[Menü Sistemi]], [[Serializer]], [[Performans Kriterleri]].
@@ -36,7 +38,7 @@ Dosyalar:
 - `src/ui/trafficSignLibrary.js`
 - `src/adapters/trafficSignAdapter.js`
 
-Mevcut katalog toplam 314 levha kaydı taşır.
+23.10.2026 teslim kontrolünde çalışan katalog 343 levha, 39 araç çeşidi ve 41 diğer sembol içerir.
 
 Her kayıt şu alanları taşımalıdır:
 
