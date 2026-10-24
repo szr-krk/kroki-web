@@ -81,7 +81,7 @@ Masaüstünde sol bölüm listesi pencere yüksekliğinden 32 piksel kısa olaca
 
 ## 24.10.2026 — Tam çevrimdışı kurulum ve bağlantı durumu
 
-HTTPS üzerinde `offlineManager.js` ve kökteki `sw.js` bütün çalışma dosyalarını önceden indirir; SHA-256 doğrulaması tamamlanınca “çevrimdışı kullanıma hazır” gösterilir. Hazır çizimler ve kılavuz ilk kez çevrimdışıyken de açılır; paket indirilmiş olsa da katalogların ve kartların gerektiğinde çalıştırılması korunur. 17.10.2026 notundaki bağlantı gereksinimi, çevrimdışı kurulum tamamlanmışsa artık geçerli değildir.
+HTTPS üzerinde `offlineManager.js` ve kökteki `sw.js` çekirdek çalışma dosyalarını önceden indirir; SHA-256 doğrulaması tamamlanınca “çevrimdışı kullanıma hazır” gösterilir. Hazır çizimler ilk kez çevrimdışıyken de açılır; kılavuz ise yeni davranışta yalnız ilk tıklamada çevrimiçi indirilir ve sonrasında çevrimdışı açılır; paket indirilmiş olsa da katalogların ve kartların gerektiğinde çalıştırılması korunur. 17.10.2026 notundaki bağlantı gereksinimi, çevrimdışı kurulum tamamlanmışsa artık geçerli değildir.
 
 Kroki ikonu çevrimiçiyken yeşil, bağlantı yokken gridir; altında okunabilir durum metni vardır. Editörün sol alt zoom kutusunda ek ikon veya metin satırı yoktur; çevrimiçiyken koyu yeşil çerçeve ve açık yeşil arka plan, çevrimdışıyken mevcut gri/beyaz görünüm kullanılır. Kutu eski yüksekliğini korur; ayrıntılı durum title bilgisinde bulunur. Sunucu erişimi sürüm kontrolleriyle doğrulanır. Çevrimdışı yönetici önizleme iframe'lerinde çalışmaz. HTTPS olmayan kurulumlarda neden hazır olunamadığı belirtilir; file:// tek dosya teslimi “Yerel dosya” gösterir.
 
@@ -89,3 +89,7 @@ Güncelleme bildirimi artık tüm yeni sürüm doğrulanana kadar bekler. Kullan
 
 ## Kroki 2.0 — Ad, ikon, sürüm ve güncelleme
 Görünen marka Kroki olarak yenilendi; ana ekran ve tarayıcı ikonu gönye/kalem görseli kullanır. Ana ekrandaki sürüm meta verisinden okunur. BT rehberi depo kökündeki 00-BT-Kurulum-ve-Guncelleme-Rehberi.md dosyasıdır. updateManager.js yalnız HTTP(S) açılışında yaklaşık beş dakikada bir version.json kontrol eder. Etkin sürükleme, metin girişi ve açık pencere sırasında bildirim bekletilir. Kullanıcı isterse çizimi yerelde doğrulanan bir güncelleme kaydından yeni sürümde açılır; isterse ana ekrana dönüşe kadar güncelleme ertelenir. Tamam düğmesi güncelleme başlatmaz.
+
+
+### 24.10.2026 — Kılavuz isteğe bağlı ve sürümlü
+Kılavuz 168.704 bayttır; çekirdek kurulumda indirilmez. `data-guide-source` URL'si yalnız düğmeye basınca iframe'e atanır. `guideVersion` ve yayın SHA-256 değeri ile doğru kopya doğrulanır; aynı yayının sonraki açılışları önbellekten karşılanır. Yeni uygulama yayını eski kılavuzu güncelmiş gibi sunmaz. İlk açılışta bağlantı yoksa açıklama gösterilir; tekrar tıklama yeniden dener. Harici iframe erişimi hata vermesin diye klavye olay bağlama korumalıdır. Bağlantı adresi BT tarafından ayarlanabilir; harici sunucunun iframe izni ve kendi sürüm/saklama düzeni gerekir.

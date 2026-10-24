@@ -26,7 +26,7 @@ JS/CSS ve font dosyaları önbellekte tutulabilir. Adreslerdeki `?v=` değeri ye
 
 ## Çevrimdışı kullanım — 24.10.2026
 
-İlk çevrimiçi açılışta `sw.js` uygulamanın bütün çalışma dosyalarını cihazdaki ayrı bir uygulama önbelleğine indirir: HTML, kılavuz, JS/CSS, hazır çizimler, kataloglar, ikon ve font. Her dosya yayın listesindeki SHA-256 özetiyle doğrulanır. Tamamlanmadan “çevrimdışı kullanıma hazır” yazılmaz. İndirme başarısızsa mevcut tamamlanmış sürüm korunur; bağlantı dönünce veya sonraki açılışta yeniden denenir.
+İlk çevrimiçi açılışta `sw.js` uygulamanın bütün çalışma dosyalarını cihazdaki ayrı bir uygulama önbelleğine indirir: HTML, JS/CSS, hazır çizimler, kataloglar, ikon ve font. Kılavuz bu ilk indirmeye dahil değildir. Her dosya yayın listesindeki SHA-256 özetiyle doğrulanır. Tamamlanmadan “çevrimdışı kullanıma hazır” yazılmaz. İndirme başarısızsa mevcut tamamlanmış sürüm korunur; bağlantı dönünce veya sonraki açılışta yeniden denenir.
 
 Ana ekrandaki Kroki ikonu çevrimiçiyken yeşil, çevrimdışıyken gridir. Altındaki metin kurulumun sürüp sürmediğini veya çevrimdışı kullanıma hazır olduğunu belirtir. Editörde ek bir durum satırı yoktur; zoom kutusunun çerçevesi çevrimiçiyken koyu yeşil, arka planı açık yeşildir. Çevrimdışıyken kutunun mevcut gri çerçeve/beyaz arka plan görünümü korunur. Ayrıntı kutunun üzerine gelindiğinde okunabilir. Bağlantı bilgisi tarayıcının ağ olayları ve sürüm sunucusuna yapılan kontrollerden gelir; sunucuya erişim kaybı bir sonraki kontrol sırasında anlaşılır. Yerel tek HTML dosyasında “Yerel dosya” gösterilir.
 
@@ -37,7 +37,7 @@ Uygulama önbelleği IndexedDB belgelerinden ayrıdır. Güncelleme krokileri, �
 ## Yeni sürüm yayımlama
 
 1. Küçük geliştirme güncellemelerinde `index.html` içindeki `kroki-version` değeri `2.0` kalabilir; yeni bir sürüm kararı verildiğinde örneğin `2.1` yapılır. Her yayında `kroki-build` değerini yeni ve artan bir yayın kimliğiyle değiştirin; biçim `YYYYMMDD.sıra` şeklindedir. Örnek: `20261105.1`.
-2. Aynı dosyadaki değişen JS/CSS dosyalarının `?v=` değerlerini yeni build ile değiştirin. Değişmeyen dosyaların adresleri korunabilir; böylece tarayıcı önbelleği kullanılmaya devam eder. Kılavuz değiştiyse `src/home.js` içindeki kılavuz adresini ve `index.html` içindeki `home.js` adresini de güncelleyin.
+2. Aynı dosyadaki değişen JS/CSS dosyalarının `?v=` değerlerini yeni build ile değiştirin. Değişmeyen dosyaların adresleri korunabilir; böylece tarayıcı önbelleği kullanılmaya devam eder. Kılavuz değiştiyse `src/version.json` içindeki `guideVersion` alanını ve `index.html` içindeki `data-guide-source` adresinin `v` değerini de yeni kılavuz sürümüne taşıyın. Kılavuz güncellemesinde de uygulamanın build kimliği artırılır.
 3. `src/version.json` içindeki `version` ve `build`, HTML ile aynı olmalıdır. `app` değeri `Kroki` olarak kalır.
 4. Son dosya değişikliğinden sonra yerel bakım aracını çalıştırın: `python Yerel-Araclar/pwa_release.py online-repair` (geliştirme çalışma alanında). Araç HTML ile `src/version.json` eşleşmesini kontrol edip `sw.js` içindeki tam dosya listesini ve özetlerini üretir. Kaynak farklıysa klasörün tam yolunu verin. Python veya bu bakım aracı sunucuya yüklenmez. Her değişen yayına yeni build verin; tamamlanmış bir build aynı kimlikle yeniden yazılmaz.
 5. **`sw.js` dahil tüm dosyaları aynı yayın olarak** aktarın. Mümkünse atomik dağıtım kullanın. Sıralı aktarım gerekiyorsa uygulama dosyaları → `index.html` → `sw.js` → en son `src/version.json` sırasını kullanın. Karışmış veya eksik dosyalı bir yayın çevrimdışı kurucu tarafından reddedilir; çalışan eski sürüm korunur. `sw.js` için JavaScript MIME türü ve `Cache-Control: no-cache` kullanın. Service worker kapsamı uygulama klasörüdür; kök alan adı yetkisi gerekmez.
@@ -77,3 +77,10 @@ Krokiler, şablonlar ve kurtarma kayıtları kullanıcının tarayıcısında In
 Bu işlevleri günlük kullanımda çağırmak gerekmez. Kontrol veya sorun incelemesi sırasında yardımcı olabilirler.
 
 Tek HTML çevrimdışı sürüm ayrı bir teslimdir. `file://` üzerinden açıldığında sunucu güncelleme kontrolü yapılmaz; yeni dosya ayrıca üretilip dağıtılır.
+
+
+## Kılavuzun gerektiğinde ve sürümlü yüklenmesi
+
+Kılavuz dosyası 168.704 bayttır (sıkıştırılmamış 168,7 KB). Kılavuz düğmesine ilk basışa kadar ağdan indirilmez. Düğmeye basılınca `guideVersion` ile sürümlenen URL kullanılır; yayın listesindeki ayrı kılavuz SHA-256 değeri doğrulanır ve başarılı kopya mevcut yayının önbelleğine alınır. Aynı yayında sonraki açılışlar bağlantısız da çalışır. Yeni yayında eski kılavuz güncelmiş gibi açılmaz; güncel kopya ilk tıklamada indirilir. Hatalı/eksik dosya saklanmaz; bağlantı yoksa veya sürüm doğrulanamazsa açıklama gösterilir ve pencereyi kapatıp yeniden açarak denenebilir. Kılavuzun ilk indirmesi çekirdek çevrimdışı hazırlığı veya uygulama güncellemesini bekletmez.
+
+BT farklı adres kullanacaksa `index.html` içindeki home.js scriptinin `data-guide-source` alanını değiştirebilir. Başka alan adındaki sunucu iframe içinde görüntülenmeye izin vermelidir. Uygulamanın sürüm ve çevrimdışı saklama güvencesi kendi `kilavuz.html` dosyası içindir; başka sunucunun erişimi, sürümlenmesi ve saklama politikası o sunucuya bağlıdır. Varsayılan adres değiştirilmemiştir.

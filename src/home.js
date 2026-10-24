@@ -17,6 +17,7 @@
   let readyRendered = false;
   let readyLoading = null;
   const readySource = document.currentScript?.dataset.readySource;
+  const guideSource = document.currentScript?.dataset.guideSource || "kilavuz.html?v=20261024.3";
   let modalFocus = null;
   let uploadKind = "svg";
   let selectedFile = null;
@@ -342,10 +343,16 @@
   document.querySelector("#btnKlavuz").addEventListener("click", () => {
     openModal(guideModal);
     const frame = document.querySelector("#homeGuideFrame");
-    if (!frame.getAttribute("src")) frame.src = "kilavuz.html?v=20261023.8";
+    if (!frame.getAttribute("src") || frame.dataset.retry === "1") {
+      delete frame.dataset.retry;
+      frame.src = guideSource;
+    }
   });
   document.querySelector("#homeGuideFrame").addEventListener("load", (event) => {
-    event.target.contentWindow.addEventListener("keydown", (keyEvent) => { if (keyEvent.key === "Escape") closeModals(); });
+    try {
+      if (event.target.contentDocument?.querySelector('meta[name="kroki-guide-unavailable"]')) event.target.dataset.retry = "1";
+      event.target.contentWindow.addEventListener("keydown", (keyEvent) => { if (keyEvent.key === "Escape") closeModals(); });
+    } catch { /* An externally hosted guide may disallow parent-window access. */ }
   });
 
   home.addEventListener("dragenter", (event) => {
