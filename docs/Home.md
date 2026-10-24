@@ -79,5 +79,13 @@ Kılavuz 16 bölüm halinde güncellendi; 16 dolgu seçeneği ve 7 çizgi deseni
 Masaüstünde sol bölüm listesi pencere yüksekliğinden 32 piksel kısa olacak biçimde sınırlandırılır; kendi içinde dikey kayar. Liste sonundaki kaydırma ana metne aktarılmaz. Klavyeyle odaklanabilir. Dar ekranlarda mevcut yatay bölüm şeridi korunur; dikey yükseklik sınırı uygulanmaz. Gömülü kılavuz ve home script URL sürümleri yenilendi.
 
 
+## 24.10.2026 — Tam çevrimdışı kurulum ve bağlantı durumu
+
+HTTPS üzerinde `offlineManager.js` ve kökteki `sw.js` bütün çalışma dosyalarını önceden indirir; SHA-256 doğrulaması tamamlanınca “çevrimdışı kullanıma hazır” gösterilir. Hazır çizimler ve kılavuz ilk kez çevrimdışıyken de açılır; paket indirilmiş olsa da katalogların ve kartların gerektiğinde çalıştırılması korunur. 17.10.2026 notundaki bağlantı gereksinimi, çevrimdışı kurulum tamamlanmışsa artık geçerli değildir.
+
+Kroki ikonu çevrimiçiyken yeşil, bağlantı yokken gridir; altında okunabilir durum metni vardır. Editörün sol alt zoom alanında küçük ikon ve kısa durum bulunur. Sunucu erişimi sürüm kontrolleriyle doğrulanır; yalnız renk kullanılmaz. Çevrimdışı yönetici önizleme iframe'lerinde çalışmaz. HTTPS olmayan kurulumlarda neden hazır olunamadığı belirtilir; file:// tek dosya teslimi “Yerel dosya” gösterir.
+
+Güncelleme bildirimi artık tüm yeni sürüm doğrulanana kadar bekler. Kullanıcı kabul ederse mevcut kayıt/doğrulama/geri açma akışı korunarak bekleyen worker etkinleşir. İndirme veya doğrulama hatasında aktif önbellek ve kişisel kayıtlar silinmez. Her sekme kendi build'ini URL'de `_kroki` ile taşır; güncellenmeyen sekmenin tembel yüklenen dosyaları ve önizleme iframe'i kendi sürümünde kalır. BT rehberinde yayın listesi üretme ve dağıtım sırası belgelenir.
+
 ## Kroki 2.0 — Ad, ikon, sürüm ve güncelleme
 Görünen marka Kroki olarak yenilendi; ana ekran ve tarayıcı ikonu gönye/kalem görseli kullanır. Ana ekrandaki sürüm meta verisinden okunur. BT rehberi depo kökündeki 00-BT-Kurulum-ve-Guncelleme-Rehberi.md dosyasıdır. updateManager.js yalnız HTTP(S) açılışında yaklaşık beş dakikada bir version.json kontrol eder. Etkin sürükleme, metin girişi ve açık pencere sırasında bildirim bekletilir. Kullanıcı isterse çizimi yerelde doğrulanan bir güncelleme kaydından yeni sürümde açılır; isterse ana ekrana dönüşe kadar güncelleme ertelenir. Tamam düğmesi güncelleme başlatmaz.

@@ -44,8 +44,12 @@
     const timer = setTimeout(() => controller.abort(), 10000);
     try {
       const response = await fetch(url, { cache: "no-store", credentials: "same-origin", signal: controller.signal });
+      K.OfflineManager?.reachability(true);
       if (!response.ok) throw new Error("update-http-" + response.status);
       return await (asJson ? response.json() : response.text());
+    } catch (error) {
+      K.OfflineManager?.reachability(false);
+      throw error;
     } finally { clearTimeout(timer); }
   }
   function savingCover() {
@@ -69,17 +73,22 @@
       const destination = new URL(location.href);
       destination.searchParams.set("_kroki", pending.build);
       destination.hash = "";
-      // Do not leave a drawing for a manifest published before the actual HTML.
-      const text = await fresh(destination.href);
-      const html = new DOMParser().parseFromString(text, "text/html");
-      if (html.querySelector('meta[name="kroki-build"]')?.content !== pending.build ||
-          html.querySelector('meta[name="kroki-version"]')?.content !== pending.version) {
-        throw new Error("update-release-not-ready");
+      // The offline installer verifies every file, including HTML, before offering a release.
+      const offline = K.OfflineManager?.getState().supported;
+      if (offline) await K.OfflineManager.prepare(pending);
+      else {
+        const text = await fresh(destination.href);
+        const html = new DOMParser().parseFromString(text, "text/html");
+        if (html.querySelector('meta[name="kroki-build"]')?.content !== pending.build ||
+            html.querySelector('meta[name="kroki-version"]')?.content !== pending.version) {
+          throw new Error("update-release-not-ready");
+        }
       }
       const checkpoint = await window.KrokiMainMenu.prepareUpdate();
       const token = { ...checkpoint, target: pending.build, version: pending.version };
       sessionStorage.setItem(RESUME_KEY, JSON.stringify(token));
       if (sessionStorage.getItem(RESUME_KEY) !== JSON.stringify(token)) throw new Error("update-token-write-failed");
+      if (offline) await K.OfflineManager.activate(pending);
       cover.textContent = "Yeni sürüm açılıyor…";
       location.replace(destination.href);
       return true;
@@ -88,6 +97,7 @@
       cover.remove();
       inputEvents.forEach(name => document.removeEventListener(name, stopKeys, true));
       applying = false;
+      try { sessionStorage.removeItem(RESUME_KEY); } catch { /* Keep the checkpoint in recent drawings. */ }
       await K.Dialog.alert("Güncelleme tamamlanamadı. Sayfa yenilenmedi; çiziminiz açık ve korunuyor. Daha sonra yeniden deneyebilirsiniz.", "Güncelleme");
       return false;
     }
@@ -128,6 +138,7 @@
       url.searchParams.set("t", String(Math.floor(Date.now() / 60000)));
       const release = await fresh(url.href, true);
       if (!valid(release) || !newer(release)) return false;
+      if (K.OfflineManager?.getState().supported) await K.OfflineManager.prepare(release);
       if (pending?.build !== release.build || pending?.version !== release.version) {
         pending = release;
         deferred = false;

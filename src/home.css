@@ -94,6 +94,13 @@ select {
   background: #115e59;
 }
 .home-logo svg { width: 23px; height: 23px; }
+.kroki-is-offline .home-logo { background: #475569; color: #f1f5f9; }
+.offline-status { margin: 3px 0 0; font-size: 11px; line-height: 1.35; color: #0f766e; }
+.kroki-is-offline .offline-status { color: #475569; }
+.offline-editor-status { display: flex; align-items: center; justify-content: center; gap: 3px; font-size: 10px; line-height: 1.3; color: #0f766e; pointer-events: none; }
+.offline-editor-icon { width: 16px; height: 16px; flex-shrink: 0; }
+.editor-grid-controls.offline-enabled { height: auto; }
+.kroki-is-offline .offline-editor-status { color: #475569; }
 .home-ust-baslik { font-size: 20px; font-weight: 900; line-height: 1.15; letter-spacing: -.5px; }
 .home-alt-baslik { color: #64748b; font-size: 12px; font-weight: 600; }
 .home-ust-aksiyonlar { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }

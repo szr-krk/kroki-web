@@ -8,10 +8,10 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <meta name="kroki-version" content="2.0" />
-  <meta name="kroki-build" content="20261023.8" />
+  <meta name="kroki-build" content="20261024.1" />
   <title>Kroki</title>
   <link rel="icon" type="image/svg+xml" href="src/kroki-icon.svg?v=20261023.2" />
-  <link rel="stylesheet" href="src/home.css?v=20261023.4" />
+  <link rel="stylesheet" href="src/home.css?v=20261024.1" />
   <link rel="stylesheet" href="src/editor.css?v=20261023.3" />
   <link rel="stylesheet" href="src/editor-line.css?v=20261023.2" />
   <link rel="stylesheet" href="src/touch-controls.css?v=20261023.2" />
@@ -25,7 +25,7 @@
           <span class="home-logo" aria-hidden="true">
             <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5v22h22L5 5Z"/><path d="M10 17v5h5M5 10h2M5 15h2M5 20h2M12 27v-2M17 27v-2M22 27v-2M14 16 24 6l4 4-10 10-5 1 1-5Z M22 8l4 4"/></svg>
           </span>
-          <div><h1 class="home-ust-baslik">Kroki</h1><p class="home-alt-baslik">Trafik Kaza Krokisi Çizim Sistemi <span id="homeVersion" class="home-version" aria-label="Sürüm 2.0">(Versiyon: 2.0)</span></p></div>
+          <div><h1 class="home-ust-baslik">Kroki</h1><p class="home-alt-baslik">Trafik Kaza Krokisi Çizim Sistemi <span id="homeVersion" class="home-version" aria-label="Sürüm 2.0">(Versiyon: 2.0)</span></p><p class="offline-status" data-offline-status role="status" aria-live="polite"></p></div>
         </div>
         <div class="home-ust-aksiyonlar">
           <button id="btnHomeTamEkran" class="home-ust-btn" type="button" aria-pressed="false" aria-label="Tam ekran aç"
@@ -184,7 +184,7 @@
       <div class="editor-ruler-corner" aria-hidden="true">x/y</div>
       <svg id="editorRulerX" class="editor-ruler editor-ruler-x" aria-hidden="true"></svg>
       <svg id="editorRulerY" class="editor-ruler editor-ruler-y" aria-hidden="true"></svg>
-      <div class="editor-grid-controls" role="group" aria-label="Cetvel, ızgara, fotoğraf ve zoom bilgisi">
+      <div class="editor-grid-controls offline-enabled" role="group" aria-label="Cetvel, ızgara, fotoğraf ve zoom bilgisi">
         <div class="editor-grid-control-buttons">
           <button id="btnEditorRulers" type="button" aria-label="Cetvelleri gizle" title="Cetvelleri gizle" aria-pressed="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 3h18v7H10v11H3Z M7 3v4m5-4v4m5-4v4M3 12h4m-4 5h4"/></svg>
@@ -200,6 +200,10 @@
           </button>
         </div>
         <output id="touchControlZoomValue" class="editor-grid-zoom-value" aria-label="Yakınlaştırma oranı">Zoom: %100</output>
+        <div class="offline-editor-status">
+          <svg class="offline-editor-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5v22h22L5 5Z"/><path d="M10 17v5h5M5 10h2M5 15h2M5 20h2M12 27v-2M17 27v-2M22 27v-2M14 16 24 6l4 4-10 10-5 1 1-5Z M22 8l4 4"/></svg>
+          <span data-offline-status data-compact role="status" aria-live="polite"></span>
+        </div>
       </div>
       <main class="editor-calisma-alani">
         <canvas id="editorGrid" class="editor-grid" aria-hidden="true"></canvas>
@@ -1545,7 +1549,8 @@
   <script src="src/ui/otherSymbolLibrary.js?v=20261023.2"></script>
   <script src="src/editor-main-menu.js?v=20261023.8"></script>
   <script src="src/ui/touchControlPanel.js?v=20261023.2"></script>
-  <script src="src/core/updateManager.js?v=20261023.8"></script>
+  <script src="src/core/offlineManager.js?v=20261024.1"></script>
+  <script src="src/core/updateManager.js?v=20261024.1"></script>
 </body>
 
 </html>
