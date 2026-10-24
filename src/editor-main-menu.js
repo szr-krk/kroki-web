@@ -435,6 +435,7 @@
     clone.removeAttribute("class");
     clone.removeAttribute("aria-label");
     clone.querySelector("#editorEditLayer")?.remove();
+    clone.querySelector("#editorGridLayer")?.remove();
     normalizeDocumentStrokeScaling(clone);
 
     const signFontDataUrl = containsSignFont(clone) ? await prepareExportSignFont() : "";

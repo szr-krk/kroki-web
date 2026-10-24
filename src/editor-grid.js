@@ -3,6 +3,7 @@
   const editor = document.querySelector("#editor");
   const canvas = document.querySelector("#editorCanvas");
   const grid = document.querySelector("#editorGrid");
+  const gridLayer = document.querySelector("#editorGridLayer");
   const camera = window.krokiEditorCamera;
   if (!editor || !canvas || !grid || !camera) return;
 
@@ -37,7 +38,7 @@
   let cursor = null;
   let snapTargets = null;
   let gesturePositionSnapEnabled = true;
-  const gridContext = grid.getContext("2d", { alpha: false });
+  const gridContext = grid.getContext("2d", { alpha: true });
 
   function svg(tag, attrs = {}) {
     const node = document.createElementNS(NS, tag);
@@ -219,8 +220,11 @@
     const height = Math.ceil(state.height);
     if (grid.width !== width) { grid.width = width; grid.style.width = width + "px"; }
     if (grid.height !== height) { grid.height = height; grid.style.height = height + "px"; }
-    gridContext.fillStyle = "#ffffff";
-    gridContext.fillRect(0, 0, width, height);
+    // Keep the screen-space grid between the photo and drawing objects.
+    gridLayer?.setAttribute("transform", `translate(${viewBox.x} ${viewBox.y}) scale(${1 / state.zoom})`);
+    gridLayer?.setAttribute("width", String(width));
+    gridLayer?.setAttribute("height", String(height));
+    gridContext.clearRect(0, 0, width, height);
     const draw = (spacing, color) => {
       gridContext.beginPath();
       gridContext.strokeStyle = color;
