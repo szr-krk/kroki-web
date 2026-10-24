@@ -8,6 +8,7 @@
   let draft = null;
   let closedShapeDraftId = "";
   let closedShapeTap = null;
+  let closedShapeHistory = null;
   const closedShapeDraftStyle = { fill: "#d1d5db", fillOpacity: 0.45 };
   const TAP_MOVE_LIMIT_PX = 10;
   const closedShapePanel = document.querySelector("#closedShapeDraftPanel");
@@ -66,7 +67,7 @@
 
   function syncClosedShapePanel() {
     const model = closedShapeDraftModel();
-    const visible = Boolean(model);
+    const visible = Boolean(model || closedShapeHistory);
     closedShapePanel?.classList.toggle("gizli", !visible);
     if (closedShapeCloseButton) closedShapeCloseButton.disabled = !model || model.geometry.points.length < 3;
   }
@@ -78,11 +79,69 @@
     closedShapeTap = null;
   }
 
+  function finishClosedShapeHistory() {
+    if (!closedShapeHistory) return;
+    closedShapeHistory = null;
+    Kroki.HistoryManager?.setDraftHistory?.(null);
+  }
+
+  function syncClosedShapeHistory() {
+    Kroki.HistoryManager?.setDraftHistory?.(closedShapeHistory);
+    syncClosedShapePanel();
+  }
+
+  function beginClosedShapeHistory() {
+    if (closedShapeHistory) return;
+    const redoPoints = [];
+    let firstPointModel = null;
+    closedShapeHistory = {
+      size() {
+        return { undo: closedShapeDraftModel()?.geometry.points.length || 0, redo: redoPoints.length };
+      },
+      undo() {
+        clearClosedShapeTap();
+        Kroki.EditorGrid?.endGesture();
+        const model = closedShapeDraftModel();
+        if (!model) return;
+        const { points, controls } = model.geometry;
+        redoPoints.push({ point: utils.clonePlain(points[points.length - 1]), control: controls.length ? utils.clonePlain(controls[controls.length - 1]) : null });
+        if (points.length === 1) {
+          firstPointModel = utils.clonePlain(model);
+          manager.remove(model.id, { skipHistory: true });
+        } else {
+          const geometry = manager.getAdapter(model).create({ points: points.slice(0, -1), controls: controls.slice(0, -1), closed: false }).geometry;
+          manager.updateModel(model.id, current => ({ ...current, geometry }), { skipHistory: true, controlPoints: false, styleControls: false });
+        }
+        syncClosedShapePanel();
+      },
+      redo() {
+        clearClosedShapeTap();
+        Kroki.EditorGrid?.endGesture();
+        const entry = redoPoints.pop();
+        if (!entry) return;
+        const model = closedShapeDraftModel();
+        if (!model) {
+          manager.add(utils.clonePlain(firstPointModel), { skipHistory: true, controlPoints: false, styleControls: false });
+        } else {
+          manager.updateModel(model.id, current => {
+            manager.getAdapter(current).appendPoint(current, entry.point);
+            if (entry.control) current.geometry.controls[current.geometry.controls.length - 1] = utils.clonePlain(entry.control);
+            return current;
+          }, { skipHistory: true, controlPoints: false, styleControls: false });
+        }
+        syncClosedShapePanel();
+      },
+      pointAdded() { redoPoints.length = 0; },
+      cancel() { cancelClosedShapeDraft({ resetTool: false }); }
+    };
+  }
+
   function cancelClosedShapeDraft(options = {}) {
     Kroki.EditorGrid?.endGesture();
     clearClosedShapeTap();
     const id = closedShapeDraftId;
     closedShapeDraftId = "";
+    finishClosedShapeHistory();
     if (id) manager.remove(id, { skipHistory: true });
     syncClosedShapePanel();
     if (options.resetTool !== false) window.krokiEditorRail?.resetCizimAraci?.();
@@ -97,13 +156,18 @@
       metadata: { draft: true }
     }, { skipHistory: true });
     closedShapeDraftId = model?.id || "";
+    if (model) {
+      beginClosedShapeHistory();
+      closedShapeHistory.pointAdded();
+      syncClosedShapeHistory();
+    }
     syncClosedShapePanel();
     return closedShapeDraftId;
   }
 
   function addClosedShapePoint(point) {
-    const id = closedShapeDraftId || ensureClosedShapeDraft(point);
-    if (!id) return;
+    const id = closedShapeDraftModel()?.id;
+    if (!id) { ensureClosedShapeDraft(point); return; }
     const model = manager.get(id);
     const adapter = manager.getAdapter(model);
     if (!model || !adapter) return;
@@ -115,7 +179,8 @@
       adapter.appendPoint(draftModel, point);
       return draftModel;
     }, { controlPoints: false, styleControls: false, skipHistory: true });
-    syncClosedShapePanel();
+    closedShapeHistory?.pointAdded();
+    syncClosedShapeHistory();
   }
 
   function closeClosedShapeDraft(event) {
@@ -130,6 +195,7 @@
       return draftModel;
     }, { controlPoints: false, skipHistory: true });
     closedShapeDraftId = "";
+    finishClosedShapeHistory();
     clearClosedShapeTap();
     syncClosedShapePanel();
     selection.edit(id);

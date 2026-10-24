@@ -6,6 +6,7 @@
   const MAX_HISTORY = 120;
   const listeners = new Set();
   let suspended = 0;
+  let draftHistory = null;
 
   function clonePlain(value) {
     return JSON.parse(JSON.stringify(value || null));
@@ -49,15 +50,16 @@
   }
 
   function size() {
+    if (draftHistory) return draftHistory.size();
     return { undo: undoStack.length, redo: redoStack.length };
   }
 
   function canUndo() {
-    return undoStack.length > 0;
+    return size().undo > 0;
   }
 
   function canRedo() {
-    return redoStack.length > 0;
+    return size().redo > 0;
   }
 
   function notifyChange() {
@@ -70,6 +72,19 @@
         console.warn("Kroki history listener failed", error);
       }
     });
+  }
+
+  // A drawing in progress owns undo/redo until it is completed or cancelled.
+  function setDraftHistory(history) {
+    draftHistory = history;
+    notifyChange();
+  }
+
+  function runDraftHistory(direction) {
+    if (suspended || !draftHistory.size()[direction]) return false;
+    suspend(() => draftHistory[direction]());
+    notifyChange();
+    return true;
   }
 
   function push(command, options = {}) {
@@ -202,6 +217,7 @@
   }
 
   function undo() {
+    if (draftHistory) return runDraftHistory("undo");
     if (suspended || !undoStack.length) return false;
     const command = undoStack.pop();
     redoStack.push(command);
@@ -212,6 +228,7 @@
   }
 
   function redo() {
+    if (draftHistory) return runDraftHistory("redo");
     if (suspended || !redoStack.length) return false;
     const command = redoStack.pop();
     undoStack.push(command);
@@ -222,6 +239,9 @@
   }
 
   function clear() {
+    const activeDraft = draftHistory;
+    draftHistory = null;
+    activeDraft?.cancel?.();
     undoStack.length = 0;
     redoStack.length = 0;
     notifyChange();
@@ -272,6 +292,7 @@
   });
 
   Kroki.HistoryManager = {
+    setDraftHistory,
     begin,
     commit,
     beginObjectChange,
