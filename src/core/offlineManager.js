@@ -22,12 +22,11 @@
       ready ? "Çevrimiçi · çevrimdışı kullanıma hazır" : "Çevrimiçi · çevrimdışı kullanım hazırlanıyor";
     document.documentElement.classList.toggle("kroki-is-offline", !connected || local);
     for (const label of labels) {
-      label.textContent = label.hasAttribute("data-compact")
-        ? (local ? "Yerel dosya" : !connected ? "Çevrimdışı" : "Çevrimiçi") : text;
+      label.textContent = text;
       label.title = text;
       label.setAttribute("aria-label", text);
     }
-    for (const icon of document.querySelectorAll(".home-logo, .offline-editor-icon")) icon.title = text;
+    for (const icon of document.querySelectorAll(".home-logo, .editor-grid-controls")) icon.title = text;
   }
   function reachability(value) { connected = value; render(); }
   function message(worker, data, timeout = 5000) {
