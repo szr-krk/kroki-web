@@ -47,6 +47,8 @@ Kurum sunucusu GitHub değişikliklerini kendiliğinden indirmez. İstenirse BT'
 
 ## Kullanıcıya güncelleme nasıl ulaşır?
 
+Yayın dosyalarının satır sonları `.gitattributes` ile LF olarak sabitlenir. Çevrimdışı özet üreticisi CRLF dosyayı reddeder; böylece Windows çalışma kopyası ile GitHub Pages'in sunduğu dosyaların SHA-256 değerleri farklılaşmaz. Bu ayarı kaldırmayın.
+
 Uygulama açık ve görünürken yaklaşık beş dakikada bir küçük sürüm dosyası kontrol edilir. Sekmeye dönüldüğünde de kontrol yapılır; sık kontroller sınırlandırılır. Ağ hatası çizimi durdurmaz. HTTPS kurulumunda yeni sürümün tüm dosyaları arka planda indirilip doğrulanmadan kullanıcıya güncelleme sunulmaz. İndirme yarıda kalırsa eski sürüm çalışır. Tam indirilmiş bir güncelleme bağlantı kesildikten sonra da uygulanabilir. Bütün sekmeler kapanınca hazır bekleyen sürüm tarayıcının normal yaşam döngüsüyle etkinleşebilir.
 
 - **Evet, güncelle:** Çizimin ayrı bir kopyası cihazdaki tarayıcıya yazılır ve okunarak doğrulanır. Yeni sürüm açılınca bu kopya otomatik yüklenir.
