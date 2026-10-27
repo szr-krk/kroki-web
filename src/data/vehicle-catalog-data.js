@@ -3903,7 +3903,7 @@
           nominalLengthM: 2.4,
           nominalWidthM: 1.1428571428571428,
           nominalHeightM: 1.2584178498985803,
-          color: "#ffffff",
+          color: "#000000",
           previewView: "side",
           supportsUpsideDown: false,
           views: VEHICLE_SVG_VIEWS.v04_atv,
