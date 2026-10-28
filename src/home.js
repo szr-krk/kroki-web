@@ -17,7 +17,7 @@
   let readyRendered = false;
   let readyLoading = null;
   const readySource = document.currentScript?.dataset.readySource;
-  const guideSource = document.currentScript?.dataset.guideSource || "kilavuz.html?v=20261028.3";
+  const guideSource = document.currentScript?.dataset.guideSource || "kilavuz.html?v=20261028.4";
   let modalFocus = null;
   let uploadKind = "svg";
   let selectedFile = null;

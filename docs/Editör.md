@@ -38,7 +38,7 @@ Canvas başlangıç viewBox'ı `0 0 1200 800` değeridir.
 
 ## Izgara, snap ve zoom
 
-Cetvel kaldırılmıştır. Sol altta Grid, Snap, isteğe bağlı Adım bilgisi ve tam sayılı Zoom göstergesi bulunur. Grid ve Snap durumları düğme üzerinde yazılıdır. İlk kullanımda Grid açık, Snap kapalıdır. Grid kapanınca Snap kapanır; Snap açılınca Grid açılır. Adım düğmesi yalnız bilgi görünürlüğünü değiştirir ve tercihi tarayıcıda saklanır.
+Cetvel kaldırılmıştır. Sol altta Grid, Snap, sürekli açık Adım bilgisi ve tam sayılı Zoom göstergesi bulunur. Grid ve Snap ikonlu düğmelerdir; durumları renk ve aria-pressed ile belirtilir. İlk kullanımda Grid açık, Snap kapalıdır. Grid kapanınca Snap kapanır; Snap açılınca Grid açılır. Adım düğmesi yoktur. Adım bilgisi her zaman açıktır; eski görünürlük tercihi kullanılmaz.
 
 Izgara ve snap aynı 1–2–5 ölçeğini kullanır. Yakındaki uç noktaları önceliklidir; aksi durumda küçük ızgara aralığı kullanılır. Adım çizim birimidir. Ctrl/Cmd geçici olarak yapışmayı atlar. Mevcut nesne ve dönüş yakalama kuralları korunur.
 
@@ -111,4 +111,4 @@ Editörün çizim ve kontrol alanlarında yerel bağlam menüsü ile metin seçi
 
 
 ## İlk açılış görünümü (21.10.2026)
-İlk kullanımda ızgara açık, yapışma kapalıdır. Grid, Snap ve adım görünürlüğü tercihleri tarayıcıda saklanır; belgeye eklenmez.
+İlk kullanımda ızgara açık, yapışma kapalıdır. Grid ve Snap tercihleri tarayıcıda saklanır; belgeye eklenmez.

@@ -1336,5 +1336,5 @@
 
 .editor-grid-status { display: flex; justify-content: center; gap: 8px; color: #475569; font: 700 9px/10px system-ui, sans-serif; white-space: nowrap; }
 .editor-grid-status output[hidden] { display: none; }
-#btnEditorZoomIn, #btnEditorZoomOut { font-size: 20px; }
+.editor-grid-controls #btnEditorZoomIn, .editor-grid-controls #btnEditorZoomOut { width: 51px; font-size: 20px; }
 #btnHomeTamEkran[hidden], #btnEditorTamEkran[hidden] { display: none !important; }

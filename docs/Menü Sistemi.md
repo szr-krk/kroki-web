@@ -112,7 +112,7 @@ Grup veya grup birimleri seçildiğinde sağ ray `is-empty` olur ve stil panelle
 
 ## Izgara, snap ve zoom kontrolleri
 
-Sol alttaki Grid, Snap ve Adım düğmeleri görünüm yardımcılarını yönetir. −/+ düğmeleri görünen çizim alanının merkezini koruyarak tam sayılı zoom seviyelerine geçer. Cetvel kaldırılmıştır. Sağ özellik rayı aynı şekilde çalışır.
+Sol alttaki ikonlu Grid ve Snap düğmeleri görünüm yardımcılarını yönetir. Adım bilgisi altta sürekli açıktır. Zoom düğmeleri 51 piksel genişliktedir. −/+ düğmeleri görünen çizim alanının merkezini koruyarak tam sayılı zoom seviyelerine geçer. Cetvel kaldırılmıştır. Sağ özellik rayı aynı şekilde çalışır.
 
 Fotoğraf altlığı varsa snap düğmesinin hemen yanında dördüncü kontrol olarak göz simgesi görünür. “Fotoğrafı gizle” / “Fotoğrafı göster” işlemi altlığı silmeden görünürlüğünü değiştirir; fotoğrafsız belgede bu düğme gizlenir. Seçim kayda, SVG/PNG çıktısına ve geri al/ileri al geçmişine yansır.
 

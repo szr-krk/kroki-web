@@ -11,7 +11,6 @@
   const ROTATION_SNAP_TOLERANCE = 10;
   const gridButton = document.querySelector("#btnEditorGrid");
   const snapButton = document.querySelector("#btnEditorSnap");
-  const stepButton = document.querySelector("#btnEditorSnapStep");
   const stepValue = document.querySelector("#editorSnapStepValue");
   const VIEW_PREFERENCES_KEY = "kroki.editor.viewPreferences.v1";
   let preferences = {};
@@ -21,11 +20,10 @@
   } catch (_) { /* Use defaults when browser storage is unavailable. */ }
   let gridVisible = typeof preferences.grid === "boolean" ? preferences.grid : true;
   let snapEnabled = gridVisible && preferences.snap === true;
-  let showSnapStep = preferences.showSnapStep === true;
 
   function savePreferences() {
     try {
-      localStorage.setItem(VIEW_PREFERENCES_KEY, JSON.stringify({ grid: gridVisible, snap: snapEnabled, showSnapStep }));
+      localStorage.setItem(VIEW_PREFERENCES_KEY, JSON.stringify({ grid: gridVisible, snap: snapEnabled }));
     } catch (_) { /* Controls still work without persistent storage. */ }
   }
   let frame = 0;
@@ -245,12 +243,9 @@
   }
 
   function renderSnapStep() {
-    stepValue.hidden = !showSnapStep;
-    if (showSnapStep) {
-      const step = getViewport().minorStep;
-      const amount = new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 6 }).format(step);
-      stepValue.textContent = `Adım: ${amount} birim${snapEnabled ? "" : " (Snap kapalı)"}`;
-    }
+    const step = getViewport().minorStep;
+    const amount = new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 6 }).format(step);
+    stepValue.textContent = `Adım: ${amount} birim${snapEnabled ? "" : " (Snap kapalı)"}`;
   }
 
   function renderViewport() {
@@ -274,15 +269,12 @@
 
   function syncButtons() {
     [[gridButton, gridVisible, "Izgarayı gizle", "Izgarayı göster"],
-      [snapButton, snapEnabled, "Izgaraya yapışma açık", "Izgaraya yapışma kapalı"],
-      [stepButton, showSnapStep, "Yapışma adımını gizle", "Yapışma adımını göster"]].forEach(([button, active, on, off]) => {
+      [snapButton, snapEnabled, "Izgaraya yapışma açık", "Izgaraya yapışma kapalı"]].forEach(([button, active, on, off]) => {
       button.setAttribute("aria-pressed", String(active));
       button.setAttribute("aria-label", active ? on : off);
       button.title = active ? on : off;
     });
     grid.classList.toggle("gizli", !gridVisible);
-    gridButton.textContent = `Grid: ${gridVisible ? "Açık" : "Kapalı"}`;
-    snapButton.textContent = `Snap: ${snapEnabled ? "Açık" : "Kapalı"}`;
     renderSnapStep();
     schedule(true);
   }
@@ -296,11 +288,6 @@
   snapButton.addEventListener("click", () => {
     snapEnabled = !snapEnabled;
     if (snapEnabled) gridVisible = true;
-    savePreferences();
-    syncButtons();
-  });
-  stepButton.addEventListener("click", () => {
-    showSnapStep = !showSnapStep;
     savePreferences();
     syncButtons();
   });
