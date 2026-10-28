@@ -345,8 +345,8 @@
       refX: "5",
       refY: "5",
       snapX: 5,
-      draw(marker) {
-        marker.append(utils.createSvgElement("circle", { cx: "5", cy: "5", r: "5", fill: "context-stroke" }));
+      draw(marker, color) {
+        marker.append(utils.createSvgElement("circle", { cx: "5", cy: "5", r: "5", fill: color }));
       }
     },
     triangle: {
@@ -354,8 +354,8 @@
       refX: "0",
       refY: "5",
       snapX: 10,
-      draw(marker) {
-        marker.append(utils.createSvgElement("path", { d: "M0 0L10 5L0 10Z", fill: "context-stroke" }));
+      draw(marker, color) {
+        marker.append(utils.createSvgElement("path", { d: "M0 0L10 5L0 10Z", fill: color }));
       }
     },
     triangle2: {
@@ -363,8 +363,8 @@
       refX: "5",
       refY: "5",
       snapX: 10,
-      draw(marker) {
-        marker.append(utils.createSvgElement("path", { d: "M0 0L10 5L0 10L4 5Z", fill: "context-stroke" }));
+      draw(marker, color) {
+        marker.append(utils.createSvgElement("path", { d: "M0 0L10 5L0 10L4 5Z", fill: color }));
       }
     },
     trianglewithbar: {
@@ -372,8 +372,8 @@
       refX: "0",
       refY: "5",
       snapX: 6.5,
-      draw(marker) {
-        marker.append(utils.createSvgElement("path", { d: "M0 0L6 5L0 10ZM6 0L6 10L7 10L7 0Z", fill: "context-stroke" }));
+      draw(marker, color) {
+        marker.append(utils.createSvgElement("path", { d: "M0 0L6 5L0 10ZM6 0L6 10L7 10L7 0Z", fill: color }));
       }
     },
     bar: {
@@ -381,11 +381,11 @@
       refX: "5",
       refY: "5",
       snapX: 5,
-      draw(marker) {
+      draw(marker, color) {
         marker.append(utils.createSvgElement("path", {
           d: "M5 0L5 10",
           fill: "none",
-          stroke: "context-stroke",
+          stroke: color,
           "stroke-linecap": "round",
           "stroke-width": "2"
         }));
@@ -813,7 +813,7 @@
     return String(normalizeStrokeWidth(value)).replace(/[^0-9a-zA-Z_-]/g, "p");
   }
 
-  function markerId(type, strokeWidth, strokeOpacity, markerScale = 1) {
+  function markerId(type, strokeWidth, strokeOpacity, markerScale = 1, strokeColor = "#111827") {
     const scale = markerScaleValue(markerScale);
     const baseStrokeWidth = normalizeStrokeWidth(strokeWidth) / scale;
     const visualStroke = Math.max(3, normalizeStrokeWidth(baseStrokeWidth));
@@ -821,6 +821,7 @@
     return [
       "editor-line-marker",
       type,
+      "c" + Array.from(strokeColor, (char) => char.charCodeAt(0).toString(16)).join("_"),
       "sw" + markerMetricKey(strokeWidth),
       "ms" + markerMetricKey(scale),
       "so" + Math.round(normalizeOpacity(strokeOpacity) * 10000),
@@ -828,8 +829,8 @@
     ].join("-");
   }
 
-  function markerUrl(type, strokeWidth, strokeOpacity, markerScale = 1, placementKey = "") {
-    return type === "none" ? "" : "url(#" + markerId(type, strokeWidth, strokeOpacity, markerScale) + placementKey + ")";
+  function markerUrl(type, strokeWidth, strokeOpacity, markerScale = 1, placementKey = "", strokeColor = "#111827") {
+    return type === "none" ? "" : "url(#" + markerId(type, strokeWidth, strokeOpacity, markerScale, strokeColor) + placementKey + ")";
   }
 
   function ensureMarkerDefs(canvas) {
@@ -846,12 +847,12 @@
     Array.from(marker.children).forEach((child) => utils.setAttributeIfChanged(child, "transform", transform));
   }
 
-  function ensureMarker(canvas, type, strokeWidth, strokeOpacity, markerScale = 1, placement = null, placementKey = "") {
+  function ensureMarker(canvas, type, strokeWidth, strokeOpacity, markerScale = 1, placement = null, placementKey = "", strokeColor = "#111827") {
     if (type === "none") return null;
     const config = MARKER_BASE[type];
     if (!config) return null;
     const defs = ensureMarkerDefs(canvas);
-    const id = markerId(type, strokeWidth, strokeOpacity, markerScale) + placementKey;
+    const id = markerId(type, strokeWidth, strokeOpacity, markerScale, strokeColor) + placementKey;
     const existing = defs.querySelector("#" + id);
     if (existing) {
       updateMarkerPlacement(existing, config, placement);
@@ -868,7 +869,7 @@
       orient: "auto-start-reverse",
       markerUnits: "strokeWidth"
     });
-    config.draw(marker);
+    config.draw(marker, strokeColor);
     if (placement) {
       marker.setAttribute("overflow", "visible");
       updateMarkerPlacement(marker, config, placement);
@@ -1025,10 +1026,10 @@
     const key = markerPlacementKeys.get(element);
     const startKey = placements?.start ? `-placement-${key}-start` : "";
     const endKey = placements?.end ? `-placement-${key}-end` : "";
-    ensureMarker(canvas, style.arrowStart, style.strokeWidth, style.strokeOpacity, style.markerScale, placements?.start, startKey);
-    ensureMarker(canvas, style.arrowEnd, style.strokeWidth, style.strokeOpacity, style.markerScale, placements?.end, endKey);
-    const startMarker = markerUrl(style.arrowStart, style.strokeWidth, style.strokeOpacity, style.markerScale, startKey);
-    const endMarker = markerUrl(style.arrowEnd, style.strokeWidth, style.strokeOpacity, style.markerScale, endKey);
+    ensureMarker(canvas, style.arrowStart, style.strokeWidth, style.strokeOpacity, style.markerScale, placements?.start, startKey, style.stroke);
+    ensureMarker(canvas, style.arrowEnd, style.strokeWidth, style.strokeOpacity, style.markerScale, placements?.end, endKey, style.stroke);
+    const startMarker = markerUrl(style.arrowStart, style.strokeWidth, style.strokeOpacity, style.markerScale, startKey, style.stroke);
+    const endMarker = markerUrl(style.arrowEnd, style.strokeWidth, style.strokeOpacity, style.markerScale, endKey, style.stroke);
     if (startMarker) utils.setAttributeIfChanged(element, "marker-start", startMarker);
     else element.removeAttribute("marker-start");
     if (endMarker) utils.setAttributeIfChanged(element, "marker-end", endMarker);

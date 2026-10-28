@@ -7,13 +7,12 @@
   const camera = window.krokiEditorCamera;
   if (!editor || !canvas || !grid || !camera) return;
 
-  const NS = "http://www.w3.org/2000/svg";
-  const SIZE = 32;
   const ROTATION_SNAP_STEP = 90;
   const ROTATION_SNAP_TOLERANCE = 10;
   const gridButton = document.querySelector("#btnEditorGrid");
   const snapButton = document.querySelector("#btnEditorSnap");
-  const rulerButton = document.querySelector("#btnEditorRulers");
+  const stepButton = document.querySelector("#btnEditorSnapStep");
+  const stepValue = document.querySelector("#editorSnapStepValue");
   const VIEW_PREFERENCES_KEY = "kroki.editor.viewPreferences.v1";
   let preferences = {};
   try {
@@ -22,11 +21,11 @@
   } catch (_) { /* Use defaults when browser storage is unavailable. */ }
   let gridVisible = typeof preferences.grid === "boolean" ? preferences.grid : true;
   let snapEnabled = gridVisible && preferences.snap === true;
-  let rulersVisible = typeof preferences.rulers === "boolean" ? preferences.rulers : true;
+  let showSnapStep = preferences.showSnapStep === true;
 
   function savePreferences() {
     try {
-      localStorage.setItem(VIEW_PREFERENCES_KEY, JSON.stringify({ grid: gridVisible, snap: snapEnabled, rulers: rulersVisible }));
+      localStorage.setItem(VIEW_PREFERENCES_KEY, JSON.stringify({ grid: gridVisible, snap: snapEnabled, showSnapStep }));
     } catch (_) { /* Controls still work without persistent storage. */ }
   }
   let frame = 0;
@@ -35,18 +34,11 @@
   let rectDirty = true;
   let canvasRect = null;
   let viewBox = camera.readViewBox(canvas);
-  let cursor = null;
   let snapTargets = null;
   let gesturePositionSnapEnabled = true;
   const gridContext = grid.getContext("2d", { alpha: true });
 
-  function svg(tag, attrs = {}) {
-    const node = document.createElementNS(NS, tag);
-    Object.keys(attrs).forEach((key) => node.setAttribute(key, attrs[key]));
-    return node;
-  }
-
-  // One scale in world units drives ruler ticks, grid lines and snapping.
+  // Grid lines and snapping share one scale in drawing units.
   function scaleForZoom(zoom) {
     const target = 85 / Math.max(0.000001, zoom);
     const exponent = Math.floor(Math.log10(target));
@@ -252,58 +244,12 @@
     gridContext.stroke();
   }
 
-  function ruler(id, horizontal) {
-    const root = document.querySelector(id);
-    const ticks = svg("path", { fill: "none", stroke: "#94a3b8", "stroke-width": 1 });
-    const majorTicks = svg("path", { fill: "none", stroke: "#64748b", "stroke-width": 1 });
-    const labels = svg("g", { fill: "#475569", "font-size": 9, "font-family": "monospace" });
-    const zero = svg("path", { fill: "none", stroke: "#2563eb", "stroke-width": 1.5 });
-    const marker = svg("path", { fill: "#ef4444", stroke: "#ef4444", "stroke-width": 1 });
-    marker.setAttribute("d", horizontal ? "M0 0V32 M-3 32L0 27L3 32Z" : "M0 0H32 M32 -3L27 0L32 3Z");
-    marker.style.display = "none";
-    root.append(ticks, majorTicks, labels, zero, marker);
-    return { root, ticks, majorTicks, labels, zero, marker, horizontal, labelPool: [] };
-  }
-  const horizontal = ruler("#editorRulerX", true);
-  const vertical = ruler("#editorRulerY", false);
-
-  function renderRuler(rulerState, length, origin, state) {
-    const { ticks, majorTicks, labels, zero, horizontal: isHorizontal } = rulerState;
-    const spacing = state.minorStep * state.zoom;
-    const first = Math.ceil(-origin / spacing);
-    const last = Math.floor((length - origin) / spacing);
-    let smallPath = "";
-    let largePath = "";
-    let zeroPath = "";
-    let labelIndex = 0;
-    for (let i = first; i <= last; i++) {
-      const position = origin + i * spacing;
-      const isMajor = i % state.subdivisions === 0;
-      const start = i === 0 ? 5 : isMajor ? 17 : 25;
-      const path = isHorizontal ? `M${position} ${start}V${SIZE}` : `M${start} ${position}H${SIZE}`;
-      if (i === 0) zeroPath += path;
-      else if (isMajor) largePath += path;
-      else smallPath += path;
-      if (!isMajor) continue;
-      const value = i * state.minorStep;
-      let label = rulerState.labelPool[labelIndex++];
-      if (!label) {
-        label = svg("text", isHorizontal ? { y: 11 } : { x: SIZE - 3, "text-anchor": "end" });
-        rulerState.labelPool.push(label);
-        labels.append(label);
-      }
-      if (label.style.display === "none") label.style.display = "";
-      label.setAttribute(isHorizontal ? "x" : "y", isHorizontal ? position + 3 : Math.max(10, position - 4));
-      const text = Math.abs(value) < 1e-9 ? "0" : value.toFixed(state.precision);
-      if (label.textContent !== text) label.textContent = text;
-      const fill = i === 0 ? "#2563eb" : "#475569";
-      if (label.getAttribute("fill") !== fill) label.setAttribute("fill", fill);
-    }
-    ticks.setAttribute("d", smallPath);
-    majorTicks.setAttribute("d", largePath);
-    zero.setAttribute("d", zeroPath);
-    for (let i = labelIndex; i < rulerState.labelPool.length; i++) {
-      if (rulerState.labelPool[i].style.display !== "none") rulerState.labelPool[i].style.display = "none";
+  function renderSnapStep() {
+    stepValue.hidden = !showSnapStep;
+    if (showSnapStep) {
+      const step = getViewport().minorStep;
+      const amount = new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 6 }).format(step);
+      stepValue.textContent = `Adım: ${amount} birim${snapEnabled ? "" : " (Snap kapalı)"}`;
     }
   }
 
@@ -311,46 +257,14 @@
     viewport = getViewport();
     viewportDirty = false;
     if (!(viewport.zoom > 0) || !viewport.width || !viewport.height) return;
-    const { x, y, width, height } = viewport;
     if (gridVisible) renderGrid(viewport);
-    if (rulersVisible) {
-      renderRuler(horizontal, width, x, viewport);
-      renderRuler(vertical, height, y, viewport);
-    }
-  }
-
-  function renderCursor() {
-    const active = cursor && viewport && rulersVisible && !camera.isGestureActive();
-    let x = -1;
-    let y = -1;
-    if (active) {
-      const world = {
-        x: (cursor.clientX - viewport.left - viewport.x) / viewport.zoom,
-        y: (cursor.clientY - viewport.top - viewport.y) / viewport.zoom
-      };
-      const point = snapPoint(world, cursor);
-      x = point.x * viewport.zoom + viewport.x;
-      y = point.y * viewport.zoom + viewport.y;
-    }
-    [[horizontal, x, viewport?.width], [vertical, y, viewport?.height]].forEach(([r, position, limit]) => {
-      const visible = Boolean(active && position >= 0 && position <= limit);
-      if (r.markerVisible !== visible) {
-        r.marker.style.display = visible ? "" : "none";
-        r.markerVisible = visible;
-      }
-      const pixel = Math.round(position);
-      if (visible && r.markerPosition !== pixel) {
-        r.marker.setAttribute("transform", r.horizontal ? `translate(${pixel} 0)` : `translate(0 ${pixel})`);
-        r.markerPosition = pixel;
-      }
-    });
+    renderSnapStep();
   }
 
   function render() {
     frame = 0;
     if (editor.classList.contains("gizli")) return;
     if (viewportDirty) renderViewport();
-    renderCursor();
   }
 
   function schedule(viewChanged = false) {
@@ -361,13 +275,15 @@
   function syncButtons() {
     [[gridButton, gridVisible, "Izgarayı gizle", "Izgarayı göster"],
       [snapButton, snapEnabled, "Izgaraya yapışma açık", "Izgaraya yapışma kapalı"],
-      [rulerButton, rulersVisible, "Cetvelleri gizle", "Cetvelleri göster"]].forEach(([button, active, on, off]) => {
+      [stepButton, showSnapStep, "Yapışma adımını gizle", "Yapışma adımını göster"]].forEach(([button, active, on, off]) => {
       button.setAttribute("aria-pressed", String(active));
       button.setAttribute("aria-label", active ? on : off);
       button.title = active ? on : off;
     });
     grid.classList.toggle("gizli", !gridVisible);
-    editor.classList.toggle("editor-rulers-hidden", !rulersVisible);
+    gridButton.textContent = `Grid: ${gridVisible ? "Açık" : "Kapalı"}`;
+    snapButton.textContent = `Snap: ${snapEnabled ? "Açık" : "Kapalı"}`;
+    renderSnapStep();
     schedule(true);
   }
 
@@ -383,16 +299,13 @@
     savePreferences();
     syncButtons();
   });
-  rulerButton.addEventListener("click", () => {
-    rulersVisible = !rulersVisible;
+  stepButton.addEventListener("click", () => {
+    showSnapStep = !showSnapStep;
     savePreferences();
-    cursor = null;
-    rectDirty = true;
     syncButtons();
-    // Reuse the editor's existing viewport resize handlers for its handles and
-    // open inspector panels when the ruler changes the available canvas area.
-    window.dispatchEvent(new Event("resize"));
   });
+  document.querySelector("#btnEditorZoomIn").addEventListener("click", () => camera.zoomByPercentagePointAtCenter(canvas, 10));
+  document.querySelector("#btnEditorZoomOut").addEventListener("click", () => camera.zoomByPercentagePointAtCenter(canvas, -10));
   // Camera writes are already limited to one per frame. Update in that same
   // frame so the grid cannot trail the drawing during pan or pinch.
   canvas.addEventListener("kroki:viewboxchange", (event) => {
@@ -401,22 +314,11 @@
     viewport = null;
     if (editor.classList.contains("gizli")) return;
     renderViewport();
-    renderCursor();
   });
-  canvas.addEventListener("pointermove", (event) => {
-    if (event.pointerType === "touch" || camera.isGestureActive() || !rulersVisible) return;
-    cursor = { clientX: event.clientX, clientY: event.clientY, ctrlKey: event.ctrlKey, metaKey: event.metaKey };
-    if (rulersVisible) schedule();
-  }, { capture: true, passive: true });
-  function clearCursor() { if (cursor) { cursor = null; schedule(); } }
-  canvas.addEventListener("pointerdown", (event) => { if (event.pointerType === "touch") clearCursor(); }, { capture: true, passive: true });
-  canvas.addEventListener("pointerleave", clearCursor, { passive: true });
-  canvas.addEventListener("pointercancel", clearCursor, { passive: true });
-  canvas.addEventListener("pointerup", (event) => { if (event.pointerType !== "mouse") clearCursor(); }, { passive: true });
   function resize() { rectDirty = true; schedule(true); }
   new ResizeObserver(resize).observe(canvas);
   window.addEventListener("resize", resize);
-  window.addEventListener("kroki:camera-gesture-start", () => { clearCursor(); endGesture(); });
+  window.addEventListener("kroki:camera-gesture-start", endGesture);
 
   Kroki.EditorGrid = Object.freeze({ scaleForZoom, placementSnapStep, snapPoint, snapEndpoint, snapAngle, anchorForModel, movePoint, pointFromEvent, beginGesture, endGesture });
   syncButtons();

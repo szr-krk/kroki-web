@@ -7,7 +7,7 @@ Editör, tek bir SVG canvas üzerinde çizim, seçim, kamera hareketi, nesne dü
 - `index.html`: `#editor`, `#editorCanvas`, bütün araç çubukları ve paneller.
 - `src/editor-state.js`: aktif çizim aracı, düzenlenen DOM nesnesi ve düzenleme modu.
 - `src/editor-camera.js`: pan, zoom, pinch ve viewBox dönüşümleri.
-- `src/editor-grid.js`: ortak dinamik cetvel/ızgara ölçeği ve grid snap.
+- `src/editor-grid.js`: dinamik ızgara ölçeği ve grid snap.
 - `src/editor-object-edit.js`: üst/yan araç çubuğu referansları ve ortak UI yardımcıları.
 - `src/editor-main-menu.js`: kayıt, export, yeni belge, Home dönüşü ve alan export akışları.
 - `src/ui/editorBindings.js`: çizim araçlarını pointer taslağına ve nesne oluşturmaya bağlar.
@@ -36,23 +36,15 @@ Canvas başlangıç viewBox'ı `0 0 1200 800` değeridir.
 - Sağ raydaki ekrana sığdır düğmesi önce `EditorObjectManager.getContentBounds()` ile belge içeriğine fit eder; içerik yoksa başlangıç viewBox'ına döner.
 - Kamera hareketi başladığında aktif nesne çizim taslağı veya seçim sürüklemesi sonlandırılır.
 
-## Cetvel, ızgara ve snap
+## Izgara, snap ve zoom
 
-Üst ve sol cetvel, ızgara ve snap aynı 1–2–5 ölçeğini kullanır. Ana aralık yaklaşık 85 ekran pikseli hedefler; snap öncelikle yakındaki mevcut uç noktasına, uygun uç yoksa görünen küçük ızgara aralığına oturur. Ölçek gerçek SVG/piksel oranından hesaplanır; pan, pinch, mouse zoom, ekrana sığdırma ve dikey tablette `xMidYMid` boşlukları hesaba katılır. Gösterilen sayılar SVG birimidir, metre değildir.
+Cetvel kaldırılmıştır. Sol altta Grid, Snap, isteğe bağlı Adım bilgisi ve tam sayılı Zoom göstergesi bulunur. Grid ve Snap durumları düğme üzerinde yazılıdır. İlk kullanımda Grid açık, Snap kapalıdır. Grid kapanınca Snap kapanır; Snap açılınca Grid açılır. Adım düğmesi yalnız bilgi görünürlüğünü değiştirir ve tercihi tarayıcıda saklanır.
 
-Sol altta üç bağımsız düğme vardır: cetvel görünürlüğü, ızgara görünürlüğü ve mıknatıs simgeli snap. Başlangıçta üçü de açıktır. Izgara gizlenince snap kapanır; ızgarayı geri açmak snap'i açmaz. Snap açılırsa ızgara da görünür olur. Cetvel gizlemek snap durumunu değiştirmez. Ctrl/Cmd basılı çizim veya sürükleme geçici olarak snap'i atlar.
+Izgara ve snap aynı 1–2–5 ölçeğini kullanır. Yakındaki uç noktaları önceliklidir; aksi durumda küçük ızgara aralığı kullanılır. Adım çizim birimidir. Ctrl/Cmd geçici olarak yapışmayı atlar. Mevcut nesne ve dönüş yakalama kuralları korunur.
 
-Yeni çizim noktaları ve çizim araçlarının döndürme dışındaki bütün kontrol noktaları grid'e veya yakındaki mevcut uçlara oturur. Ekranda şekilden uzakta gösterilen tutamaçlarda snap, tutamacın merkezine değil gerçek geometri köşesine/ucuna uygulanır. Çizgi uç tutamacı sürüklenirken başlangıç geometrisi ve parmağın tutamacı kavradığı konum saklanır; bu konuma göre gerçek uç taşınır ve snap edilir. Tekli taşımada başlangıç/merkez veya bounds köşesi; çoklu/grup taşımada ortak bounds köşesi referanstır. Bütün nesne aynı miktarda taşınır; boyut ve iç mesafeler korunur.
+Zoom −/+ düğmeleri 10 yüzde puanı ile tam sayı seviyelere geçer ve boş SVG alanları dahil görünen canvas merkezindeki dünya noktasını sabit tutar. Tekerlek ve pinch davranışları değişmez.
 
-Döndürme kontrol noktaları, çizim nesnelerinin yanında levha, araç ve diğer sembollerde de 0°, 90°, 180° ve 270° açılarına 10° tolerans içinde yardımcı snap uygular. Katalog nesnelerinin taşıması serbest kalır; taşıma snap'ini kapatan `gridSnap: false` açı yardımını kapatmaz. Ctrl/Cmd diğer snap işlemlerinde olduğu gibi bu yardımı da geçici olarak atlar. Sağ IP'deki nesne ve grup döndürme picker'ları kontrol noktası yolunu kullanmaz; 1° adımla serbest dönmeye devam eder. Oransal grup boyutlandırması ve yola bağlı geometrik kısıtlar kendi kurallarını korur.
-
-Mevcut uçlar, zoom nedeniyle yeni grid aralığının dışında kalsalar bile birleştirilebilir. Uç yakalama mesafesi mouse/kalemde 12, dokunmada 18 CSS pikselidir. Hedefler sürükleme başında yalnız koordinatlarıyla bir uzamsal indekse alınır; hareket eden nesne(ler) dışarıda tutulur. Pointer move sırasında sahne taranmaz veya modeller kopyalanmaz. Yeni çizim aynı snapped noktada kaldıysa gereksiz geometri güncellemesi atlanır.
-
-Araç, trafik levhası ve diğer sembol adapter'ları `gridSnap: false` bildirir; tek başına veya henüz gruplanmamış çoklu seçim içinde taşınırken serbest kalır ve uç noktalara yapışmazlar. Semantic grup kendi dönüşüm politikasıyla çalışır: içeriğindeki nesne tiplerinden bağımsız olarak grup taşıma ve kontrol noktasıyla resize ortak snap'i kullanır. Snap izni gesture başında etkileşim türüne göre açıkça verilir; snap gerekmeyen dönüşlerde hedef indeksi hazırlanmaz. Sonraki işlem kendi politikasıyla yeniden değerlendirilir, genel snap düğmesinin durumu değişmez.
-
-Eski yatay/dikey çizim yardımcısı, API'si, Inspector düğmesi, ikonu, dinleyicisi ve CSS'i kaldırılmıştır. Mevcut Inspector sistemi korunur.
-
-Izgara ve cetveller belge SVG'sinin kardeş elemanlarıdır; SVG/PNG çıktısına, kayıtlı önizlemeye veya IndexedDB şemasına dahil olmaz. Görünüm tercihleri yalnız oturum belleğindedir. Izgara ayrı bir Canvas 2D katmanında tutulur; backing store 1 CSS pikseli ölçeğiyle sınırlıdır ve yalnız kamera/boyut/görünürlük değiştiğinde boyanır. Cetvel görünür işaretleri üretir; etiket düğümleri zoom/pan sırasında yeniden kullanılır. Ekran ölçüsü yalnız workspace boyutu değişince okunur. Dokunma hareketi cetvel imlecini güncellemez; mouse/kalem takibi değişen konumla sınırlıdır. Kamera yazımıyla aynı karede güncellenir. Chrome 90 hedefiyle kütüphanesiz çalışır.
+Izgara SVG içindeki saydam Canvas 2D katmanında fotoğrafın üstünde, nesnelerin altında kalır. Görünüm kontrolleri belgeye veya çıktıya eklenmez. Son tercihler `kroki.editor.viewPreferences.v1` içinde saklanır; eski cetvel tercihi artık kullanılmaz.
 
 ## Çizim akışı
 
@@ -119,4 +111,4 @@ Editörün çizim ve kontrol alanlarında yerel bağlam menüsü ile metin seçi
 
 
 ## İlk açılış görünümü (21.10.2026)
-İlk kullanımda ızgara ve cetvel açık, yapışma kapalıdır. Üç düğmenin son tercihleri tarayıcıda `kroki.editor.viewPreferences.v1` anahtarıyla saklanır; belge verisine eklenmez. Izgara kapatılınca yapışma da kapanır; yapışma açılınca ızgara açılır. Depolama kullanılamazsa kontroller oturum boyunca çalışır.
+İlk kullanımda ızgara açık, yapışma kapalıdır. Grid, Snap ve adım görünürlüğü tercihleri tarayıcıda saklanır; belgeye eklenmez.

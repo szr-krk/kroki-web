@@ -176,7 +176,7 @@
     const metrics = Kroki.ControlPointManager.metrics();
     const step = Kroki.EditorGrid?.placementSnapStep?.() || 0;
     // Center the visible bounds on both viewport axes independently of grid
-    // and ruler visibility. Fit the handles around that fixed center.
+    // visibility. Fit the handles around that fixed center.
     const area = roadPlacementBounds(model, adapter, metrics, true);
     const align = (value) => step ? Math.round(Math.round(value / step) * step * 1e8) / 1e8 : value;
     const reference = Kroki.EditorCenterGuide?.origin();

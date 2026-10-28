@@ -618,6 +618,7 @@
   }
 
   function currentFullscreenElement() {
+    if (window.Kroki?.Browser?.fullscreenEnabled === false) return null;
     return document.fullscreenElement
       || document.webkitFullscreenElement
       || document.mozFullScreenElement
@@ -626,6 +627,7 @@
   }
 
   function exitAppFullscreen() {
+    if (window.Kroki?.Browser?.fullscreenEnabled === false) return undefined;
     const exit = document.exitFullscreen
       || document.webkitExitFullscreen
       || document.mozCancelFullScreen
@@ -1660,8 +1662,10 @@
     input.click();
   }
 
+  let photoImportPending = false;
   async function importPhoto(file) {
-    if (!file) return false;
+    if (!file || photoImportPending) return false;
+    photoImportPending = true;
     showBusy("Fotoğraf kopyalanıyor...");
     try {
       const photoBackground = await Kroki.PhotoBackgroundManager?.stateFromFile?.(file);
@@ -1687,14 +1691,22 @@
     } catch {
       await notify("Fotoğraf okunamadı. JPEG, PNG, WebP, GIF, BMP veya AVIF dosyası seçin.", "Fotoğraf Yükle");
       return false;
-    } finally { hideBusy(); }
+    } finally { photoImportPending = false; hideBusy(); }
   }
 
   function importPhotoFile() {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = ".jpg,.jpeg,.png,.webp,.gif,.bmp,.avif,image/jpeg,image/png,image/webp,image/gif,image/bmp,image/avif";
-    input.addEventListener("change", () => { void importPhoto(input.files?.[0]); }, { once: true });
+    input.tabIndex = -1;
+    input.style.cssText = "position:fixed;width:1px;height:1px;opacity:0;pointer-events:none";
+    document.body.append(input);
+    input.addEventListener("cancel", () => input.remove(), { once: true });
+    input.addEventListener("change", () => {
+      const file = input.files?.[0];
+      input.remove();
+      void importPhoto(file);
+    }, { once: true });
     input.click();
   }
 

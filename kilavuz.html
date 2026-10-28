@@ -1147,19 +1147,19 @@
             </article>
           </div>
 
-          <h3 class="mini-heading">Cetvel, ızgara ve yapışma</h3>
-          <div class="callout"><strong>İlk açılış:</strong> Cetvel ve ızgara açık, yapışma kapalı gelir.
-            Bu üç düğmede yaptığınız son seçim aynı cihaz ve tarayıcıda hatırlanır. Tarayıcı verileri temizlenirse başlangıç ayarlarına dönülür.</div>
+          <h3 class="mini-heading">Grid, Snap ve Zoom</h3>
+          <div class="callout"><strong>İlk açılış:</strong> Grid açık, Snap kapalı gelir. Son seçimler aynı tarayıcıda hatırlanır.</div>
           <div class="action-list">
-            <div class="action"><strong>Cetvel</strong><span>Sol alttaki cetvel simgesi üst ve sol cetveli gösterir veya gizler. Bölmeler zoom ile değişir ve çizimle birlikte hareket eder.</span></div>
-            <div class="action"><strong>Izgara</strong><span>Kareli simge ızgarayı gösterir veya gizler. Gizlediğinizde yapışma da kapanır.</span></div>
-            <div class="action"><strong>Yapışma (Snap)</strong><span>Mıknatıs simgesi yakındaki mevcut çizgi uçlarını tam olarak birleştirir; yakın uç yoksa görünen küçük ızgara aralığına oturtur. Uçları birleştirmek için zoom değiştirmeniz gerekmez. Açarsanız ızgara da görünür olur. Bilgisayarda Ctrl/Cmd basılıyken serbest hareket edebilirsiniz.</span></div>
+            <div class="action"><strong>Grid</strong><span>Sol alttaki düğme ızgarayı gösterir veya gizler; açık/kapalı durumunu üzerinde gösterir.</span></div>
+            <div class="action"><strong>Snap</strong><span>Çizim ve taşıma sırasında yakın uç noktalarına veya küçük ızgara aralıklarına yapıştırır. Grid kapanınca Snap da kapanır. Snap açılırsa Grid açılır. Ctrl/Cmd geçici olarak yapışmayı atlar.</span></div>
+            <div class="action"><strong>Adım</strong><span>Yapışma aralığını çizim birimi cinsinden gösterir veya gizler. Değer zoom ile güncellenir; Snap kapalıysa bu da belirtilir. Bu tercih yapışmayı açıp kapatmaz.</span></div>
+            <div class="action"><strong>− / + ve Zoom</strong><span>Görünen çizim alanının tam merkezini koruyarak 10 yüzde puanı uzaklaştırır/yakınlaştırır. Düğmeler tam sayılı zoom seviyelerine geçer. Mouse ve iki parmak zoom hareketleri serbestçe çalışır.</span></div>
           </div>
           <p>Araçlar, levhalar ve diğer semboller yapışma açıkken de serbest taşınır. Bunlardan biri çoklu seçim veya grubun içindeyse bütün seçim serbest hareket eder.</p>
-          <p>Cetvel sayıları çizim birimidir; tek başına metre veya santimetre anlamına gelmez. Cetvel ve ızgara kaydedilen resimde görünmez.</p>
+          <p>Adım değerleri çizim birimidir; metre veya santimetre değildir. Izgara ve görünüm kontrolleri kaydedilen resme eklenmez. Safari’de tam ekran işlevleri kapalıdır.</p>
           <h3 class="mini-heading">Ortadaki kırmızı artı ve merkezleme</h3>
           <p>Kırmızı artı görünen çizim alanının merkezidir. Yeni yol ve ada bu noktaya ortalanarak eklenir;
-            ızgara ve cetveli gizlemek merkezlemeyi kapatmaz. Yol, daire, elips, dikdörtgen veya kapalı şekli
+            ızgarayı gizlemek merkezlemeyi kapatmaz. Yol, daire, elips, dikdörtgen veya kapalı şekli
             taşırken merkezi bu noktaya yaklaştırırsanız yatay ve/veya dikey hizaya yapışır; yakalanan eksen kesik çizgiyle gösterilir.
             Uzaklaştırınca serbest hareket sürer. Bu yardım mıknatıstan bağımsızdır ve çıktı dosyalarında görünmez.</p>
 
@@ -1481,7 +1481,7 @@
             <li><span><strong>Yol türünü seçin:</strong> Normal veya bölünmüş yol.</span></li>
             <li><span><strong>Başlangıç ayrıntılarını belirleyin:</strong> Şerit sayısı ile sağ/sol banket ve bariyer
                 seçeneklerini ayarlayın.</span></li>
-            <li><span><strong>“Yolu Ekle”ye basın:</strong> Yol veya ada, görünen çizim alanının hem yatay hem dikey merkezine eklenir ve düzenlemeye hazır olur. Izgara/cetvelin açık olması gerekmez.</span>
+            <li><span><strong>“Yolu Ekle”ye basın:</strong> Yol veya ada, görünen çizim alanının hem yatay hem dikey merkezine eklenir ve düzenlemeye hazır olur. Izgaranın açık olması gerekmez.</span>
             </li>
           </ol>
 
@@ -1767,7 +1767,7 @@
             yeterlidir.</p>
 
           <div class="faq">
-<details><summary>Ok düğmeleri neden pasif?</summary><p>Seçili çizgi, yay veya eğride bir iz deseni vardır. Desen panelinde “Yok — normal çizgi”yi seçin. Düğmeler yeniden açılır; istediğiniz uç okunu yeniden seçin. Desen atamak önceden eklenmiş okları kaldırır.</p></details><details><summary>Fren izinin genişliği neden + / − ile değişmiyor?</summary><p>Fren izi normal çizgi kalınlığından bağımsızdır. Fren deseni seçiliyken görünen özel genişlik düğmesine basın: İnce, Normal ve Geniş. Başka bir çizgi deseninde genel çizgi kalınlığı yeniden kullanılır.</p></details><details><summary>Dolgu deseni yerine neden fren veya akıntı listesi açılıyor?</summary><p>Seçtiğiniz nesne açık bir çizgi veya eğridir. Kapalı alan dolgusu için daire, elips, dikdörtgen ya da tamamlanmış kapalı Bezier şekli seçin. Yolun asfaltı yerine ada veya cep içini boyamak için ilgili iç alanı seçin.</p></details><details><summary>Deseni kaldırınca iç alan neden beyaz oldu?</summary><p>“Düz dolgu” deseni kaldırır ve alanı beyaza döndürür. Yeni dolgu rengi seçebilirsiniz. Arkadaki çizimi göstermek istiyorsanız dolgu saydamlığını azaltın.</p></details><details><summary>Izgara kapalıyken nesne neden merkeze yapışıyor?</summary><p>Ortadaki kırmızı artıya hizalama, ızgara yapışmasından bağımsızdır. Merkezden uzaklaştırınca nesne serbest hareket eder. Yeni yol/ada ekleme de ızgara ve cetvelden bağımsız olarak merkeze yapılır.</p></details><details><summary>Ayarlar neden önceki açılıştaki gibi geldi?</summary><p>Izgara, cetvel ve yapışmanın son seçimleri aynı tarayıcıda hatırlanır. İlk kullanımda ızgara/cetvel açık, yapışma kapalıdır. Bu tercihler SVG çalışma dosyasının içeriği değildir.</p></details><details><summary>Kaydettiğim resimde cetvel, ızgara veya kırmızı artı yok</summary><p>Bunlar çizim yardımcılarıdır; PNG ve SVG çıktılarına eklenmez. Gerçek dolgular, iz desenleri, yazılar ve semboller ise çıktıda görünür.</p></details><details><summary>Tablette sayı girmek veya küçük hareket yapmak zor</summary><p>Sayısal alanın + / − düğmelerini ya da alana dokununca açılan sayı düzenleyicisini kullanın. Tek dokunuş küçük adım atar; basılı tutmak işlemi tekrarlar. Taşıma kumandasındaki oklar seçili nesneyi birer çizim birimi taşır.</p></details>
+<details><summary>Ok düğmeleri neden pasif?</summary><p>Seçili çizgi, yay veya eğride bir iz deseni vardır. Desen panelinde “Yok — normal çizgi”yi seçin. Düğmeler yeniden açılır; istediğiniz uç okunu yeniden seçin. Desen atamak önceden eklenmiş okları kaldırır.</p></details><details><summary>Fren izinin genişliği neden + / − ile değişmiyor?</summary><p>Fren izi normal çizgi kalınlığından bağımsızdır. Fren deseni seçiliyken görünen özel genişlik düğmesine basın: İnce, Normal ve Geniş. Başka bir çizgi deseninde genel çizgi kalınlığı yeniden kullanılır.</p></details><details><summary>Dolgu deseni yerine neden fren veya akıntı listesi açılıyor?</summary><p>Seçtiğiniz nesne açık bir çizgi veya eğridir. Kapalı alan dolgusu için daire, elips, dikdörtgen ya da tamamlanmış kapalı Bezier şekli seçin. Yolun asfaltı yerine ada veya cep içini boyamak için ilgili iç alanı seçin.</p></details><details><summary>Deseni kaldırınca iç alan neden beyaz oldu?</summary><p>“Düz dolgu” deseni kaldırır ve alanı beyaza döndürür. Yeni dolgu rengi seçebilirsiniz. Arkadaki çizimi göstermek istiyorsanız dolgu saydamlığını azaltın.</p></details><details><summary>Izgara kapalıyken nesne neden merkeze yapışıyor?</summary><p>Ortadaki kırmızı artıya hizalama, ızgara yapışmasından bağımsızdır. Merkezden uzaklaştırınca nesne serbest hareket eder. Yeni yol/ada ekleme de ızgaradan bağımsız olarak merkeze yapılır.</p></details><details><summary>Ayarlar neden önceki açılıştaki gibi geldi?</summary><p>Izgara, adım gösterimi ve yapışmanın son seçimleri aynı tarayıcıda hatırlanır. İlk kullanımda ızgara açık, yapışma kapalıdır. Bu tercihler SVG çalışma dosyasının içeriği değildir.</p></details><details><summary>Kaydettiğim resimde ızgara veya kırmızı artı yok</summary><p>Bunlar çizim yardımcılarıdır; PNG ve SVG çıktılarına eklenmez. Gerçek dolgular, iz desenleri, yazılar ve semboller ise çıktıda görünür.</p></details><details><summary>Tablette sayı girmek veya küçük hareket yapmak zor</summary><p>Sayısal alanın + / − düğmelerini ya da alana dokununca açılan sayı düzenleyicisini kullanın. Tek dokunuş küçük adım atar; basılı tutmak işlemi tekrarlar. Taşıma kumandasındaki oklar seçili nesneyi birer çizim birimi taşır.</p></details>
             <details>
               <summary>Nesne kırmızı görünüyor ama taşıyamıyorum</summary>
               <p>Kırmızı renk ilk seçimdir. Aynı yere tekrar tıklamak tek başına düzenlemeyi açmaz.

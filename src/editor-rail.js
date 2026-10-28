@@ -13,6 +13,7 @@ const FIT_PADDING_WORLD = window.krokiEditorFraming?.CONTENT_PADDING_WORLD ?? 25
 let editorForcedFullscreenOffUntil = 0;
 
 function editorCurrentFullscreenElement() {
+  if (window.Kroki?.Browser?.fullscreenEnabled === false) return null;
   return document.fullscreenElement
     || document.webkitFullscreenElement
     || document.mozFullScreenElement
@@ -21,6 +22,7 @@ function editorCurrentFullscreenElement() {
 }
 
 async function editorRequestAppFullscreen() {
+  if (window.Kroki?.Browser?.fullscreenEnabled === false) return undefined;
   const target = document.documentElement;
   const request = target.requestFullscreen
     || target.webkitRequestFullscreen
@@ -30,6 +32,7 @@ async function editorRequestAppFullscreen() {
 }
 
 async function editorExitAppFullscreen() {
+  if (window.Kroki?.Browser?.fullscreenEnabled === false) return undefined;
   const exit = document.exitFullscreen
     || document.webkitExitFullscreen
     || document.mozCancelFullScreen
@@ -176,6 +179,7 @@ function fitEditorToScreen(event) {
 }
 
 function syncEditorFullscreenButton() {
+  if (editorFloatingFullscreenButton) editorFloatingFullscreenButton.hidden = window.Kroki?.Browser?.fullscreenEnabled === false;
   const active = Boolean(editorCurrentFullscreenElement()) && !editorIsFullscreenForcedOff();
   editorFloatingFullscreenButton?.classList.toggle("is-active", active);
   editorFloatingFullscreenButton?.setAttribute("aria-pressed", String(active));
@@ -195,6 +199,7 @@ async function toggleEditorFullscreen(event) {
   event?.preventDefault();
   event?.stopPropagation();
   closeRailMenus();
+  if (window.Kroki?.Browser?.fullscreenEnabled === false) return;
 
   try {
     const apiActive = Boolean(editorCurrentFullscreenElement());

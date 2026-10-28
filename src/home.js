@@ -17,7 +17,7 @@
   let readyRendered = false;
   let readyLoading = null;
   const readySource = document.currentScript?.dataset.readySource;
-  const guideSource = document.currentScript?.dataset.guideSource || "kilavuz.html?v=20261024.3";
+  const guideSource = document.currentScript?.dataset.guideSource || "kilavuz.html?v=20261028.3";
   let modalFocus = null;
   let uploadKind = "svg";
   let selectedFile = null;
@@ -29,11 +29,13 @@
   let fullscreenPreferred = false;
 
   function currentFullscreen() {
+    if (window.Kroki?.Browser?.fullscreenEnabled === false) return null;
     return document.fullscreenElement || document.webkitFullscreenElement
       || document.mozFullScreenElement || document.msFullscreenElement || null;
   }
 
   function requestFullscreen() {
+    if (window.Kroki?.Browser?.fullscreenEnabled === false) return Promise.resolve();
     const target = document.documentElement;
     const request = target.requestFullscreen || target.webkitRequestFullscreen
       || target.mozRequestFullScreen || target.msRequestFullscreen;
@@ -41,18 +43,21 @@
   }
 
   function exitFullscreen() {
+    if (window.Kroki?.Browser?.fullscreenEnabled === false) return Promise.resolve();
     const exit = document.exitFullscreen || document.webkitExitFullscreen
       || document.mozCancelFullScreen || document.msExitFullscreen;
     return exit ? Promise.resolve(exit.call(document)) : Promise.resolve();
   }
 
   function restoreFullscreen() {
+    if (!Kroki.Browser.fullscreenEnabled) return;
     if (fullscreenPreferred && !currentFullscreen() && Date.now() >= forcedFullscreenOffUntil) {
       void requestFullscreen().catch(() => {});
     }
   }
 
   function syncFullscreen() {
+    fullscreenButton.hidden = !Kroki.Browser.fullscreenEnabled;
     const active = Boolean(currentFullscreen()) && Date.now() >= forcedFullscreenOffUntil;
     fullscreenButton.setAttribute("aria-pressed", String(active));
     fullscreenButton.setAttribute("aria-label", active ? "Tam ekrandan çık" : "Tam ekran aç");
@@ -185,6 +190,7 @@
       const image = new Image();
       uploadPreviewImage = image;
       image.className = "home-upload-preview-image gizli";
+      image.draggable = false;
       image.alt = `${file.name} önizlemesi`;
       image.decoding = "async";
       image.onload = () => {
@@ -386,6 +392,7 @@
     else trapFocus(event, modal);
   });
   fullscreenButton.addEventListener("click", async () => {
+    if (!Kroki.Browser.fullscreenEnabled) return;
     const active = Boolean(currentFullscreen()) && Date.now() >= forcedFullscreenOffUntil;
     forcedFullscreenOffUntil = 0;
     fullscreenPreferred = !active;

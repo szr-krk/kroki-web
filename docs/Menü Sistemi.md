@@ -110,9 +110,9 @@ Serbest metin (`text`) sağ rayda metin girişi, metin özellikleri, metin boyut
 
 Grup veya grup birimleri seçildiğinde sağ ray `is-empty` olur ve stil panelleri kapatılır. Saf çoklu nesne seçiminde ortak uygulanabilir stil, adapter yeteneklerine göre filtrelenerek uygulanabilir.
 
-## Cetvel ve ızgara kontrolleri
+## Izgara, snap ve zoom kontrolleri
 
-Sol alttaki üç dokunma düğmesi cetvelleri, ızgarayı ve snap durumunu yönetir. Izgarayı gizlemek snap'i de kapatır. Cetvel görünürlüğü bağımsızdır; ayrıntı: [[Editör#Cetvel, ızgara ve snap]]. Sağ özellik rayı aynı şekilde çalışır.
+Sol alttaki Grid, Snap ve Adım düğmeleri görünüm yardımcılarını yönetir. −/+ düğmeleri görünen çizim alanının merkezini koruyarak tam sayılı zoom seviyelerine geçer. Cetvel kaldırılmıştır. Sağ özellik rayı aynı şekilde çalışır.
 
 Fotoğraf altlığı varsa snap düğmesinin hemen yanında dördüncü kontrol olarak göz simgesi görünür. “Fotoğrafı gizle” / “Fotoğrafı göster” işlemi altlığı silmeden görünürlüğünü değiştirir; fotoğrafsız belgede bu düğme gizlenir. Seçim kayda, SVG/PNG çıktısına ve geri al/ileri al geçmişine yansır.
 

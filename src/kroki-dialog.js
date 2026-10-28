@@ -21,6 +21,7 @@
   let lastSyncPulse = 0;
 
   function currentFullscreenElement() {
+    if (window.Kroki?.Browser?.fullscreenEnabled === false) return null;
     return document.fullscreenElement
       || document.webkitFullscreenElement
       || document.mozFullScreenElement

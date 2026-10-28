@@ -432,13 +432,23 @@
 
     const viewBox = readViewBox(svg);
     const currentScale = scaleForViewBox(viewBox);
-    const nextScale = clampScale(currentScale + delta / 100);
+    const nextPercent = delta > 0
+      ? Math.floor(currentScale * 100 + 1e-7) + Math.max(1, Math.round(delta))
+      : Math.ceil(currentScale * 100 - 1e-7) - Math.max(1, Math.round(-delta));
+    const nextScale = clampScale(nextPercent / 100);
     if (Math.abs(nextScale - currentScale) < 0.000001) return viewBox;
 
     const metrics = getViewportMetrics(svg, viewBox);
-    const centerX = metrics.left + metrics.width / 2;
-    const centerY = metrics.top + metrics.height / 2;
-    return zoomAtScreen(svg, nextScale / currentScale, centerX, centerY);
+    const centerX = metrics.rect.left + metrics.rect.width / 2;
+    const centerY = metrics.rect.top + metrics.rect.height / 2;
+    // Do not clamp to the SVG's fitted rectangle: portrait canvases have spare space.
+    const anchor = clientToWorld(svg, centerX, centerY, viewBox);
+    const nextViewBox = viewBoxForScale(nextScale, viewBox);
+    const nextMetrics = getViewportMetrics(svg, nextViewBox);
+    nextViewBox.x = anchor.x - (centerX - nextMetrics.left) / nextMetrics.scale;
+    nextViewBox.y = anchor.y - (centerY - nextMetrics.top) / nextMetrics.scale;
+    writeViewBox(svg, nextViewBox, { defer: svg === canvas });
+    return nextViewBox;
   }
 
   function pinchFromStart(svg = canvas, startViewBox, startCenter, currentCenter, scaleFactor) {

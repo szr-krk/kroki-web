@@ -27,8 +27,7 @@
   }
 
   function formatPercent(value) {
-    const rounded = Math.round(value * 10) / 10;
-    return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1).replace(".", ",");
+    return String(Math.round(value));
   }
 
   function renderZoomValue() {
