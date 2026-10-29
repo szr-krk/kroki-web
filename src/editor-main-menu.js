@@ -1098,10 +1098,36 @@
       empty.append(title);
       if (!options.failed) {
         const hint = document.createElement("span");
-        hint.textContent = options.kind === "recent"
-          ? "Yeni Kroki ile başlayın. Kaydettiğiniz çizimler burada görünür."
-          : "Bir krokinin önizlemesindeki Şablon Yap düğmesiyle kendi şablonunuzu oluşturun.";
-        empty.append(hint);
+        if (options.kind === "recent") {
+          empty.classList.add("stored-doc-start-guide");
+          hint.textContent = "Nasıl başlamak istersiniz?";
+          empty.append(hint);
+          const choices = document.createElement("ul");
+          const starts = [
+            ["Yeni Kroki", "Boş bir krokiyle başlayın."],
+            ["Şablonlarım", "Kaydettiğiniz bir şablonla başlayın."],
+            ["Hazır Çizimler", "Hazır bir çizim seçin."],
+            ["SVG Yükle", "Cihazınıza kaydettiğiniz krokiyi açın."],
+            ["Fotoğraf Yükle", "Kaza yeri fotoğrafı üzerine çizin."]
+          ];
+          starts.forEach(([label, description]) => {
+            const item = document.createElement("li");
+            const name = document.createElement("b");
+            name.textContent = label;
+            const detail = document.createElement("span");
+            detail.textContent = description;
+            item.append(name, detail);
+            choices.append(item);
+          });
+          empty.append(choices);
+          const note = document.createElement("p");
+          note.className = "stored-doc-start-note";
+          note.textContent = "Şablon, hazır çizim, SVG veya fotoğraf kullanacaksanız başlamadan önce seçin. Bunlar açık krokiye sonradan eklenemez.";
+          empty.append(note);
+        } else {
+          hint.textContent = "Bir krokinin önizlemesindeki Şablon Yap düğmesiyle kendi şablonunuzu oluşturun.";
+        }
+        if (options.kind !== "recent") empty.append(hint);
       }
       target.append(empty);
       return;
