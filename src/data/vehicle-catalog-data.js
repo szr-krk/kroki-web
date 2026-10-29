@@ -1404,6 +1404,15 @@
       upsideDown: {
         viewBox: "0 0 128.571429 35.714286",
         paths: [
+{
+          "role": "detail",
+          "fill": "#000000",
+          "d": "M263 93 270 98Q270 99 269 99L270 100Q272 99 273 97L272 96Q272 97 271 97L264 93ZM264 9 271 4Q272 4 272 5L273 4Q272 2 270 1L269 2Q270 2 270 3L263 9Z",
+          "stroke": "#000",
+          "strokeWidth": 1,
+          "ghost": "auto",
+          "transform": "matrix(0.415282 0 0 0.415282 1.163 -3.322256)"
+},
           {
             role: "body",
             fill: "#ffffff",
