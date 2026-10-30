@@ -334,7 +334,7 @@
       try {
         chunks.push(Array.from(sheet.cssRules || []).map((rule) => rule.cssText).join("\n"));
       } catch {
-        // Cross-origin stylesheets are ignored; app styles are same-origin.
+
       }
     });
     const source = chunks.length ? chunks.join("\n") : [
@@ -654,7 +654,7 @@
       const result = exitAppFullscreen();
       if (result?.catch) result.catch(() => {});
     } catch {
-      // Browser download prompts can break fullscreen asynchronously; UI sync handles the visible state.
+
     }
     pulseFullscreenSync(15000);
   }
@@ -976,7 +976,7 @@
     try {
       const ready = new Promise(resolve => {
         polling = setInterval(() => {
-          try { if (frame.contentWindow?.KrokiMainMenu?.renderDocumentPreview) resolve(frame.contentWindow.KrokiMainMenu); } catch { /* Await same-origin renderer. */ }
+          try { if (frame.contentWindow?.KrokiMainMenu?.renderDocumentPreview) resolve(frame.contentWindow.KrokiMainMenu); } catch {                                   }
         }, 50);
       });
       frame.src = url.href;
@@ -1800,7 +1800,7 @@
     if (!saved || JSON.stringify(saved.document) !== JSON.stringify(doc)) {
       throw new Error("update-checkpoint-verification-failed");
     }
-    // The verified drawing is already safe. A preview failure must not discard it or block the update.
+
     try {
       const preview = await withPreviewTimeout(previewSnapshot(), 5000);
       if (preview?.svg) await documentStorage.put("recent", { ...saved, previewSvg: preview.svg, previewViewBox: preview.viewBox });
@@ -1865,7 +1865,7 @@
           try {
             let doc = null, record = null;
             for (const snapshot of snapshots) {
-              try { doc = await Kroki.DocumentRecovery.read(snapshot); record = snapshot; break; } catch { /* Try previous complete snapshot. */ }
+              try { doc = await Kroki.DocumentRecovery.read(snapshot); record = snapshot; break; } catch {                                       }
             }
             if (!doc) throw new Error("recovery-unreadable");
             if (loadDocument(doc, { currentDocumentId: record.documentId, markSaved: false, recoverySession: session })) {

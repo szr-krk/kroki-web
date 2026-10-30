@@ -8,7 +8,7 @@
 
   const SELECTION_FRAME_SCALE = 1.12;
   const MULTI_SELECTION_STROKE_WIDTH = 4;
-  // Standard triangular sign canvases are ~1.138; more elongated canvases use their rectangular frame.
+
   const RECTANGULAR_FRAME_MIN_ASPECT = 1.15;
   const RECTANGULAR_CATEGORY_KEYS = new Set([
     "3-bilgi-levhalari",
@@ -526,8 +526,8 @@
 
   function normalizeScale(value) {
     const scale = Number(value);
-    // Group transforms must retain their exact ratio, including after reload.
-    // Individual sign controls enforce their own UI limits in styleManager.
+
+
     return Number.isFinite(scale) && scale > 0 ? scale : 0.08;
   }
 
@@ -1237,7 +1237,7 @@
   function cpPoint(model, metrics) {
     const geometry = model.geometry;
     const signMetrics = metricsFor(model);
-    // Intersect the local right-facing ray with the visible selection outline.
+
     const edgeDistance = (signMetrics.frameShape === "circle" ? signMetrics.radius
       : signMetrics.frameShape.startsWith("triangle") ? signMetrics.halfWidth / 2
       : signMetrics.halfWidth) * SELECTION_FRAME_SCALE;

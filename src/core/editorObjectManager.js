@@ -646,7 +646,7 @@
       : (callback) => window.setTimeout(callback, 16);
     viewportLabelFrame = schedule(() => {
       viewportLabelFrame = 0;
-      // Panning changes only the origin. Label clearance depends on scale.
+
       const unit = utils.svgUnitsPerScreenPx(canvas);
       if (unit !== viewportLabelUnit) renderViewportDependentLabels();
     });

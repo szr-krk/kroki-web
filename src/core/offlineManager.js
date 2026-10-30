@@ -7,7 +7,7 @@
   let connected = navigator.onLine, prepared = null;
   const labels = document.querySelectorAll("[data-offline-status]");
 
-  // Pin all subresources of this tab to the release that produced its HTML.
+
   if (supported) {
     const url = new URL(location.href);
     url.searchParams.set("_kroki", build);
@@ -62,7 +62,7 @@
       registration.addEventListener("updatefound", () => observe(registration.installing));
       observe(registration.installing);
       await refresh();
-      // Persistent storage reduces automatic eviction. No user prompt or schema change.
+
       if (navigator.storage?.persist) void navigator.storage.persist().catch(() => {});
       return registration;
     } catch { failed = true; render(); return null; }
@@ -83,7 +83,7 @@
     let worker = await candidate();
     if (!worker) {
       await reg.update();
-      // Installation may take time on the weak connections this feature is for.
+
       const deadline = Date.now() + 150000;
       while (Date.now() < deadline) {
         worker = await candidate();

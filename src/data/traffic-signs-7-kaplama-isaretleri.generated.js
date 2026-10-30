@@ -1,7 +1,7 @@
-/* AUTO-GENERATED TRAFFIC SIGN CATALOG
- * Source folder: 7 KAPLAMA İŞARETLERİ
- * Sign count: 16
- */
+
+
+
+
 (function () {
   "use strict";
 

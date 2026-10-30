@@ -1,4 +1,4 @@
-/* Drawing gestures must not start native selection or touch callouts. */
+
 #editor, #editor * {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
@@ -1284,7 +1284,7 @@
   }
 }
 
-/* The transparent grid sits above the photo; export removes its view-only layer. */
+
 .editor-grid { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; contain: strict; }
 .editor-grid-controls { position: absolute; bottom: 8px; left: 8px; z-index: 8; height: 54px; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px; padding: 3px; border: 1px solid #cbd5e1; border-radius: 10px; background: #fff; }
 .editor-grid-control-buttons { display: flex; gap: 3px; }
@@ -1297,7 +1297,7 @@
 .editor-grid-zoom-value { min-height: 10px; color: #475569; font: 700 9px/10px ui-sans-serif, system-ui, sans-serif; letter-spacing: .01em; text-align: center; white-space: nowrap; }
 
 
-/* Viewport reference only: outside the document SVG and its export layers. */
+
 .editor-center-guide {
   position: absolute;
   inset: 0;

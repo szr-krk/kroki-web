@@ -211,7 +211,7 @@
     return removeRaw(database, kind, id);
   }
 
-  // Recovery has no preview or history. Photos are written only when their source changes.
+
   async function putRecovery(record, photo) {
     const database = await openDatabase();
     const transaction = database.transaction([RECOVERY_STORE, RECOVERY_PHOTOS], "readwrite");
@@ -228,7 +228,7 @@
       if (old?.photoKey && old.photoKey !== record.photoKey && old.photoKey !== other?.photoKey) photos.delete(old.photoKey);
       await done;
     } catch (error) {
-      try { transaction.abort(); } catch { /* Already completed or aborted. */ }
+      try { transaction.abort(); } catch {                                     }
       await done.catch(() => {});
       throw error;
     }

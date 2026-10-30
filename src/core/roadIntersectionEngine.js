@@ -44,7 +44,7 @@
   let laneSplitTerminals = new Map();
   let laneSplitSiblingRegions = new Map();
   const roadSurfaceCache = new Map();
-  // Derived data lives for one rebuild only; geometry and Q edits invalidate it.
+
   let terminalAttachmentCache = new WeakMap();
   let qCutCache = new WeakMap();
   let terminalAttachmentComputations = 0;
@@ -77,11 +77,11 @@
     const parent = manager.objectLayer || manager.canvas;
     if (!layer || !parent) return layer;
 
-    // Kavşak dış contour'u ayrı bir canvas sibling'i olursa editorObjects'in üstünde kalır.
-    // Bu durumda sonradan çizilen rectangle/circle/text gibi normal objeler bile contour'un
-    // altında kalır ve karışık görüntü oluşur. Layer'ı editorObjects içine, yol objelerinin
-    // hemen arkasına/üstüne fakat diğer objelerin altına yerleştiriyoruz:
-    // road objects -> roadIntersectionContourLayer -> rectangle/text/other objects -> edit layer.
+
+
+
+
+
     const reference = firstNonRoadObjectNode();
     if (layer.parentNode !== parent) {
       parent.insertBefore(layer, reference);
@@ -151,10 +151,10 @@
 
     const defs = ensureContourMaskDefs();
     let mask = defs.querySelector("#" + CONTOUR_MASK_ID);
-    // One circular exclusion is an exact vector clip: no viewport-sized
-    // luminance surface needs to be rasterized while sibling objects change.
-    // Keep compositing masks for multiple islands (overlapping holes must union,
-    // not cancel each other as they would in an even-odd compound path).
+
+
+
+
     const vectorClip = islandCenters.length === 1;
     const tag = vectorClip ? "clipPath" : "mask";
     if (mask && mask.tagName.toLowerCase() !== tag.toLowerCase()) {
@@ -1204,9 +1204,9 @@
     const clean = simplifyPoints(points || [], 0.18);
     if (clean.length < (closed ? 4 : 3)) return clean;
     if (!closed) return simplifyPolylineRdp(clean, 0.38);
-    // Kapalı contour'da RDP için en güvenli yol: en uzun kenarı başlangıç kırığı olarak
-    // kullanıp açık polyline gibi sadeleştirmek. Bu düz/sampled noktaları temizler,
-    // gerçek köşeleri ve eğri parçalarını korur.
+
+
+
     let splitIndex = 0;
     let best = -1;
     for (let i = 0; i < clean.length; i += 1) {
@@ -1475,9 +1475,9 @@
       const key = generatedKey || (keyPrefix ? `${keyPrefix}${rawEvents.length}` : coordinateKey);
       const edit = qEditForKey(key, keyPrefix ? [`${keyPrefix}${coordinateKey}`, coordinateKey] : []);
       const control = qControlWithEdit(baseControl, edit);
-      // Açık dış-contour parçalarında Q endpoint CP'leri kendi kenarı boyunca
-      // parçanın gerçek başlangıç/bitiş ucuna kadar gidebilmeli. Önceki sınırlama
-      // radius*3.4 civarında kaldığı için CP sadece kısa bir mesafe hareket ediyordu.
+
+
+
       const entryMaxCut = Math.max(0.25, backLimit);
       const exitMaxCut = Math.max(0.25, forwardLimit);
       const entryCut = clamp(numberOr(edit.entryCut, cut), 0.25, entryMaxCut);
@@ -1519,10 +1519,10 @@
   function smoothClosedPath(points, radius = SMOOTH_RADIUS, cornerHints = [], blockedHints = [], qCollector = null, keyPrefix = "", keyFactory = null) {
     const clean = simplifyBoundaryPoints(removeSoftPolylineNoise(points || []), true);
     if (clean.length < 3) return pathFromPoints(clean, true);
-    // Tutucu kural:
-    // - Quadratic Bezier sadece gerçek intersection çevresindeki dış contour köşesine uygulanır.
-    // - Quadratic Bezier'in kapladığı eski sampled/line vertexleri path'ten çıkarılır.
-    //   Böylece eğrinin etrafında L 550 455 / L 550 459.58 gibi geri dönen uzantılar kalmaz.
+
+
+
+
     const hintTolerance = Math.max(radius * 1.35, 22);
     const blockedTolerance = Math.max(5, radius * 0.45);
     const metrics = buildClosedPathMetrics(clean);
@@ -1633,11 +1633,11 @@
     if (!filteredEvents.length) return pathFromPoints(clean, true);
 
     function addOriginalVerticesBetween(state, fromS, toS) {
-      // Kapalı path bir noktadan başlatılıp lineer mesafeye çevrilince bazı aralıklar
-      // contour'un 0 noktasını sarar. Eski sürüm vertexleri dizi sırasıyla ekliyordu;
-      // wrap eden aralıkta düşük cumulative değerli noktalar önce yazıldığı için path
-      // kendi üstüne atlayıp diagonal/ters bağlantılar oluşturabiliyordu.
-      // Bu yüzden önce her vertex'in lineer mesafesini hesaplayıp mutlaka mesafeye göre sıralıyoruz.
+
+
+
+
+
       const vertices = [];
       for (let i = 0; i < clean.length; i += 1) {
         let vertexS = metrics.cumulative[i];
@@ -1800,7 +1800,7 @@
     });
     const merged = mergeIntersectionShapeClusters(shapes);
     if (lastIslandSurfaces.some((surface) => surface.config.islandMode !== "modern")) {
-      // Keep ordinary multi-road clipping even when an island joins its cluster.
+
       const ordinaryPairs = shapes.filter((shape) => !shape.roadIds.some(isClassicIslandId));
       if (ordinaryPairs.length > 1 && ordinaryPairs.length < shapes.length) {
         mergeIntersectionShapeClusters(ordinaryPairs).filter((shape) => shape.clustered).forEach((shape) => {
@@ -2035,9 +2035,9 @@
 
   function buildOuterContours(memberSurfaces, intersectionShapes = []) {
     if (!memberSurfaces.length) return [];
-    // Yol başlangıç/bitişindeki enine kapatma çizgileri dış boundary olarak çizilmez.
-    // Bunlar açık yol ağzı gibi davranır; böylece dış contour sadece gerçek yol kenarlarını
-    // ve kavşak dönüşlerini çizer, road cap çizgisi gereksiz ağız kapatması yapmaz.
+
+
+
     const segments = unionBoundarySegments(memberSurfaces).filter((segment) => segment.kind !== "startCap" && segment.kind !== "endCap");
     lastOuterBoundarySegments = segments;
     const paths = assembleBoundaryPaths(segments);
@@ -2080,7 +2080,7 @@
   function roadClipShapesFor(id, boundary = null) {
     const allowCluster = boundary?.role === "marking" || isRoadShoulderBoundary(boundary);
     return roadShapesFor(id).filter((shape) => {
-      // Island overlap must not turn a multi-road hull into a marking eraser.
+
       if (lastIslandSurfaces.length && shape.clustered && !isIslandRoadId(id) && shape.roadIds.some(isClassicIslandId)) return false;
       return !shape.clustered || allowCluster;
     });
@@ -2200,8 +2200,8 @@
       const center = island.model.geometry.center;
       const connected = surfaces.filter((road) => !road.isIsland && boundsOverlap(road.bounds, island.bounds)
         && polygonIntersections(road.polygon, island.polygon).length >= 3);
-      // A single divided road already encloses its channel. Preserve its concave
-      // edge: a convex hull would leave island arcs outside the inside of a bend.
+
+
       if (connected.length === 1 && connected[0].config.divided) {
         island.classicEnvelope = connected[0].polygon;
       } else if (connected.length) {
@@ -2256,7 +2256,7 @@
       return shape.roadIds.some((otherId) => {
         const surface = roadSurfaceForId(otherId), center = surface?.islandCenterMask;
         if (!center || !isClassicIslandId(otherId)) return false;
-        // Only the shoulder facing the physical island is an entry/exit boundary.
+
         if (surface.classicChannels?.has(id)) {
           const roles = [boundary.before?.role, boundary.after?.role];
           if (!roles.includes("lane") || (!roles.includes("innerShoulder") && !roles.includes("waterChannel"))) return false;
@@ -2286,7 +2286,7 @@
     if (isIslandOuterEdgeBoundary(id, boundary)) return pointInsideOtherSurfacePolygon(point, id);
     return roadClipShapesFor(id, boundary).some((shape) => {
       if (isIslandPairForRoad(id, shape) && boundary?.before && boundary?.after) {
-        // Open the channel edge; keep the adjacent inner shoulder as entry dashes.
+
         if (boundary.role === "channel" && [boundary.before.role, boundary.after.role].includes("innerShoulder")) {
           return shape.roadIds.some((otherId) => {
             const island = roadSurfaceForId(otherId);
@@ -2493,7 +2493,7 @@
     return qSegments.some((q) => {
       const data = qCutData(q);
       const bounds = data.bounds;
-      // Conservative envelope covers the 2.4px tracks and extended 1.4px rays.
+
       if (point.x < bounds.minX - 3 || point.x > bounds.maxX + 3 ||
           point.y < bounds.minY - 3 || point.y > bounds.maxY + 3) return false;
       if (isPointNearConsumedQTrack(point, q, "entry") || isPointNearConsumedQTrack(point, q, "exit")) return true;
@@ -2710,7 +2710,7 @@
           }
         }
       });
-      // Preserve the original scan order, including equal-distance tie breaks.
+
       return Array.from(found).sort((a, b) => a.index - b.index);
     }
     records.forEach((first) => {
@@ -2925,9 +2925,9 @@
 
 
   function qHandleSizes() {
-    // Boyutlar ekran pikseli üzerinden sabit tutulur. SVG viewBox zoom yaptığında
-    // circle radius/stroke-width otomatik sabit kalmaz; bu yüzden viewBox değişiminde
-    // syncQHandleMetrics() ile tekrar SVG unit'e çevrilip yazılır.
+
+
+
     const unit = utils.svgUnitsPerScreenPx?.(manager.canvas) || 1;
     return {
       unit,
@@ -3038,7 +3038,7 @@
   function stopQEndpointDrag(event) {
     if (!qEndpointDrag) return;
     const drag = qEndpointDrag;
-    // Commit the last pointermove even when pointerup/cancel precedes its frame.
+
     if (drag.moved && scheduled) render();
     const pointerId = event?.pointerId ?? drag.pointerId;
     try {
@@ -3170,8 +3170,8 @@
   function renderQInteractivity(layer, segments) {
     qInteractivityNodes.forEach((node) => node.remove());
     qInteractivityNodes = [];
-    // Ada bağlantılarındaki otomatik Q'lar düzgün ağız geometrisini korur; kullanıcı
-    // editi ise uçları çember boyunca taşıyıp dış kontur kalıntısı üretebildiği için kapalıdır.
+
+
     const items = (Array.isArray(segments) ? segments : []).filter(isEditableQSegment);
     if (selectedQKey && !items.some((item) => item.key === selectedQKey)) selectedQKey = "";
     const sizes = qHandleSizes();
@@ -3198,8 +3198,8 @@
         }
         event.preventDefault();
         event.stopPropagation();
-        // Q parçasına ilk dokunuş önseçim/edit başlatır; seçiliyken tekrar Q çizgisine
-        // veya CP dışındaki alana dokunmak düzenlemeyi bitirir.
+
+
         selectQSegment(selectedQKey === item.key ? "" : item.key);
       }, true);
       if (isSelected) {
@@ -3390,8 +3390,8 @@
 
   function handleCanvasQOutsidePointerDown(event) {
     if (!selectedQKey || qEndpointDrag) return;
-    // CP dışında bir yere dokunulursa Q düzenleme biter. Q çizgisine dokunma ise
-    // kendi handler'ında toggle/select olarak ele alınır; burada karışmayız.
+
+
     if (isQInteractionTarget(event.target)) return;
     selectQSegment("");
   }

@@ -63,8 +63,8 @@
   }
 
   function keepTextEntryVisible() {
-    // Sabit metin panellerinde scrollIntoView sanal klavye acilirken
-    // sayfayi ve paneli gereksiz yere kaydirir.
+
+
     if (!activeTextEntry?.isConnected || activeTextEntryHost?.matches?.(".free-text-composer, .line-text-panel")) return;
     window.requestAnimationFrame(() => {
       try {

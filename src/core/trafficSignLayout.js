@@ -28,8 +28,8 @@
   })[char]);
 
   function textMetrics(text, capHeight = data.capHeight, spacing = data.unit) {
-    // Match the bundled font without layout reads or font-loading races.
-    // Kerning and ligatures are disabled on this family's SVG text.
+
+
     const scale = capHeight / data.fontCapHeight;
     let cursor = 0, left = Infinity, right = -Infinity;
     for (const char of Array.from(text)) {

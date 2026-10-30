@@ -5,7 +5,7 @@
   const cache = new WeakMap();
   const n = value => Math.round(value * 1000) / 1000;
   const escape = value => String(value).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]);
-  // Native dimensions from PDFs 141–151; a is normalized to 100 at the root.
+
   const profiles = {
     restPark: { a: 20, fields: [["line2", "2. satır", "Köroğlu"], ["line3", "3. satır", "Dinlenme Parkı"]] },
     regionBoundary: { a: 20, fields: [["line2", "2. satır", "6. Bölge Sınırı"], ["line3", "3. satır", "64. Şube Sınırı"]] },
@@ -63,7 +63,7 @@
       }
     }
     function plane(x, y, size, mirror = false) {
-      // One closed outline traced from the PDF, without its triangulated fills.
+
       const d = "M33.65 15.14H23.2L12.31 0H9.93L14.68 12.31V15.14L5.21 15.86 1.9 11.11H0L1.42 16.31 0 16.79 1.42 17.27 0 22.47H1.9L5.21 17.75 14.68 18.44V21.3L9.93 33.58H12.31L23.2 18.44H33.65C34.72 18.48 35.68 17.8 36 16.79C35.68 15.77 34.72 15.1 33.65 15.14Z";
       path(d, "#fff", { stroke: "#000", "stroke-width": .25, transform: `translate(${n(x + (mirror ? size : 0))} ${n(y)}) scale(${n((mirror ? -1 : 1) * size / 36)} ${n(size / 36)})` });
     }
@@ -104,12 +104,12 @@
     } else if (profile === "town" || profile === "townEnd") {
       h = 1625; w = Math.max(10 * a + metric(value("name")).width, 12 * a); frame(blue, "#fff");
       if (profile === "townEnd") {
-        // Clip analytically to the inner rectangle. The rounded frame covers ends;
-        // the red stripe is painted before lettering and follows every new width.
+
+
         const x = 2 * a, y = h - 2 * a, right = w - 2 * a, top = 2 * a;
         const slope = (y - top) / (right - x), offset = 1.5 * a * Math.sqrt(1 + slope * slope);
         path(`M${x} ${n(y - offset)}L${n(right - offset / slope)} ${top}H${right}V${n(top + offset)}L${n(x + offset / slope)} ${y}H${x}Z`, "#ee252c");
-        // Restore the rounded inner corners without a shared SVG clip-path id.
+
         const r = 2 * a;
         path(`M${x} ${top + r}V${top}H${x + r}A${r} ${r} 0 0 0 ${x} ${top + r}Z M${right - r} ${top}H${right}V${top + r}A${r} ${r} 0 0 0 ${right - r} ${top}Z M${right} ${y - r}V${y}H${right - r}A${r} ${r} 0 0 0 ${right} ${y - r}Z M${x + r} ${y}H${x}V${y - r}A${r} ${r} 0 0 0 ${x + r} ${y}Z`, "#fff");
       }
@@ -168,7 +168,7 @@
     sign.resolvedLayout.nodes.forEach((node, i) => {
       const element = group.querySelector(`[data-information-part="${i}"]`);
       if (!element) return;
-      // Fitting can disappear after replacing a long label with a short one.
+
       if (node.tag === "text") { element.removeAttribute("textLength"); element.removeAttribute("lengthAdjust"); element.textContent = node.text; }
       Object.entries(node.attrs).forEach(([key, value]) => element.setAttribute(key, typeof value === "number" ? n(value) : value));
     });

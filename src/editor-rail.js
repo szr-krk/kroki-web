@@ -213,7 +213,7 @@ async function toggleEditorFullscreen(event) {
         try {
           await editorExitAppFullscreen();
         } catch {
-          // Request below is still attempted for the user's tap.
+
         }
       }
       await editorRequestAppFullscreen();

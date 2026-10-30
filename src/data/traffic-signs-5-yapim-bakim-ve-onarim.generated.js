@@ -1,7 +1,7 @@
-/* AUTO-GENERATED TRAFFIC SIGN CATALOG
- * Source folder: 5 YAPIM BAKIM ve ONARIM
- * Sign count: 20
- */
+
+
+
+
 (function () {
   "use strict";
 

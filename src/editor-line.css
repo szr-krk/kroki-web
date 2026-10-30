@@ -1623,8 +1623,8 @@
   font-weight: 900;
 }
 
-/* Sanal klavye acikken diger giris araclari dokunulabilir boyutta kalir.
-   freeTextComposer temel olculerini korur; odaklaninca yeniden boyutlanmaz. */
+
+
 :root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-text-entry-host:not(.line-text-panel):not(.free-text-composer) :is(
   .line-text-input,
   .free-text-input
@@ -1814,7 +1814,7 @@
   line-height: 1.05;
 }
 
-/* Named, path-following trace choices share the existing fill panel. */
+
 .path-pattern-status { font-size: .85rem; padding: .35rem; font-weight: 600; }
 .fill-pattern-panel.is-trace-panel { width: 18rem; max-height: 75vh; overflow-y: auto; }
 .fill-pattern-panel.is-trace-panel > .fill-pattern-options { display: none; }

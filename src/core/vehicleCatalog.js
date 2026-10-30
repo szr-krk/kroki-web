@@ -84,7 +84,7 @@
     return views[(index + 1) % views.length] || "top";
   }
 
-  // Hitch positions are measured from the rear along each top-view drawing.
+
   const TRACTOR_HITCHES = { "09/cekici": 0.22, "09/uc-dingil-cekici": 0.25 };
   const TRAILER_KEYS = ["09/uc-dingil-dorse", "09/tanker-yari-romork", "09/silobas-kasa-yari-romork"];
 
@@ -140,7 +140,7 @@
     const trailerGround = view === "side" ? sideGround(parts.trailer, trailer,
       Boolean(appearance.vehicleTrailerMetadata?.vehicleGhost ?? appearance.vehicleGhost)) : 0;
     const ground = Math.max(tractorGround, trailerGround);
-    // Articulation is a plan-view angle; side elevation remains straight.
+
     return { tractor, trailer, tractorHitch, trailerHitch, hitchX,
       angle: view === "side" ? 0 : articulationAngle(angle),
       tractorY: ground - tractorGround,

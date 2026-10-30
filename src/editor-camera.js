@@ -346,7 +346,7 @@
     return {
       rect,
       scale,
-      // The editor SVG is anchored at xMinYMin; other SVGs retain centered fitting.
+
       left: rect.left + (svg === canvas ? 0 : (rect.width - viewportWidth) / 2),
       top: rect.top + (svg === canvas ? 0 : (rect.height - viewportHeight) / 2),
       width: viewportWidth,
@@ -395,7 +395,7 @@
 
     const nextViewBox = {
       ...viewBox,
-      // Positive values move the scene content in the requested direction.
+
       x: viewBox.x - safeDx,
       y: viewBox.y - safeDy
     };
@@ -441,7 +441,7 @@
     const metrics = getViewportMetrics(svg, viewBox);
     const centerX = metrics.rect.left + metrics.rect.width / 2;
     const centerY = metrics.rect.top + metrics.rect.height / 2;
-    // Do not clamp to the SVG's fitted rectangle: portrait canvases have spare space.
+
     const anchor = clientToWorld(svg, centerX, centerY, viewBox);
     const nextViewBox = viewBoxForScale(nextScale, viewBox);
     const nextMetrics = getViewportMetrics(svg, nextViewBox);
@@ -566,7 +566,7 @@
     if (gestureEvents.length > 32) gestureEvents.shift();
   }
 
-  // Bounded, memory-only diagnostics: no drawing data, storage writes or network.
+
   window.addEventListener("error", () => recordGesture("script-error"));
   window.addEventListener("unhandledrejection", () => recordGesture("unhandled-rejection"));
   if (window.PerformanceObserver?.supportedEntryTypes?.includes("longtask")) {
@@ -590,7 +590,7 @@
     canvas.classList.remove("is-camera-pan-ready");
     setGestureActive(false);
     ids.forEach((id) => {
-      try { if (canvas.hasPointerCapture?.(id)) canvas.releasePointerCapture(id); } catch (_) { /* Pointer already ended. */ }
+      try { if (canvas.hasPointerCapture?.(id)) canvas.releasePointerCapture(id); } catch (_) {                              }
     });
     invalidateViewportRect();
   }
@@ -620,7 +620,7 @@
       startCenter: centerOf(pointA, pointB),
       startDistance: distance
     };
-    // End object previews before taking ownership of both fingers.
+
     setGestureActive(true);
     activePinch.pointerIds.forEach(capturePointer);
   }
@@ -742,8 +742,8 @@
     canvas.classList.remove("is-camera-pan-ready");
   }
 
-  // Stop the browser's long-press menu before it can interrupt a drawing
-  // gesture. Keep native text editing menus available in the property panels.
+
+
   document.querySelector("#editor")?.addEventListener("contextmenu", (event) => {
     if (!isEditableTarget(event.target)) event.preventDefault();
   }, true);

@@ -25,7 +25,7 @@
   function schedule() {
     cancelSchedule();
     if (!active || revision === savedRevision || pointers.size || writing) return;
-    // Debounce completed edits, cap postponement, and limit writes to once per two seconds.
+
     const now = Date.now();
     const delay = Math.max(lastWrite + 2000 - now, Math.min(1000, Math.max(0, firstDirty + 8000 - now)), failures ? Math.min(30000, 2000 * 2 ** failures) : 0);
     timer = window.setTimeout(() => {

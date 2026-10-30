@@ -17,14 +17,14 @@
   try {
     const stored = JSON.parse(localStorage.getItem(VIEW_PREFERENCES_KEY));
     if (stored && typeof stored === "object") preferences = stored;
-  } catch (_) { /* Use defaults when browser storage is unavailable. */ }
+  } catch (_) {                                                         }
   let gridVisible = typeof preferences.grid === "boolean" ? preferences.grid : true;
   let snapEnabled = gridVisible && preferences.snap === true;
 
   function savePreferences() {
     try {
       localStorage.setItem(VIEW_PREFERENCES_KEY, JSON.stringify({ grid: gridVisible, snap: snapEnabled }));
-    } catch (_) { /* Controls still work without persistent storage. */ }
+    } catch (_) {                                                       }
   }
   let frame = 0;
   let viewportDirty = true;
@@ -36,7 +36,7 @@
   let gesturePositionSnapEnabled = true;
   const gridContext = grid.getContext("2d", { alpha: true });
 
-  // Grid lines and snapping share one scale in drawing units.
+
   function scaleForZoom(zoom) {
     const target = 85 / Math.max(0.000001, zoom);
     const exponent = Math.floor(Math.log10(target));
@@ -49,7 +49,7 @@
   }
 
   function currentViewport() {
-    // Layout is read only when the workspace size changes, never per move/zoom.
+
     if (rectDirty || !canvasRect) {
       canvasRect = canvas.getBoundingClientRect();
       rectDirty = false;
@@ -85,7 +85,7 @@
 
   function beginGesture(excludedIds = [], pointerType = "mouse", options = {}) {
     endGesture();
-    // Interaction owners decide positional policy; member capabilities must not leak into group transforms.
+
     gesturePositionSnapEnabled = options.positionSnap !== false;
     if (!gesturePositionSnapEnabled || !gridVisible || !snapEnabled) return;
     const manager = Kroki.EditorObjectManager;
@@ -105,7 +105,7 @@
       if (!cell) { cell = []; cells.set(key, cell); }
       cell.push({ x: point.x, y: point.y });
     };
-    // Read model references once. Never clone artwork or scan the scene on move.
+
     const models = manager?.getObjectsInDomOrder() || [];
     models.forEach((model) => {
       if (excluded.has(model.id)) return;
@@ -161,7 +161,7 @@
     return { x: round(point.x), y: round(point.y) };
   }
 
-  // Capture from the raw endpoint; grid/endpoint snapping keeps the free axis.
+
   function snapEndpoint(point, anchor, modifiers = {}) {
     const ordinary = snapPoint(point, modifiers);
     if (!point || !anchor || !gesturePositionSnapEnabled || modifiers.ctrlKey || modifiers.metaKey) return ordinary;
@@ -177,7 +177,7 @@
 
   function snapAngle(angle, modifiers = {}) {
     const value = Number(angle);
-    // Positional snap opt-outs (catalog objects) must not disable the rotation helper.
+
     if (!Number.isFinite(value) || !gridVisible || !snapEnabled || modifiers.ctrlKey || modifiers.metaKey) {
       return angle;
     }
@@ -195,7 +195,7 @@
     return { x: bounds?.x || 0, y: bounds?.y || 0 };
   }
 
-  // Snap one anchor; translate the complete object/selection without distorting it.
+
   function movePoint(start, anchor, point, modifiers = point) {
     if (!gesturePositionSnapEnabled) return point;
     const target = { x: anchor.x + point.x - start.x, y: anchor.y + point.y - start.y };
@@ -205,12 +205,12 @@
 
   function renderGrid(state) {
     if (!gridContext) return;
-    // One CSS-pixel backing store bounds tablet memory, regardless of device DPR.
+
     const width = Math.ceil(state.width);
     const height = Math.ceil(state.height);
     if (grid.width !== width) { grid.width = width; grid.style.width = width + "px"; }
     if (grid.height !== height) { grid.height = height; grid.style.height = height + "px"; }
-    // Keep the screen-space grid between the photo and drawing objects.
+
     gridLayer?.setAttribute("transform", `translate(${viewBox.x} ${viewBox.y}) scale(${1 / state.zoom})`);
     gridLayer?.setAttribute("width", String(width));
     gridLayer?.setAttribute("height", String(height));
@@ -293,8 +293,8 @@
   });
   document.querySelector("#btnEditorZoomIn").addEventListener("click", () => camera.zoomByPercentagePointAtCenter(canvas, 10));
   document.querySelector("#btnEditorZoomOut").addEventListener("click", () => camera.zoomByPercentagePointAtCenter(canvas, -10));
-  // Camera writes are already limited to one per frame. Update in that same
-  // frame so the grid cannot trail the drawing during pan or pinch.
+
+
   canvas.addEventListener("kroki:viewboxchange", (event) => {
     viewBox = event.detail || camera.readViewBox(canvas);
     viewportDirty = true;

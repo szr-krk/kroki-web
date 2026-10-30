@@ -13,3 +13,6 @@ packed.html
 /sunucu.ps1
 /inspect_psd.py
 /*.xml
+
+*.md
+!/00-BT-Kurulum-ve-Guncelleme-Rehberi.md

@@ -35,8 +35,8 @@
   }
 
   function svgUnitsPerScreenPx(canvas) {
-    // The camera already caches the editor viewport rectangle. Reuse its scale
-    // instead of forcing SVG layout after each geometry/selection write.
+
+
     const camera = window.krokiEditorCamera;
     if (canvas?.id === "editorCanvas" && camera?.getViewportMetrics) {
       const viewBox = canvas.viewBox?.baseVal;

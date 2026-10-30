@@ -1,7 +1,7 @@
-/* AUTO-GENERATED TRAFFIC SIGN CATALOG
- * Source folder: 2 UYARI LEVHALARI
- * Sign count: 63
- */
+
+
+
+
 (function () {
   "use strict";
 

@@ -1,6 +1,6 @@
-/* CUSTOM TRAFFIC SIGN CATALOG ENTRY
- * Restored from the "tum-levhalar-oncesi-yedek" Git backup.
- */
+
+
+
 (function () {
   "use strict";
 

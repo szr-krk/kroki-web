@@ -24,8 +24,8 @@
       art: template.art
     };
   });
-  // Fixed 1980 x 684 drawing from 139.pdf, normalized from a=24 to a=100.
-  // Fixed labels use the existing sign font; both circles use SVG arcs.
+
+
   signs.push({
     key: "3-bilgi-levhalari/sehir-merkezi-levhasi", code: "", name: "ŞEHİR MERKEZİ LEVHASI",
     category: "3 BİLGİ LEVHALARI", categoryKey: "3-bilgi-levhalari", file: "sehir-merkezi.svg",
@@ -49,7 +49,7 @@
     width: tourist.width, height: tourist.height, viewBox: `0 0 ${tourist.width} ${tourist.height}`, baseScale: 0.02,
     layout: { family: "tourist-finger-v1", direction: "right" }, art: tourist.art
   });
-  // Fixed 1476 x 440 drawing from 140.pdf, normalized from a=16 to a=100.
+
   signs.push({
     key: "3-bilgi-levhalari/b-5c-kavsak-ici-yon-levhasi-metro", code: "B-5c",
     name: "KAVŞAK İÇİ YÖN LEVHASI (Metro)",

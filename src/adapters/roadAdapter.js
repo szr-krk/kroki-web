@@ -1257,9 +1257,9 @@
     const radius = Math.max(1, radii.centerRadius + offset);
     const first = islandPointAt(model.geometry, reverse ? end : start, offset);
     const sweep = reverse ? 1 : 0;
-    // SVG needs two arcs for a complete circle. Clipped/style ranges keep their
-    // original endpoints and direction; geometry sampling is still used by Q,
-    // intersection and hit-test calculations, never by this rendering shortcut.
+
+
+
     if (end - start === 1) {
       const opposite = islandPointAt(model.geometry, 0.5, offset);
       return `${arcSegmentPath(first, opposite, radius, 0, sweep)} A ${radius} ${radius} 0 0 ${sweep} ${formatPoint(first)} Z`;
@@ -2146,7 +2146,7 @@
 
   function isIslandProtectedBoundary(model, boundary) {
     if (!isIslandGeometry(model?.geometry)) return false;
-    // Ada şerit ayırıcısı tam halka olarak kalır; yalnız dış kenar bağlantı ağızlarında kırpılabilir.
+
     if (boundary?.role === "marking") return roadConfig(model).islandMode !== "classic";
     return boundary?.role === "edge" && numberOr(boundary.offset, 0) < 0;
   }
@@ -2162,7 +2162,7 @@
 
   function shouldSkipRoadBoundary(model, boundary) {
     if (!derivedContourOwnsRoadBoundary(model, boundary)) return false;
-    // Ayrılan yolun banketsiz ana yolunda dış kenar, 1–3 arasında geçici banket/şerit çizgisidir.
+
     return departureDashedRangesForBoundary(model, boundary, 0, 1).length === 0;
   }
 
@@ -2444,11 +2444,11 @@
   }
 
   function renderSurface(model, element, section) {
-    // RoadIntersectionEngine artık kavşak içinde beyaz maske/örtme kullanmıyor;
-    // yol hit-test'i de adapter.hitTest ile hesaplanıyor. Bu yüzden beyaz dolgulu,
-    // çok noktalı editor-road-surface path'ini DOM'a basmak gereksiz yük oluşturuyordu.
-    // Geometri gerektiğinde surfacePathData(...) hesap içinde kullanılmaya devam edebilir,
-    // fakat normal render'da görünmeyen/etkisiz beyaz kapalı shape üretmiyoruz.
+
+
+
+
+
     return null;
   }
 
@@ -2465,7 +2465,7 @@
       stroke: "none",
       "pointer-events": "none"
     };
-    // Doku saydam olsa bile alttaki yol/nesneler ada merkezinden görünmemelidir.
+
     element.append(utils.createSvgElement("circle", {
       ...circleGeometry,
       class: "editor-road-island-center-base",

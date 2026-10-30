@@ -21,7 +21,7 @@
   }
   function begin(model, adapter, start, pointerType) {
     end();
-    // Whole roads and closed drawing shapes only. No CP or group gestures.
+
     const eligible = ["road", "circle", "ellipse", "rectangle"].includes(model?.type)
       || (model?.type === "closedShape" && model.geometry?.closed !== false && model.geometry?.points?.length > 2);
     if (!eligible) return null;
@@ -43,8 +43,8 @@
     const snapX = Math.abs(x - state.center.x) <= state.tolerance;
     const snapY = Math.abs(y - state.center.y) <= state.tolerance;
     show(snapX, snapY);
-    // Decide attraction from the raw pointer, then override only captured axes.
-    // Existing endpoint/grid snapping remains active on the other axis.
+
+
     return { ...ordinary,
       x: snapX ? state.start.x + state.center.x - state.anchor.x : ordinary.x,
       y: snapY ? state.start.y + state.center.y - state.anchor.y : ordinary.y };

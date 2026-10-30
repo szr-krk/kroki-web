@@ -73,7 +73,7 @@
       const destination = new URL(location.href);
       destination.searchParams.set("_kroki", pending.build);
       destination.hash = "";
-      // The offline installer verifies every file, including HTML, before offering a release.
+
       const offline = K.OfflineManager?.getState().supported;
       if (offline) await K.OfflineManager.prepare(pending);
       else {
@@ -97,7 +97,7 @@
       cover.remove();
       inputEvents.forEach(name => document.removeEventListener(name, stopKeys, true));
       applying = false;
-      try { sessionStorage.removeItem(RESUME_KEY); } catch { /* Keep the checkpoint in recent drawings. */ }
+      try { sessionStorage.removeItem(RESUME_KEY); } catch {                                               }
       await K.Dialog.alert("Güncelleme tamamlanamadı. Sayfa yenilenmedi; çiziminiz açık ve korunuyor. Daha sonra yeniden deneyebilirsiniz.", "Güncelleme");
       return false;
     }

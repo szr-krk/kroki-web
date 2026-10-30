@@ -7,7 +7,7 @@
     return new TextDecoder("utf-8").decode(bytes);
   }
 
-  // Turkish alphabetical order; numeric suffixes stay in ascending order.
+
   Kroki.ReadyDrawings = [
     {
       id: "diger-kavsak-1",

@@ -1,7 +1,7 @@
-/* AUTO-GENERATED TRAFFIC SIGN CATALOG
- * Source folder: 3 BİLGİ LEVHALARI
- * Sign count: 94
- */
+
+
+
+
 (function () {
   "use strict";
 

@@ -10,7 +10,7 @@
     { id: "oil", title: "Yağ / yakıt izi", base: "#a5a5a5", ink: "#44444c" },
     { id: "grit", title: "Kum / çakıl", base: "#ddc9a4", ink: "#897359" }
   ];
-  // Vehicle catalog uses 50 units per 3.5 metres. One path is one tyre.
+
   const brakeWidths = [
     { id: "thin", title: "İnce", width: 1.8 },
     { id: "normal", title: "Normal", width: 3.2 },
@@ -25,8 +25,8 @@
   const fmt = n => String(Math.round(n * 100) / 100);
   const xy = p => fmt(p.x) + " " + fmt(p.y);
 
-  // One SVG paint tile per object. Geometry stays on the original line/path,
-  // so hit testing, controls, groups and export retain their existing contracts.
+
+
   function ensure(canvas, model, adapter, style, element) {
     const choice = choices.find(c => c.id === style.pathPattern);
     if (!choice || choice.id === "none" || !adapter.pointAt || !canvas) return null;
@@ -35,8 +35,8 @@
     const id = "editor-fill-pattern-trace-" + String(model.id).replace(/[^a-zA-Z0-9_-]/g, "_");
     let pattern = Array.from(defs.children).find(p => p.id === id);
     if (!pattern) { pattern = U.createSvgElement("pattern", { id }); defs.append(pattern); }
-    // Endpoint markers can trim or reshape the visible path. Sample that same
-    // geometry, and include it in the cache key when arrow settings change.
+
+
     const marked = element && (style.arrowStart !== "none" || style.arrowEnd !== "none");
     const rendered = marked ? ["d", "x1", "y1", "x2", "y2"].map(name => element.getAttribute(name)) : null;
     const key = JSON.stringify([model.geometry, strokeWidth(style), choice.id, style.pathPatternReverse, rendered]);
@@ -70,13 +70,13 @@
       Object.entries(attrs).forEach(([name, value]) => U.setAttributeIfChanged(node, name, String(value)));
     };
     for (const [k, v] of Object.entries({ patternUnits: "userSpaceOnUse", patternContentUnits: "userSpaceOnUse", x: minX, y: minY, width: w, height: h, viewBox: `${minX} ${minY} ${w} ${h}`, "data-path-pattern": choice.id })) pattern.setAttribute(k, String(v));
-    // The original stroke clips the tile to exactly the user-selected width.
+
     if (choice.base !== "transparent") paint("rect", { x: minX, y: minY, width: w, height: h, fill: choice.base });
     const position = (p, offset) => ({ x: p.x + p.nx * offset * width, y: p.y + p.ny * offset * width });
     const path = (d, thickness, color, extra = {}) => paint("path", { d, fill: "none", stroke: color, "stroke-width": width * thickness, "stroke-linecap": "round", "stroke-linejoin": "round", ...extra });
     if (choice.id === "brake") {
-      // Staggered irregular micro-dashes follow each offset curve. Seven paths
-      // provide grain without thousands of individual DOM nodes or raster assets.
+
+
       const scale = Math.max(.001, Number(style.brakeScale) || 1);
       for (let rail = -3; rail <= 3; rail++) {
         const d = samples.map((p, i) => (i ? "L" : "M") + xy(position(p, rail * .14))).join(" ");

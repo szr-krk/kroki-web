@@ -188,7 +188,7 @@
     try {
       button.setPointerCapture?.(event.pointerId);
     } catch (_) {
-      // Synthetic and older pointer implementations may not support capture.
+
     }
     performAction(press.session);
     press.holdTimer = window.setTimeout(() => {

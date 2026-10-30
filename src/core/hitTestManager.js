@@ -82,7 +82,7 @@
     const entries = linearEntries;
     return prioritizedHitTest(point, objects.length, (priorityIndex, roadPass) => {
       const objectIndex = objects.length - priorityIndex - 1;
-      // Skip the other pass before constructing bounds for an unused object.
+
       if (Number(objects[objectIndex].type === "road") !== roadPass) return null;
       if (!entries[objectIndex]) entries[objectIndex] = entryFor(objects[objectIndex], objectIndex);
       return entries[objectIndex];

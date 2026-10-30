@@ -74,7 +74,7 @@
     });
   }
 
-  // A drawing in progress owns undo/redo until it is completed or cancelled.
+
   function setDraftHistory(history) {
     draftHistory = history;
     notifyChange();

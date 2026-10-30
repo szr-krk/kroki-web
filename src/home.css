@@ -6,7 +6,7 @@
 }
 
 :root {
-  /* 1280 x 720 referansinda 1rem = 16px; diger ekranlarda tum UI orantili olceklenir. */
+
   font-size: min(1.25vw, 2.222222vh);
   font-size: min(1.25vw, 2.222222dvh);
   -webkit-text-size-adjust: 100%;
@@ -63,7 +63,7 @@ select {
   display: none !important;
 }
 
-/* Home uses readable touch sizes independently of the editor's proportional scale. */
+
 #home {
   display: flex;
   flex-direction: column;
@@ -384,7 +384,7 @@ html:not(.kroki-is-offline) .editor-grid-controls { border-color: #166534; backg
   color: #ffffff;
 }
 
-/* Metin girisinde fiziksel okunabilirlik, oransal UI olceginden bagimsiz korunur. */
+
 :root.kroki-text-entry-active.kroki-touch-entry-mode :is(
   textarea,
   input:not([type]),
@@ -460,7 +460,7 @@ html:not(.kroki-is-offline) .editor-grid-controls { border-color: #166534; backg
   font-size: 16px !important;
 }
 
-/* Klavye yatay telefonda cok az yukseklik biraktiginda alan ve onaylar ayni anda gorunur. */
+
 @media (max-height: 220px) {
   :root.kroki-text-entry-active.kroki-touch-entry-mode .kroki-dialog-panel.kroki-text-entry-host {
     gap: 6px !important;

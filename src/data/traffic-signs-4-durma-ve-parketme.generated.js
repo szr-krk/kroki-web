@@ -1,7 +1,7 @@
-/* AUTO-GENERATED TRAFFIC SIGN CATALOG
- * Source folder: 4 DURMA ve PARKETME
- * Sign count: 10
- */
+
+
+
+
 (function () {
   "use strict";
 

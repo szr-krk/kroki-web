@@ -1,7 +1,7 @@
-/* AUTO-GENERATED OTHER SYMBOL CATALOG
- * Source file: svg diger semboller kaynagi.xml
- * Symbol count: 41
- */
+
+
+
+
 (function () {
   "use strict";
 

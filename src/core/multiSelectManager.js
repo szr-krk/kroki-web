@@ -1001,8 +1001,8 @@
       geometry.cx = center.x;
       geometry.cy = center.y;
       const nextScale = Number(geometry.scale || 0.08) * scale;
-      // Clamping an individual sign independently makes it escape the group
-      // frame once the shared resize crosses that sign's scale limit.
+
+
       geometry.scale = source.type === "trafficSign"
         ? nextScale
         : Math.min(4, Math.max(0.005, nextScale));

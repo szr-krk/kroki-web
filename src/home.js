@@ -184,7 +184,7 @@
     clearUploadPreview();
     uploadPreviewStatus.textContent = "Önizleme hazırlanıyor…";
     try {
-      // SVG stays in an image context; its markup is never inserted into the page.
+
       const source = svg ? file.slice(0, file.size, "image/svg+xml") : file;
       uploadPreviewUrl = URL.createObjectURL(source);
       const image = new Image();
@@ -358,7 +358,7 @@
     try {
       if (event.target.contentDocument?.querySelector('meta[name="kroki-guide-unavailable"]')) event.target.dataset.retry = "1";
       event.target.contentWindow.addEventListener("keydown", (keyEvent) => { if (keyEvent.key === "Escape") closeModals(); });
-    } catch { /* An externally hosted guide may disallow parent-window access. */ }
+    } catch {                                                                     }
   });
 
   home.addEventListener("dragenter", (event) => {
@@ -402,7 +402,7 @@
         if (currentFullscreen()) await exitFullscreen();
         await requestFullscreen();
       }
-    } catch { /* Fullscreen is optional; keep the application usable. */ }
+    } catch {                                                            }
     scheduleFullscreenSync();
   });
   ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange", "visibilitychange"].forEach((name) => document.addEventListener(name, scheduleFullscreenSync));

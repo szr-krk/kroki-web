@@ -154,7 +154,7 @@
     }
     let top = rect.top;
     let bottom = rect.top + rect.height;
-    // Measure after selection opens the IP, so its responsive height is current.
+
     document.querySelectorAll(".editor-top-ip, .editor-floating-toolbar, .editor-grid-controls").forEach((element) => {
       const toolbar = element.getBoundingClientRect();
       if (!toolbar.width || !toolbar.height || toolbar.right <= corridorLeft || toolbar.left >= corridorRight) return;
@@ -175,8 +175,8 @@
     const adapter = manager.getAdapter(model);
     const metrics = Kroki.ControlPointManager.metrics();
     const step = Kroki.EditorGrid?.placementSnapStep?.() || 0;
-    // Center the visible bounds on both viewport axes independently of grid
-    // visibility. Fit the handles around that fixed center.
+
+
     const area = roadPlacementBounds(model, adapter, metrics, true);
     const align = (value) => step ? Math.round(Math.round(value / step) * step * 1e8) / 1e8 : value;
     const reference = Kroki.EditorCenterGuide?.origin();
@@ -208,7 +208,7 @@
     const lengthStep = 2 * step;
     let low = 0;
     let high = Math.min(placements[0].box.height, placements[1].box.width);
-    // One common length fits both directions, including their actual handles.
+
     for (let index = 0; index < 24; index += 1) {
       const length = (low + high) / 2;
       const alignedLength = lengthStep ? Math.floor(length / lengthStep) * lengthStep : length;
@@ -218,7 +218,7 @@
     const length = lengthStep ? Math.floor(low / lengthStep) * lengthStep : low;
     const fitted = candidateAt(length, placements[horizontal ? 1 : 0]);
     if (!fitted || length <= 0) {
-      // Preserve the reference axis even when a very thick road cannot fit.
+
       if (reference) manager.updateGeometry(model.id, (draft) => {
         const bounds = adapter.getBounds(draft);
         adapter.move(draft, reference.x - (bounds.x + bounds.width / 2), reference.y - (bounds.y + bounds.height / 2));

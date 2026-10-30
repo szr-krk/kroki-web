@@ -134,8 +134,8 @@
 
     const delta = signedArcDelta(geometry);
     const sign = geometry.sweepFlag ? 1 : -1;
-    // The straight marker spans a chord, not an arc length. Preserve the circle
-    // and rotate the marker by half that chord's angle to reach the model tip.
+
+
     const startTrim = 2 * Math.asin(Math.min(1, startOffset / (2 * geometry.radius)));
     const endTrim = 2 * Math.asin(Math.min(1, endOffset / (2 * geometry.radius)));
     const available = Math.abs(delta) - Math.min(Math.abs(delta) * 0.01, 0.001 / geometry.radius);
@@ -276,7 +276,7 @@
       utils.setAttributeIfChanged(element, "data-arc-sagitta-ratio", String(model.geometry.ratio));
       const rendered = renderedGeometry(model);
       utils.setAttributeIfChanged(element, "d", rendered.path);
-      // Geometry-only CP previews also update the existing marker placements.
+
       if (element.ownerSVGElement) {
         styleManager.applyMarkers(element, styleManager.normalizeStyle(model.style, model.type), adapter, element.ownerSVGElement, rendered.markers);
       }

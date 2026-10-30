@@ -549,8 +549,8 @@
       arrowEnd: normalizeArrowType(merged.arrowEnd || merged.endArrow),
       markerScale: Math.max(0.001, numberOr(merged.markerScale ?? merged.arrowScale, 1))
     };
-    // Trace textures and endpoint arrows are mutually exclusive, including
-    // imported documents and programmatic style updates.
+
+
     if (normalized.pathPattern !== "none") {
       normalized.arrowStart = "none";
       normalized.arrowEnd = "none";
@@ -1020,8 +1020,8 @@
       return;
     }
 
-    // Stable keys let live geometry edits reuse definitions instead of creating
-    // one marker for every angle. Ordinary line/Bezier markers stay shared.
+
+
     if (placements && !markerPlacementKeys.has(element)) markerPlacementKeys.set(element, ++markerPlacementSequence);
     const key = markerPlacementKeys.get(element);
     const startKey = placements?.start ? `-placement-${key}-start` : "";
@@ -1968,8 +1968,8 @@
     }
 
     const { model, adapter } = entry;
-    // A control-point drag changes geometry, not the inspector's style, icons or
-    // available actions. Keep its live numeric feedback without rebuilding them.
+
+
     if (options.geometryOnly && !entry.multi && model.type !== "road") {
       syncObjectRotationControls(entry);
       if (isCatalogObjectAdapter(adapter)) syncCatalogObjectControls(model);

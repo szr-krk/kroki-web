@@ -99,7 +99,7 @@
 
   function syncVisibility() {
     const visible = isVisible();
-    // Keep the image data in the SVG so hidden backgrounds can be restored after import.
+
     layer?.setAttribute("display", visible ? "inline" : "none");
     if (!visibilityButton) return;
     const label = visible ? "Fotoğrafı gizle" : "Fotoğrafı göster";
@@ -217,7 +217,7 @@
       name: file.name || "Fotoğraf",
       naturalWidth: dimensions.width,
       naturalHeight: dimensions.height,
-      // New photos have tight bounds independent of the previous document's camera.
+
       bounds: { x: 0, y: 0, width: dimensions.width * scale, height: dimensions.height * scale }
     });
   }
@@ -231,7 +231,7 @@
       const scale = Math.min(bounds.width / naturalWidth, bounds.height / naturalHeight);
       const width = naturalWidth * scale;
       const height = naturalHeight * scale;
-      // Legacy records may include letterboxing; frame the painted image without moving it.
+
       return {
         x: bounds.x + (bounds.width - width) / 2,
         y: bounds.y + (bounds.height - height) / 2,

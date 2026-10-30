@@ -1,7 +1,7 @@
-/* AUTO-GENERATED TRAFFIC SIGN CATALOG
- * Source folder: 6 PANELLER
- * Sign count: 40
- */
+
+
+
+
 (function () {
   "use strict";
 

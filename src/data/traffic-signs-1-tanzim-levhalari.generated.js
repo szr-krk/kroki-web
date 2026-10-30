@@ -1,7 +1,7 @@
-/* AUTO-GENERATED TRAFFIC SIGN CATALOG
- * Source folder: 1 TANZİM LEVHALARI
- * Sign count: 70
- */
+
+
+
+
 (function () {
   "use strict";
 
