@@ -4019,7 +4019,7 @@
       variants: [
         {
           id: "panelvan",
-          name: "Panelvan",
+          name: "Pickup",
           kind: "box",
           lengthM: 4.827,
           widthM: 2.05,
@@ -4032,7 +4032,7 @@
         },
         {
           id: "pickup",
-          name: "Pickup",
+          name: "Panelvan",
           kind: "box",
           lengthM: 4.576,
           widthM: 1.95,
