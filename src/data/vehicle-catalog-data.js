@@ -3499,49 +3499,7 @@
     ];
   }
 
-  function representativeCoachViews(lengthM, widthM, heightM) {
-    const length = vehicleUnits(lengthM);
-    const width = vehicleUnits(widthM);
-    const height = vehicleUnits(heightM);
-    const wheelY = height * 0.9;
-    const wheelRadius = height * 0.095;
-    const axles = [length * 0.2, length * 0.79];
-    return {
-      top: stretchVehicleView(VEHICLE_SVG_VIEWS.v10_otobus.top, length, width),
-      side: {
-        viewBox: `0 0 ${length} ${height}`,
-        paths: [
-          {
-            role: "body",
-            fill: "vehicle",
-            stroke: "#000000",
-            strokeWidth: 0.8,
-            paintable: true,
-            ghost: "auto",
-            d: `M 2 ${height * 0.86} V ${height * 0.18} Q 2 2 ${height * 0.18} 2 H ${length * 0.82} Q ${length * 0.91} 2 ${length * 0.97} ${height * 0.22} L ${length - 2} ${height * 0.52} V ${height * 0.86} Z`,
-          },
-          {
-            role: "window",
-            fill: "#ffffff",
-            stroke: "#000000",
-            strokeWidth: 0.65,
-            ghost: "preserve",
-            d: `M ${length * 0.055} ${height * 0.14} H ${length * 0.81} Q ${length * 0.87} ${height * 0.14} ${length * 0.94} ${height * 0.3} L ${length * 0.97} ${height * 0.48} H ${length * 0.055} Z`,
-          },
-          {
-            role: "detail",
-            fill: "none",
-            stroke: "#ffffff",
-            strokeWidth: 0.75,
-            ghost: "preserve",
-            d: `M ${length * 0.06} ${height * 0.58} H ${length * 0.91} M ${length * 0.3} ${height * 0.6} V ${height * 0.83} M ${length * 0.47} ${height * 0.6} V ${height * 0.83} M ${length * 0.64} ${height * 0.6} V ${height * 0.83} M ${length * 0.81} ${height * 0.52} V ${height * 0.83}`,
-          },
-          ...busWheelPaths(axles, wheelY, wheelRadius),
-        ],
-      },
-      upsideDown: stretchVehicleView(VEHICLE_SVG_VIEWS.v10_otobus.upsideDown, length, width),
-    };
-  }
+
 
 
 
@@ -3550,9 +3508,9 @@
   const CRAFTER_LENGTH_M = 7.391;
   const CRAFTER_WIDTH_M = 2.04;
   const CRAFTER_HEIGHT_M = 2.637;
-  const TRAVEGO_LENGTH_M = 13.115;
+  const TRAVEGO_LENGTH_M = 14.03;
   const TRAVEGO_WIDTH_M = 2.55;
-  const TRAVEGO_HEIGHT_M = 3.99;
+  const TRAVEGO_HEIGHT_M = 3.97;
 
   VEHICLE_SVG_VIEWS.v10_kucuk_crafter = {
     top: stretchVehicleView(
@@ -3637,11 +3595,169 @@
     ),
   };
 
-  VEHICLE_SVG_VIEWS.v10_buyuk_travego = representativeCoachViews(
-    TRAVEGO_LENGTH_M,
-    TRAVEGO_WIDTH_M,
-    TRAVEGO_HEIGHT_M
-  );
+  VEHICLE_SVG_VIEWS.v10_buyuk_travego = {
+  "top": {
+    "viewBox": "0 0 200.428571429 36.4285714286",
+    "paths": [
+      {
+        "role": "body",
+        "fill": "vehicle",
+        "stroke": "#000000",
+        "strokeWidth": 2.0,
+        "ghost": "auto",
+        "lineCap": "round",
+        "lineJoin": "round",
+        "d": "M1632 15 1682 5A1 1 0 011682 20L1632 20Q1657 128 1631 235L1682 235A1 1 0 011682 250L1631 240Q1587 247 1545 247L10 247Q7 247 7 244-3 125 7 9 7 6 10 6L1545 6Q1587 6 1632 15Z",
+        "transform": "matrix(0.12189629085105 0 0 0.149911816578483 -0.12189629085105 -0.749559082892416)",
+        "paintable": true
+      },
+      {
+        "role": "detail",
+        "fill": "#ff0000",
+        "stroke": "#000",
+        "strokeWidth": 1.0,
+        "ghost": "preserve",
+        "lineCap": "round",
+        "lineJoin": "round",
+        "d": "M13 55 30 10Q10 6 8 55ZM8 197Q10 247 30 242L13 197Z",
+        "transform": "matrix(0.12189629085105 0 0 0.149911816578483 -0.12189629085105 -0.749559082892416)"
+      },
+      {
+        "role": "detail",
+        "fill": "#fff",
+        "stroke": "#000",
+        "strokeWidth": 1.0,
+        "ghost": "preserve",
+        "lineCap": "round",
+        "lineJoin": "round",
+        "d": "M1530 16 1628 20Q1653 128 1627 235L1530 237Z",
+        "transform": "matrix(0.12189629085105 0 0 0.149911816578483 -0.12189629085105 -0.749559082892416)"
+      },
+      {
+        "role": "detail",
+        "fill": "#fff",
+        "stroke": "#000",
+        "strokeWidth": 2.0,
+        "ghost": "preserve",
+        "lineCap": "round",
+        "lineJoin": "round",
+        "d": "M690 126A1 1 0 01640 126 1 1 0 01690 126ZM840 126A1 1 0 01790 126 1 1 0 01840 126ZM600 150Q600 160 610 160L870 160Q880 160 880 150L880 100Q880 90 870 90L610 90Q600 90 600 100Z",
+        "transform": "matrix(0.12189629085105 0 0 0.149911816578483 -0.12189629085105 -0.749559082892416)"
+      }
+    ]
+  },
+  "side": {
+    "viewBox": "0 0 200.428571429 56.7142857143",
+    "paths": [
+      {
+        "role": "body",
+        "fill": "vehicle",
+        "stroke": "#000",
+        "strokeWidth": 2.0,
+        "ghost": "auto",
+        "lineCap": "round",
+        "lineJoin": "round",
+        "d": "M457 20Q457 6 471 6L839 6Q853 6 853 20L1574 20Q1610 20 1622 43L1630 65Q1714 65 1714 99L1718 135A1 1 0 011698 138L1687 98 1689 91 1689 91Q1666 80 1637 84L1653 144Q1665 198 1672 253L1675 295 1675 345 1675 345Q1675 358 1620 358L1500 358 1500 320A1 1 0 001341 320L1341 358 560 358 560 320A1 1 0 00401 320L401 358 390 358 390 320A1 1 0 00231 320L231 358 178 358 28 345Q10 345 10 328 3 169 19 32 20 20 58 20L58 20Z",
+        "transform": "matrix(0.12007962963317 0 0 0.146738126039549 -0.824894822150287 -0.733690630197745)",
+        "paintable": true
+      },
+      {
+        "role": "wheel",
+        "fill": "#000",
+        "stroke": "#000",
+        "strokeWidth": 2.0,
+        "ghost": "preserve",
+        "lineCap": "round",
+        "lineJoin": "round",
+        "d": "M240 320A1 1 0 00381 320 1 1 0 00240 320ZM410 320A1 1 0 00551 320 1 1 0 00410 320ZM1350 320A1 1 0 001491 320 1 1 0 001350 320Z",
+        "transform": "matrix(0.12007962963317 0 0 0.146738126039549 -0.824894822150287 -0.733690630197745)"
+      },
+      {
+        "role": "wheel",
+        "fill": "#fff",
+        "stroke": "#000",
+        "strokeWidth": 2.0,
+        "ghost": "preserve",
+        "lineCap": "round",
+        "lineJoin": "round",
+        "d": "M280 320A1 1 0 00341 320 1 1 0 00280 320ZM450 320A1 1 0 00511 320 1 1 0 00450 320ZM1390 320A1 1 0 001451 320 1 1 0 001390 320Z",
+        "transform": "matrix(0.12007962963317 0 0 0.146738126039549 -0.824894822150287 -0.733690630197745)"
+      },
+      {
+        "role": "detail",
+        "fill": "#fff",
+        "stroke": "#000",
+        "strokeWidth": 1.0,
+        "ghost": "preserve",
+        "lineCap": "round",
+        "lineJoin": "round",
+        "d": "M57 39 245 39 245 148 101 148Q57 148 57 98ZM249 39 427 39 427 148 249 148ZM431 39 612 39 612 148 431 148ZM616 39 797 39 797 148 616 148ZM801 39 982 39 982 148 801 148ZM986 39 1165 39 1165 148 986 148ZM1169 39 1349 39 1349 148 1169 148ZM1353 39 1520 39 1520 193 1446 150Q1443 148 1440 148L1353 148ZM1524 39 1581 39Q1601 39 1601 42L1628 245 1524 196ZM1613 45 1623 45Q1655 128 1673 261L1653 255Q1640 251 1639 244L1613 45Z",
+        "transform": "matrix(0.12007962963317 0 0 0.146738126039549 -0.824894822150287 -0.733690630197745)"
+      },
+      {
+        "role": "detail",
+        "fill": "#ff0000",
+        "stroke": "#000",
+        "strokeWidth": 1.0,
+        "ghost": "preserve",
+        "lineCap": "round",
+        "lineJoin": "round",
+        "d": "M12 187Q26 189 27 203 30 240 27 278 25 291 9 291 7 239 9 187Z",
+        "transform": "matrix(0.12007962963317 0 0 0.146738126039549 -0.824894822150287 -0.733690630197745)"
+      },
+      {
+        "role": "detail",
+        "fill": "#fff",
+        "stroke": "#000",
+        "strokeWidth": 1.0,
+        "ghost": "preserve",
+        "lineCap": "round",
+        "lineJoin": "round",
+        "d": "M1639 278Q1658 281 1675 290 1677 304 1675 318 1662 315 1650 309 1639 304 1639 278Z",
+        "transform": "matrix(0.12007962963317 0 0 0.146738126039549 -0.824894822150287 -0.733690630197745)"
+      }
+    ]
+  },
+  "upsideDown": {
+    "viewBox": "0 0 200.428571429 36.4285714286",
+    "paths": [
+      {
+        "role": "body",
+        "fill": "#fff",
+        "stroke": "#000",
+        "strokeWidth": 2.0,
+        "ghost": "auto",
+        "lineCap": "round",
+        "lineJoin": "round",
+        "d": "M1632 15 1682 5A1 1 0 011682 20L1632 20Q1657 128 1631 235L1682 235A1 1 0 011682 250L1631 240Q1587 247 1545 247L10 247Q7 247 7 244-3 125 7 9 7 6 10 6L1545 6Q1587 6 1632 15Z",
+        "transform": "matrix(0.12189629085105 0 0 0.149911816578483 -0.12189629085105 -0.749559082892416)",
+        "paintable": false
+      },
+      {
+        "role": "wheel",
+        "fill": "#000",
+        "stroke": "#000",
+        "strokeWidth": 2.0,
+        "ghost": "preserve",
+        "lineCap": "round",
+        "lineJoin": "round",
+        "d": "M1340 242 1500 242 1500 210 1435 210 1435 43 1500 43 1500 11 1340 11 1340 43 1405 43 1405 210 1340 210ZM230 242 390 242 390 210 325 210 325 200 390 200 390 168 325 168 325 85 390 85 390 53 325 53 325 43 390 43 390 11 230 11 230 43 295 43 295 53 230 53 230 85 295 85 295 168 230 168 230 200 295 200 295 210 230 210ZM460 242 620 242 620 210 555 210 555 200 620 200 620 168 555 168 555 85 620 85 620 53 555 53 555 43 620 43 620 11 460 11 460 43 525 43 525 53 460 53 460 85 525 85 525 168 460 168 460 200 525 200 525 210 460 210Z",
+        "transform": "matrix(0.12189629085105 0 0 0.149911816578483 -0.12189629085105 -0.749559082892416)"
+      },
+      {
+        "role": "damage-cross",
+        "fill": "none",
+        "stroke": "#000",
+        "strokeWidth": 4.0,
+        "ghost": "auto",
+        "lineCap": "round",
+        "lineJoin": "round",
+        "d": "M7 9 1631 235M1632 20 7 244",
+        "transform": "matrix(0.12189629085105 0 0 0.149911816578483 -0.12189629085105 -0.749559082892416)"
+      }
+    ]
+  }
+};
 
 
   const TYPES = [
@@ -4040,6 +4156,7 @@
         },
         {
           id: "buyuk-travego",
+          source: "mercedes-benz-travego-s-17-shd-user-svg",
           name: "Büyük Otobüs (Travego)",
           kind: "box",
           lengthM: TRAVEGO_LENGTH_M,
