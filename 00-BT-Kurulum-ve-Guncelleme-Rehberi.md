@@ -51,7 +51,7 @@ Yayın dosyalarının satır sonları `.gitattributes` ile LF olarak sabitlenir.
 
 Uygulama açık ve görünürken yaklaşık beş dakikada bir küçük sürüm dosyası kontrol edilir. Sekmeye dönüldüğünde de kontrol yapılır; sık kontroller sınırlandırılır. Ağ hatası çizimi durdurmaz. HTTPS kurulumunda yeni sürümün tüm dosyaları arka planda indirilip doğrulanmadan kullanıcıya güncelleme sunulmaz. İndirme yarıda kalırsa eski sürüm çalışır. Tam indirilmiş bir güncelleme bağlantı kesildikten sonra da uygulanabilir. Bütün sekmeler kapanınca hazır bekleyen sürüm tarayıcının normal yaşam döngüsüyle etkinleşebilir.
 
-- **Evet, güncelle:** Çizimin ayrı bir kopyası cihazdaki tarayıcıya yazılır ve okunarak doğrulanır. Yeni sürüm açılınca bu kopya otomatik yüklenir.
+- **Evet, güncelle:** Editör açıksa çizimin ayrı bir kopyası cihazdaki tarayıcıya yazılır ve okunarak doğrulanır. Yeni sürüm açılınca bu kopya otomatik yüklenir. Ana sayfada çizim kaydı oluşturulmaz; “Güncelleme hazırlanıyor” durumuyla yeni sürüm açılır.
 - **Hayır, bu çizim bittikten sonra güncelle:** Çalışmaya devam edilir. Kullanıcı çizimi bitirip ana ekrana dönünce güncelleme uygulanır. Üstteki “Tamam” düğmesi tek başına çizimin bittiği anlamına gelmez.
 - Kayıt veya güncelleme hazırlığı başarısız olursa sayfa yenilenmez. Yarım kalmış bir dağıtım algılanırsa da çizim açık kalır.
 

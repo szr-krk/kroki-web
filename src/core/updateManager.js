@@ -52,12 +52,12 @@
       throw error;
     } finally { clearTimeout(timer); }
   }
-  function savingCover() {
+  function updateCover() {
     const cover = document.createElement("div");
     cover.className = "kroki-update-saving";
     cover.setAttribute("role", "status");
     cover.setAttribute("aria-live", "polite");
-    cover.textContent = "Çiziminiz güvenle kaydediliyor. Lütfen bekleyin…";
+    cover.textContent = "Güncelleme hazırlanıyor. Lütfen bekleyin…";
     document.body.append(cover);
     return cover;
   }
@@ -65,7 +65,8 @@
     if (!enabled || !pending || applying || pointers.size || document.hidden) return false;
     applying = true;
     clearTimeout(promptTimer);
-    const cover = savingCover();
+    const editing = inEditor();
+    const cover = updateCover();
     const stopKeys = event => { event.preventDefault(); event.stopImmediatePropagation(); };
     const inputEvents = ["keydown", "pointerdown", "drop", "paste"];
     inputEvents.forEach(name => document.addEventListener(name, stopKeys, true));
@@ -84,6 +85,7 @@
           throw new Error("update-release-not-ready");
         }
       }
+      if (editing) cover.textContent = "Çiziminiz güvenle kaydediliyor. Lütfen bekleyin…";
       const checkpoint = await window.KrokiMainMenu.prepareUpdate();
       const token = { ...checkpoint, target: pending.build, version: pending.version };
       sessionStorage.setItem(RESUME_KEY, JSON.stringify(token));
@@ -98,7 +100,9 @@
       inputEvents.forEach(name => document.removeEventListener(name, stopKeys, true));
       applying = false;
       try { sessionStorage.removeItem(RESUME_KEY); } catch {                                               }
-      await K.Dialog.alert("Güncelleme tamamlanamadı. Sayfa yenilenmedi; çiziminiz açık ve korunuyor. Daha sonra yeniden deneyebilirsiniz.", "Güncelleme");
+      await K.Dialog.alert(editing
+        ? "Güncelleme tamamlanamadı. Sayfa yenilenmedi; çiziminiz açık ve korunuyor. Daha sonra yeniden deneyebilirsiniz."
+        : "Güncelleme tamamlanamadı. Sayfa yenilenmedi. Daha sonra yeniden deneyebilirsiniz.", "Güncelleme");
       return false;
     }
   }
@@ -160,7 +164,7 @@
       }
       sessionStorage.removeItem(RESUME_KEY);
       if (token.target !== build) {
-        K.Dialog.toast("Çiziminiz açıldı. Sunucu henüz yeni sürümü sunmuyor; güncellemeyi daha sonra tekrar deneyin.");
+        K.Dialog.toast((token.resume ? "Çiziminiz açıldı. " : "") + "Sunucu henüz yeni sürümü sunmuyor; güncellemeyi daha sonra tekrar deneyin.");
       } else K.Dialog.toast(token.resume ? "Güncelleme tamamlandı. Çiziminiz geri yüklendi." : "Güncelleme tamamlandı.");
     } catch {
       await K.Dialog.alert("Güncelleme öncesi kayıt otomatik açılamadı. Kayıt silinmedi; Son Krokiler listesindeki ‘Güncelleme öncesi kroki’ kaydını açabilirsiniz.", "Çizimi yeniden açma");
