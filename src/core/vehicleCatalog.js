@@ -5,6 +5,13 @@
   const VIEW_ORDER = ["top", "side", "upsideDown"];
   const DEFAULT_COLOR = "#000000";
   const LEGACY_VARIANT_ALIASES = {
+    "13/beko-loader": "14/beko-loader",
+    "13/patpat": "19/patpat",
+    "13/lastik-tekerlekli-ekskavator": "14/lastik-tekerlekli-ekskavator",
+    "13/itfaiye-merdivenli": "19/itfaiye-merdivenli",
+    "13/cekme-karavan": "19/cekme-karavan",
+    "13/bicerdover": "14/bicerdover",
+    "13/bicerdover-tablasiz": "14/bicerdover-tablasiz",
     "10/yolcu-otobusu": "10/otobus",
     "08/beton-mikseri": "13/beton-mikseri"
   };
