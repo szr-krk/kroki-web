@@ -5,7 +5,8 @@
   const VIEW_ORDER = ["top", "side", "upsideDown"];
   const DEFAULT_COLOR = "#000000";
   const LEGACY_VARIANT_ALIASES = {
-    "10/yolcu-otobusu": "10/otobus"
+    "10/yolcu-otobusu": "10/otobus",
+    "08/beton-mikseri": "13/beton-mikseri"
   };
 
   let catalogIndex = null;
