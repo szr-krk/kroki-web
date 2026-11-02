@@ -1,86 +1,108 @@
-# Kroki — BT Kurulum ve Güncelleme Rehberi
+# Kroki 2.0 — BT Kurulum ve Güncelleme Rehberi
 
-Kroki 2.0, kurum içi ağda bir web sunucusundan yayımlanabilen çizim uygulamasıdır. Aşağıdaki notlar kurulum ve bakım için yardımcı olabilir.
+Teslim sürümü: **2.0** · Tarih: **2 Kasım 2026**
+
+Kroki, tarayıcıda çalışan SVG kroki uygulamasıdır. IIS, Nginx veya Apache üzerinden statik dosya olarak yayımlanır. Sunucuda derleme, paket kurulumu, uygulama servisi ve veritabanı gerekmez.
+
+## Teslim içeriği
+
+| Dosya veya klasör | Görevi |
+| --- | --- |
+| `index.html` | Ana ekran ve çizim editörü |
+| `src/` | Uygulama kodları, kataloglar, simgeler ve yazı tipi |
+| `src/version.json` | Sürüm ve güncelleme bilgisi |
+| `sw.js` | Doğrulanan çevrimdışı kurulum ve sürüm önbelleği |
+| `kilavuz.html` | Uygulama içinden açılan kullanım kılavuzu |
+| `00-BT-Kurulum-ve-Guncelleme-Rehberi.md` | Bu kurulum ve bakım rehberi |
+
+`src/` altındaki bütün dosyalar ve klasör yapısı korunmalıdır. `src/arial-narrow.ttf` yazı tipi çıktıların doğru görünmesi için gereklidir. Ham araç görselleri, test dosyaları ve geliştirme araçları sunucuya aktarılmaz. Tek HTML çevrimdışı paket bu web tesliminden ayrıdır; `file://` üzerinden açılan paket sunucu güncellemelerini almaz.
 
 ## İlk kurulum
 
-1. GitHub deposunun güncel dosyalarını indirin. Klasör yapısını koruyun.
-2. Dosyaları IIS, Nginx veya Apache üzerindeki bir uygulama klasörüne yerleştirin. Açılış dosyası `index.html` olur.
-3. Kullanıcılara sabit bir adres verin. Örnek: `https://kroki.kurum.local/`. Çevrimdışı kurulum için HTTPS gereklidir (geliştirmede localhost istisnadır). HTTP üzerinden çevrimiçi editör çalışır, çevrimdışı kurulum yapılmaz.
-4. JavaScript, CSS, SVG, JSON ve TTF dosyalarının sunulabildiğini kontrol edin. IIS'te JSON için gerekirse `application/json` MIME türünü ekleyin.
-5. Chrome veya Edge ile açın. Bir hazır çizimi düzenleyin; SVG kaydedip yeniden açmayı deneyin.
+1. Aynı yayına ait teslim dosyalarını boş bir yayın klasörüne çıkarın. Dosyaları düzenlemeden ve yeniden kaydetmeden aktarın.
+2. Uygulamayı sabit bir HTTPS adresinde yayımlayın. Örnek: `https://kroki.kurum.local/`. Ana dosya `index.html` olmalıdır. Çevrimdışı kurulum HTTPS gerektirir; geliştirme için localhost istisnadır.
+3. HTML, JavaScript, CSS, SVG, JSON ve TTF dosyalarının sunulabildiğini doğrulayın. JSON için `application/json`, JavaScript için `text/javascript` veya `application/javascript`, SVG için `image/svg+xml` MIME türünü kullanın.
+4. Sunucunun dosyalara giriş sayfası veya hata sayfası döndürmediğini, dosya içeriklerini değiştirmediğini kontrol edin. `sw.js` uygulamanın yayımlandığı klasörde kalmalıdır.
+5. Chrome veya Edge ile uygulamayı açın. Ana ekranda **Versiyon: 2.0** ve **çevrimdışı kullanıma hazır** durumunu bekleyin.
+6. Kılavuzu bağlantı varken bir kez açın; daha sonra çevrimdışıyken de açılabildiğini kontrol edin.
+7. Aşağıdaki teslim kontrolünü tamamladıktan sonra kullanıcılarla sabit HTTPS adresini paylaşın.
 
-Derleme, paket kurulumu, uygulama sunucusu ve sunucu veritabanı gerekmez. Kurum içindeki dosyalara erişim yeterlidir; dış internet servisi kullanılmaz.
+Uygulamanın çalışması için dış internet servisi gerekmez. İlk kurulum ve yeni yayınların indirilmesi için uygulama sunucusuna erişim gerekir.
 
-## Önbellek ve veri tasarrufu
+## Sürüm ve bağlantı düzeni
 
-HTML ve sürüm dosyası için aşağıdaki HTTP başlığı kullanılabilir:
+2.0 tesliminde HTML içindeki `kroki-version` ve `kroki-build`, `src/version.json` içindeki `version`, `build` ve `guideVersion` değerleri **2.0** olarak eşleşir. Dosya adreslerindeki `?v=2.0` etiketi tarayıcı önbelleğini sürümler. Uygulama açılınca adrese eklenen `?_kroki=2.0`, ilgili sekmenin doğru yayın dosyalarını kullanmasını sağlar; hata veya kullanıcıya ait bir kayıt numarası değildir.
+
+Kullanıcılara yalnızca temel adres verilebilir. Uygulama sürüm ekini kendisi yönetir. Dosyaların işlevsel adları ve klasör yolları değiştirilmez.
+
+**Yayımlanmış bir sürüm numarasıyla farklı dosyalar tekrar yayımlanmaz.** Bir sonraki değişiklik ayrı bir yayın olmalıdır; örneğin sürüm ve yayın kimliği **2.1** yapılır. Küçük bir düzeltme için de yeni kimlik gerekir.
+
+## Sunucu önbelleği
+
+`index.html`, `src/version.json` ve `sw.js` için aşağıdaki başlığı kullanın:
 
 ```http
 Cache-Control: no-cache
 ```
 
-Bu başlık dosyayı her seferinde bütünüyle indirmek anlamına gelmez. ETag veya Last-Modified açıksa değişmeyen dosya yeniden kullanılabilir. Sunucunun bunları üretmesi faydalıdır. HTML içindeki meta etiketleri HTTP sunucu ayarının yerine geçmez.
+Bu başlık dosyanın değişip değişmediğini yeniden kontrol ettirir; ETag veya Last-Modified açıksa değişmeyen içerik yeniden kullanılabilir. HTML meta etiketleri HTTP sunucu ayarının yerine geçmez.
 
-JS/CSS ve font dosyaları önbellekte tutulabilir. Adreslerdeki `?v=` değeri yeni yayında değiştirilir. Hazır çizimler yalnız ilgili liste ilk açıldığında çalıştırılır; çevrimdışı kurulum dosyayı önceden indirir. Sunucuda gzip veya Brotli sıkıştırması açılması da veri aktarımını azaltabilir.
+JS, CSS, SVG ve font dosyaları önbelleğe alınabilir. Yeni yayında dosya sürüm etiketleri değiştirilir. Gzip veya Brotli sıkıştırması kullanılabilir; açılmış dosya içeriği teslimdekiyle aynı kalmalıdır.
 
-## Çevrimdışı kullanım — 24.10.2026
+## Çevrimdışı kullanım ve kullanıcı verileri
 
-İlk çevrimiçi açılışta `sw.js` uygulamanın bütün çalışma dosyalarını cihazdaki ayrı bir uygulama önbelleğine indirir: HTML, JS/CSS, hazır çizimler, kataloglar, ikon ve font. Kılavuz bu ilk indirmeye dahil değildir. Her dosya yayın listesindeki SHA-256 özetiyle doğrulanır. Tamamlanmadan “çevrimdışı kullanıma hazır” yazılmaz. İndirme başarısızsa mevcut tamamlanmış sürüm korunur; bağlantı dönünce veya sonraki açılışta yeniden denenir.
+İlk açılışta uygulamanın bütün çalışma dosyaları cihazdaki ayrı bir önbelleğe indirilir. Her dosya yayın listesindeki SHA-256 özetiyle doğrulanır. Kurulum tamamlanmadan hazır durumu gösterilmez. İndirme başarısız olursa mevcut tamamlanmış sürüm korunur.
 
-Ana ekrandaki Kroki ikonu çevrimiçiyken yeşil, çevrimdışıyken gridir. Altındaki metin kurulumun sürüp sürmediğini veya çevrimdışı kullanıma hazır olduğunu belirtir. Editörde ek bir durum satırı yoktur; zoom kutusunun çerçevesi çevrimiçiyken koyu yeşil, arka planı açık yeşildir. Çevrimdışıyken kutunun mevcut gri çerçeve/beyaz arka plan görünümü korunur. Ayrıntı kutunun üzerine gelindiğinde okunabilir. Bağlantı bilgisi tarayıcının ağ olayları ve sürüm sunucusuna yapılan kontrollerden gelir; sunucuya erişim kaybı bir sonraki kontrol sırasında anlaşılır. Yerel tek HTML dosyasında “Yerel dosya” gösterilir.
+Kılavuz ilk kurulumun parçası olarak indirilmez. Kılavuz düğmesine basılınca o yayına ait dosya indirilir, doğrulanır ve saklanır. Bağlantı yokken daha önce açılmamış kılavuz için açıklama gösterilir. Bağlantı sağlandığında düğmeye yeniden basılabilir. Yeni yayın eski kılavuzu güncelmiş gibi göstermez.
 
-Kurulum tamamlandıktan sonra aynı adres internet olmadan yeniden açılabilir. Tarayıcıyı kapatıp açmak kayıtları veya kurulan sürümü silmez. Ana ekrana ekleme zorunlu değildir. Tarayıcı/site verilerinin kullanıcı tarafından silinmesi bu kurulumu da kaldırır. Kalıcı depolama izni uygun tarayıcılarda en iyi çabayla istenir.
+Ana ekrandaki Kroki simgesi çevrimiçiyken yeşil, çevrimdışıyken gridir. Editörde yakınlaştırma kutusunun rengi ve açıklaması bağlantı durumunu gösterir. Aynı adres, kurulum tamamlandıktan sonra bağlantı olmadan açılabilir; ana ekrana ekleme zorunlu değildir.
 
-Uygulama önbelleği IndexedDB belgelerinden ayrıdır. Güncelleme krokileri, şablonları, kurtarma kayıtlarını ve tercihleri silmez; veri tabanı şeması değişmez. Birden fazla açık sekmede eski sürümün dosyaları o sekmeler kapanana kadar korunur. Başka klasördeki kurulumlar için önbellek adları yayın yolu ile ayrılır.
+Krokiler, şablonlar, tercihler ve kurtarma kayıtları kullanıcının tarayıcısında tutulur; sunucuya gönderilmez ve kullanıcılar arasında ortak değildir. Uygulama önbelleği bu kayıtlardan ayrıdır. Tarayıcıyı kapatıp açmak kayıtları silmez. **Site verilerini silmek çizim ve şablonları da silebilir.** Önemli çalışmalar ayrıca SVG dosyası olarak dışarı kaydedilmelidir.
+
+Yayın adresini, protokolünü veya portunu değiştirmek önceki yerel kayıtlara erişimi etkiler. Normal güncelleme için tarayıcı verilerini temizlemeyin. Tasarım sürümünden 2.0'a geçişte tek seferlik temiz kurulum yapılacaksa önce gerekli krokileri SVG olarak dışarı alın; mümkünse yalnızca uygulama önbelleğini ve service worker kaydını sıfırlayın.
 
 ## Yeni sürüm yayımlama
 
-1. Küçük geliştirme güncellemelerinde `index.html` içindeki `kroki-version` değeri `2.0` kalabilir; yeni bir sürüm kararı verildiğinde örneğin `2.1` yapılır. Her yayında `kroki-build` değerini yeni ve artan bir yayın kimliğiyle değiştirin; biçim `YYYYMMDD.sıra` şeklindedir. Örnek: `20261105.1`.
-2. Aynı dosyadaki değişen JS/CSS dosyalarının `?v=` değerlerini yeni build ile değiştirin. Değişmeyen dosyaların adresleri korunabilir; böylece tarayıcı önbelleği kullanılmaya devam eder. Kılavuz değiştiyse `src/version.json` içindeki `guideVersion` alanını ve `index.html` içindeki `data-guide-source` adresinin `v` değerini de yeni kılavuz sürümüne taşıyın. Kılavuz güncellemesinde de uygulamanın build kimliği artırılır.
-3. `src/version.json` içindeki `version` ve `build`, HTML ile aynı olmalıdır. `app` değeri `Kroki` olarak kalır.
-4. Son dosya değişikliğinden sonra yerel bakım aracını çalıştırın: `python Yerel-Araclar/pwa_release.py online-repair` (geliştirme çalışma alanında). Araç HTML ile `src/version.json` eşleşmesini kontrol edip `sw.js` içindeki tam dosya listesini ve özetlerini üretir. Kaynak farklıysa klasörün tam yolunu verin. Python veya bu bakım aracı sunucuya yüklenmez. Her değişen yayına yeni build verin; tamamlanmış bir build aynı kimlikle yeniden yazılmaz.
-5. **`sw.js` dahil tüm dosyaları aynı yayın olarak** aktarın. Mümkünse atomik dağıtım kullanın. Sıralı aktarım gerekiyorsa uygulama dosyaları → `index.html` → `sw.js` → en son `src/version.json` sırasını kullanın. Karışmış veya eksik dosyalı bir yayın çevrimdışı kurucu tarafından reddedilir; çalışan eski sürüm korunur. `sw.js` için JavaScript MIME türü ve `Cache-Control: no-cache` kullanın. Service worker kapsamı uygulama klasörüdür; kök alan adı yetkisi gerekmez.
-6. Ana ekrandaki sürümü, “çevrimdışı kullanıma hazır” durumunu ve kaydetme/açma işlemini kontrol edin. Bağlantıyı kapatıp sayfayı yeniden açın; kılavuz ve Hazır Çizimler'i de deneyin. Güncelleme için tarayıcı verilerini temizlemeyin.
+1. Önceki teslimi yedekleyin ve yeni bir yayın numarası belirleyin; örneğin **2.1**.
+2. `index.html` içindeki `kroki-version`, `kroki-build` ve dosya adreslerindeki `?v=` etiketlerini yeni sürüme taşıyın. `data-guide-source` adresinin sürümünü de güncelleyin.
+3. `src/version.json` içindeki `version`, `build` ve `guideVersion` alanlarını aynı yeni sürüm olarak kaydedin. `app` değeri `Kroki` kalır. Güncel kılavuzu ve rehberi aynı teslimde bulundurun.
+4. Son değişiklikten sonra geliştirici yayın envanterini ve dosya özetlerini yeniden üretmelidir. Geliştirme çalışma alanındaki bakım komutu: `python Yerel-Araclar/pwa_release.py online-repair`. Başka klasör kullanılıyorsa son argümanı o klasörle değiştirin. BT'ye hazırlanan teslimde `sw.js` önceden üretilmiş olmalıdır; sunucuda Python gerekmez.
+5. Dosyaların LF satır sonlarını koruyun. Yayın dosyalarını aktarırken içerik dönüştürmeyin. Geliştirme deposundaki `.gitattributes` ayarı ve özet üreticisinin satır sonu kontrolü kaldırılmamalıdır.
+6. Bütün uygulama dosyalarını, kılavuzu, `index.html`, `sw.js` ve `src/version.json` dosyalarını tek yayın olarak aktarın. Mümkünse atomik klasör değişimi kullanın. Sıralı aktarımda uygulama dosyaları ve kılavuz → `index.html` → `sw.js` → en son `src/version.json` sırasını izleyin.
+7. Aşağıdaki teslim kontrolünü uygulayın. Eksik veya karışmış dosyaları olan yayın, çevrimdışı doğrulama tarafından reddedilir; önceki tamamlanmış sürüm korunur.
 
-Kurum sunucusu GitHub değişikliklerini kendiliğinden indirmez. İstenirse BT'nin mevcut dağıtım aracıyla aktarım otomatikleştirilebilir.
+Kurum sunucusu GitHub değişikliklerini kendiliğinden indirmez. Her yeni teslim BT tarafından aynı yayın adresine aktarılmalıdır.
 
-## Kullanıcıya güncelleme nasıl ulaşır?
+## Güncellemenin kullanıcıya ulaşması
 
-Yayın dosyalarının satır sonları `.gitattributes` ile LF olarak sabitlenir. Çevrimdışı özet üreticisi CRLF dosyayı reddeder; böylece Windows çalışma kopyası ile GitHub Pages'in sunduğu dosyaların SHA-256 değerleri farklılaşmaz. Bu ayarı kaldırmayın.
+Uygulama açık ve görünürken yaklaşık beş dakikada bir sürüm kontrol edilir. Sekmeye dönüldüğünde de kontrol yapılır. Ağ hatası çizimi durdurmaz. HTTPS kurulumunda yeni dosyalar indirilip doğrulanmadan güncelleme sunulmaz.
 
-Uygulama açık ve görünürken yaklaşık beş dakikada bir küçük sürüm dosyası kontrol edilir. Sekmeye dönüldüğünde de kontrol yapılır; sık kontroller sınırlandırılır. Ağ hatası çizimi durdurmaz. HTTPS kurulumunda yeni sürümün tüm dosyaları arka planda indirilip doğrulanmadan kullanıcıya güncelleme sunulmaz. İndirme yarıda kalırsa eski sürüm çalışır. Tam indirilmiş bir güncelleme bağlantı kesildikten sonra da uygulanabilir. Bütün sekmeler kapanınca hazır bekleyen sürüm tarayıcının normal yaşam döngüsüyle etkinleşebilir.
+- **Evet, güncelle:** Açık çizim tarayıcıya kaydedilir ve okunarak doğrulanır. Yeni sürüm açılınca çizim geri yüklenir. Ana sayfada ayrıca çizim kaydı oluşturulmaz.
+- **Hayır, bu çizim bittikten sonra güncelle:** Kullanıcı çalışmaya devam eder; ana ekrana dönünce güncelleme uygulanır. “Tamam” düğmesi düzenlemeyi bitirir, tek başına ana ekrana dönmek anlamına gelmez.
+- Kayıt veya güncelleme hazırlığı başarısız olursa sayfa yenilenmez. İndirme yarım kalırsa önceki sürüm kullanılabilir.
 
-- **Evet, güncelle:** Editör açıksa çizimin ayrı bir kopyası cihazdaki tarayıcıya yazılır ve okunarak doğrulanır. Yeni sürüm açılınca bu kopya otomatik yüklenir. Ana sayfada çizim kaydı oluşturulmaz; “Güncelleme hazırlanıyor” durumuyla yeni sürüm açılır.
-- **Hayır, bu çizim bittikten sonra güncelle:** Çalışmaya devam edilir. Kullanıcı çizimi bitirip ana ekrana dönünce güncelleme uygulanır. Üstteki “Tamam” düğmesi tek başına çizimin bittiği anlamına gelmez.
-- Kayıt veya güncelleme hazırlığı başarısız olursa sayfa yenilenmez. Yarım kalmış bir dağıtım algılanırsa da çizim açık kalır.
+Tam indirilmiş bir güncelleme bağlantı kesildikten sonra da uygulanabilir. Bütün sekmeler kapanınca bekleyen sürüm tarayıcının normal yaşam döngüsüyle etkinleşebilir. Açık eski sekmelerin dosyaları bu sekmeler kapanana kadar korunur. Güncelleme yerel krokileri ve şablonları silmez; geri alma geçmişi sayfa yenilendiğinde yeniden başlar.
 
-Güncelleme öncesi kopya Son Krokiler'de tutulur. Geri alma geçmişi sayfa yenilenmesinden sonra yeniden başlar. Güncelleme sekmeyi veya devam eden sürükleme/metin girişini zorla kesmez.
+## Teslim kontrolü
 
-## Verilerin yeri
+- Ana ekranda **Versiyon: 2.0**, adres çubuğunda `?_kroki=2.0` ve çevrimdışı hazır durumu görünür.
+- Yeni kroki açılır; araç, levha ve sembol eklenir. SVG kaydedilir ve yeniden açılır.
+- **13 Özel Amaçlı → Özel Amaçlı Araç** ile **19 Diğer → Diğer Araç** üzerinde kenar tutamaçları genişliği ve yüksekliği ayrı değiştirir; köşeler mevcut oranı korur. Diğer araçlara bu ek tutamaçlar uygulanmaz.
+- Bağımsız boyutlandırma geri alınır, yinelenir ve SVG kaydedilip açılınca korunur.
+- Çizim Araçları listesinin sonundaki boş düğme, “Tamam” işlemini yapar ve paneli kapatır.
+- İtfaiye yeni eklendiğinde kırmızıdır. Güncellenen araçların ters görünümleri renk seçiminden etkilenmez.
+- Kılavuz çevrimiçiyken bir kez açılır; ardından bağlantı kesilip uygulama ve kılavuz yeniden açılır.
+- Son Krokiler ve Şablonlarım kayıtları, uygulama yeniden açıldığında kullanılabilir.
+- Yeni yayın denemesinde güncelleme sırasında açık çizimin ve şablonların korunduğu doğrulanır.
 
-Krokiler, şablonlar ve kurtarma kayıtları kullanıcının tarayıcısında IndexedDB'de tutulur. Sunucuya gönderilmez ve kullanıcılar arasında ortak değildir. Yayın adresini/protokolünü/portunu değiştirmek veya tarayıcı verilerini temizlemek kayıtlara erişimi etkileyebilir. Önemli çalışmalar ayrıca SVG çalışma dosyası olarak saklanabilir.
+## Sorun giderme
 
-## Gerekirse incelenebilecek kod noktaları
-
-| İşlev | Yer |
+| Belirti | Kontrol |
 | --- | --- |
-| Sürümü elle kontrol etmek | `Kroki.UpdateManager.check({ force: true })` |
-| Mevcut sürüm ve bekleyen güncellemeyi görmek | `Kroki.UpdateManager.getState()` |
-| Güncelleme kaydını hazırlamak ve doğrulamak | `KrokiMainMenu.prepareUpdate()` — normalde güncelleme yöneticisi çağırır |
-| Güncelleme kaydını yeniden açmak | `KrokiMainMenu.restoreUpdate(id)` — normalde açılışta çağrılır |
-| Kayıt katmanı | `src/core/documentStorage.js` |
-| Güncelleme akışı | `src/core/updateManager.js` |
-| Çevrimdışı durum / hazırlama / etkinleştirme | `src/core/offlineManager.js` |
-| Sürümlü ve doğrulanan uygulama önbelleği | `sw.js` |
+| Çevrimdışı kurulum başlamıyor | HTTPS, tarayıcı desteği, service worker kaydı ve `sw.js` erişimi |
+| Kurulum tekrar deneniyor veya güncelleme hazır olmuyor | Aynı yayına ait bütün dosyaların aktarılması, MIME türleri, içerik değiştiren sunucu ayarları ve SHA-256 eşleşmesi |
+| Kılavuz çevrimdışı açılmıyor | İlgili sürümün kılavuzunu bağlantı varken bir kez açın |
+| Eski sürüm görünmeye devam ediyor | Sunucuda `src/version.json` ve `sw.js` dosyalarını, yeni yayın numarasını ve bekleyen sekmeleri kontrol edin |
+| Yerel kayıtlar görünmüyor | Aynı tarayıcı profili, yayın adresi, protokol ve portun kullanıldığını kontrol edin |
 
-Bu işlevleri günlük kullanımda çağırmak gerekmez. Kontrol veya sorun incelemesi sırasında yardımcı olabilirler.
-
-Tek HTML çevrimdışı sürüm ayrı bir teslimdir. `file://` üzerinden açıldığında sunucu güncelleme kontrolü yapılmaz; yeni dosya ayrıca üretilip dağıtılır.
-
-
-## Kılavuzun gerektiğinde ve sürümlü yüklenmesi
-
-Kılavuz dosyasının güncel boyutu yayın dosyasından görülebilir. Kılavuz düğmesine ilk basışa kadar ağdan indirilmez. Düğmeye basılınca `guideVersion` ile sürümlenen URL kullanılır; yayın listesindeki ayrı kılavuz SHA-256 değeri doğrulanır ve başarılı kopya mevcut yayının önbelleğine alınır. Aynı yayında sonraki açılışlar bağlantısız da çalışır. Yeni yayında eski kılavuz güncelmiş gibi açılmaz; güncel kopya ilk tıklamada indirilir. Hatalı/eksik dosya saklanmaz; bağlantı yoksa veya sürüm doğrulanamazsa açıklama gösterilir ve pencereyi kapatıp yeniden açarak denenebilir. Kılavuzun ilk indirmesi çekirdek çevrimdışı hazırlığı veya uygulama güncellemesini bekletmez.
-
-BT farklı adres kullanacaksa `index.html` içindeki home.js scriptinin `data-guide-source` alanını değiştirebilir. Başka alan adındaki sunucu iframe içinde görüntülenmeye izin vermelidir. Uygulamanın sürüm ve çevrimdışı saklama güvencesi kendi `kilavuz.html` dosyası içindir; başka sunucunun erişimi, sürümlenmesi ve saklama politikası o sunucuya bağlıdır. Varsayılan adres değiştirilmemiştir.
+Destek için tarayıcı geliştirici konsolunda `Kroki.UpdateManager.getState()` ile etkin ve bekleyen sürüm; `Kroki.OfflineManager.getState()` ile çevrimdışı durum okunabilir. Elle sürüm kontrolü `Kroki.UpdateManager.check({ force: true })` ile yapılır. Bu komutlar normal kullanıcı işlemleri için gerekli değildir.

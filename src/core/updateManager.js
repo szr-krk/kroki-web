@@ -30,7 +30,7 @@
   }
   function valid(release) {
     return release?.app === "Kroki" && /^\d+\.\d+(?:\.\d+){0,2}$/.test(release.version) &&
-      /^\d{8}\.\d{1,6}$/.test(release.build);
+      /^\d+\.\d+(?:\.\d+){0,2}$/.test(release.build);
   }
   function inEditor() { return !document.querySelector("#editor")?.classList.contains("gizli"); }
   function busy() {
