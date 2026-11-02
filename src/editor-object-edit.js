@@ -244,4 +244,5 @@ window.krokiObjectEditCore = {
 
 document.querySelector("#btnDrawingTamam")?.addEventListener("click", () => {
   document.querySelector("#btnEditTamam")?.click();
+  window.krokiEditorRail?.closeRailMenus?.();
 });
