@@ -241,3 +241,7 @@ window.krokiObjectEditCore = {
     delete: document.querySelector("#btnEditSil")
   }
 };
+
+document.querySelector("#btnDrawingTamam")?.addEventListener("click", () => {
+  document.querySelector("#btnEditTamam")?.click();
+});

@@ -195,11 +195,11 @@
   }
 
   function resizeHandle(handle, sizes, cp = {}) {
-    handle.querySelector(".editor-object-cp-hit")?.setAttribute("r", String(sizes.touchRadius));
+    handle.querySelector(".editor-object-cp-hit")?.setAttribute("r", String(Math.min(sizes.touchRadius, cp.maxHitRadius || Infinity)));
     const visualCircle = handle.querySelector("circle.editor-object-cp-visual");
     const visualRect = handle.querySelector("rect.editor-object-cp-visual");
     const rotateIcon = handle.querySelector("path.editor-object-cp-rotate-icon");
-    visualCircle?.setAttribute("r", String(sizes.visibleRadius));
+    visualCircle?.setAttribute("r", String(Math.min(sizes.visibleRadius, cp.maxHitRadius || Infinity)));
     if (rotateIcon) {
       const iconScale = (cp.catalogControl ? 42 : ROTATE_ICON_SIZE_PX) * sizes.unit / ROTATE_ICON_VIEWBOX_SIZE;
       const iconOffset = -ROTATE_ICON_VIEWBOX_SIZE * iconScale / 2;

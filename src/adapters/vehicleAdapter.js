@@ -72,6 +72,17 @@
     return catalog.normalizeView(variant, model?.metadata?.vehicleView || "top");
   }
 
+  const FREE_RESIZE_KEYS = new Set(["13/ozel-amacli-arac", "19/diger-arac"]);
+  const RESIZE_POINTS = [
+    ["nw", -1, -1], ["n", 0, -1], ["ne", 1, -1], ["e", 1, 0],
+    ["se", 1, 1], ["s", 0, 1], ["sw", -1, 1], ["w", -1, 0]
+  ];
+  function dimensionScale(value) {
+    const scale = Number(value);
+    return Number.isFinite(scale) && scale > 0 ? Math.min(20, Math.max(0.05, scale)) : 1;
+  }
+  function freeResize(variant) { return FREE_RESIZE_KEYS.has(variant?.key); }
+
   function baseMetrics(model) {
     const metadata = model.metadata || {};
     const geometry = model.geometry || {};
@@ -84,7 +95,7 @@
       metadata.vehicleTrailerVariantKey || "",
       Boolean(metadata.vehicleGhost), Boolean(metadata.vehicleTrailerMetadata?.vehicleGhost ?? metadata.vehicleGhost),
       catalog.articulationAngle(geometry.articulationAngle),
-      scale
+      scale, geometry.vehicleWidthScale || 1, geometry.vehicleHeightScale || 1
     ].join("|");
     const cached = metricsCache.get(model);
     if (cached?.key === cacheKey) return cached.metrics;
@@ -94,15 +105,18 @@
     const parts = catalog.rigParts(variant, metadata);
     const rig = parts ? catalog.rigLayout(parts, view, geometry.articulationAngle, metadata) : null;
     const dimensions = rig || catalog.dimensionsForView(variant, view);
+    const axisScaleX = freeResize(variant) ? dimensionScale(geometry.vehicleWidthScale) : 1;
+    const axisScaleY = freeResize(variant) ? dimensionScale(geometry.vehicleHeightScale) : 1;
     const metrics = {
+      axisScaleX, axisScaleY,
       parts, rig,
       variant,
       view,
       kind: variant?.kind || "car",
-      baseWidth: dimensions.width,
-      baseHeight: dimensions.height,
-      width: dimensions.width * scale,
-      height: dimensions.height * scale,
+      baseWidth: dimensions.width * axisScaleX,
+      baseHeight: dimensions.height * axisScaleY,
+      width: dimensions.width * axisScaleX * scale,
+      height: dimensions.height * axisScaleY * scale,
       scale
     };
     metricsCache.set(model, { key: cacheKey, metrics });
@@ -253,16 +267,17 @@
     const custom = customViewFor(variant, view);
     const box = parseViewBox(custom?.viewBox);
     if (!custom || !box) return false;
-    const scale = Math.min(w / box.width, h / box.height);
-    const fittedWidth = box.width * scale;
-    const fittedHeight = box.height * scale;
+    const axisX = metrics.axisScaleX || 1, axisY = metrics.axisScaleY || 1;
+    const scale = Math.min(w / axisX / box.width, h / axisY / box.height);
+    const fittedWidth = box.width * scale * axisX;
+    const fittedHeight = box.height * scale * axisY;
     const offsetX = (w - fittedWidth) / 2;
     const offsetY = (h - fittedHeight) / 2;
 
     const art = append(group, "g", {
       transform: [
         `translate(${-w / 2 + offsetX} ${-h / 2 + offsetY})`,
-        `scale(${scale})`,
+        `scale(${scale * axisX} ${scale * axisY})`,
         `translate(${-box.x} ${-box.y})`
       ].join(" ")
     });
@@ -811,7 +826,11 @@
           cy: utils.numberOr(geometry.cy ?? center.y ?? initialData.y, 0),
           scale: clampScale(geometry.scale ?? initialData.scale ?? 1),
           rotation: utils.normalizeRotation(geometry.rotation ?? initialData.rotation),
-          articulationAngle: catalog.articulationAngle(geometry.articulationAngle)
+          articulationAngle: catalog.articulationAngle(geometry.articulationAngle),
+          ...(freeResize(variant) ? {
+            vehicleWidthScale: dimensionScale(geometry.vehicleWidthScale),
+            vehicleHeightScale: dimensionScale(geometry.vehicleHeightScale)
+          } : {})
         },
         style: initialData.style,
         label: initialData.label,
@@ -829,7 +848,11 @@
           cy: utils.numberOr(element.dataset.cy, 0),
           scale: clampScale(element.dataset.scale),
           rotation: utils.normalizeRotation(element.dataset.rotation),
-          articulationAngle: catalog.articulationAngle(element.dataset.articulationAngle)
+          articulationAngle: catalog.articulationAngle(element.dataset.articulationAngle),
+          ...(FREE_RESIZE_KEYS.has(element.dataset.vehicleVariantKey) ? {
+            vehicleWidthScale: dimensionScale(element.dataset.vehicleWidthScale),
+            vehicleHeightScale: dimensionScale(element.dataset.vehicleHeightScale)
+          } : {})
         },
         style: {},
         label: {},
@@ -862,6 +885,8 @@
       writeDataset(element, "cx", model.geometry.cx);
       writeDataset(element, "cy", model.geometry.cy);
       writeDataset(element, "scale", metrics.scale);
+      writeDataset(element, "vehicleWidthScale", freeResize(metrics.variant) ? metrics.axisScaleX : "");
+      writeDataset(element, "vehicleHeightScale", freeResize(metrics.variant) ? metrics.axisScaleY : "");
       writeDataset(element, "rotation", utils.normalizeRotation(model.geometry.rotation));
       writeDataset(element, "articulationAngle", catalog.articulationAngle(model.geometry.articulationAngle));
       writeDataset(element, "vehicleTrailerVariantKey", metrics.parts?.trailer.key || "");
@@ -895,11 +920,55 @@
           title: "Çekiciyi döndür",
           ...bodyWorldPoint(model, { x: r.hitchX + front.x, y: front.y }, bodyMetrics) });
       }
+      if (freeResize(bodyMetrics.variant)) {
+        RESIZE_POINTS.forEach(([id, sx, sy]) => points.push({
+          id: "resize-" + id, role: "resize", cursor: "grab",
+          maxHitRadius: Math.min(bodyMetrics.width, bodyMetrics.height) / 5,
+          title: sx && sy ? "Oranı koruyarak boyutlandır" : sx ? "Genişliği ayarla" : "Yüksekliği ayarla",
+          ...localToWorld(model, sx * bodyMetrics.width / 2, sy * bodyMetrics.height / 2)
+        }));
+      }
       return points;
+    },
+
+    beginControlPointMove(model, cpId, point) {
+      const cp = RESIZE_POINTS.find(([id]) => cpId === "resize-" + id);
+      const metrics = baseMetrics(model);
+      if (!cp || !freeResize(metrics.variant)) return null;
+      const [, sx, sy] = cp;
+      const handle = localToWorld(model, sx * metrics.width / 2, sy * metrics.height / 2);
+      return { sx, sy, width: metrics.width, height: metrics.height,
+        axisX: metrics.axisScaleX, axisY: metrics.axisScaleY, rotation: model.geometry.rotation || 0,
+        fixed: localToWorld(model, -sx * metrics.width / 2, -sy * metrics.height / 2),
+        offset: { x: point.x - handle.x, y: point.y - handle.y } };
     },
 
     moveControlPoint(model, cpId, worldPoint, modifiers = {}) {
       const metrics = baseMetrics(model);
+      const state = modifiers.startState;
+      if (cpId.startsWith("resize-") && state?.fixed && freeResize(metrics.variant)) {
+        const radians = state.rotation * Math.PI / 180, cos = Math.cos(radians), sin = Math.sin(radians);
+        const dx = worldPoint.x - state.offset.x - state.fixed.x;
+        const dy = worldPoint.y - state.offset.y - state.fixed.y;
+        const x = dx * cos + dy * sin, y = -dx * sin + dy * cos;
+        let width = state.sx ? state.sx * x : state.width;
+        let height = state.sy ? state.sy * y : state.height;
+        if (state.sx && state.sy) {
+          const factor = Math.max(0.001, (width * state.width + height * state.height) /
+            (state.width * state.width + state.height * state.height));
+          const bounded = Math.min(20 / state.axisX, 20 / state.axisY,
+            Math.max(0.05 / state.axisX, 0.05 / state.axisY, factor));
+          width = state.width * bounded; height = state.height * bounded;
+        }
+        const axisX = state.sx ? dimensionScale(Math.max(0.05, state.axisX * width / state.width)) : state.axisX;
+        const axisY = state.sy ? dimensionScale(Math.max(0.05, state.axisY * height / state.height)) : state.axisY;
+        width = state.width * axisX / state.axisX; height = state.height * axisY / state.axisY;
+        model.geometry.vehicleWidthScale = axisX; model.geometry.vehicleHeightScale = axisY;
+        const hx = state.sx * width / 2, hy = state.sy * height / 2;
+        model.geometry.cx = state.fixed.x + hx * cos - hy * sin;
+        model.geometry.cy = state.fixed.y + hx * sin + hy * cos;
+        return;
+      }
       if (cpId === "tractorRotate" && metrics.rig && metrics.view !== "side") {
         const point = bodyLocalPoint(model, worldPoint, metrics);
         let angle = Math.atan2(point.y, point.x - metrics.rig.hitchX) * 180 / Math.PI;

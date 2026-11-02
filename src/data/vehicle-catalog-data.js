@@ -3841,7 +3841,7 @@
       variants: [
         {
           id: "sehir-bisikleti",
-          name: "Sehir Bisikleti",
+          name: "Şehir Bisikleti",
           kind: "box",
           lengthM: 1.706,
           widthM: 0.55,
@@ -3860,7 +3860,7 @@
       variants: [
         {
           id: "at-arabasi",
-          name: "At Arabasi",
+          name: "At Arabası",
           kind: "box",
           lengthM: 5.998,
           widthM: 1.55,
@@ -4011,7 +4011,7 @@
       variants: [
         {
           id: "minibus",
-          name: "Minibus",
+          name: "Minibüs",
           kind: "box",
           lengthM: 6.056,
           widthM: 2.05,
@@ -4108,7 +4108,7 @@
       variants: [
         {
           id: "cekici",
-          name: "Cekici",
+          name: "Çekici",
           kind: "box",
           lengthM: 5.165,
           widthM: 2.5,
@@ -4185,7 +4185,7 @@
         },
         {
           id: "cekici-ve-dorse",
-          name: "Cekici Ve Dorse",
+          name: "Çekici ve Dorse",
           kind: "box",
           lengthM: 13.301,
           widthM: 2.5,
@@ -4250,7 +4250,7 @@
       variants: [
         {
           id: "traktor",
-          name: "Traktor",
+          name: "Traktör",
           kind: "box",
           lengthM: 4.083,
           widthM: 2,
@@ -4263,7 +4263,7 @@
         },
         {
           id: "traktor-ve-romork",
-          name: "Traktor Ve Romork",
+          name: "Traktör ve Römork",
           kind: "box",
           lengthM: 5.281,
           widthM: 2,
@@ -4282,7 +4282,7 @@
       variants: [
         {
           id: "arazi-tasiti",
-          name: "Arazi Tasiti",
+          name: "Arazi Taşıtı",
           kind: "box",
           lengthM: 4.234,
           widthM: 1.95,
@@ -4301,7 +4301,7 @@
       variants: [
         {
           id: "ozel-amacli-arac",
-          name: "Ozel Amacli Arac",
+          name: "Özel Amaçlı Araç",
           kind: "box",
           lengthM: 6.217,
           widthM: 2.3,
@@ -4415,7 +4415,7 @@
       variants: [
         {
           id: "diger-arac",
-          name: "Diger Arac",
+          name: "Diğer Araç",
           kind: "box",
           lengthM: 5.13,
           widthM: 1.9,
